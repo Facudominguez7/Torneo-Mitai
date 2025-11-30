@@ -136,6 +136,9 @@ jobs:
               echo "No pending migrations found."
             fi
             
+            # Limpiar cachés después de migraciones
+            php artisan optimize:clear
+            
             # Optimizaciones
             php artisan config:cache
             php artisan route:cache
