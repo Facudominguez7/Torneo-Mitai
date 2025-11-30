@@ -72,9 +72,23 @@ jobs:
             # Activar modo mantenimiento
             php artisan down --retry=60 || true
             
+            # Hacer backup de carpetas con contenido del usuario (no versionadas)
+            if [ -d "public/fotos" ]; then
+              echo "Backing up public/fotos..."
+              cp -r public/fotos /tmp/fotos_backup_$$
+            fi
+            
             # Actualizar código
             git fetch origin main
             git reset --hard origin/main
+            
+            # Restaurar carpetas con contenido del usuario
+            if [ -d "/tmp/fotos_backup_$$" ]; then
+              echo "Restoring public/fotos..."
+              mkdir -p public
+              cp -r /tmp/fotos_backup_$$ public/fotos
+              rm -rf /tmp/fotos_backup_$$
+            fi
             
             # Instalar dependencias
             composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
