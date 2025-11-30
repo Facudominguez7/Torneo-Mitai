@@ -1,0 +1,604 @@
+<?php
+
+namespace App\Http\Controllers\Panel;
+
+use App\Http\Controllers\Controller;
+use App\Models\Categoria;
+use App\Models\Edicion;
+use App\Models\EquipoEdicion;
+use App\Models\Jugador;
+use App\Models\Partido;
+use App\Models\InstanciaFinal;
+use App\Models\PlanillaJugador;
+use App\Models\TablaGoleador;
+use App\Models\ListaBuenaFe;
+use App\Constants\PartidoConstants;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+
+use App\Services\ValidadorReglasJugador;
+
+class ControladorPlanillaJugador extends Controller
+{
+    protected $validadorReglas;
+
+    public function __construct(ValidadorReglasJugador $validadorReglas)
+    {
+        $this->validadorReglas = $validadorReglas;
+    }
+    public function mostrarPlanilla(Request $request, $partidoId, $idEdicion, $tipoPartido, $horario)
+    {
+        $ediciones = Edicion::all();
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+        $horarioSeleccionado = $horario;
+
+        // Obtener el partido o instancia final
+        if ($tipoPartido === 'instanciaFinal') {
+            $partido = InstanciaFinal::findOrFail($partidoId);
+        } else {
+            $partido = Partido::findOrFail($partidoId);
+        }
+
+        // Verificar si ya existen jugadores en la planilla (local o visitante)
+        $planillaYaExiste = PlanillaJugador::where('partido_id', $partidoId)
+            ->where('idEdicion', $idEdicion)
+            ->exists();
+
+        // Sincronizar planilla con Lista de Buena Fe (Altas y Bajas)
+        $this->sincronizarPlanilla($partidoId, $partido->idEquipoLocal, $idEdicion, $tipoPartido);
+        $this->sincronizarPlanilla($partidoId, $partido->idEquipoVisitante, $idEdicion, $tipoPartido);
+
+        // Obtener la planilla para mostrar los jugadores locales
+        $jugadoresLocalPlanilla = PlanillaJugador::where('partido_id', $partidoId)
+            ->where('idEquipo', $partido->idEquipoLocal)
+            ->where('idEdicion', $idEdicion)
+            ->join('jugadores', 'planilla_jugadores.dni_jugador', '=', 'jugadores.dni')
+            ->select('planilla_jugadores.*', 'jugadores.nombre', 'jugadores.apellido')
+            ->get();
+
+        // Obtener la planilla para mostrar los jugadores visitantes
+        $jugadoresVisitantePlanilla = PlanillaJugador::where('partido_id', $partidoId)
+            ->where('idEquipo', $partido->idEquipoVisitante)
+            ->where('idEdicion', $idEdicion)
+            ->join('jugadores', 'planilla_jugadores.dni_jugador', '=', 'jugadores.dni')
+            ->select('planilla_jugadores.*', 'jugadores.nombre', 'jugadores.apellido')
+            ->get();
+
+        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado'));
+    }
+
+    /**
+     * Método auxiliar para auto-poblar la planilla de un equipo desde la Lista de Buena Fe
+     * 
+     * @param int $partidoId ID del partido actual
+     * @param int $equipoId ID del equipo a poblar
+     * @param int $idEdicion ID de la edición
+     * @param string $tipoPartido Tipo de partido (normal o instanciaFinal)
+     * @param mixed $partido Objeto del partido (Partido o InstanciaFinal)
+     */
+    private function autoPoblarPlanilla($partidoId, $equipoId, $idEdicion, $tipoPartido, $partido)
+    {
+        try {
+            // Verificar si ya existen jugadores cargados para este equipo en este partido
+            $jugadoresExistentes = PlanillaJugador::where('partido_id', $partidoId)
+                ->where('idEquipo', $equipoId)
+                ->where('idEdicion', $idEdicion)
+                ->pluck('dni_jugador')
+                ->toArray();
+
+            // Si ya hay jugadores, no hacer nada (evitar duplicados)
+            if (!empty($jugadoresExistentes)) {
+                Log::info("Planilla ya existe para partido {$partidoId}, equipo {$equipoId}");
+                return;
+            }
+
+            // Obtener jugadores ACTIVOS de la Lista de Buena Fe
+            $jugadoresBuenaFe = ListaBuenaFe::with('jugador')
+                ->deEquipo($equipoId, $idEdicion)
+                ->activos()
+                ->get();
+
+            // Si no hay jugadores en la lista de buena fe, intentar migrar desde el último partido
+            if ($jugadoresBuenaFe->isEmpty()) {
+                Log::warning("No hay jugadores en Lista de Buena Fe para equipo {$equipoId}. Considera migrar jugadores existentes.");
+                return;
+            }
+
+            // Log de información
+            Log::info("Auto-poblando planilla para partido {$partidoId}, equipo {$equipoId}. Encontrados " . $jugadoresBuenaFe->count() . " jugadores en Lista de Buena Fe");
+
+            // Insertar jugadores en la planilla
+            $jugadoresInsertados = 0;
+            $jugadoresSuspendidos = 0;
+
+            foreach ($jugadoresBuenaFe as $listaBuenaFe) {
+                // Verificar si el jugador está suspendido (tarjeta roja en último partido)
+                if ($listaBuenaFe->estaSuspendido()) {
+                    Log::info("Jugador {$listaBuenaFe->dni_jugador} está suspendido, no se agrega a la planilla");
+                    $jugadoresSuspendidos++;
+                    continue;
+                }
+
+                // Validar que el jugador y sus datos existan
+                if (!$listaBuenaFe->jugador || empty($listaBuenaFe->fecha_nacimiento) || empty($listaBuenaFe->idCategoria)) {
+                    Log::warning("Jugador {$listaBuenaFe->dni_jugador} tiene datos incompletos en Lista de Buena Fe, se omite");
+                    continue;
+                }
+
+                // Insertar en la planilla
+                try {
+                    PlanillaJugador::create([
+                        'partido_id' => $partidoId,
+                        'partido_type' => PartidoConstants::getModelClass($tipoPartido),
+                        'dni_jugador' => $listaBuenaFe->dni_jugador,
+                        'fecha_nacimiento' => $listaBuenaFe->fecha_nacimiento,
+                        'idEquipo' => $equipoId,
+                        'idEdicion' => $idEdicion,
+                        'idCategoria' => $listaBuenaFe->idCategoria,
+                        'numero_camiseta' => $listaBuenaFe->numero_camiseta ?? 0,
+                        'goles' => 0,
+                        'asistio' => false,
+                        'tarjeta_roja' => false,
+                    ]);
+                    $jugadoresInsertados++;
+                } catch (\Exception $e) {
+                    Log::error("Error insertando jugador {$listaBuenaFe->dni_jugador}: " . $e->getMessage());
+                }
+            }
+
+            Log::info("Planilla partido {$partidoId}: {$jugadoresInsertados} jugadores insertados, {$jugadoresSuspendidos} suspendidos excluidos");
+
+        } catch (\Exception $e) {
+            // Log del error pero no interrumpir la ejecución
+            Log::error("Error en autoPoblarPlanilla para partido {$partidoId}, equipo {$equipoId}: " . $e->getMessage());
+        }
+    }
+
+    public function agregarJugador(Request $request)
+    {
+        $idEdicion = $request->idEdicion;
+        $tipoPartido = $request->tipoPartido;
+        $horarioSeleccionado = $request->horario;
+        $fecha_nacimiento = $request->fecha_nacimiento;
+        $partidoId = $request->partido_id;
+
+        // Validar número de camiseta único en el equipo para este partido
+        if ($request->numero_camiseta) {
+            $numeroDuplicado = PlanillaJugador::where('partido_id', $partidoId)
+                ->where('idEquipo', $request->equipo_id)
+                ->where('numero_camiseta', $request->numero_camiseta)
+                ->exists();
+            
+            if ($numeroDuplicado) {
+                return redirect()->back()->with('status', 'El número de camiseta ' . $request->numero_camiseta . ' ya está en uso en este equipo para este partido.');
+            }
+        }
+
+        // 2. Obtener Equipo y Categoría (Necesarios para validación)
+        $equipo = EquipoEdicion::where('idEquipo', $request->equipo_id)
+            ->where('idEdicion', $idEdicion)
+            ->first();
+
+        if (!$equipo) {
+            return redirect()->back()->with('status', 'Equipo no encontrado.');
+        }
+
+        // 3. Validar Reglas de Negocio (Servicio)
+        $resultadoValidacion = $this->validadorReglas->validarJugador(
+            $request->dni_jugador,
+            $request->equipo_id,
+            $idEdicion,
+            $request->idCategoria,
+            $fecha_nacimiento
+        );
+
+        if ($resultadoValidacion) {
+             // En planilla, tratamos warnings como errores para simplificar el flujo rápido
+             if ($resultadoValidacion['type'] === 'error' || $resultadoValidacion['type'] === 'warning') {
+                 return redirect()->back()->with('status', $resultadoValidacion['message']);
+             }
+        }
+
+        // 4. Crear o buscar Jugador
+        $jugador = Jugador::firstOrCreate(
+            ['dni' => $request->dni_jugador],
+            [
+                'nombre' => $request->nombre_jugador,
+                'apellido' => $request->apellido_jugador,
+                'fecha_nacimiento' => $fecha_nacimiento,
+            ]
+        );
+
+        // Agregar el jugador a la planilla
+        $nuevaPlanilla = PlanillaJugador::create([
+            'partido_id' => $partidoId,
+            'partido_type' => PartidoConstants::getModelClass($tipoPartido),
+            'dni_jugador' => $jugador->dni,
+            'idEquipo' => $equipo->idEquipo,
+            'idEdicion' => $idEdicion,
+            'numero_camiseta' => $request->numero_camiseta,
+            'fecha_nacimiento' => $fecha_nacimiento,
+            'idCategoria' => $equipo->idCategoria,
+            'goles' => 0,
+            'asistio' => false,
+            'tarjeta_roja' => isset($request->tarjeta_roja),
+        ]);
+
+        // Si se agregó con roja marcada, incrementar el total histórico
+        if ($nuevaPlanilla->tarjeta_roja) {
+            $jugador->tarjetas_rojas_totales = ($jugador->tarjetas_rojas_totales ?? 0) + 1;
+            $jugador->save();
+        }
+
+        // --- Sincronización con Lista de Buena Fe ---
+        try {
+            // Verificar si ya existe en la lista (activo o inactivo)
+            $listaBuenaFe = ListaBuenaFe::where('dni_jugador', $jugador->dni)
+                ->where('idEquipo', $equipo->idEquipo)
+                ->where('idEdicion', $idEdicion)
+                ->first();
+
+            if ($listaBuenaFe) {
+                // Si existe pero está inactivo, reactivarlo
+                if (!$listaBuenaFe->activo) {
+                    // Verificar límite antes de reactivar
+                    $cantidadActivos = ListaBuenaFe::where('idEquipo', $equipo->idEquipo)
+                        ->where('idEdicion', $idEdicion)
+                        ->where('activo', true)
+                        ->count();
+                    
+                    if ($cantidadActivos < 16) {
+                        $listaBuenaFe->reactivar();
+                        // Actualizar datos si cambiaron
+                        $listaBuenaFe->fecha_nacimiento = $fecha_nacimiento;
+                        $listaBuenaFe->idCategoria = $equipo->idCategoria;
+                        $listaBuenaFe->save();
+                    } else {
+                        Log::warning("Jugador agregado a planilla pero Lista de Buena Fe llena. No se pudo reactivar en la lista.");
+                    }
+                } else {
+                    // Ya está activo, actualizar datos
+                    $listaBuenaFe->fecha_nacimiento = $fecha_nacimiento;
+                    $listaBuenaFe->idCategoria = $equipo->idCategoria;
+                    $listaBuenaFe->save();
+                }
+            } else {
+                // No existe, crear nuevo
+                // Verificar límite
+                $cantidadActivos = ListaBuenaFe::where('idEquipo', $equipo->idEquipo)
+                    ->where('idEdicion', $idEdicion)
+                    ->where('activo', true)
+                    ->count();
+
+                if ($cantidadActivos < 16) {
+                    ListaBuenaFe::create([
+                        'dni_jugador' => $jugador->dni,
+                        'idEquipo' => $equipo->idEquipo,
+                        'idEdicion' => $idEdicion,
+                        'idCategoria' => $equipo->idCategoria,
+                        'fecha_nacimiento' => $fecha_nacimiento,
+                        'fecha_alta' => now(),
+                        'activo' => true,
+                    ]);
+                } else {
+                     Log::warning("Jugador agregado a planilla pero Lista de Buena Fe llena. No se pudo agregar a la lista.");
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("Error sincronizando Lista de Buena Fe al agregar en planilla: " . $e->getMessage());
+        }
+
+        if ($tipoPartido === 'instanciaFinal') {
+            return redirect()->route('planilla.show', [
+                'partidoId' => $partidoId,
+                'idEdicion' => $idEdicion,
+                'tipoPartido' => $tipoPartido,
+                'horario' => 0,
+            ])->with('status', 'Jugador agregado a la planilla con éxito.');
+        } else {
+            return redirect()->route('planilla.show', [
+                'partidoId' => $partidoId,
+                'idEdicion' => $idEdicion,
+                'tipoPartido' => $tipoPartido,
+                'horario' => $horarioSeleccionado,
+            ])->with('status', 'Jugador agregado a la planilla con éxito.');
+        }
+    }
+
+    public function actualizarJugadores(Request $request)
+    {
+        $tipoPartido = $request->tipoPartido;
+        $horarioSeleccionado = $request->horario;
+        $idEdicion = $request->idEdicion;
+
+        // Iniciar transacción para asegurar integridad de datos
+        DB::transaction(function () use ($request, $idEdicion) {
+            // Recorrer todos los jugadores enviados en el formulario
+            foreach ($request->jugadores as $dni => $datos) {
+                // Buscar la planilla y el jugador
+                $planilla = PlanillaJugador::where('partido_id', $request->partido_id)
+                    ->where('dni_jugador', $dni)
+                    ->first();
+
+                $jugador = Jugador::where('dni', $dni)->first();
+
+                if (!$planilla || !$jugador) {
+                    continue; // Si no se encuentra la planilla o el jugador, pasar al siguiente
+                }
+
+                // Guardar los valores actuales antes de actualizar
+                $golesAnteriores = $planilla->goles;
+                $asistioAnteriormente = $planilla->asistio;
+                $teniaRojaAntes = (bool)$planilla->tarjeta_roja;
+
+                // Actualizar los datos de la planilla (SOLO campos permitidos)
+                $planilla->goles = $datos['goles'] ?? $planilla->goles;
+                $planilla->asistio = isset($datos['asistencia']);
+                $planilla->numero_camiseta = $datos['numero_camiseta'] ?? $planilla->numero_camiseta;
+                $planilla->tarjeta_roja = isset($datos['tarjeta_roja']);
+                $planilla->save();
+
+                // Si pasó de no tener roja a tenerla, incrementa el total histórico del jugador
+                if (!$teniaRojaAntes && $planilla->tarjeta_roja) {
+                    $jugador->tarjetas_rojas_totales = ($jugador->tarjetas_rojas_totales ?? 0) + 1;
+                }
+
+                // Actualizar los datos del jugador (Estadísticas)
+                $jugador->goles_totales += ($planilla->goles - $golesAnteriores);
+
+                // Actualizar partidos_totales basándose SOLO en asistencia, no en goles
+                if ($planilla->asistio && !$asistioAnteriormente) {
+                    $jugador->partidos_totales += 1;
+                } elseif (!$planilla->asistio && $asistioAnteriormente) {
+                    $jugador->partidos_totales -= 1;
+                }
+
+                $jugador->save();
+
+                // Actualizar o crear el registro en la tabla de goleadores
+                $goleador = TablaGoleador::where('dni_jugador', $dni)
+                    ->where('idEdicion', $idEdicion)
+                    ->where('idCategoria', $planilla->idCategoria)
+                    ->first();
+
+                if ($goleador) {
+                    $goleador->cantidadGoles += ($planilla->goles - $golesAnteriores);
+                    $goleador->save();
+                } else {
+                    if ($planilla->goles > 0) {
+                        TablaGoleador::create([
+                            'dni_jugador' => $dni,
+                            'cantidadGoles' => $planilla->goles,
+                            'idEquipo' => $planilla->idEquipo,
+                            'idEdicion' => $idEdicion,
+                            'idCategoria' => $planilla->idCategoria,
+                        ]);
+                    }
+                }
+            }
+        });
+
+        // Redirigir de vuelta a la vista con un mensaje de éxito
+        $mensaje = 'Jugadores actualizados correctamente.';
+        
+        if ($tipoPartido === 'instanciaFinal') {
+            return redirect()->route('planilla.show', [
+                'partidoId' => $request->partido_id,
+                'idEdicion' => $idEdicion,
+                'tipoPartido' => $tipoPartido,
+                'horario' => 0,
+            ])->with('status', $mensaje);
+        } else {
+            return redirect()->route('planilla.show', [
+                'partidoId' => $request->partido_id,
+                'idEdicion' => $idEdicion,
+                'tipoPartido' => $tipoPartido,
+                'horario' => $horarioSeleccionado,
+            ])->with('status', $mensaje);
+        }
+    }
+
+    public function generarReportePDF($equipoId, $idEdicion, $partidoId)
+    {
+        // Obtener los jugadores únicos del equipo en la edición especificada
+        $jugadores = PlanillaJugador::where('idEquipo', $equipoId)
+            ->where('idEdicion', $idEdicion)
+            ->join('jugadores', 'planilla_jugadores.dni_jugador', '=', 'jugadores.dni')
+            ->select(
+                'jugadores.dni',
+                'jugadores.nombre',
+                'jugadores.apellido',
+                'planilla_jugadores.fecha_nacimiento'
+            )
+            ->distinct() // Eliminar duplicados
+            ->get();
+
+
+        // Obtener la categoría del partido
+        $nombreCategoria = Partido::where('partidos.id', $partidoId)
+            ->leftJoin('categorias', 'partidos.idCategoria', '=', 'categorias.id')
+            ->select('categorias.nombreCategoria as nombre')
+            ->first();
+
+
+        // Obtener información del equipo
+        $equipo = EquipoEdicion::where('equipo_ediciones.idEquipo', $equipoId)
+            ->leftJoin('equipos', 'equipo_ediciones.idEquipo', '=', 'equipos.id')
+            ->leftJoin('ediciones', 'equipo_ediciones.idEdicion', '=', 'ediciones.id')
+            ->select('equipos.nombre', 'equipos.foto', 'equipo_ediciones.*')
+            ->first();
+
+
+        // Generar el PDF
+        $pdf = Pdf::loadView('Panel.reporte.jugadores', compact('jugadores', 'equipo', 'nombreCategoria'));
+
+        // Ver PDF en el navegador
+        return $pdf->stream('reporte_jugadores_equipo_' . $equipo->nombre . '_categoria_' . $nombreCategoria->nombre . '.pdf', ['Attachment' => false]);
+    }
+
+    /**
+     * Eliminar un jugador de la planilla de un partido específico
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function eliminarJugador(Request $request)
+    {
+        $dniJugador = $request->dni_jugador;
+        $partidoId = $request->partido_id;
+        $idEdicion = $request->idEdicion;
+        $tipoPartido = $request->tipoPartido;
+        $horarioSeleccionado = $request->horario;
+
+        // Determinar el tipo de partido correcto
+        $partidoType = PartidoConstants::getModelClass($tipoPartido);
+
+        // Buscar el registro en la planilla con el tipo de partido
+        $planilla = PlanillaJugador::where('partido_id', $partidoId)
+            ->where('partido_type', $partidoType)
+            ->where('dni_jugador', $dniJugador)
+            ->first();
+
+        if (!$planilla) {
+            return redirect()->back()->with('error', 'No se encontró el jugador (DNI: ' . $dniJugador . ') en la planilla del partido ' . $partidoId);
+        }
+
+        // Obtener el equipo del jugador para esta edición
+        $idEquipo = $planilla->idEquipo;
+        $idCategoria = $planilla->idCategoria;
+
+        // Obtener TODAS las planillas del jugador en este equipo y edición
+        $todasLasPlanillas = PlanillaJugador::where('dni_jugador', $dniJugador)
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->get();
+
+        // Calcular estadísticas totales a restar del jugador
+        $totalGoles = $todasLasPlanillas->sum('goles');
+        $totalPartidos = $todasLasPlanillas->where('asistio', 1)->count();
+        $totalTarjetasRojas = $todasLasPlanillas->where('tarjeta_roja', 1)->count();
+
+        // Actualizar estadísticas globales del jugador
+        $jugador = Jugador::where('dni', $dniJugador)->first();
+        if ($jugador) {
+            $jugador->goles_totales = max(0, ($jugador->goles_totales ?? 0) - $totalGoles);
+            $jugador->partidos_totales = max(0, ($jugador->partidos_totales ?? 0) - $totalPartidos);
+            $jugador->tarjetas_rojas_totales = max(0, ($jugador->tarjetas_rojas_totales ?? 0) - $totalTarjetasRojas);
+            $jugador->save();
+        }
+
+        // Eliminar completamente de la tabla de goleadores de esta edición
+        TablaGoleador::where('dni_jugador', $dniJugador)
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $idCategoria)
+            ->delete();
+
+        // Eliminar TODAS las planillas del jugador en este equipo y edición
+        PlanillaJugador::where('dni_jugador', $dniJugador)
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->delete();
+
+        // --- Sincronización con Lista de Buena Fe ---
+        try {
+            $listaBuenaFe = ListaBuenaFe::where('dni_jugador', $dniJugador)
+                ->where('idEquipo', $idEquipo)
+                ->where('idEdicion', $idEdicion)
+                ->first();
+
+            if ($listaBuenaFe) {
+                $listaBuenaFe->darDeBaja('Eliminado desde planilla del partido ' . $partidoId);
+                Log::info("Jugador {$dniJugador} dado de baja de Lista de Buena Fe por eliminación en planilla.");
+            }
+        } catch (\Exception $e) {
+            Log::error("Error sincronizando Lista de Buena Fe al eliminar de planilla: " . $e->getMessage());
+        }
+
+        if ($tipoPartido === 'instanciaFinal') {
+            return redirect()->route('planilla.show', [
+                'partidoId' => $partidoId,
+                'idEdicion' => $idEdicion,
+                'tipoPartido' => $tipoPartido,
+                'horario' => 0,
+            ])->with('status', 'Jugador eliminado completamente del equipo en esta edición.');
+        } else {
+            return redirect()->route('planilla.show', [
+                'partidoId' => $partidoId,
+                'idEdicion' => $idEdicion,
+                'tipoPartido' => $tipoPartido,
+                'horario' => $horarioSeleccionado,
+            ])->with('status', 'Jugador eliminado completamente del equipo en esta edición.');
+        }
+    }
+
+    /**
+     * Sincroniza la planilla del partido con la Lista de Buena Fe.
+     * - Agrega jugadores activos que no estén en la planilla.
+     * - Elimina jugadores inactivos de la planilla SI no tienen estadísticas (goles, rojas, asistencia).
+     */
+    private function sincronizarPlanilla($partidoId, $equipoId, $idEdicion, $tipoPartido)
+    {
+        try {
+            // 1. Obtener jugadores de la Lista de Buena Fe (Activos e Inactivos para comparar)
+            // Necesitamos saber quiénes están activos para agregarlos, y quiénes NO para eliminarlos.
+            $jugadoresBuenaFe = ListaBuenaFe::where('idEquipo', $equipoId)
+                ->where('idEdicion', $idEdicion)
+                ->get();
+
+            $activosDni = $jugadoresBuenaFe->where('activo', true)->pluck('dni_jugador')->toArray();
+            
+            // 2. Obtener jugadores actuales en la planilla
+            $planillaActual = PlanillaJugador::where('partido_id', $partidoId)
+                ->where('idEquipo', $equipoId)
+                ->where('idEdicion', $idEdicion)
+                ->get();
+
+            $planillaDni = $planillaActual->pluck('dni_jugador')->toArray();
+
+            // 3. IDENTIFICAR ALTAS (Están activos en Buena Fe pero NO en Planilla)
+            $altasDni = array_diff($activosDni, $planillaDni);
+
+            foreach ($altasDni as $dni) {
+                $jugadorBF = $jugadoresBuenaFe->where('dni_jugador', $dni)->first();
+                
+                // Verificar suspensión
+                if ($jugadorBF->estaSuspendido()) {
+                    continue; 
+                }
+
+                // Crear registro en planilla
+                PlanillaJugador::create([
+                    'partido_id' => $partidoId,
+                    'partido_type' => PartidoConstants::getModelClass($tipoPartido),
+                    'dni_jugador' => $dni,
+                    'fecha_nacimiento' => $jugadorBF->fecha_nacimiento,
+                    'idEquipo' => $equipoId,
+                    'idEdicion' => $idEdicion,
+                    'idCategoria' => $jugadorBF->idCategoria,
+                    'numero_camiseta' => $jugadorBF->numero_camiseta ?? 0,
+                    'goles' => 0,
+                    'asistio' => false,
+                    'tarjeta_roja' => false,
+                ]);
+            }
+
+            // 4. IDENTIFICAR BAJAS (Están en Planilla pero NO activos en Buena Fe)
+            // Feedback usuario: "eliminar por completo, un jugador dado de baja quiere decir que no volvera a jugar en ese equipo"
+            
+            foreach ($planillaActual as $registroPlanilla) {
+                // Si el jugador NO está en la lista de activos de buena fe
+                if (!in_array($registroPlanilla->dni_jugador, $activosDni)) {
+                    // Eliminar incondicionalmente de la planilla actual
+                    // Nota: Si tiene goles, estos se perderán del partido. Es lo solicitado.
+                    $registroPlanilla->delete();
+                }
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Error en sincronizarPlanilla: " . $e->getMessage());
+        }
+    }
+}

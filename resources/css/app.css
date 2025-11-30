@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+@layer base {
+    :root {
+        --color-primary: rgb(14, 75, 94);
+        --color-secondary: rgb(42, 109, 129);
+    }
+}
+
+.btn {
+    @apply border rounded px-3 py-2 text-white font-bold inline-block transition-all
+}
+.btn-eliminar {
+    @apply bg-red-600 hover:bg-red-800 border-red-600
+}
+.btn-editar {
+    @apply bg-green-600 hover:bg-green-800 border-green-600
+}
+.btn-detalle {
+    @apply bg-yellow-600 hover:bg-yellow-800 border-yellow-600
+}
+.card {
+    @apply p-6 rounded shadow-sm
+}

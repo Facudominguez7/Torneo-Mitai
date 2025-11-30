@@ -1,0 +1,54 @@
+# Ignorar archivos de Git
+.git
+.gitignore
+.gitattributes
+
+# Ignorar archivos de entorno
+.env
+.env.backup
+.env.production
+
+# Ignorar dependencias
+/node_modules
+/vendor
+
+# Ignorar archivos de IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Ignorar archivos de log
+storage/logs/*
+*.log
+
+# Ignorar cache
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/bootstrap/cache/*
+
+# Ignorar archivos de testing
+/tests
+phpunit.xml
+.phpunit.result.cache
+
+# Ignorar archivos del sistema
+Thumbs.db
+.DS_Store
+
+# Ignorar archivos de Laravel Mix / Vite
+/public/hot
+/public/storage
+/public/build
+npm-debug.log
+yarn-error.log
+
+# Ignorar archivos de documentación
+README.md
+CHANGELOG.md
+LICENSE
+
+# Ignorar Docker
+docker-compose.override.yml

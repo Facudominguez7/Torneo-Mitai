@@ -1,0 +1,118 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main  # Se ejecuta automáticamente al hacer push a main
+  workflow_dispatch:  # También permite ejecución manual desde GitHub
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, dom, filter, gd, json, zip
+          tools: composer:v2
+          coverage: none
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install Composer dependencies
+        run: composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
+        
+      - name: Install NPM dependencies
+        run: npm ci
+        
+      - name: Build assets
+        run: npm run build
+
+      - name: Copy assets to server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "public/build"
+          target: "${{ secrets.DEPLOY_PATH }}/public"
+          strip_components: 1
+        
+      - name: Deploy to Hostinger via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            
+            # Verificar si es un repo git, si no, inicializarlo (para la primera vez)
+            if [ ! -d ".git" ]; then
+              echo "Initializing Git repository..."
+              git init
+              git remote add origin https://github.com/${{ github.repository }}.git
+              git fetch origin main
+              git reset --soft origin/main
+            fi
+            
+            # Activar modo mantenimiento
+            php artisan down --retry=60 || true
+            
+            # Actualizar código
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # Instalar dependencias
+            composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
+            
+            # Asegurar permisos correctos
+            chmod -R 775 storage bootstrap/cache
+            
+            # Manejo de public_html vs public (Hostinger)
+            if [ -d "public_html" ] && [ ! -L "public_html" ]; then
+               # Si public_html es una carpeta real y no un symlink, hacer backup y crear symlink
+               echo "Backing up public_html and creating symlink..."
+               mv public_html public_html_backup_$(date +%F_%T)
+               ln -s public public_html
+            elif [ ! -d "public_html" ]; then
+               ln -s public public_html
+            fi
+            
+            # Ejecutar migraciones
+            php artisan migrate --force
+            
+            # Optimizaciones
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan event:cache
+            
+            # Storage link
+            php artisan storage:link || true
+            
+            # Desactivar modo mantenimiento
+            php artisan up
+            
+            echo "✅ Deployment completed successfully!"
+            
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Deployment to production was successful!"
+          else
+            echo "❌ Deployment failed. Check the logs above."
+          fi

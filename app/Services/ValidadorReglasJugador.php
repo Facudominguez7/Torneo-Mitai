@@ -1,0 +1,268 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Categoria;
+use App\Models\Equipo;
+use App\Models\ListaBuenaFe;
+use App\Models\PlanillaJugador;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Servicio de Validación de Reglas de Negocio para Jugadores
+ * 
+ * Centraliza todas las validaciones de reglas para agregar jugadores a equipos,
+ * evitando duplicación de código entre ControladorListaBuenaFe y ControladorPlanillaJugador.
+ * 
+ * @package App\Services
+ */
+class ValidadorReglasJugador
+{
+    /**
+     * Validar todas las reglas de negocio para agregar un jugador a un equipo
+     * 
+     * Retorna null si todas las validaciones pasan, o un array con el tipo de error
+     * y mensaje si alguna validación falla.
+     * 
+     * Tipos de retorno:
+     * - null: Todas las validaciones pasaron
+     * - ['type' => 'error', 'message' => '...']: Error bloqueante (HARD)
+     * - ['type' => 'warning', 'message' => '...']: Advertencia que puede forzarse (SOFT)
+     * 
+     * @param string $dni_jugador DNI del jugador
+     * @param int $idEquipo ID del equipo destino
+     * @param int $idEdicion ID de la edición
+     * @param int $idCategoria ID de la categoría
+     * @param string $fecha_nacimiento Fecha de nacimiento del jugador
+     * @return array|null Null si OK, array con tipo y mensaje si falla
+     */
+    public function validarJugador($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento, $esReactivacion = false)
+    {
+        // 1. Validar si ya jugó en otro equipo de la misma categoría y edición (Regla de Planilla)
+        $resultado = $this->validarEquipoUnicoPorCategoria($dni_jugador, $idEquipo, $idEdicion, $idCategoria);
+        if ($resultado) return $resultado;
+
+        // 2. Validar si está activo en la Lista de Buena Fe de otro equipo
+        $resultado = $this->validarListaBuenaFeOtroEquipo($dni_jugador, $idEquipo, $idEdicion, $idCategoria);
+        if ($resultado) return $resultado;
+
+        // 3. Validar si jugador existe como inactivo (advertir para reactivar)
+        // Solo si NO es una reactivación (si es reactivación, ya sabemos que está inactivo)
+        if (!$esReactivacion) {
+            $resultado = $this->validarJugadorInactivo($dni_jugador, $idEquipo, $idEdicion);
+            if ($resultado) return $resultado;
+        }
+
+        // 4. Validaciones de Categoría y Edad
+        $resultado = $this->validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento);
+        if ($resultado) return $resultado;
+
+        // 5. Validar límite de 16 jugadores activos (WARNING, no bloquear)
+        $resultado = $this->validarLimiteJugadores($idEquipo, $idEdicion);
+        if ($resultado) return $resultado;
+
+        // 6. Verificar si ya está en la lista de buena fe (activo)
+        $resultado = $this->validarDuplicadoEnLista($dni_jugador, $idEquipo, $idEdicion);
+        if ($resultado) return $resultado;
+
+        return null; // Todas las validaciones pasaron
+    }
+
+    /**
+     * Validar si el jugador ya jugó para otro equipo en la misma categoría y edición
+     */
+    private function validarEquipoUnicoPorCategoria($dni_jugador, $idEquipo, $idEdicion, $idCategoria)
+    {
+        $jugadorEnOtroEquipo = PlanillaJugador::where('dni_jugador', $dni_jugador)
+            ->where('idEquipo', '!=', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $idCategoria)
+            ->first();
+
+        if ($jugadorEnOtroEquipo) {
+            $equipoAsignado = Equipo::find($jugadorEnOtroEquipo->idEquipo);
+            return [
+                'type' => 'warning',
+                'message' => 'El jugador ya jugó para el equipo ' . ($equipoAsignado->nombre ?? 'Desconocido') . ' en esta categoría y edición.'
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Validar si está activo en la Lista de Buena Fe de otro equipo
+     */
+    private function validarListaBuenaFeOtroEquipo($dni_jugador, $idEquipo, $idEdicion, $idCategoria)
+    {
+        $enOtraLista = ListaBuenaFe::where('dni_jugador', $dni_jugador)
+            ->where('idEquipo', '!=', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $idCategoria)
+            ->where('activo', true)
+            ->first();
+
+        if ($enOtraLista) {
+            $equipoOtro = Equipo::find($enOtraLista->idEquipo);
+            return [
+                'type' => 'warning',
+                'message' => 'El jugador ya está en la Lista de Buena Fe del equipo ' . ($equipoOtro->nombre ?? 'Desconocido') . '.'
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Validar si el jugador existe como inactivo en el mismo equipo
+     * (Advertir al usuario para que decida si reactivar)
+     */
+    private function validarJugadorInactivo($dni_jugador, $idEquipo, $idEdicion)
+    {
+        $jugadorInactivo = ListaBuenaFe::where('dni_jugador', $dni_jugador)
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->where('activo', false)
+            ->first();
+
+        if ($jugadorInactivo) {
+            return [
+                'type' => 'warning',
+                'message' => 'El jugador ya existe en la lista pero está INACTIVO (dado de baja). ¿Desea reactivarlo en lugar de crear un nuevo registro?'
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Validar reglas de categorías y edad
+     */
+    private function validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento)
+    {
+        // Helper para extraer año de categoría
+        $extraerAnioCategoria = function (string $nombre) {
+            if (preg_match('/(20\d{2})/', $nombre, $m)) {
+                return (int) $m[1];
+            }
+            return null;
+        };
+
+        // Obtener historial de categorías del jugador
+        $categoriasJugador = PlanillaJugador::join('equipo_ediciones', function ($join) {
+            $join->on('planilla_jugadores.idEquipo', '=', 'equipo_ediciones.idEquipo')
+                ->on('planilla_jugadores.idEdicion', '=', 'equipo_ediciones.idEdicion');
+        })
+            ->join('categorias', 'equipo_ediciones.idCategoria', '=', 'categorias.id')
+            ->join('equipos', 'equipo_ediciones.idEquipo', '=', 'equipos.id')
+            ->where('planilla_jugadores.dni_jugador', $dni_jugador)
+            ->where('planilla_jugadores.idEdicion', $idEdicion)
+            ->select('categorias.nombreCategoria', 'equipos.nombre as nombreEquipo', 'equipo_ediciones.idEquipo as idEquipoCategoria', 'equipos.idInstitucion')
+            ->distinct()
+            ->get();
+
+        $categoriaEquipoActual = Categoria::find($idCategoria);
+        $anioEquipoActual = $extraerAnioCategoria($categoriaEquipoActual->nombreCategoria);
+
+        $equipoDestino = Equipo::find($idEquipo);
+        $institucionDestinoId = $equipoDestino?->idInstitucion;
+
+        foreach ($categoriasJugador as $categoriaJugador) {
+            $anioCategoriaJugador = $extraerAnioCategoria($categoriaJugador->nombreCategoria);
+            $institucionOrigenId = $categoriaJugador->idInstitucion;
+
+            if (is_null($anioCategoriaJugador) || is_null($anioEquipoActual)) {
+                continue;
+            }
+
+            // Regla 1: Mayor bajando a Menor (Año menor < Año mayor)
+            if ($anioCategoriaJugador < $anioEquipoActual) {
+                return [
+                    'type' => 'warning',
+                    'message' => 'El jugador ya está inscripto en una categoría mayor (' . $categoriaJugador->nombreCategoria . '). No puede bajar a ' . $categoriaEquipoActual->nombreCategoria . '.'
+                ];
+            }
+
+            // Regla 2: Menor subiendo a Mayor - Solo misma institución
+            $mismaInstitucion = $institucionDestinoId && $institucionDestinoId === $institucionOrigenId;
+            if ($anioCategoriaJugador > $anioEquipoActual && !$mismaInstitucion) {
+                return [
+                    'type' => 'warning',
+                    'message' => 'El jugador ya pertenece al equipo "' . $categoriaJugador->nombreEquipo . '" en la "' . $categoriaJugador->nombreCategoria . '". Solo puede jugar en una categoría más grande dentro de la misma institución.'
+                ];
+            }
+        }
+
+        // Validación de Edad Límite
+        $anioActual = now()->year;
+        $anioNacimiento = (int) \Carbon\Carbon::parse($fecha_nacimiento)->year;
+        $edadJugador = $anioActual - $anioNacimiento;
+
+        $anioCategoria = $extraerAnioCategoria($categoriaEquipoActual->nombreCategoria);
+
+        if (!is_null($anioCategoria)) {
+            $edadMaximaCalculada = ($anioActual - $anioCategoria);
+            if ($edadJugador > $edadMaximaCalculada) {
+                return [
+                    'type' => 'warning',
+                    'message' => 'El jugador excede la edad permitida para ' . $categoriaEquipoActual->nombreCategoria . '.'
+                ];
+            }
+        } else {
+            // Categorías especiales (ej: Femenino Sub 13)
+            if (preg_match('/Sub\s*(\d{1,2})/i', $categoriaEquipoActual->nombreCategoria, $mSub)) {
+                $limite = (int) $mSub[1];
+                if ($edadJugador > $limite) {
+                    return [
+                        'type' => 'warning',
+                        'message' => 'El jugador excede la edad límite para ' . $categoriaEquipoActual->nombreCategoria . '.'
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Validar límite de 16 jugadores activos
+     * Retorna WARNING (no bloquea, solo advierte)
+     */
+    private function validarLimiteJugadores($idEquipo, $idEdicion)
+    {
+        $cantidadJugadores = ListaBuenaFe::where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->where('activo', true)
+            ->count();
+
+        if ($cantidadJugadores >= 16) {
+            return [
+                'type' => 'warning',
+                'message' => 'El equipo ya tiene ' . $cantidadJugadores . ' jugadores activos. El límite recomendado es 16 jugadores por equipo.'
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Verificar si ya está en la lista de buena fe (activo)
+     */
+    private function validarDuplicadoEnLista($dni_jugador, $idEquipo, $idEdicion)
+    {
+        $existe = ListaBuenaFe::where('dni_jugador', $dni_jugador)
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->where('activo', true)
+            ->exists();
+
+        if ($existe) {
+            return [
+                'type' => 'error',
+                'message' => 'El jugador ya está en la Lista de Buena Fe de este equipo.'
+            ];
+        }
+
+        return null;
+    }
+}

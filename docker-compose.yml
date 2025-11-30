@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  # Servicio de base de datos MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: mitai-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - mitai-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 5s
+      retries: 10
+
+  # Servicio phpMyAdmin (Gestión visual de BD)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: mitai-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USERNAME}
+      PMA_PASSWORD: ${DB_PASSWORD}
+      UPLOAD_LIMIT: 64M
+    networks:
+      - mitai-network
+    depends_on:
+      - mysql
+
+  # Servicio de la aplicación PHP
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mitai-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html:delegated
+      - ./storage:/var/www/html/storage:delegated
+      - ./bootstrap/cache:/var/www/html/bootstrap/cache:delegated
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      - /var/www/html/vendor
+    networks:
+      - mitai-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  # Servicio Nginx (servidor web)
+  nginx:
+    image: nginx:alpine
+    container_name: mitai-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html:delegated
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - mitai-network
+    depends_on:
+      - app
+
+  # Servicio Node para Vite (desarrollo frontend)
+  vite:
+    image: node:20-alpine
+    container_name: mitai-vite
+    restart: unless-stopped
+    working_dir: /var/www/html
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/var/www/html:delegated
+      - /var/www/html/node_modules
+    networks:
+      - mitai-network
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+networks:
+  mitai-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
