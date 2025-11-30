@@ -47,7 +47,8 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           source: "public/build"
           target: "${{ secrets.DEPLOY_PATH }}/public"
-          strip_components: 1
+          strip_components: 2
+          rm: true
         
       - name: Deploy to Hostinger via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -97,20 +98,22 @@ jobs:
             # Eliminar migraciones default de Laravel que causan conflictos (si existen)
             rm -f database/migrations/0001_01_01_*.php
             
-            # Ejecutar migraciones (ignorar error si la tabla ya existe)
-            php artisan migrate --force || true
+            # Ejecutar migraciones solo si hay pendientes
+            echo "Checking migration status..."
+            PENDING=$(php artisan migrate:status --pending 2>/dev/null | grep -c "Pending" || echo "0")
+            
+            if [ "$PENDING" != "0" ]; then
+              echo "Found $PENDING pending migrations, running them..."
+              php artisan migrate --force
+            else
+              echo "No pending migrations found."
+            fi
             
             # Optimizaciones
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
             php artisan event:cache
-            
-            # Storage link (Usando ln -s porque symlink() suele estar deshabilitado en Hostinger)
-            if [ ! -L "public/storage" ]; then
-                echo "Creating storage symlink..."
-                ln -s ../storage/app/public public/storage
-            fi
             
             # Desactivar modo mantenimiento
             php artisan up
