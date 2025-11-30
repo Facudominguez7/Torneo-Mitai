@@ -645,6 +645,26 @@ class ControladorListaBuenaFe extends Controller
             
             if ($created->wasRecentlyCreated) {
                 $migrados++;
+                
+                // Validar jugador recién migrado contra reglas administrativas
+                $resultadoValidacion = $this->validadorReglas->validarJugador(
+                    $jugador->dni_jugador,
+                    $idEquipo,
+                    $idEdicion,
+                    $jugador->idCategoria,
+                    $jugador->fecha_nacimiento
+                );
+                
+                // Si tiene advertencias, marcarlo como conflictivo
+                if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning') {
+                    $created->conflictivo = true;
+                    $created->motivo_conflicto = $resultadoValidacion['message'];
+                    $created->resuelto = false;
+                    $created->save();
+                    $omitidosConflictivos++;
+                    
+                    Log::info("Jugador migrado marcado como conflictivo: DNI {$jugador->dni_jugador}, Motivo: {$resultadoValidacion['message']}");
+                }
             } else {
                 $omitidos++;
                 

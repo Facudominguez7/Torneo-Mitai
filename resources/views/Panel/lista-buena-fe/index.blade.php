@@ -118,7 +118,7 @@
                             <div class="p-4 text-center">
                                 <div class="w-20 h-20 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
                                     @if($equipo->equipo->foto)
-                                        <img src="{{ asset('storage/' . $equipo->equipo->foto) }}" alt="{{ $equipo->equipo->nombre }}" class="w-full h-full object-cover">
+                                        <img src="{{ asset('fotos/equipos/' . $equipo->equipo->foto) }}" alt="{{ $equipo->equipo->nombre }}" class="w-full h-full object-cover">
                                     @else
                                         <span class="text-2xl">🛡️</span>
                                     @endif
