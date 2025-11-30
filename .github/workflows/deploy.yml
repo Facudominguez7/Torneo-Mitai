@@ -98,6 +98,15 @@ jobs:
             # Eliminar migraciones default de Laravel que causan conflictos (si existen)
             rm -f database/migrations/0001_01_01_*.php
             
+            # Sincronizar tabla migrations (solo se ejecuta si el script existe)
+            if [ -f "sync_migrations.php" ]; then
+              echo "🔄 Sincronizando tabla migrations con tablas existentes..."
+              php sync_migrations.php
+              # Eliminar el script después de ejecutarlo para que no se ejecute de nuevo
+              rm sync_migrations.php
+              echo "✅ Sincronización completada y script eliminado."
+            fi
+            
             # Ejecutar migraciones solo si hay pendientes
             echo "Checking migration status..."
             PENDING=$(php artisan migrate:status --pending 2>/dev/null | grep -c "Pending" || echo "0")
