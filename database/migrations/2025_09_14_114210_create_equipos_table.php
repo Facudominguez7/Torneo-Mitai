@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('equipos', function (Blueprint $table) {
+        if (!Schema::hasTable('equipos')) {
+            Schema::create('equipos', function (Blueprint $table) {
             $table->integer('id', true);
             $table->integer('idCategoria')->index('relacion_categorias');
             $table->integer('idEdicion')->index('fkidediciones');
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->integer('diferenciaGoles')->default(0);
             $table->integer('puntos')->default(0);
         });
+        }
     }
 
     /**

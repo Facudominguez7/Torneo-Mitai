@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('fechas', function (Blueprint $table) {
+        if (!Schema::hasTable('fechas')) {
+            Schema::create('fechas', function (Blueprint $table) {
             $table->integer('id', true);
             $table->integer('idCategoria')->nullable()->index('fkidcategoria');
             $table->integer('idEdicion')->index('fkidediciones');
             $table->string('nombre', 250);
         });
+        }
     }
 
     /**

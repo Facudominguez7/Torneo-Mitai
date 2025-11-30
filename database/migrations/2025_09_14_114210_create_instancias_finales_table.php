@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('instancias_finales', function (Blueprint $table) {
+        if (!Schema::hasTable('instancias_finales')) {
+            Schema::create('instancias_finales', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->integer('idEquipoLocal')->index('instancias_fiinales_idequipolocal_foreign');
             $table->integer('idEquipoVisitante')->index('instancias_fiinales_idequipovisitante_foreign');
@@ -28,6 +29,7 @@ return new class extends Migration
             $table->string('resultadoGlobal', 10)->nullable();
             $table->timestamps();
         });
+        }
     }
 
     /**

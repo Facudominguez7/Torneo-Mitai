@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('goleadores', function (Blueprint $table) {
+        if (!Schema::hasTable('goleadores')) {
+            Schema::create('goleadores', function (Blueprint $table) {
             $table->integer('id', true);
             $table->integer('idEquipo')->index('fkidequipo');
             $table->integer('idCategoria')->index('fkidcategoria');
             $table->integer('idEdicion')->index('fkidediciones');
             $table->string('nombre', 70);
         });
+        }
     }
 
     /**

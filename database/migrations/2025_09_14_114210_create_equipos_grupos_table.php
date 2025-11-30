@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('equipos_grupos', function (Blueprint $table) {
+        if (!Schema::hasTable('equipos_grupos')) {
+            Schema::create('equipos_grupos', function (Blueprint $table) {
             $table->integer('id', true);
             $table->integer('idEquipo')->index('fkidequipo');
             $table->integer('idGrupo')->index('fkidgrupo');
         });
+        }
     }
 
     /**

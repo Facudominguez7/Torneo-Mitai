@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tabla_goleadores', function (Blueprint $table) {
+        if (!Schema::hasTable('tabla_goleadores')) {
+            Schema::create('tabla_goleadores', function (Blueprint $table) {
             $table->integer('id', true);
             $table->integer('idCategoria')->index('fkidcategoria');
             $table->integer('idEdicion')->index('fkidedicion');
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->string('nombre', 100);
             $table->integer('cantidadGoles');
         });
+        }
     }
 
     /**

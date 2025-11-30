@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('fases', function (Blueprint $table) {
+        if (!Schema::hasTable('fases')) {
+            Schema::create('fases', function (Blueprint $table) {
             $table->increments('id');
             $table->string('nombre');
             $table->timestamps();
         });
+        }
     }
 
     /**

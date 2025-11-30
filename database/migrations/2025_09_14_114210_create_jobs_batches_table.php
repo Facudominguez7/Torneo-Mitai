@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('jobs_batches', function (Blueprint $table) {
+        if (!Schema::hasTable('jobs_batches')) {
+            Schema::create('jobs_batches', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->string('name');
             $table->integer('total_jobs');
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->integer('created_at');
             $table->integer('finished_at')->nullable();
         });
+        }
     }
 
     /**

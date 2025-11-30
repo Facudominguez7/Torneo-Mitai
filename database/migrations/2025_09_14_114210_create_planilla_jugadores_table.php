@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('planilla_jugadores', function (Blueprint $table) {
+        if (!Schema::hasTable('planilla_jugadores')) {
+            Schema::create('planilla_jugadores', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->integer('dni_jugador')->index('planilla_jugadores_dni_jugador_foreign');
             $table->integer('idEquipo')->index('planilla_jugadores_equipos');
@@ -25,6 +26,7 @@ return new class extends Migration
             $table->boolean('asistio');
             $table->timestamps();
         });
+        }
     }
 
     /**

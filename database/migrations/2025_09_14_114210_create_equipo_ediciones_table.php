@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('equipo_ediciones', function (Blueprint $table) {
+        if (!Schema::hasTable('equipo_ediciones')) {
+            Schema::create('equipo_ediciones', function (Blueprint $table) {
             $table->integer('id', true);
             $table->integer('idEdicion')->index('equipo_ediciones_idedicion_foreign');
             $table->integer('idEquipo')->index('equipo_ediciones_idequipo_foreign');
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent();
         });
+        }
     }
 
     /**

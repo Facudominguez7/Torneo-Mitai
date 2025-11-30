@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('partidos', function (Blueprint $table) {
+        if (!Schema::hasTable('partidos')) {
+            Schema::create('partidos', function (Blueprint $table) {
             $table->integer('id', true);
             $table->integer('idCategoria')->nullable()->index('fkidcategoria');
             $table->integer('idFechas')->index('fkidfechas');
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->integer('jugado')->nullable();
             $table->dateTime('horario_datetime')->nullable();
         });
+        }
     }
 
     /**

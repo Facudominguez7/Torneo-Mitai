@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tabla_posiciones', function (Blueprint $table) {
+        if (!Schema::hasTable('tabla_posiciones')) {
+            Schema::create('tabla_posiciones', function (Blueprint $table) {
             $table->integer('id', true);
             $table->integer('idGrupo')->index('fkidgrupo');
             $table->integer('idEquipo')->index('fkidequipo');
@@ -25,6 +26,7 @@ return new class extends Migration
             $table->integer('perdido');
             $table->integer('empatado');
         });
+        }
     }
 
     /**

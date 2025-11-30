@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('grupos', function (Blueprint $table) {
+        if (!Schema::hasTable('grupos')) {
+            Schema::create('grupos', function (Blueprint $table) {
             $table->integer('id', true);
             $table->integer('idCategoria')->index('fkidcategoria');
             $table->integer('idEdicion')->index('fkidediciones');
             $table->string('nombre', 250);
         });
+        }
     }
 
     /**
