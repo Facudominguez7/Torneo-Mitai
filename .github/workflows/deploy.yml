@@ -91,8 +91,11 @@ jobs:
                ln -s public public_html
             fi
             
-            # Ejecutar migraciones
-            php artisan migrate --force
+            # Limpiar cachés antiguos primero
+            php artisan optimize:clear
+            
+            # Ejecutar migraciones (ignorar error si la tabla ya existe)
+            php artisan migrate --force || true
             
             # Optimizaciones
             php artisan config:cache
@@ -100,8 +103,11 @@ jobs:
             php artisan view:cache
             php artisan event:cache
             
-            # Storage link
-            php artisan storage:link || true
+            # Storage link (Usando ln -s porque symlink() suele estar deshabilitado en Hostinger)
+            if [ ! -L "public/storage" ]; then
+                echo "Creating storage symlink..."
+                ln -s ../storage/app/public public/storage
+            fi
             
             # Desactivar modo mantenimiento
             php artisan up
