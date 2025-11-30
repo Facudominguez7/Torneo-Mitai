@@ -90,6 +90,11 @@ $otherAppliedMigrations = [
 $registered = 0;
 $skipped = 0;
 
+// Primero, eliminar registros de migraciones antiguas de 2024 que ya no existen
+echo "🗑️  Limpiando registros de migraciones obsoletas de 2024...\n";
+$deleted = DB::table('migrations')->where('migration', 'like', '2024_%')->delete();
+echo "   Eliminados $deleted registros obsoletos.\n\n";
+
 // Verificar y registrar migraciones de tablas base
 foreach ($tableMigrationMap as $table => $migration) {
     if (Schema::hasTable($table)) {
@@ -151,6 +156,7 @@ foreach ($otherAppliedMigrations as $migration) {
 echo "\n" . str_repeat("=", 50) . "\n";
 echo "✅ Sincronización completada!\n";
 echo "📊 Estadísticas:\n";
+echo "   - Registros obsoletos eliminados: $deleted\n";
 echo "   - Migraciones registradas: $registered\n";
 echo "   - Migraciones ya existentes: $skipped\n";
 echo "\n💡 Ahora puedes ejecutar 'php artisan migrate:status' para verificar.\n";

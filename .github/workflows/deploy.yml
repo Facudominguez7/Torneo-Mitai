@@ -45,8 +45,8 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
-          source: "public/build"
-          target: "${{ secrets.DEPLOY_PATH }}/public"
+          source: "public/build/*"
+          target: "${{ secrets.DEPLOY_PATH }}/public/build/"
           strip_components: 2
           rm: true
         
@@ -95,8 +95,12 @@ jobs:
             # Limpiar cachés antiguos primero
             php artisan optimize:clear
             
-            # Eliminar migraciones default de Laravel que causan conflictos (si existen)
+            # Eliminar migraciones antiguas y obsoletas
+            echo "Limpiando migraciones obsoletas..."
+            rm -f database/migrations/2024_*.php
             rm -f database/migrations/0001_01_01_*.php
+            rm -f database/migrations/agregar_*.php
+            echo "✅ Migraciones obsoletas eliminadas."
             
             # Sincronizar tabla migrations (solo se ejecuta si el script existe)
             if [ -f "sync_migrations.php" ]; then
