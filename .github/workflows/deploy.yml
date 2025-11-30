@@ -94,6 +94,9 @@ jobs:
             # Limpiar cachés antiguos primero
             php artisan optimize:clear
             
+            # Eliminar migraciones default de Laravel que causan conflictos (si existen)
+            rm -f database/migrations/0001_01_01_*.php
+            
             # Ejecutar migraciones (ignorar error si la tabla ya existe)
             php artisan migrate --force || true
             
