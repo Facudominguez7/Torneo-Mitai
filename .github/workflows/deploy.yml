@@ -36,7 +36,10 @@ jobs:
         run: npm ci
         
       - name: Build assets
-        run: npm run build
+        run: |
+          npm run build
+          # Comprimir assets para evitar problemas de transferencia (archivos vacíos)
+          tar -czf assets.tar.gz -C public build
 
       - name: Prepare & Update Code via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -92,11 +95,9 @@ jobs:
             chmod -R 775 storage bootstrap/cache
             
             # PREPARAR CARPETA BUILD PARA SCP
-            echo "Preparing public/build directory..."
-            mkdir -p public/build
-            chmod 775 public/build
-            # Limpiar contenido viejo de build para evitar basura
-            rm -rf public/build/*
+            # No necesitamos crear la carpeta build vacía porque el tar la creará al descomprimir
+            # Pero aseguramos que public exista
+            mkdir -p public
             
             # Manejo de public_html vs public (Hostinger)
             # Solo aseguramos que el symlink exista, sin hacer backups innecesarios
@@ -141,10 +142,9 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
-          source: "public/build/*"
-          target: "${{ secrets.DEPLOY_PATH }}/public/build/"
-          strip_components: 2
-          rm: false # No borrar la carpeta, ya la limpiamos en el paso anterior
+          source: "assets.tar.gz"
+          target: "${{ secrets.DEPLOY_PATH }}"
+          rm: false
 
       - name: Finalize Deployment via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -155,6 +155,11 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
+            
+            # DESCOMPRIMIR ASSETS
+            echo "Extracting assets..."
+            tar -xzf assets.tar.gz -C public
+            rm assets.tar.gz
             
             # ARREGLAR PERMISOS DE ESTILOS (IMPORTANTE)
             echo "Fixing permissions for build assets..."
