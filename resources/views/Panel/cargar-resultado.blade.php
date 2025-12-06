@@ -33,7 +33,7 @@
                     <div class="text-2xl font-bold mt-4 md:mt-0 text-center text-[--color-primary]">
                         {{ $partido->golesEquipoLocal ?? '-' }} - {{ $partido->golesEquipoVisitante ?? '-' }}
                     </div>
-                    @if ($tipo === 'instancia_final')
+                    @if (isset($tipo) && $tipo === 'instancia_final')
                         <div class="text-2xl font-bold mt-4 md:mt-0 text-center text-[--color-primary]">
                             {{ $partido->penalesEquipoLocal }} - {{ $partido->penalesEquipoVisitante }}
                         </div>
@@ -60,7 +60,7 @@
     @endif
 
     <form
-        action="{{ route($tipo === 'instancia_final' ? 'cargar-resultado-instancia' : 'cargar-resultado', ['idPartido' => $partido->id, 'idEdicion' => $EdicionSeleccionada->id]) }}"
+        action="{{ route(($tipo ?? '') === 'instancia_final' ? 'cargar-resultado-instancia' : 'cargar-resultado', ['idPartido' => $partido->id, 'idEdicion' => $EdicionSeleccionada->id]) }}"
         method="POST">
         @csrf
         <div class="mb-5">
