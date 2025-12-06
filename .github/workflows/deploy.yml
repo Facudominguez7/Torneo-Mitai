@@ -46,21 +46,37 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            # Stop script on first error
+            set -e
+
+            echo "Deploying to ${{ secrets.DEPLOY_PATH }}..."
+            
+            # Verificar que el directorio existe
+            if [ ! -d "${{ secrets.DEPLOY_PATH }}" ]; then
+              echo "❌ Error: Directory ${{ secrets.DEPLOY_PATH }} does not exist."
+              exit 1
+            fi
+
             cd ${{ secrets.DEPLOY_PATH }}
             
             # Verificar si es un repo git, si no, inicializarlo (para la primera vez)
             if [ ! -d ".git" ]; then
               echo "Initializing Git repository..."
               git init
-              git remote add origin https://github.com/${{ github.repository }}.git
+              # USAR SSH EN LUGAR DE HTTPS
+              git remote add origin git@github.com:${{ github.repository }}.git
               git fetch origin main
               git reset --soft origin/main
+            else
+              # Asegurar que el remote sea SSH
+              git remote set-url origin git@github.com:${{ github.repository }}.git
             fi
             
             # Activar modo mantenimiento
             php artisan down --retry=60 || true
             
             # Actualizar código
+            echo "Fetching latest changes..."
             git fetch origin main
             git reset --hard origin/main
             
