@@ -38,19 +38,7 @@ jobs:
       - name: Build assets
         run: npm run build
 
-      - name: Copy assets to server via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "public/build/*"
-          target: "${{ secrets.DEPLOY_PATH }}/public/build/"
-          strip_components: 2
-          rm: true
-        
-      - name: Deploy to Hostinger via SSH
+      - name: Prepare & Update Code via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -72,12 +60,6 @@ jobs:
             # Activar modo mantenimiento
             php artisan down --retry=60 || true
             
-            # Hacer backup de carpetas con contenido del usuario (no versionadas)
-            if [ -d "public/fotos" ]; then
-              echo "Backing up public/fotos..."
-              cp -r public/fotos /tmp/fotos_backup_$$
-            fi
-            
             # Actualizar código
             git fetch origin main
             git reset --hard origin/main
@@ -86,20 +68,19 @@ jobs:
             echo "Removing unnecessary files..."
             rm -rf docker-compose.yml docker-start.bat docker-start.sh DOCKER.md Dockerfile docker sync_migrations.php sync-db.bat sync-db.sh test-db-connection.bat
             echo "✅ Unnecessary files removed."
-
-            # Restaurar carpetas con contenido del usuario
-            if [ -d "/tmp/fotos_backup_$$" ]; then
-              echo "Restoring public/fotos..."
-              mkdir -p public
-              cp -r /tmp/fotos_backup_$$ public/fotos
-              rm -rf /tmp/fotos_backup_$$
-            fi
             
             # Instalar dependencias
             composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
             
             # Asegurar permisos correctos
             chmod -R 775 storage bootstrap/cache
+            
+            # PREPARAR CARPETA BUILD PARA SCP
+            echo "Preparing public/build directory..."
+            mkdir -p public/build
+            chmod 775 public/build
+            # Limpiar contenido viejo de build para evitar basura
+            rm -rf public/build/*
             
             # Manejo de public_html vs public (Hostinger)
             if [ -d "public_html" ] && [ ! -L "public_html" ]; then
@@ -140,6 +121,28 @@ jobs:
             else
               echo "No pending migrations found."
             fi
+
+      - name: Copy assets to server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "public/build/*"
+          target: "${{ secrets.DEPLOY_PATH }}/public/build/"
+          strip_components: 2
+          rm: false # No borrar la carpeta, ya la limpiamos en el paso anterior
+
+      - name: Finalize Deployment via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
             
             # Limpiar cachés después de migraciones
             php artisan optimize:clear
