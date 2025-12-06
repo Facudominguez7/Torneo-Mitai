@@ -15,16 +15,20 @@
                 <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
                     <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                         <div class="space-y-3 max-w-3xl">
-                            <span class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-[#f7f280]/80">
+                            <span
+                                class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-[#f7f280]/80">
                                 <span class="h-2 w-2 rounded-full bg-[#f7f280]"></span>
                                 Ranking oficial
                             </span>
                             <h1 class="text-3xl sm:text-4xl font-bold text-white">Tabla de goleadores</h1>
-                            <p class="text-sm sm:text-base text-white/70">Explorá el listado completo de artilleros de la edición seleccionada, filtrá por categoría y ordená por goles, nombre o equipo para encontrar a tu jugador preferido.</p>
+                            <p class="text-sm sm:text-base text-white/70">Explorá el listado completo de artilleros de
+                                la edición seleccionada, filtrá por categoría y ordená por goles, nombre o equipo para
+                                encontrar a tu jugador preferido.</p>
                         </div>
                         <div class="grid gap-3 text-sm text-white/70">
                             @if ($EdicionSeleccionada)
-                                <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+                                <div
+                                    class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
                                     <i class="fa-solid fa-trophy text-[#f7f280]"></i>
                                     {{ $EdicionSeleccionada->nombre }}
                                 </div>
@@ -32,7 +36,8 @@
                         </div>
                     </div>
 
-                    <div class="mt-10 rounded-3xl border border-[#f7f280]/25 bg-black/30 px-5 py-6 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.85)] sm:px-6 sm:py-7">
+                    <div
+                        class="mt-10 rounded-3xl border border-[#f7f280]/25 bg-black/30 px-5 py-6 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.85)] sm:px-6 sm:py-7">
                         <div class="grid gap-4 md:grid-cols-[minmax(0,260px)_auto] md:items-center">
                             <div class="filtro-categoria">
                                 <x-dropdown align="right" width="52">
@@ -52,7 +57,8 @@
                                                 Todas las categorías
                                             </div>
                                             @foreach ($categorias as $c)
-                                                <div class="cursor-pointer px-4 py-2 text-sm text-white/90 transition hover:bg-[#f7f280]/15" data-id="{{ $c->id }}" data-nombre="{{ $c->nombreCategoria }}">
+                                                <div class="cursor-pointer px-4 py-2 text-sm text-white/90 transition hover:bg-[#f7f280]/15"
+                                                    data-id="{{ $c->id }}" data-nombre="{{ $c->nombreCategoria }}">
                                                     {{ $c->nombreCategoria }}
                                                 </div>
                                             @endforeach
@@ -64,11 +70,13 @@
 
                         <div class="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <h2 class="text-sm font-semibold uppercase tracking-[0.3em] text-white/70">Buscar jugador</h2>
+                                <h2 class="text-sm font-semibold uppercase tracking-[0.3em] text-white/70">Buscar
+                                    jugador</h2>
                                 <p class="text-xs text-white/50">Filtrá al instante por nombre dentro de la tabla.</p>
                             </div>
                             <label for="buscador-goleadores" class="relative w-full md:max-w-sm">
-                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#f7f280]">
+                                <span
+                                    class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#f7f280]">
                                     <i class="fa-solid fa-magnifying-glass text-sm"></i>
                                 </span>
                                 <input id="buscador-goleadores" type="text" placeholder="Buscar por nombre..."
@@ -78,7 +86,7 @@
                     </div>
 
                     @php
-                        $sort = request('sort','goles');
+                        $sort = request('sort', 'goles');
                         $dir = request('dir', $sort === 'goles' ? 'desc' : 'asc');
                         $toggle = fn($k) => ($sort === $k && $dir === 'asc') ? 'desc' : 'asc';
                         $arrow = fn($k) => $sort === $k ? ($dir === 'asc' ? '▲' : '▼') : '';
@@ -88,33 +96,45 @@
 
                     <div class="mt-10 space-y-6">
                         @if ($goleadores_t->isEmpty())
-                            <div class="rounded-3xl border border-[#f7f280]/25 bg-black/30 px-6 py-10 text-center text-lg font-semibold text-white/70">
+                            <div
+                                class="rounded-3xl border border-[#f7f280]/25 bg-black/30 px-6 py-10 text-center text-lg font-semibold text-white/70">
                                 No existen registros para la combinación seleccionada.
                             </div>
                         @else
                             <div class="hidden lg:block">
-                                <div class="overflow-hidden rounded-3xl border border-[#f7f280]/25 bg-black/40 shadow-[0_28px_70px_-45px_rgba(14,75,94,0.9)]">
+                                <div
+                                    class="overflow-hidden rounded-3xl border border-[#f7f280]/25 bg-black/40 shadow-[0_28px_70px_-45px_rgba(14,75,94,0.9)]">
                                     <table class="w-full min-w-[720px] border-collapse">
                                         <thead class="bg-gradient-to-r from-[#0e4b5e]/90 to-[#2a6d81]/90">
                                             <tr>
-                                                <th class="py-4 pl-6 pr-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">#</th>
-                                                <th class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                                    <a class="inline-flex items-center gap-2 hover:text-white" href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'nombre', 'dir' => $toggle('nombre')])) }}">
+                                                <th
+                                                    class="py-4 pl-6 pr-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+                                                    #</th>
+                                                <th
+                                                    class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+                                                    <a class="inline-flex items-center gap-2 hover:text-white"
+                                                        href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'nombre', 'dir' => $toggle('nombre')])) }}">
                                                         Nombre <span>{{ $arrow('nombre') }}</span>
                                                     </a>
                                                 </th>
-                                                <th class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                                    <a class="inline-flex items-center gap-2 hover:text-white" href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'equipo', 'dir' => $toggle('equipo')])) }}">
+                                                <th
+                                                    class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+                                                    <a class="inline-flex items-center gap-2 hover:text-white"
+                                                        href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'equipo', 'dir' => $toggle('equipo')])) }}">
                                                         Equipo <span>{{ $arrow('equipo') }}</span>
                                                     </a>
                                                 </th>
-                                                <th class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                                    <a class="inline-flex items-center gap-2 hover:text-white" href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'categoria', 'dir' => $toggle('categoria')])) }}">
+                                                <th
+                                                    class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+                                                    <a class="inline-flex items-center gap-2 hover:text-white"
+                                                        href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'categoria', 'dir' => $toggle('categoria')])) }}">
                                                         Categoría <span>{{ $arrow('categoria') }}</span>
                                                     </a>
                                                 </th>
-                                                <th class="py-4 pr-6 pl-3 text-right text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                                    <a class="inline-flex items-center gap-2 hover:text-white" href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'goles', 'dir' => $toggle('goles')])) }}">
+                                                <th
+                                                    class="py-4 pr-6 pl-3 text-right text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+                                                    <a class="inline-flex items-center gap-2 hover:text-white"
+                                                        href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'goles', 'dir' => $toggle('goles')])) }}">
                                                         Goles <span>{{ $arrow('goles') }}</span>
                                                     </a>
                                                 </th>
@@ -122,12 +142,13 @@
                                         </thead>
                                         <tbody class="divide-y divide-white/5">
                                             @foreach ($goleadores_t as $index => $g)
-                                                <tr class="fila-goleador transition hover:bg-white/5" data-jugador="{{ $g->nombre }}">
+                                                <tr class="fila-goleador transition hover:bg-white/5"
+                                                    data-jugador="{{ $g->nombreJugador }}">
                                                     <td class="py-4 pl-6 pr-3 text-sm font-semibold text-white/80">
                                                         {{ $posOffset + $index + 1 }}
                                                     </td>
                                                     <td class="py-4 px-3 text-sm font-semibold text-white">
-                                                        {{ $g->nombre }}
+                                                        {{ $g->nombreJugador }}
                                                     </td>
                                                     <td class="py-4 px-3 text-sm text-white/80">
                                                         {{ $g->nombreEquipo }}
@@ -147,17 +168,21 @@
 
                             <div class="grid gap-5 lg:hidden">
                                 @foreach ($goleadores_t as $index => $g)
-                                    <article class="card-goleador-movil rounded-3xl border border-[#f7f280]/25 bg-gradient-to-br from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/90 p-5 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.85)]" data-jugador="{{ $g->nombre }}">
-                                        <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
+                                    <article
+                                        class="card-goleador-movil rounded-3xl border border-[#f7f280]/25 bg-gradient-to-br from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/90 p-5 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.85)]"
+                                        data-jugador="{{ $g->nombreJugador }}">
+                                        <div
+                                            class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
                                             <span>#{{ str_pad($posOffset + $index + 1, 2, '0', STR_PAD_LEFT) }}</span>
                                             <span>{{ $g->nombreCategoria }}</span>
                                         </div>
                                         <div class="mt-4 space-y-2">
-                                            <h3 class="text-lg font-bold text-white">{{ $g->nombre }}</h3>
+                                            <h3 class="text-lg font-bold text-white">{{ $g->nombreJugador }}</h3>
                                             <p class="text-sm text-white/70">{{ $g->nombreEquipo }}</p>
                                         </div>
                                         <div class="mt-6 flex items-center justify-between">
-                                            <span class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+                                            <span
+                                                class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
                                                 <i class="fa-solid fa-medal text-[#f7f280]"></i>
                                                 Goles
                                             </span>
@@ -166,7 +191,8 @@
                                     </article>
                                 @endforeach
                             </div>
-                            <div id="sin-coincidencias" class="hidden rounded-3xl border border-[#f7f280]/25 bg-black/20 px-6 py-8 text-center text-sm font-semibold text-white/70">
+                            <div id="sin-coincidencias"
+                                class="hidden rounded-3xl border border-[#f7f280]/25 bg-black/20 px-6 py-8 text-center text-sm font-semibold text-white/70">
                                 No encontramos jugadores que coincidan con tu búsqueda en esta página.
                             </div>
                         @endif
@@ -183,7 +209,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             var idEdicion = "{{ $EdicionSeleccionada->id ?? '' }}";
             var idCategoria = new URLSearchParams(window.location.search).get('idCategoria') || '';
             var url = "{{ route('tabla-goleadores') }}";
@@ -210,7 +236,7 @@
                     return normalizar(datasetNombre).includes(termino);
                 };
 
-                filas.forEach(function(fila) {
+                filas.forEach(function (fila) {
                     const coincide = evaluar(fila.dataset.jugador || '');
                     fila.classList.toggle('hidden', !coincide);
                     if (coincide) {
@@ -218,7 +244,7 @@
                     }
                 });
 
-                tarjetas.forEach(function(card) {
+                tarjetas.forEach(function (card) {
                     const coincide = evaluar(card.dataset.jugador || '');
                     card.classList.toggle('hidden', !coincide);
                     if (coincide) {
@@ -236,14 +262,14 @@
             }
 
             if (buscador) {
-                buscador.addEventListener('input', function(event) {
+                buscador.addEventListener('input', function (event) {
                     aplicarFiltro(event.target.value || '');
                 });
             }
 
             function updateUrl(params) {
                 var newUrl = new URL(url);
-                Object.keys(params).forEach(function(key) {
+                Object.keys(params).forEach(function (key) {
                     if (params[key]) {
                         newUrl.searchParams.set(key, params[key]);
                     } else {
@@ -254,8 +280,8 @@
                 window.location.href = newUrl;
             }
 
-            document.querySelectorAll('.filtro-categoria [data-id]').forEach(function(item) {
-                item.addEventListener('click', function() {
+            document.querySelectorAll('.filtro-categoria [data-id]').forEach(function (item) {
+                item.addEventListener('click', function () {
                     idCategoria = this.getAttribute('data-id') || '';
                     updateUrl({
                         idCategoria,
@@ -270,4 +296,3 @@
         });
     </script>
 </body>
-

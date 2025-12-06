@@ -12,16 +12,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('planilla_jugadores', function (Blueprint $table) {
-            // Agregar timestamps para poder ordenar correctamente
-            $table->timestamps();
-        });
-        
-        // Actualizar registros existentes con fecha actual
-        DB::table('planilla_jugadores')->update([
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // Solo agregar timestamps si no existen (para evitar error de columna duplicada)
+        if (!Schema::hasColumn('planilla_jugadores', 'created_at')) {
+            Schema::table('planilla_jugadores', function (Blueprint $table) {
+                // Agregar timestamps para poder ordenar correctamente
+                $table->timestamps();
+            });
+            
+            // Actualizar registros existentes con fecha actual
+            DB::table('planilla_jugadores')->update([
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 
     /**

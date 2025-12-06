@@ -14,9 +14,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('instancias_finales', function (Blueprint $table) {
-            // Renombrar columnas con typo
-            $table->renameColumn('resoltadoGlobalLocal', 'resultadoGlobalLocal');
-            $table->renameColumn('resoltadoGlobalVisitante', 'resultadoGlobalVisitante');
+            // Renombrar columnas con typo (solo si existen con el nombre con typo)
+            if (Schema::hasColumn('instancias_finales', 'resoltadoGlobalLocal')) {
+                $table->renameColumn('resoltadoGlobalLocal', 'resultadoGlobalLocal');
+            }
+            if (Schema::hasColumn('instancias_finales', 'resoltadoGlobalVisitante')) {
+                $table->renameColumn('resoltadoGlobalVisitante', 'resultadoGlobalVisitante');
+            }
         });
     }
 

@@ -49,4 +49,9 @@ deploy-config.sh
 .deployment-exclude
 optimize-production.sh
 
-
+# Tests (solo archivos de cache y coverage, los tests sí se versionan)
+phpunit.xml
+/.phpunit.cache/
+/.phpunit.result.cache
+coverage/
+*.coverage

@@ -348,9 +348,10 @@ class ControladorHome extends Controller
         // Normalizar clave de orden
         $sortKey = in_array($sort, ['goles', 'nombre', 'equipo', 'categoria']) ? $sort : 'goles';
         // Columna real en base de datos para cada clave
+        // 'nombre' ahora se obtiene de la tabla jugadores (apellido + nombre)
         $sortColumnMap = [
             'goles' => 'tabla_goleadores.cantidadGoles',
-            'nombre' => 'tabla_goleadores.nombre',
+            'nombre' => 'j.apellido',
             'equipo' => 'e.nombre',
             'categoria' => 'cat.nombreCategoria',
         ];
@@ -363,7 +364,8 @@ class ControladorHome extends Controller
             ->join('ediciones as ed', 'tabla_goleadores.idEdicion', '=', 'ed.id')
             ->join('equipos as e', 'tabla_goleadores.idEquipo', '=', 'e.id')
             ->join('categorias as cat', 'tabla_goleadores.idCategoria', '=', 'cat.id')
-            ->select('tabla_goleadores.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo')
+            ->join('jugadores as j', 'tabla_goleadores.dni_jugador', '=', 'j.dni')
+            ->select('tabla_goleadores.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo', \Illuminate\Support\Facades\DB::raw("CONCAT(j.apellido, ' ', j.nombre) as nombreJugador"))
             ->where('tabla_goleadores.idEdicion', $idEdicion);
 
         if (!is_null($idCategoria)) {
