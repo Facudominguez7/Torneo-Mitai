@@ -99,12 +99,8 @@ jobs:
             rm -rf public/build/*
             
             # Manejo de public_html vs public (Hostinger)
-            if [ -d "public_html" ] && [ ! -L "public_html" ]; then
-               # Si public_html es una carpeta real y no un symlink, hacer backup y crear symlink
-               echo "Backing up public_html and creating symlink..."
-               mv public_html public_html_backup_$(date +%F_%T)
-               ln -s public public_html
-            elif [ ! -d "public_html" ]; then
+            # Solo aseguramos que el symlink exista, sin hacer backups innecesarios
+            if [ ! -d "public_html" ]; then
                ln -s public public_html
             fi
             
@@ -159,6 +155,10 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
+            
+            # ARREGLAR PERMISOS DE ESTILOS (IMPORTANTE)
+            echo "Fixing permissions for build assets..."
+            chmod -R 755 public/build
             
             # Limpiar cachés después de migraciones
             php artisan optimize:clear
