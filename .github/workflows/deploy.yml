@@ -82,6 +82,11 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             
+            # Eliminar archivos innecesarios para producción
+            echo "Removing unnecessary files..."
+            rm -rf docker-compose.yml docker-start.bat docker-start.sh DOCKER.md Dockerfile docker sync_migrations.php sync-db.bat sync-db.sh test-db-connection.bat
+            echo "✅ Unnecessary files removed."
+
             # Restaurar carpetas con contenido del usuario
             if [ -d "/tmp/fotos_backup_$$" ]; then
               echo "Restoring public/fotos..."
