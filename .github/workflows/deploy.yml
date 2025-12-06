@@ -63,13 +63,13 @@ jobs:
             if [ ! -d ".git" ]; then
               echo "Initializing Git repository..."
               git init
-              # USAR SSH EN LUGAR DE HTTPS
-              git remote add origin git@github.com:${{ github.repository }}.git
+              # USAR SSH CON ALIAS CONFIGURADO (github-torneo)
+              git remote add origin git@github-torneo:${{ github.repository }}.git
               git fetch origin main
               git reset --soft origin/main
             else
-              # Asegurar que el remote sea SSH
-              git remote set-url origin git@github.com:${{ github.repository }}.git
+              # Asegurar que el remote sea SSH con el alias correcto
+              git remote set-url origin git@github-torneo:${{ github.repository }}.git
             fi
             
             # Activar modo mantenimiento
