@@ -158,6 +158,19 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             
+            # ELIMINAR ARCHIVO HOT (PREVIENE MODO DESARROLLO)
+            echo "Removing hot file if exists..."
+            rm -f public/hot
+            
+            # ASEGURAR QUE public_html SEA SYMLINK (no carpeta)
+            if [ -d "public_html" ] && [ ! -L "public_html" ]; then
+              echo "Converting public_html directory to symlink..."
+              rm -rf public_html
+              ln -s public public_html
+            elif [ ! -e "public_html" ]; then
+              ln -s public public_html
+            fi
+            
             # DESCOMPRIMIR ASSETS
             echo "Extracting assets..."
             tar -xzf assets.tar.gz -C public
