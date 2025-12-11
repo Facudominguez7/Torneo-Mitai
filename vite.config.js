@@ -3,14 +3,8 @@ import laravel from "laravel-vite-plugin";
 
 export default defineConfig({
     build: {
-        // Minificación agresiva para producción
-        minify: 'terser',
-        terserOptions: {
-            compress: {
-                drop_console: true,
-                drop_debugger: true,
-            },
-        },
+        // Minificación con esbuild (incluido en Vite, más rápido que terser)
+        minify: 'esbuild',
         // Code splitting para mejor caché
         rollupOptions: {
             output: {
