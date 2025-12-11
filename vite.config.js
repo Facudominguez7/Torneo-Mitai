@@ -2,6 +2,26 @@ import { defineConfig } from "vite";
 import laravel from "laravel-vite-plugin";
 
 export default defineConfig({
+    build: {
+        // Minificación agresiva para producción
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true,
+            },
+        },
+        // Code splitting para mejor caché
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['alpinejs', 'axios'],
+                },
+            },
+        },
+        // Advertir si chunks son muy grandes
+        chunkSizeWarningLimit: 500,
+    },
     plugins: [
         laravel({
             input: [
