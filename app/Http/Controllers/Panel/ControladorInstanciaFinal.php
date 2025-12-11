@@ -31,6 +31,9 @@ class ControladorInstanciaFinal extends Controller
         $idEdicion = $request->idEdicion;
         $idCategoria = $request->idCategoria;
         $idFase = $request->idFase;
+        $idCopa = $request->idCopa;
+        $estado = $request->estado; // 'pendiente', 'jugado' o null para todos
+        $busquedaEquipo = $request->busqueda;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
 
         $query = InstanciaFinal::query();
@@ -47,15 +50,41 @@ class ControladorInstanciaFinal extends Controller
             $query->where('idFase', $idFase);
         }
 
+        // Filtro por copa
+        if ($idCopa) {
+            $query->where('idCopa', $idCopa);
+        }
+
+        // Filtro por estado (pendiente/jugado)
+        if ($estado === 'pendiente') {
+            $query->whereNull('golesEquipoLocal')->whereNull('golesEquipoVisitante');
+        } elseif ($estado === 'jugado') {
+            $query->whereNotNull('golesEquipoLocal')->whereNotNull('golesEquipoVisitante');
+        }
+
+        // Búsqueda por nombre de equipo
+        if ($busquedaEquipo) {
+            $query->where(function($q) use ($busquedaEquipo) {
+                $q->whereHas('equipoLocal', function($q) use ($busquedaEquipo) {
+                    $q->where('nombre', 'like', '%' . $busquedaEquipo . '%');
+                })->orWhereHas('equipoVisitante', function($q) use ($busquedaEquipo) {
+                    $q->where('nombre', 'like', '%' . $busquedaEquipo . '%');
+                });
+            });
+        }
+
         $partidos = $query
             ->with([
             'equipoLocal:id,nombre,foto',
             'equipoVisitante:id,nombre,foto',
             'fase:id,nombre',
-            'categoria:id,nombreCategoria'
+            'categoria:id,nombreCategoria',
+            'copa:id,nombre'
             ])
             ->select('instancias_finales.*')
-            ->orderByRaw('DATE(instancias_finales.horario) desc')
+            // Ordenar: pendientes primero (sin goles), luego por fecha
+            ->orderByRaw('CASE WHEN golesEquipoLocal IS NULL AND golesEquipoVisitante IS NULL THEN 0 ELSE 1 END ASC')
+            ->orderByRaw('DATE(instancias_finales.horario) ASC')
             ->orderBy('instancias_finales.horario', 'asc')
             ->get();
 
@@ -69,10 +98,13 @@ class ControladorInstanciaFinal extends Controller
             ->orderBy('nombre', 'desc')
             ->get();
 
+        // Obtener las copas para el filtro
+        $copas = Copa::orderBy('nombre', 'asc')->get();
+
         $nombreFase = $fases->firstWhere('id', $idFase)->nombre ?? null;
         $nombreCategoria = $categorias->firstWhere('id', $idCategoria)->nombreCategoria ?? null;
 
-        return view('Panel.instancia_final.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fases', 'categorias', 'idCategoria', 'nombreFase', 'nombreCategoria'));
+        return view('Panel.instancia_final.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fases', 'categorias', 'idCategoria', 'nombreFase', 'nombreCategoria', 'copas', 'estado', 'busquedaEquipo', 'idCopa'));
     }
 
     public function create(Request $request)

@@ -66,15 +66,25 @@
                     </div>
                 </div>
 
+                @if(isset($sinRegistrosDePartidos) && $sinRegistrosDePartidos)
+                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded" role="alert">
+                        <p class="font-bold">Sin registros de partidos</p>
+                        <p>Este jugador no tiene partidos registrados en esta edición, pero está inscripto en la Lista de Buena Fe.</p>
+                        @if(isset($listaBuenaFe) && $listaBuenaFe->edicion && $listaBuenaFe->edicion->id != $edicionActual->id)
+                            <p class="mt-1 text-sm">Última edición registrada: <strong>{{ $listaBuenaFe->edicion->nombre }}</strong></p>
+                        @endif
+                    </div>
+                @endif
+
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
                     <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                         <p class="text-sm text-gray-600 dark:text-gray-400">Equipo</p>
-                        <p class="text-lg font-semibold text-gray-800 dark:text-white">{{ $equipoActual->nombre }}</p>
+                        <p class="text-lg font-semibold text-gray-800 dark:text-white">{{ $equipoActual?->nombre ?? 'Sin equipo asignado' }}</p>
                     </div>
                     
                     <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                         <p class="text-sm text-gray-600 dark:text-gray-400">Categoría</p>
-                        <p class="text-lg font-semibold text-gray-800 dark:text-white">{{ $categoriaActual->nombreCategoria }}</p>
+                        <p class="text-lg font-semibold text-gray-800 dark:text-white">{{ $categoriaActual?->nombreCategoria ?? 'Sin categoría' }}</p>
                     </div>
                     
                     <div class="bg-green-50 dark:bg-green-900 p-4 rounded-lg">

@@ -107,6 +107,18 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     // Consulta de jugador
     Route::get('/consulta-jugador', [ControladorConsultaJugador::class, 'index'])->name('jugador.consulta');
     Route::post('/consulta-jugador/buscar', [ControladorConsultaJugador::class, 'buscar'])->name('jugador.buscar');
+
+    // Gestión de Instituciones
+    Route::prefix('instituciones')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Panel\ControladorInstitucion::class, 'index'])->name('institucion.index');
+        Route::post('/', [\App\Http\Controllers\Panel\ControladorInstitucion::class, 'store'])->name('institucion.store');
+        Route::put('/{institucion}', [\App\Http\Controllers\Panel\ControladorInstitucion::class, 'update'])->name('institucion.update');
+        Route::post('/cambiar-equipo', [\App\Http\Controllers\Panel\ControladorInstitucion::class, 'cambiarInstitucionEquipo'])->name('institucion.cambiarEquipo');
+        Route::post('/desvincular-equipo', [\App\Http\Controllers\Panel\ControladorInstitucion::class, 'desvincularEquipo'])->name('institucion.desvincularEquipo');
+    });
+
+    // Estadísticas de Jugadores (vista global con estadísticas por edición)
+    Route::get('/estadisticas-jugadores', [\App\Http\Controllers\Panel\ControladorEstadisticasJugadores::class, 'index'])->name('estadisticas-jugadores');
 });
 
 

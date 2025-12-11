@@ -94,10 +94,9 @@
                     </button>
                 </form>
 
-                {{-- Botón de Jugadores Conflictivos --}}
                 <a href="{{ route('lista-buena-fe.conflictivos') }}" 
-                   class="w-full md:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded shadow flex items-center justify-center">
-                    <span class="mr-2">⚠️</span> Conflictos Administrativos
+                   class="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded shadow flex items-center justify-center">
+                    <span class="mr-2">📋</span> Revisión de Jugadores
                 </a>
             </div>
         @endif

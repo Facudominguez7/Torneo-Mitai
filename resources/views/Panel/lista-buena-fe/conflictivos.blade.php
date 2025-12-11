@@ -2,7 +2,7 @@
 
 @section('contenido')
     <div class="container mx-auto px-4 py-6">
-        <h1 class="text-3xl font-bold mb-6 text-white">⚠️ Conflictos Administrativos</h1>
+        <h1 class="text-3xl font-bold mb-6 text-white">📋 Revisión de Jugadores</h1>
 
         <!-- Filtros y Búsqueda -->
         <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
@@ -91,7 +91,7 @@
             <div class="p-6 border-b border-gray-200">
                 <p class="text-gray-600">
                     @if (($estado ?? 'pendientes') === 'resueltos')
-                        Histórico de conflictos administrativos que han sido resueltos.
+                        Histórico de casos que han sido resueltos.
                     @else
                         Listado de jugadores que fueron agregados a la Lista de Buena Fe con observaciones administrativas
                         pendientes de resolución.
@@ -103,7 +103,7 @@
                 <div class="p-8 text-center">
                     <p class="text-green-600 text-lg">
                         @if (($estado ?? 'pendientes') === 'resueltos')
-                            📋 No hay conflictos resueltos para mostrar.
+                            📋 No hay casos resueltos para mostrar.
                         @else
                             ✅ No hay jugadores marcados como conflictivos pendientes.
                         @endif
@@ -121,7 +121,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Edición</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Motivo del Conflicto</th>
+                                    Motivo de la Observación</th>
                                 @if (($estado ?? 'pendientes') === 'resueltos')
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Resuelto Por</th>
@@ -207,7 +207,7 @@
     <div id="resolveModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3">
-                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Resolver Conflicto Administrativo</h3>
+                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Resolver Caso</h3>
                 
                 <div class="mb-4 p-3 bg-gray-50 rounded">
                     <p class="text-sm text-gray-600 mb-1">Jugador:</p>
@@ -215,7 +215,7 @@
                 </div>
 
                 <div class="mb-4 p-3 bg-yellow-50 rounded">
-                    <p class="text-sm text-gray-600 mb-1">Motivo del conflicto:</p>
+                    <p class="text-sm text-gray-600 mb-1">Motivo de la observación:</p>
                     <p class="text-sm font-semibold text-red-600" id="modalMotivoConflicto"></p>
                 </div>
 
@@ -232,7 +232,7 @@
                             name="notas_resolucion" 
                             rows="3" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            placeholder="Agregar notas sobre la resolución del conflicto..."
+                            placeholder="Agregar notas sobre la resolución del caso..."
                         ></textarea>
                     </div>
 

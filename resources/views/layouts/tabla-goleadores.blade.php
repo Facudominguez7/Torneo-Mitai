@@ -33,6 +33,12 @@
                                     {{ $EdicionSeleccionada->nombre }}
                                 </div>
                             @endif
+                            @if ($goleadores_t->isNotEmpty() && $goleadores_t->first()->updated_at)
+                                <div class="inline-flex items-center gap-2 text-xs text-white/50">
+                                    <i class="fa-solid fa-clock text-[#f7f280]/60"></i>
+                                    Última actualización: {{ $goleadores_t->max('updated_at')->diffForHumans() }}
+                                </div>
+                            @endif
                         </div>
                     </div>
 
