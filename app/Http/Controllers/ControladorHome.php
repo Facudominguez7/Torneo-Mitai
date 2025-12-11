@@ -16,6 +16,7 @@ use App\Models\TablaGoleador;
 use App\Models\TablaPosicion;
 use App\Models\User;
 use App\Models\VallaMenosVencida;
+use App\Models\EquipoEdicion;
 use App\Services\EstadisticasService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -197,6 +198,97 @@ class ControladorHome extends Controller
             ->get();
 
         return view('layouts.vallas', compact('ediciones', 'EdicionSeleccionada', 'vallas'));
+    }
+
+    /**
+     * Mostrar la tabla de vallas menos vencidas en tiempo real.
+     * 
+     * Muestra los equipos ordenados por menor cantidad de goles recibidos,
+     * considerando tanto partidos de fase de grupos como instancias finales.
+     * Los datos se obtienen de `equipo_ediciones.golesContra` que se actualiza
+     * automáticamente al cargar resultados.
+     *
+     * @param Request $request
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function tablaVallas(Request $request)
+    {
+        $ediciones = Edicion::all();
+        $idEdicion = $request->query('idEdicion');
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+        $idCategoria = $request->query('idCategoria');
+
+        // Parámetros de ordenamiento
+        $sort = $request->query('sort');
+        $dir = strtolower($request->query('dir', '')) === 'desc' ? 'desc' : 'asc';
+
+        // Normalizar clave de orden
+        $sortKey = in_array($sort, ['goles', 'equipo', 'categoria']) ? $sort : 'goles';
+        
+        // Columna real en base de datos para cada clave
+        $sortColumnMap = [
+            'goles' => 'equipo_ediciones.golesContra',
+            'equipo' => 'e.nombre',
+            'categoria' => 'cat.nombreCategoria',
+        ];
+
+        // Dirección por defecto: goles asc (menos goles = mejor), resto asc
+        if (!$request->has('dir')) {
+            $dir = 'asc';
+        }
+
+        // Query base con Eloquent
+        $baseQuery = EquipoEdicion::query()
+            ->join('ediciones as ed', 'equipo_ediciones.idEdicion', '=', 'ed.id')
+            ->join('equipos as e', 'equipo_ediciones.idEquipo', '=', 'e.id')
+            ->join('categorias as cat', 'equipo_ediciones.idCategoria', '=', 'cat.id')
+            ->select([
+                'equipo_ediciones.*',
+                'e.nombre as nombreEquipo',
+                'e.foto as fotoEquipo',
+                'cat.nombreCategoria as nombreCategoria',
+                'cat.id as idCategoriaEquipo',
+            ])
+            ->where('equipo_ediciones.idEdicion', $idEdicion);
+
+        // Filtro por categoría
+        if (!is_null($idCategoria)) {
+            $baseQuery->where('equipo_ediciones.idCategoria', $idCategoria);
+        }
+
+        // Aplicar ordenamiento
+        $baseQuery->orderBy($sortColumnMap[$sortKey], $dir)
+            ->orderBy('cat.nombreCategoria', 'desc')
+            ->orderBy('equipo_ediciones.golesContra', 'asc');
+
+        // Paginación
+        $equipos = $baseQuery->paginate(30);
+
+        // Mantener parámetros en la paginación
+        $appendParams = array_filter([
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'sort' => $sortKey,
+            'dir' => $dir,
+        ]);
+        $equipos->appends($appendParams);
+
+        // Obtener categorías para el filtro
+        $categorias = collect();
+        if ($EdicionSeleccionada) {
+            $categorias = Categoria::where('idEdicion', $idEdicion)
+                ->select('id', 'nombreCategoria')
+                ->orderBy('nombreCategoria', 'desc')
+                ->get();
+        }
+
+        return view('layouts.tabla-vallas', compact(
+            'ediciones',
+            'EdicionSeleccionada',
+            'equipos',
+            'categorias',
+            'idCategoria'
+        ));
     }
 
     public function fixture(Request $request)

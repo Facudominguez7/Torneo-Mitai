@@ -51,6 +51,11 @@
                                 <i class="fa-solid fa-futbol text-base"></i>
                                 Goleadores al día
                             </a>
+                            <a href="{{ route('tabla-vallas', ['idEdicion' => $edicionActual->id]) }}"
+                                class="group flex items-center gap-2 rounded-full border border-emerald-400/60 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-emerald-500/20">
+                                <i class="fa-solid fa-shield text-base text-emerald-300"></i>
+                                Vallas al día
+                            </a>
                         @endif
                     </div>
                 </div>
