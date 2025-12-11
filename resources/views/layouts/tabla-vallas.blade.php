@@ -48,36 +48,7 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
                     {{-- Filtros --}}
                     <div
                         class="mt-10 rounded-3xl border border-emerald-300/25 bg-black/30 px-5 py-6 shadow-[0_24px_60px_-40px_rgba(16,185,129,0.5)] sm:px-6 sm:py-7">
-                        <div class="grid gap-4 md:grid-cols-[minmax(0,260px)_auto] md:items-center">
-                            {{-- Selector de edición --}}
-                            <div>
-                                <label for="idEdicion"
-                                    class="block text-xs font-semibold uppercase tracking-[0.3em] text-white/50 mb-2">
-                                    Edición
-                                </label>
-                                <div class="relative">
-                                    <div
-                                        class="group rounded-2xl bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-800 p-[1px] transition focus-within:ring-2 focus-within:ring-emerald-300/50">
-                                        <div class="relative rounded-[1.1rem] bg-emerald-900/80">
-                                            <select id="idEdicion" name="idEdicion" onchange="updateEdicion(this.value)"
-                                                class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none">
-                                                <option value="">Seleccioná una edición</option>
-                                                @foreach ($ediciones as $edicion)
-                                                    <option value="{{ $edicion->id }}"
-                                                        {{ optional($EdicionSeleccionada)->id === $edicion->id ? 'selected' : '' }}>
-                                                        {{ $edicion->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <span
-                                                class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-emerald-300">
-                                                <i class="fa-solid fa-chevron-down text-xs"></i>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                        <div class="grid gap-4 md:items-center">
                             {{-- Filtro por categoría --}}
                             @if ($categorias->isNotEmpty())
                                 <div class="filtro-categoria">
@@ -99,8 +70,7 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
                                                 </div>
                                                 @foreach ($categorias as $c)
                                                     <div class="cursor-pointer px-4 py-2 text-sm text-white/90 transition hover:bg-emerald-300/15"
-                                                        data-id="{{ $c->id }}"
-                                                        data-nombre="{{ $c->nombreCategoria }}">
+                                                        data-id="{{ $c->id }}" data-nombre="{{ $c->nombreCategoria }}">
                                                         {{ $c->nombreCategoria }}
                                                     </div>
                                                 @endforeach
@@ -227,8 +197,7 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
                                             <div
                                                 class="h-16 w-16 overflow-hidden rounded-full border border-emerald-300/30 bg-white/10 p-2">
                                                 <img src="{{ asset('fotos/equipos/' . ($equipo->fotoEquipo ?? 'Logo_Mitai_SinFondo.png')) }}"
-                                                    alt="{{ $equipo->nombreEquipo }}"
-                                                    class="h-full w-full object-contain"
+                                                    alt="{{ $equipo->nombreEquipo }}" class="h-full w-full object-contain"
                                                     onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';">
                                             </div>
                                             <h3 class="text-lg font-bold text-white">{{ $equipo->nombreEquipo }}</h3>
@@ -239,8 +208,7 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
                                                 <i class="fa-solid fa-shield text-emerald-300"></i>
                                                 Goles en Contra
                                             </span>
-                                            <span
-                                                class="text-2xl font-bold text-emerald-300">{{ $equipo->golesContra }}</span>
+                                            <span class="text-2xl font-bold text-emerald-300">{{ $equipo->golesContra }}</span>
                                         </div>
                                     </article>
                                 @endforeach
@@ -266,7 +234,7 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             var idEdicion = "{{ $EdicionSeleccionada->id ?? '' }}";
             var idCategoria = new URLSearchParams(window.location.search).get('idCategoria') || '';
             var url = "{{ route('tabla-vallas') }}";
@@ -294,7 +262,7 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
                     return normalizar(datasetNombre).includes(termino);
                 };
 
-                filas.forEach(function(fila) {
+                filas.forEach(function (fila) {
                     const coincide = evaluar(fila.dataset.equipo || '');
                     fila.classList.toggle('hidden', !coincide);
                     if (coincide) {
@@ -302,7 +270,7 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
                     }
                 });
 
-                tarjetas.forEach(function(card) {
+                tarjetas.forEach(function (card) {
                     const coincide = evaluar(card.dataset.equipo || '');
                     card.classList.toggle('hidden', !coincide);
                     if (coincide) {
@@ -320,14 +288,14 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
             }
 
             if (buscador) {
-                buscador.addEventListener('input', function(event) {
+                buscador.addEventListener('input', function (event) {
                     aplicarFiltro(event.target.value || '');
                 });
             }
 
             function updateUrl(params) {
                 var newUrl = new URL(url, window.location.origin);
-                Object.keys(params).forEach(function(key) {
+                Object.keys(params).forEach(function (key) {
                     if (params[key]) {
                         newUrl.searchParams.set(key, params[key]);
                     } else {
@@ -338,8 +306,8 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
             }
 
             // Event listeners para filtro de categoría
-            document.querySelectorAll('.filtro-categoria [data-id]').forEach(function(item) {
-                item.addEventListener('click', function() {
+            document.querySelectorAll('.filtro-categoria [data-id]').forEach(function (item) {
+                item.addEventListener('click', function () {
                     idCategoria = this.getAttribute('data-id') || '';
                     updateUrl({
                         idCategoria,
@@ -353,13 +321,6 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
             aplicarFiltro('');
         });
 
-        // Función para actualizar edición
-        function updateEdicion(value) {
-            var url = new URL("{{ route('tabla-vallas') }}", window.location.origin);
-            if (value) {
-                url.searchParams.set('idEdicion', value);
-            }
-            window.location.href = url;
-        }
+
     </script>
 </body>
