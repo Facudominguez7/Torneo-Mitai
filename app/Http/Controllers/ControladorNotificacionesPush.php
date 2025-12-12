@@ -54,11 +54,11 @@ class ControladorNotificacionesPush extends Controller
     public function subscribe(Request $request)
     {
         // Validación estricta de los datos de suscripción
-        // Se valida formato Base64 URL-safe para prevenir inyección de datos maliciosos
+        // Se valida formato Base64 URL-safe (incluye padding =) para prevenir inyección de datos maliciosos
         $validated = $request->validate([
             'endpoint' => ['required', 'url', 'max:500'],
-            'keys.p256dh' => ['required', 'string', 'max:200', 'regex:/^[A-Za-z0-9_-]+$/'],
-            'keys.auth' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'keys.p256dh' => ['required', 'string', 'max:200', 'regex:/^[A-Za-z0-9_\-=]+$/'],
+            'keys.auth' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9_\-=]+$/'],
         ]);
 
         // Validar que el endpoint sea de un servicio push legítimo
