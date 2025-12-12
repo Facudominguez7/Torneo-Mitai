@@ -306,6 +306,7 @@ class ControladorHome extends Controller
             ? strtolower($ordenParam)
             : ($estado === 'proximos' ? 'asc' : 'desc');
 
+        $categorias = collect();
         if (isset($EdicionSeleccionada)) {
             $categorias = Categoria::where('idEdicion', $idEdicion)
                 ->select('id', 'nombreCategoria')
@@ -478,6 +479,7 @@ class ControladorHome extends Controller
         }
         $goleadores_t->appends($appendParams);
 
+        $categorias = collect();
         if (isset($EdicionSeleccionada)) {
             $categorias = Categoria::where('idEdicion', $idEdicion)
                 ->select('id', 'nombreCategoria')

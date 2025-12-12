@@ -2,6 +2,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- Preconnect para recursos externos (mejora LCP/FCP) --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,10 +13,28 @@
     {{-- Preload de imagen LCP (la más grande visible al cargar) --}}
     <link rel="preload" as="image" href="{{ asset('fotos/fondo_en_cancha.webp') }}" fetchpriority="high">
 
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Torneo Mitai">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Torneo Mitai">
+    <meta name="description" content="Sistema de gestión del Torneo Mitai de fútbol infantil">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}">
+
     <title>Torneo Mitai</title>
     <link rel="shortcut icon" type="image/png" href="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}">
 
-    @vite(['resources/css/app.css', 'resources/js/welcome.js', 'resources/js/app.js', 'resources/js/admin/admin.js'])
+    @vite(['resources/css/app.css', 'resources/js/welcome.js', 'resources/js/app.js', 'resources/js/admin/admin.js', 'resources/js/push-notifications.js'])
+
+    {{-- SweetAlert2 para diálogos y notificaciones --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
     {{-- FontAwesome con carga diferida para no bloquear renderizado --}}
     <script src="https://kit.fontawesome.com/05291cba44.js" crossorigin="anonymous" defer></script>
@@ -37,5 +56,20 @@
                 };
             }, 1500);
         });
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then((registration) => {
+                        console.log('[App] Service Worker registrado:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.error('[App] Error registrando Service Worker:', error);
+                    });
+            });
+        }
     </script>
 </head>

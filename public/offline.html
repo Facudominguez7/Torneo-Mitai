@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin Conexión - Torneo Mitai</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+        }
+
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        p {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #38a169;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #2f855a;
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <img src="/fotos/Logo_Mitai_SinFondo.png" alt="Torneo Mitai" class="logo">
+        <div class="icon">📡</div>
+        <h1>Sin Conexión</h1>
+        <p>
+            Parece que no tienes conexión a internet.
+            Verifica tu conexión e intenta nuevamente.
+        </p>
+        <button class="btn" onclick="window.location.reload()">
+            Reintentar
+        </button>
+    </div>
+</body>
+
+</html>
