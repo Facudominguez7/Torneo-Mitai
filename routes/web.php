@@ -120,7 +120,26 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
 
     // Estadísticas de Jugadores (vista global con estadísticas por edición)
     Route::get('/estadisticas-jugadores', [\App\Http\Controllers\Panel\ControladorEstadisticasJugadores::class, 'index'])->name('estadisticas-jugadores');
+
+    // Notificaciones Push
+    Route::prefix('push')->group(function () {
+        Route::post('/subscribe', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'subscribe'])
+            ->middleware('throttle:10,1') // Rate limit: 10 requests por minuto
+            ->name('push.subscribe');
+        Route::post('/unsubscribe', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'unsubscribe'])
+            ->middleware('throttle:10,1') // Rate limit: 10 requests por minuto
+            ->name('push.unsubscribe');
+        Route::get('/status', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'status'])
+            ->name('push.status');
+        Route::post('/enviar-manual', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarNotificacionManual'])
+            ->middleware(UserAccesPanelMiddleware::class) // Solo admins
+            ->name('push.enviar-manual');
+    });
 });
+
+// Ruta pública para obtener la clave VAPID (no requiere autenticación)
+Route::get('/push/vapid-public-key', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'getVapidPublicKey'])
+    ->name('push.vapid');
 
 
 

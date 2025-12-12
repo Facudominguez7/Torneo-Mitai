@@ -13,9 +13,12 @@ use App\Models\Grupo;
 use App\Models\Jugador;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
+use App\Models\User;
+use App\Notifications\ResultadoCargado;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ControladorPartidos extends Controller
 {
@@ -219,7 +222,7 @@ class ControladorPartidos extends Controller
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $idPartido = $request->idPartido;
-        $partido = Partido::with(['equipoLocal', 'equipoVisitante', 'grupo'])->findOrFail($idPartido);
+        $partido = Partido::with(['equipoLocal', 'equipoVisitante', 'grupo', 'categoria'])->findOrFail($idPartido);
 
         if ($request->isMethod('post')) {
             $datosValidados = $request->validate([
@@ -234,9 +237,46 @@ class ControladorPartidos extends Controller
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoLocal, $partido->idEdicion, $partido->idGrupo);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoVisitante, $partido->idEdicion, $partido->idGrupo);
 
+            // Enviar notificación push a todos los usuarios suscritos
+            $this->enviarNotificacionResultado($partido, $golesEquipoLocal, $golesEquipoVisitante);
+
             return to_route('partido.index', ['idEdicion' => $idEdicion])->with('status', 'Resultado guardado con éxito.');
         }
 
         return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada'));
+    }
+
+    /**
+     * Enviar notificación push a todos los usuarios suscritos cuando se carga un resultado.
+     */
+    private function enviarNotificacionResultado(Partido $partido, int $golesLocal, int $golesVisitante): void
+    {
+        try {
+            $datosPartido = (object) [
+                'id' => $partido->id,
+                'idEdicion' => $partido->idEdicion,
+                'nombre_local' => $partido->equipoLocal->nombre ?? 'Equipo Local',
+                'nombre_visitante' => $partido->equipoVisitante->nombre ?? 'Equipo Visitante',
+                'golesEquipoLocal' => $golesLocal,
+                'golesEquipoVisitante' => $golesVisitante,
+                'nombre_categoria' => $partido->categoria->nombreCategoria ?? '',
+            ];
+
+            $usuariosSuscritos = User::whereHas('pushSubscriptions')->get();
+
+            foreach ($usuariosSuscritos as $usuario) {
+                $usuario->notify(new ResultadoCargado($datosPartido));
+            }
+
+            Log::info('Notificaciones push enviadas', [
+                'partido_id' => $partido->id,
+                'usuarios_notificados' => $usuariosSuscritos->count(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error enviando notificaciones push', [
+                'partido_id' => $partido->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

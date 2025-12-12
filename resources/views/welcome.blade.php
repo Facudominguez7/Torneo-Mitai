@@ -8,9 +8,6 @@
         @php
             $edicionActual = $EdicionSeleccionada ?? $ultimaEdicion;
         @endphp
-        <x-modal-promo name="promo-torneo" :show="$errors->userDeletion->isNotEmpty()" focusable>
-
-        </x-modal-promo>
 
         <section class="relative overflow-hidden">
             <div class="absolute inset-0">
@@ -342,26 +339,5 @@
         </p>
     </footer>
 </body>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Verifica si el modal ya fue mostrado
-        if (!localStorage.getItem('promoModalShown')) {
-            // Dispara el evento para abrir el modal
-            window.dispatchEvent(new CustomEvent('open-modal', {
-                detail: 'promo-torneo'
-            }));
-
-            // Cierra el modal automáticamente después de 3 segundos
-            setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('close-modal', {
-                    detail: 'promo-torneo'
-                }));
-            }, 3000);
-
-            // Marca como mostrado en el almacenamiento local
-            localStorage.setItem('promoModalShown', 'true');
-        }
-    });
-</script>
 
 </html>
