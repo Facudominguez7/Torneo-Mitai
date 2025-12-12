@@ -60,6 +60,9 @@ class PushNotificationManager {
      * Inicializar el gestor de notificaciones push
      */
     async init() {
+        // Configurar UI primero para tener referencia al botón
+        this.setupUI();
+
         // Si es iOS sin PWA, mostrar mensaje especial
         if (this.isIOS && !this.isPWA) {
             console.warn('[Push] iOS sin PWA - mostrando instrucciones de instalación');
@@ -82,9 +85,6 @@ class PushNotificationManager {
 
             // Verificar estado de suscripción actual
             await this.checkSubscriptionStatus();
-
-            // Configurar UI
-            this.setupUI();
 
             // Mostrar diálogo de activación si no está suscrito
             this.showAutoPromptIfNeeded();
