@@ -35,7 +35,7 @@ class PushNotificationManager {
         // CSRF Token para requests
         this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-        console.log('[Push] iOS:', this.isIOS, 'PWA:', this.isPWA, 'Safari:', this.isIOSSafari, 'Soportado:', this.isSupported);
+
     }
 
     /**
@@ -49,7 +49,6 @@ class PushNotificationManager {
 
         // En iOS, solo lo soportamos si es PWA instalada
         if (this.isIOS && !this.isPWA) {
-            console.log('[Push] iOS detectado pero no es PWA instalada');
             return false;
         }
 
@@ -65,13 +64,11 @@ class PushNotificationManager {
 
         // Si es iOS sin PWA, mostrar mensaje especial
         if (this.isIOS && !this.isPWA) {
-            console.warn('[Push] iOS sin PWA - mostrando instrucciones de instalación');
             this.updateUI('ios-no-pwa');
             return;
         }
 
         if (!this.isSupported) {
-            console.warn('[Push] Push notifications no soportadas en este navegador');
             this.updateUI('not-supported');
             return;
         }
@@ -81,7 +78,6 @@ class PushNotificationManager {
             this.swRegistration = await navigator.serviceWorker.register('/sw.js', {
                 scope: '/'
             });
-            console.log('[Push] Service Worker registrado:', this.swRegistration);
 
             // Verificar estado de suscripción actual
             await this.checkSubscriptionStatus();
@@ -90,7 +86,6 @@ class PushNotificationManager {
             this.showAutoPromptIfNeeded();
 
         } catch (error) {
-            console.error('[Push] Error inicializando:', error);
             this.updateUI('error');
         }
     }
@@ -103,20 +98,17 @@ class PushNotificationManager {
     showAutoPromptIfNeeded() {
         // Si el usuario no está autenticado, invitarlo a loguearse
         if (!this.isAuthenticated) {
-            console.log('[Push] Usuario no autenticado, mostrando invitación a login');
             this.showLoginPrompt();
             return;
         }
 
         // No mostrar si ya está suscrito
         if (this.isSubscribed) {
-            console.log('[Push] No se muestra prompt: ya está suscrito');
             return;
         }
 
         // No mostrar si el permiso ya fue denegado
         if (Notification.permission === 'denied') {
-            console.log('[Push] No se muestra prompt: permiso denegado');
             return;
         }
 
@@ -129,7 +121,6 @@ class PushNotificationManager {
 
             // Si pasaron menos de 24 horas, no mostrar
             if (hoursDiff < 24) {
-                console.log('[Push] No se muestra prompt: mostrado hace menos de 24h');
                 return;
             }
         }
@@ -156,7 +147,6 @@ class PushNotificationManager {
             const hoursDiff = (now - lastDate) / (1000 * 60 * 60);
 
             if (hoursDiff < 24) {
-                console.log('[Push] No se muestra prompt de login: mostrado hace menos de 24h');
                 return;
             }
         }
@@ -217,11 +207,9 @@ class PushNotificationManager {
         // Si SweetAlert2 aún no está cargado, reintentar hasta 5 veces
         if (typeof Swal === 'undefined') {
             if (retryCount < 5) {
-                console.log('[Push] SweetAlert2 aún no cargado, reintentando en 500ms...');
                 setTimeout(() => this.showActivationPrompt(retryCount + 1), 500);
                 return;
             }
-            console.warn('[Push] SweetAlert2 no disponible después de varios intentos');
             return;
         }
 
@@ -278,14 +266,11 @@ class PushNotificationManager {
             } else if (response.status === 401 || response.status === 403) {
                 // Usuario no autenticado, no mostrar prompt
                 this.isAuthenticated = false;
-                console.log('[Push] Usuario no autenticado, no se mostrará prompt');
             }
 
-            console.log('[Push] Estado de suscripción:', this.isSubscribed, 'Autenticado:', this.isAuthenticated);
             this.updateUI(this.isSubscribed ? 'subscribed' : 'not-subscribed');
 
         } catch (error) {
-            console.error('[Push] Error verificando suscripción:', error);
             this.isAuthenticated = false;
         }
     }
@@ -319,7 +304,6 @@ class PushNotificationManager {
                 await this.subscribe();
             }
         } catch (error) {
-            console.error('[Push] Error alternando suscripción:', error);
             this.showNotification('Error', 'No se pudo cambiar el estado de las notificaciones', 'error');
         } finally {
             if (this.toggleButton) {
@@ -337,7 +321,6 @@ class PushNotificationManager {
             const permission = await Notification.requestPermission();
 
             if (permission !== 'granted') {
-                console.warn('[Push] Permiso denegado');
                 this.showNotification('Permiso Denegado', 'Debes permitir las notificaciones en tu navegador', 'warning');
                 return;
             }
@@ -355,8 +338,6 @@ class PushNotificationManager {
                 userVisibleOnly: true,
                 applicationServerKey: this.urlBase64ToUint8Array(vapidData.publicKey)
             });
-
-            console.log('[Push] Suscripción creada:', subscription);
 
             // Enviar suscripción al servidor
             const response = await fetch('/Panel/push/subscribe', {
@@ -387,7 +368,6 @@ class PushNotificationManager {
             this.showNotification('¡Listo!', data.message || 'Notificaciones activadas', 'success');
 
         } catch (error) {
-            console.error('[Push] Error suscribiendo:', error);
             throw error;
         }
     }
@@ -423,7 +403,6 @@ class PushNotificationManager {
             this.showNotification('Listo', 'Notificaciones desactivadas', 'info');
 
         } catch (error) {
-            console.error('[Push] Error desuscribiendo:', error);
             throw error;
         }
     }
@@ -536,8 +515,6 @@ class PushNotificationManager {
                 toast: true,
                 position: 'top-end'
             });
-        } else {
-            console.log(`[${type.toUpperCase()}] ${title}: ${message}`);
         }
     }
 
