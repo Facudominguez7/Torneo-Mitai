@@ -11,7 +11,19 @@
 
 class PushNotificationManager {
     constructor() {
-        this.isSupported = 'serviceWorker' in navigator && 'PushManager' in window;
+        // Detectar si es iOS
+        this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        // Detectar si está corriendo como PWA instalada
+        this.isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true;
+
+        // En iOS, push solo funciona en Safari como PWA instalada con iOS 16.4+
+        this.isIOSSafari = this.isIOS && /Safari/.test(navigator.userAgent) && !/Chrome|CriOS|Firefox|FxiOS/.test(navigator.userAgent);
+
+        // Verificar soporte de push
+        this.isSupported = this.checkPushSupport();
+
         this.swRegistration = null;
         this.isSubscribed = false;
         this.isAuthenticated = false;
@@ -22,12 +34,39 @@ class PushNotificationManager {
 
         // CSRF Token para requests
         this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        console.log('[Push] iOS:', this.isIOS, 'PWA:', this.isPWA, 'Safari:', this.isIOSSafari, 'Soportado:', this.isSupported);
+    }
+
+    /**
+     * Verificar si push notifications están soportadas
+     */
+    checkPushSupport() {
+        // Verificar APIs básicas
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            return false;
+        }
+
+        // En iOS, solo lo soportamos si es PWA instalada
+        if (this.isIOS && !this.isPWA) {
+            console.log('[Push] iOS detectado pero no es PWA instalada');
+            return false;
+        }
+
+        return true;
     }
 
     /**
      * Inicializar el gestor de notificaciones push
      */
     async init() {
+        // Si es iOS sin PWA, mostrar mensaje especial
+        if (this.isIOS && !this.isPWA) {
+            console.warn('[Push] iOS sin PWA - mostrando instrucciones de instalación');
+            this.updateUI('ios-no-pwa');
+            return;
+        }
+
         if (!this.isSupported) {
             console.warn('[Push] Push notifications no soportadas en este navegador');
             this.updateUI('not-supported');
@@ -427,6 +466,17 @@ class PushNotificationManager {
                 this.toggleButton.disabled = true;
                 break;
 
+            case 'ios-no-pwa':
+                this.toggleButton.innerHTML = `
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+                    </svg>
+                    Instalar App
+                `;
+                this.toggleButton.className = 'flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium text-sm';
+                this.toggleButton.onclick = () => this.showIOSInstallInstructions();
+                break;
+
             case 'error':
                 this.toggleButton.innerHTML = `
                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
@@ -436,6 +486,32 @@ class PushNotificationManager {
                 `;
                 this.toggleButton.className = 'flex items-center px-4 py-2 bg-red-500 text-white rounded-lg font-medium text-sm';
                 break;
+        }
+    }
+
+    /**
+     * Mostrar instrucciones para instalar PWA en iOS
+     */
+    showIOSInstallInstructions() {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '📲 Instalá la App',
+                html: `
+                    <div class="text-left text-sm">
+                        <p class="mb-3">Para recibir notificaciones en iPhone:</p>
+                        <ol class="list-decimal pl-5 space-y-2">
+                            <li>Tocá el botón <strong>Compartir</strong> 📤 (abajo)</li>
+                            <li>Seleccioná <strong>"Agregar a inicio"</strong></li>
+                            <li>Abrí la app desde el ícono</li>
+                            <li>Activá las notificaciones</li>
+                        </ol>
+                        <p class="mt-3 text-xs text-gray-500">Requiere iOS 16.4 o superior</p>
+                    </div>
+                `,
+                icon: 'info',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#3b82f6'
+            });
         }
     }
 
