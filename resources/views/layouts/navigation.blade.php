@@ -29,6 +29,17 @@
             @endauth
 
             @auth
+                {{-- Botón de Notificaciones Push - Visible directamente en la barra de navegación --}}
+                <button id="push-toggle-btn"
+                    class="inline-flex items-center justify-center gap-2 rounded-full border border-amber-400/50 bg-gradient-to-r from-amber-500/90 via-orange-500/85 to-amber-600/85 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 transition hover:brightness-110 hover:shadow-amber-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+                    title="Activar notificaciones push">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+                    </svg>
+                    <span class="hidden sm:inline">Notificaciones</span>
+                </button>
+
                 <div x-data="{ open: false }" class="relative">
                     @php
                         $nombreUsuario = Auth::user()->name ?? Auth::user()->email;
@@ -71,18 +82,6 @@
                                     {{ __('Perfil') }}
                                 </x-dropdown-link>
                             @endif
-
-                            {{-- Botón de Notificaciones Push para todos los usuarios autenticados --}}
-                            <div class="px-4 py-2 border-t border-white/10">
-                                <button id="push-toggle-btn"
-                                    class="flex items-center w-full gap-2 px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-                                    </svg>
-                                    <span>Activar Notificaciones</span>
-                                </button>
-                            </div>
 
                             <form method="POST" action="{{ route('logout') }}" class="border-t border-white/10">
                                 @csrf
