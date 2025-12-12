@@ -283,10 +283,60 @@ class PushNotificationManager {
         this.statusText = document.getElementById('push-status-text');
 
         if (this.toggleButton) {
-            this.toggleButton.addEventListener('click', () => this.toggleSubscription());
+            // Detectar si el usuario está autenticado desde el atributo data
+            const isAuthenticatedFromDOM = this.toggleButton.dataset.authenticated === 'true';
+
+            this.toggleButton.addEventListener('click', () => {
+                // Si no está autenticado, mostrar popup de login
+                if (!isAuthenticatedFromDOM && !this.isAuthenticated) {
+                    this.showLoginRequiredPopup();
+                    return;
+                }
+                this.toggleSubscription();
+            });
         }
 
         this.updateUI(this.isSubscribed ? 'subscribed' : 'not-subscribed');
+    }
+
+    /**
+     * Mostrar popup indicando que debe iniciar sesión para activar notificaciones
+     */
+    showLoginRequiredPopup() {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '🔔 Iniciá sesión',
+                html: `
+                    <p class="text-gray-600 mb-3">Para activar las notificaciones necesitás iniciar sesión.</p>
+                    <ul class="text-left text-sm text-gray-500 space-y-1 mb-3">
+                        <li>⚽ Recibí alertas de resultados en vivo</li>
+                        <li>📅 Enterate de los próximos partidos</li>
+                        <li>🏆 Novedades del torneo al instante</li>
+                    </ul>
+                    <p class="text-xs text-gray-400">¡Es gratis y solo toma unos segundos!</p>
+                `,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Iniciar sesión',
+                cancelButtonText: 'Ahora no',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    confirmButton: 'rounded-full px-6',
+                    cancelButton: 'rounded-full px-6'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/login';
+                }
+            });
+        } else {
+            // Fallback si SweetAlert no está disponible
+            if (confirm('Para activar las notificaciones necesitás iniciar sesión. ¿Querés ir a la página de login?')) {
+                window.location.href = '/login';
+            }
+        }
     }
 
     /**
