@@ -286,17 +286,40 @@ class PushNotificationManager {
             // Detectar si el usuario está autenticado desde el atributo data
             const isAuthenticatedFromDOM = this.toggleButton.dataset.authenticated === 'true';
 
-            this.toggleButton.addEventListener('click', () => {
-                // Si no está autenticado, mostrar popup de login
-                if (!isAuthenticatedFromDOM && !this.isAuthenticated) {
-                    this.showLoginRequiredPopup();
-                    return;
-                }
-                this.toggleSubscription();
-            });
+            // Usar onclick directamente para evitar conflictos con addEventListener
+            this.toggleButton.onclick = (e) => {
+                e.preventDefault();
+                this.handleButtonClick(isAuthenticatedFromDOM);
+            };
         }
 
         this.updateUI(this.isSubscribed ? 'subscribed' : 'not-subscribed');
+    }
+
+    /**
+     * Manejar el click del botón de notificaciones
+     */
+    handleButtonClick(isAuthenticatedFromDOM) {
+        // Prioridad 1: Si no está autenticado, mostrar popup de login
+        if (!isAuthenticatedFromDOM && !this.isAuthenticated) {
+            this.showLoginRequiredPopup();
+            return;
+        }
+
+        // Prioridad 2: Si es iOS sin PWA, mostrar instrucciones de instalación
+        if (this.isIOS && !this.isPWA) {
+            this.showIOSInstallInstructions();
+            return;
+        }
+
+        // Prioridad 3: Si no hay soporte, mostrar mensaje
+        if (!this.isSupported) {
+            this.showNotification('No soportado', 'Tu navegador no soporta notificaciones push', 'warning');
+            return;
+        }
+
+        // Prioridad 4: Alternar suscripción normalmente
+        this.toggleSubscription();
     }
 
     /**
@@ -503,7 +526,6 @@ class PushNotificationManager {
                     Instalar App
                 `;
                 this.toggleButton.className = 'flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium text-sm';
-                this.toggleButton.onclick = () => this.showIOSInstallInstructions();
                 break;
 
             case 'error':
