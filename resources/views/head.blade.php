@@ -62,13 +62,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                    .then((registration) => {
-                        console.log('[App] Service Worker registrado:', registration.scope);
-                    })
-                    .catch((error) => {
-                        console.error('[App] Error registrando Service Worker:', error);
-                    });
+                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => { });
             });
         }
     </script>

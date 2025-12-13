@@ -16,7 +16,9 @@
     // UI del botón
     function updateUI() {
         const bell = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>';
-        if (subscribed) {
+
+        // Solo mostrar icono verde si está logueado Y suscrito
+        if (isAuth && subscribed) {
             btn.innerHTML = bell + '<span class="w-2 h-2 bg-green-400 rounded-full -ml-2 -mt-3"></span><span class="hidden sm:inline">Activas</span>';
             btn.className = 'inline-flex items-center gap-1 rounded-full border border-green-400/50 bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-lg transition hover:bg-green-700';
         } else {
@@ -25,16 +27,38 @@
         }
     }
 
+    // Mostrar popup automático para usuarios no logueados (cada 1 hora)
+    function showAutoPrompt() {
+        if (isAuth) return; // Solo para no logueados
+
+        const lastPrompt = localStorage.getItem('pushPromptLastShown');
+        if (lastPrompt) {
+            const hoursDiff = (Date.now() - parseInt(lastPrompt)) / (1000 * 60 * 60);
+            if (hoursDiff < 1) return; // Menos de 1 hora, no mostrar
+        }
+
+        localStorage.setItem('pushPromptLastShown', Date.now().toString());
+
+        setTimeout(() => {
+            if (confirm('🔔 ¡Activá las notificaciones para recibir alertas de resultados y partidos! ¿Querés iniciar sesión?')) {
+                window.location.href = '/login';
+            }
+        }, 3000);
+    }
+
     // Inicializar
     async function init() {
-        if (canPush) {
+        // Solo verificar suscripción si está logueado y puede push
+        if (isAuth && canPush) {
             try {
                 swReg = await navigator.serviceWorker.register('/sw.js');
                 const sub = await swReg.pushManager.getSubscription();
                 subscribed = !!sub;
             } catch (e) { }
         }
+
         updateUI();
+        showAutoPrompt();
     }
 
     // Click handler
@@ -98,7 +122,7 @@
         btn.disabled = false;
     };
 
-    // Iniciar cuando DOM esté listo
+    // Iniciar
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

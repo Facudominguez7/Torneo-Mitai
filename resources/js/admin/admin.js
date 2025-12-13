@@ -1,42 +1,28 @@
+// Admin.js - Sidebar toggle
 document.addEventListener('DOMContentLoaded', function () {
-    const button = document.querySelector('[data-collapse-toggle="dropdown-example"]');
+    const dropdownBtn = document.querySelector('[data-collapse-toggle="dropdown-example"]');
     const dropdown = document.getElementById('dropdown-example');
 
-    button.addEventListener('click', function () {
-        dropdown.classList.toggle('hidden');
-    });
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-    const button = document.querySelector('[data-drawer-toggle="sidebar-multi-level-sidebar"]');
-    const sidebar = document.getElementById('sidebar-multi-level-sidebar');
-    const links = sidebar.querySelectorAll('a');
-
-    // Función para ocultar el sidebar
-    function hideSidebar() {
-        if (!sidebar.classList.contains('-translate-x-full')) {
-            sidebar.classList.add('-translate-x-full');
-        }
+    if (dropdownBtn && dropdown) {
+        dropdownBtn.addEventListener('click', () => dropdown.classList.toggle('hidden'));
     }
 
-    // Toggle sidebar al hacer clic en el botón
-    button.addEventListener('click', function (event) {
-        event.stopPropagation();
-        sidebar.classList.toggle('-translate-x-full');
-    });
+    const sidebarBtn = document.querySelector('[data-drawer-toggle="sidebar-multi-level-sidebar"]');
+    const sidebar = document.getElementById('sidebar-multi-level-sidebar');
 
-    // Ocultar sidebar al hacer clic fuera de él
-    document.addEventListener('click', function (event) {
-        if (!sidebar.contains(event.target) && !button.contains(event.target)) {
-            hideSidebar();
-        }
-    });
+    if (sidebarBtn && sidebar) {
+        const links = sidebar.querySelectorAll('a');
+        const hide = () => sidebar.classList.add('-translate-x-full');
 
-    // Ocultar sidebar al hacer clic en cualquier enlace dentro de él
-    links.forEach(function (link) {
-        link.addEventListener('click', function () {
-            hideSidebar();
+        sidebarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('-translate-x-full');
         });
-    });
-});
 
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && !sidebarBtn.contains(e.target)) hide();
+        });
+
+        links.forEach(link => link.addEventListener('click', hide));
+    }
+});

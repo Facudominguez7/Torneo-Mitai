@@ -1,60 +1,43 @@
-const button = document.querySelector(
-    '[data-collapse-toggle="navbar-dropdown"]'
-);
-const botonEdiciones = document.querySelector(
-    '[data-dropdown-toggle="dropdownEdiciones"]'
-);
-const botonUser = document.querySelector('[data-dropdown-toggle="dropdownUser"]');
+// Welcome.js - Menús dropdown
+(function () {
+    const button = document.querySelector('[data-collapse-toggle="navbar-dropdown"]');
+    const menu = document.getElementById('navbar-dropdown');
+    const botonEdiciones = document.querySelector('[data-dropdown-toggle="dropdownEdiciones"]');
+    const menuEdiciones = document.getElementById('dropdownEdiciones');
+    const botonUser = document.querySelector('[data-dropdown-toggle="dropdownUser"]');
+    const menuUser = document.getElementById('dropdownUser');
 
-const menu = document.getElementById("navbar-dropdown");
-const menuEdiciones = document.getElementById("dropdownEdiciones");
-const menuUser = document.getElementById("dropdownUser");
-
-button.addEventListener("click", function () {
-    menu.classList.toggle("hidden");
-});
-
-botonEdiciones.addEventListener("click", function (event) {
-    const buttonRect = botonEdiciones.getBoundingClientRect();
-
-    if (window.innerWidth < 768) {
-        menuEdiciones.style.top = `${buttonRect.bottom}px`;
-        menuEdiciones.style.left = "0";
-        menuEdiciones.style.width = "100%";
-    } else {
-        const navRect = document.querySelector("nav").getBoundingClientRect();
-        const menuWidth = navRect.width * 0.1; // Ancho ajustado
-
-        menuEdiciones.style.top = `${buttonRect.bottom}px`;
-        menuEdiciones.style.left = `${buttonRect.left}px`; // Ajuste de posición a la izquierda del botón
-        menuEdiciones.style.width = `${menuWidth}px`;
+    if (button && menu) {
+        button.addEventListener('click', () => menu.classList.toggle('hidden'));
     }
 
-    menuEdiciones.classList.toggle("hidden");
-});
-document.addEventListener("click", function (event) {
-    const isClickInsideEdiciones = menuEdiciones.contains(event.target);
-    const isClickOnButtonEdiciones = event.target === botonEdiciones;
-    const isClickInsideMenuUser = menuUser.contains(event.target);
-    const isClickOnButtonUser = event.target === botonUser;
+    if (botonEdiciones && menuEdiciones) {
+        botonEdiciones.addEventListener('click', function () {
+            const rect = botonEdiciones.getBoundingClientRect();
+            if (window.innerWidth < 768) {
+                menuEdiciones.style.cssText = `top:${rect.bottom}px;left:0;width:100%`;
+            } else {
+                menuEdiciones.style.cssText = `top:${rect.bottom}px;left:${rect.left}px`;
+            }
+            menuEdiciones.classList.toggle('hidden');
+        });
+    }
 
-    if (!isClickInsideMenuCategorias && !isClickOnButtonCategorias) {
-        menuCategorias.classList.add("hidden");
-    }
-    if (!isClickInsideEdiciones && !isClickOnButtonEdiciones) {
-        menuEdiciones.classList.add("hidden");
-    }
-    if (!isClickInsideMenuUser && !isClickOnButtonUser) {
-        menuUser.classList.add("hidden");
-    }
-});
+    document.addEventListener('click', function (e) {
+        if (menuEdiciones && botonEdiciones && !menuEdiciones.contains(e.target) && e.target !== botonEdiciones) {
+            menuEdiciones.classList.add('hidden');
+        }
+        if (menuUser && botonUser && !menuUser.contains(e.target) && e.target !== botonUser) {
+            menuUser.classList.add('hidden');
+        }
+    });
+})();
 
 function descargarPDF() {
-    // Crea un enlace invisible
-    var enlace = document.createElement("a");
-    enlace.href = ""; // Reemplaza 'ruta/al/archivo.pdf' con la URL del archivo PDF
-    enlace.download = "ReglamentoMitaiCup.pdf"; // Establece el nombre del archivo
-    document.body.appendChild(enlace);
-    enlace.click();
-    document.body.removeChild(enlace);
+    const a = document.createElement('a');
+    a.href = '';
+    a.download = 'ReglamentoMitaiCup.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
