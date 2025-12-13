@@ -7,25 +7,11 @@
 
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    const canPush = 'PushManager' in window && (!isIOS || isPWA);
+    const canPush = 'PushManager' in window && 'serviceWorker' in navigator && (!isIOS || isPWA);
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
-    let isAuth = btn.dataset.authenticated === 'true';
+    const isAuth = btn.dataset.authenticated === 'true';
     let subscribed = false;
     let swReg = null;
-
-    // Inicializar
-    async function init() {
-        if (canPush) {
-            try {
-                swReg = await navigator.serviceWorker.register('/sw.js');
-                const sub = await swReg.pushManager.getSubscription();
-                subscribed = !!sub;
-                const res = await fetch('/Panel/push/status', { headers: { 'X-CSRF-TOKEN': csrf }, credentials: 'same-origin' });
-                if (res.ok) { const d = await res.json(); subscribed = d.subscribed; isAuth = true; }
-            } catch (e) { }
-        }
-        updateUI();
-    }
 
     // UI del botón
     function updateUI() {
@@ -39,6 +25,18 @@
         }
     }
 
+    // Inicializar
+    async function init() {
+        if (canPush) {
+            try {
+                swReg = await navigator.serviceWorker.register('/sw.js');
+                const sub = await swReg.pushManager.getSubscription();
+                subscribed = !!sub;
+            } catch (e) { }
+        }
+        updateUI();
+    }
+
     // Click handler
     btn.onclick = async (e) => {
         e.preventDefault();
@@ -50,7 +48,7 @@
         }
 
         if (isIOS && !isPWA) {
-            alert('Tocá Compartir 📤 → "Agregar a inicio" para instalar la app y recibir notificaciones.');
+            alert('Tocá Compartir 📤 → "Agregar a inicio" para instalar la app.');
             return;
         }
 
@@ -100,6 +98,10 @@
         btn.disabled = false;
     };
 
-    // Iniciar
-    document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
+    // Iniciar cuando DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();
