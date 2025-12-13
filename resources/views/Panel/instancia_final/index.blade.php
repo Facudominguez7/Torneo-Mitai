@@ -57,75 +57,67 @@
             </div>
         </div>
 
-        <div class="mt-2 flex flex-wrap gap-2 items-center">
+        {{-- Filtros agrupados --}}
+        <div class="mt-4 flex flex-wrap gap-3 items-center">
             {{-- Filtro por fase --}}
-            <div x-data="{ open: false }" class="relative inline-block text-left filtro-fase">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button
-                            class="inline-flex items-center gap-2 text-black bg-gray-200 hover:bg-gray-300 py-2 px-4 rounded-full transition-all duration-300">
-                            Filtrar por fase
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
-                        @foreach ($fases as $f)
-                            <div class="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                data-id="{{ $f->id }}" data-nombre="{{ $f->nombre }}">
-                                {{ $f->nombre }}
-                            </div>
-                        @endforeach
-                    </x-slot>
-                </x-dropdown>
-            </div>
+            @if($fases->count() > 0)
+                <select id="filtro-fase"
+                    class="bg-white border border-gray-300 text-gray-700 py-2.5 px-4 rounded-lg text-sm font-medium shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                    <option value="">📋 Todas las fases</option>
+                    @foreach ($fases as $f)
+                        <option value="{{ $f->id }}" {{ request('idFase') == $f->id ? 'selected' : '' }}>{{ $f->nombre }}</option>
+                    @endforeach
+                </select>
+            @endif
 
             {{-- Filtro por categoría --}}
-            <div x-data="{ open: false }" class="relative inline-block text-left filtro-categoria">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button
-                            class="inline-flex items-center gap-2 text-black bg-gray-200 hover:bg-gray-300 py-2 px-4 rounded-full transition-all duration-300">
-                            Seleccionar Categoria
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
-                        @foreach ($categorias as $c)
-                            <div class="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                data-id="{{ $c->id }}" data-nombre="{{ $c->nombreCategoria }}">
-                                {{ $c->nombreCategoria }}
-                            </div>
-                        @endforeach
-                    </x-slot>
-                </x-dropdown>
-            </div>
+            @if($categorias->count() > 0)
+                <select id="filtro-categoria"
+                    class="bg-white border border-gray-300 text-gray-700 py-2.5 px-4 rounded-lg text-sm font-medium shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                    <option value="">🏷️ Todas las categorías</option>
+                    @foreach ($categorias as $c)
+                        <option value="{{ $c->id }}" {{ request('idCategoria') == $c->id ? 'selected' : '' }}>
+                            {{ $c->nombreCategoria }}
+                        </option>
+                    @endforeach
+                </select>
+            @endif
 
             {{-- Filtro por copa --}}
             @if(isset($copas) && $copas->count() > 0)
-                <div x-data="{ open: false }" class="relative inline-block text-left filtro-copa">
-                    <x-dropdown align="right" width="48">
-                        <x-slot name="trigger">
-                            <button
-                                class="inline-flex items-center gap-2 text-black bg-purple-200 hover:bg-purple-300 py-2 px-4 rounded-full transition-all duration-300">
-                                🏆 Filtrar por copa
-                            </button>
-                        </x-slot>
-                        <x-slot name="content">
-                            @foreach ($copas as $copa)
-                                <div class="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    data-id="{{ $copa->id }}" data-nombre="{{ $copa->nombre }}">
-                                    {{ $copa->nombre }}
-                                </div>
-                            @endforeach
-                        </x-slot>
-                    </x-dropdown>
-                </div>
+                <select id="filtro-copa"
+                    class="bg-white border border-amber-300 text-amber-700 py-2.5 px-4 rounded-lg text-sm font-medium shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 cursor-pointer">
+                    <option value="">🏆 Todas las copas</option>
+                    @foreach ($copas as $copa)
+                        <option value="{{ $copa->id }}" {{ request('idCopa') == $copa->id ? 'selected' : '' }}>{{ $copa->nombre }}
+                        </option>
+                    @endforeach
+                </select>
             @endif
 
-            <div class="inline-block items-center">
+            {{-- Filtro por fecha --}}
+            @if(isset($fechasDisponibles) && $fechasDisponibles->count() > 0)
+                <select id="filtro-fecha"
+                    class="bg-white border border-green-300 text-green-700 py-2.5 px-4 rounded-lg text-sm font-medium shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer">
+                    <option value="">📅 Todas las fechas</option>
+                    @foreach ($fechasDisponibles as $fecha)
+                        <option value="{{ $fecha }}" {{ request('fecha') == $fecha ? 'selected' : '' }}>
+                            {{ \Carbon\Carbon::parse($fecha)->format('d/m/Y') }}
+                        </option>
+                    @endforeach
+                </select>
+            @endif
+
+            {{-- Botón eliminar filtros - solo si hay filtros activos --}}
+            @if(request('idCategoria') || request('idFase') || request('idCopa') || request('estado') || request('busqueda') || request('fecha'))
                 <button id="reset-filters"
-                    class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-full transition-all">
-                    ✕ Eliminar Filtros
+                    class="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2.5 px-4 rounded-lg text-sm font-medium transition-all shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Limpiar
                 </button>
-            </div>
+            @endif
         </div>
         <div class="flex items-center justify-center flex-row mt-5 mb-0">
             @if (isset($nombreFase))
@@ -164,19 +156,7 @@
                 </div>
             </div>
 
-            {{-- Barra de progreso --}}
-            @if ($totalPartidos > 0)
-                <div class="mb-4">
-                    <div class="flex justify-between text-sm text-gray-600 mb-1">
-                        <span>Progreso del torneo</span>
-                        <span>{{ round(($partidosJugados / $totalPartidos) * 100) }}%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-3">
-                        <div class="bg-green-500 h-3 rounded-full transition-all duration-300"
-                            style="width: {{ ($partidosJugados / $totalPartidos) * 100 }}%"></div>
-                    </div>
-                </div>
-            @endif
+
         </div>
     </div>
     <div class="bg-white p-6">
@@ -236,7 +216,7 @@
                     @if ($p->golesEquipoLocal === null && $p->golesEquipoVisitante === null)
                         <div class="px-6 py-4 flex justify-center">
                             <a
-                                href="{{ route('cargar-resultado-instancia', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final']) }}">
+                                href="{{ route('cargar-resultado-instancia', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final', 'fecha' => request('fecha')]) }}">
                                 <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
                                     Cargar Resultado
                                 </button>
@@ -245,18 +225,19 @@
                     @endif
                     <div class="flex justify-center my-4 gap-2">
                         <a
-                            href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'instanciaFinal', 'horario' => 0]) }}">
+                            href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'instanciaFinal', 'horario' => 0, 'fecha' => request('fecha')]) }}">
                             <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                                 Planillas
                             </button>
                         </a>
-                        <a href="{{ route('instancia_final.edit', $p->id) }}">
+                        <a
+                            href="{{ route('instancia_final.edit', ['instancia_final' => $p->id, 'fecha' => request('fecha')]) }}">
                             <button class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
                                 Editar
                             </button>
                         </a>
                         <form
-                            action="{{ route('instancia_final.destroy', ['instancia_final' => $p->id, 'idEdicion' => $EdicionSeleccionada->id]) }}"
+                            action="{{ route('instancia_final.destroy', ['instancia_final' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'fecha' => request('fecha')]) }}"
                             method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este partido?');">
                             @csrf
                             @method('DELETE')
@@ -280,18 +261,10 @@
             var idCopa = new URLSearchParams(window.location.search).get('idCopa') || '';
             var estado = new URLSearchParams(window.location.search).get('estado') || '';
             var busqueda = new URLSearchParams(window.location.search).get('busqueda') || '';
+            var fecha = new URLSearchParams(window.location.search).get('fecha') || '';
 
             var url = "{{ route('instancia_final.index') }}";
 
-            // Mostrar u ocultar filtros
-            function toggleFiltersVisibility() {
-                const faseFilterContainer = document.querySelector('.filtro-fase');
-                const categoriaFilterContainer = document.querySelector('.filtro-categoria');
-
-                // Mostrar ambos filtros
-                faseFilterContainer.classList.remove('hidden');
-                categoriaFilterContainer.classList.remove('hidden');
-            }
 
             // Actualizar la URL con los filtros seleccionados
             function updateUrl(params) {
@@ -306,63 +279,47 @@
                 window.location.href = newUrl;
             }
 
-            // Añadir eventos a cada filtro de "Categoria"
-            document.querySelectorAll('.filtro-categoria [data-id]').forEach(function (item) {
-                item.addEventListener('click', function () {
-                    idCategoria = this.getAttribute('data-id');
-                    updateUrl({
-                        idCategoria,
-                        idEdicion,
-                        idFase,
-                        idCopa,
-                        estado,
-                        busqueda
-                    });
+            // Filtro por Fase (select)
+            var selectFase = document.getElementById('filtro-fase');
+            if (selectFase) {
+                selectFase.addEventListener('change', function () {
+                    idFase = this.value;
+                    updateUrl({ idCategoria, idEdicion, idFase, idCopa, estado, busqueda, fecha });
                 });
-            });
+            }
 
-            // Añadir eventos a cada filtro de "Fase"
-            document.querySelectorAll('.filtro-fase [data-id]').forEach(function (item) {
-                item.addEventListener('click', function () {
-                    idFase = this.getAttribute('data-id');
-                    updateUrl({
-                        idCategoria,
-                        idEdicion,
-                        idFase,
-                        idCopa,
-                        estado,
-                        busqueda
-                    });
+            // Filtro por Categoría (select)
+            var selectCategoria = document.getElementById('filtro-categoria');
+            if (selectCategoria) {
+                selectCategoria.addEventListener('change', function () {
+                    idCategoria = this.value;
+                    updateUrl({ idCategoria, idEdicion, idFase, idCopa, estado, busqueda, fecha });
                 });
-            });
+            }
 
-            // Añadir eventos a cada filtro de "Copa"
-            document.querySelectorAll('.filtro-copa [data-id]').forEach(function (item) {
-                item.addEventListener('click', function () {
-                    idCopa = this.getAttribute('data-id');
-                    updateUrl({
-                        idCategoria,
-                        idEdicion,
-                        idFase,
-                        idCopa,
-                        estado,
-                        busqueda
-                    });
+            // Filtro por Copa (select)
+            var selectCopa = document.getElementById('filtro-copa');
+            if (selectCopa) {
+                selectCopa.addEventListener('change', function () {
+                    idCopa = this.value;
+                    updateUrl({ idCategoria, idEdicion, idFase, idCopa, estado, busqueda, fecha });
                 });
-            });
+            }
+
+            // Filtro por Fecha (select)
+            var selectFecha = document.getElementById('filtro-fecha');
+            if (selectFecha) {
+                selectFecha.addEventListener('change', function () {
+                    fecha = this.value;
+                    updateUrl({ idCategoria, idEdicion, idFase, idCopa, estado, busqueda, fecha });
+                });
+            }
 
             // Añadir eventos a cada filtro de "Estado" (Pendiente/Jugado)
             document.querySelectorAll('.filtro-estado').forEach(function (item) {
                 item.addEventListener('click', function () {
                     estado = this.getAttribute('data-estado');
-                    updateUrl({
-                        idCategoria,
-                        idEdicion,
-                        idFase,
-                        idCopa,
-                        estado,
-                        busqueda
-                    });
+                    updateUrl({ idCategoria, idEdicion, idFase, idCopa, estado, busqueda, fecha });
                 });
             });
 
@@ -373,14 +330,7 @@
             if (btnBuscar) {
                 btnBuscar.addEventListener('click', function () {
                     busqueda = inputBusqueda.value.trim();
-                    updateUrl({
-                        idCategoria,
-                        idEdicion,
-                        idFase,
-                        idCopa,
-                        estado,
-                        busqueda
-                    });
+                    updateUrl({ idCategoria, idEdicion, idFase, idCopa, estado, busqueda, fecha });
                 });
             }
 
@@ -390,32 +340,19 @@
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         busqueda = inputBusqueda.value.trim();
-                        updateUrl({
-                            idCategoria,
-                            idEdicion,
-                            idFase,
-                            idCopa,
-                            estado,
-                            busqueda
-                        });
+                        updateUrl({ idCategoria, idEdicion, idFase, idCopa, estado, busqueda, fecha });
                     }
                 });
             }
 
-            // Añadir evento al botón de eliminar filtros
-            document.getElementById('reset-filters').addEventListener('click', function () {
-                updateUrl({
-                    idCategoria: '',
-                    idEdicion,
-                    idFase: '',
-                    idCopa: '',
-                    estado: '',
-                    busqueda: ''
+            // Añadir evento al botón de eliminar filtros (solo si existe)
+            var resetBtn = document.getElementById('reset-filters');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function () {
+                    updateUrl({ idCategoria: '', idEdicion, idFase: '', idCopa: '', estado: '', busqueda: '', fecha: '' });
                 });
-            });
+            }
 
-            // Inicializar el estado de visibilidad de los filtros
-            toggleFiltersVisibility();
         });
     </script>
 @endsection

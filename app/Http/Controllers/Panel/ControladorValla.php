@@ -48,7 +48,19 @@ class ControladorValla extends Controller
             ->where('equipo_ediciones.idCategoria', $idCategoria)
             ->select('equipo_ediciones.*', 'e.nombre as nombreEquipo')
             ->get();
-        return view('Panel.valla.create', compact('ediciones', 'valla', 'EdicionSeleccionada', 'equipos', 'CategoriaSeleccionada'));
+
+        // Obtener todos los equipos ordenados por goles en contra para el SELECT
+        $listaEquiposVallas = collect();
+        if ($idEdicion && $idCategoria) {
+            $listaEquiposVallas = EquipoEdicion::join('equipos as e', 'equipo_ediciones.idEquipo', '=', 'e.id')
+                ->where('equipo_ediciones.idEdicion', $idEdicion)
+                ->where('equipo_ediciones.idCategoria', $idCategoria)
+                ->select('equipo_ediciones.*', 'e.nombre as nombreEquipo')
+                ->orderBy('equipo_ediciones.golesContra', 'asc')
+                ->get();
+        }
+
+        return view('Panel.valla.create', compact('ediciones', 'valla', 'EdicionSeleccionada', 'equipos', 'CategoriaSeleccionada', 'listaEquiposVallas'));
     }
 
     /**

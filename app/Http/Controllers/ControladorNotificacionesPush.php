@@ -250,4 +250,22 @@ class ControladorNotificacionesPush extends Controller
             'count' => $usuariosSuscritos->count()
         ]);
     }
+
+    /**
+     * Listar usuarios con suscripciones push activas.
+     * Solo accesible por administradores.
+     */
+    public function listarSuscriptores()
+    {
+        $suscriptores = \App\Models\User::whereHas('pushSubscriptions')
+            ->withCount('pushSubscriptions')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Variables necesarias para el layout admin.blade.php
+        $ediciones = \App\Models\Edicion::orderBy('id', 'desc')->get();
+        $EdicionSeleccionada = $ediciones->first();
+
+        return view('Panel.suscriptores-push', compact('suscriptores', 'ediciones', 'EdicionSeleccionada'));
+    }
 }

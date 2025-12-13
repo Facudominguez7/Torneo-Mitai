@@ -30,10 +30,11 @@
                                 <div class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
                                     <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
                                         <select name="categoria" id="categoria" onchange="this.form.submit()"
-                                            class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none">
-                                            <option value="">Todas las categorías</option>
+                                            class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
+                                            style="color-scheme: dark;">
+                                            <option value="" style="background-color: #0e4b5e; color: white;">Todas las categorías</option>
                                             @foreach ($categorias as $categoria)
-                                                <option value="{{ $categoria->id }}" {{ $selectedCategoria == $categoria->id ? 'selected' : '' }}>
+                                                <option value="{{ $categoria->id }}" style="background-color: #0e4b5e; color: white;" {{ $selectedCategoria == $categoria->id ? 'selected' : '' }}>
                                                     {{ $categoria->nombreCategoria }}
                                                 </option>
                                             @endforeach

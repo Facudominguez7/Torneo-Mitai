@@ -141,7 +141,24 @@ class ControladorHome extends Controller
             ->join('categorias', 'campeones.idCategoria', '=', 'categorias.id')
             ->orderBy('categorias.nombreCategoria', 'desc')
             ->get();
-        return view('layouts.campeones', compact('ediciones', 'EdicionSeleccionada', 'categorias', 'campeonesOro', 'campeonesPlata'));
+
+        $campeonesMitai = Campeon::where('campeones.idEdicion', $idEdicion)
+            ->join('copas', 'campeones.idCopa', '=', 'copas.id')
+            ->where('copas.nombre', "Copa Mita'í")
+            ->with(['equipo', 'categoria'])
+            ->join('categorias', 'campeones.idCategoria', '=', 'categorias.id')
+            ->orderBy('categorias.nombreCategoria', 'desc')
+            ->get();
+
+        $campeonesBronce = Campeon::where('campeones.idEdicion', $idEdicion)
+            ->join('copas', 'campeones.idCopa', '=', 'copas.id')
+            ->where('copas.nombre', 'Copa de Bronce')
+            ->with(['equipo', 'categoria'])
+            ->join('categorias', 'campeones.idCategoria', '=', 'categorias.id')
+            ->orderBy('categorias.nombreCategoria', 'desc')
+            ->get();
+
+        return view('layouts.campeones', compact('ediciones', 'EdicionSeleccionada', 'categorias', 'campeonesOro', 'campeonesPlata', 'campeonesMitai', 'campeonesBronce'));
     }
 
     public function subcampeones(Request $request)
@@ -167,7 +184,24 @@ class ControladorHome extends Controller
             ->join('categorias', 'subcampeones.idCategoria', '=', 'categorias.id')
             ->orderBy('categorias.nombreCategoria', 'desc')
             ->get();
-        return view('layouts.subcampeones', compact('ediciones', 'EdicionSeleccionada', 'categorias', 'subcampeonesOro', 'subcampeonesPlata'));
+
+        $subcampeonesMitai = Subcampeon::where('subcampeones.idEdicion', $idEdicion)
+            ->join('copas', 'subcampeones.idCopa', '=', 'copas.id')
+            ->where('copas.nombre', "Copa Mita'í")
+            ->with(['equipo', 'categoria'])
+            ->join('categorias', 'subcampeones.idCategoria', '=', 'categorias.id')
+            ->orderBy('categorias.nombreCategoria', 'desc')
+            ->get();
+
+        $subcampeonesBronce = Subcampeon::where('subcampeones.idEdicion', $idEdicion)
+            ->join('copas', 'subcampeones.idCopa', '=', 'copas.id')
+            ->where('copas.nombre', 'Copa de Bronce')
+            ->with(['equipo', 'categoria'])
+            ->join('categorias', 'subcampeones.idCategoria', '=', 'categorias.id')
+            ->orderBy('categorias.nombreCategoria', 'desc')
+            ->get();
+
+        return view('layouts.subcampeones', compact('ediciones', 'EdicionSeleccionada', 'categorias', 'subcampeonesOro', 'subcampeonesPlata', 'subcampeonesMitai', 'subcampeonesBronce'));
     }
     public function goleadores(Request $request)
     {
@@ -193,7 +227,18 @@ class ControladorHome extends Controller
         $vallas = VallaMenosVencida::where('vallas_menos_vencidas.idEdicion', $idEdicion)
             ->join('equipos', 'vallas_menos_vencidas.idEquipo', '=', 'equipos.id')
             ->join('categorias', 'vallas_menos_vencidas.idCategoria', '=', 'categorias.id')
-            ->select('vallas_menos_vencidas.nombre as nombre_jugador', 'equipos.nombre as nombre_equipo', 'equipos.foto as foto_equipo', 'categorias.nombreCategoria as categoria_nombre')
+            ->leftJoin('equipo_ediciones', function ($join) {
+                $join->on('vallas_menos_vencidas.idEquipo', '=', 'equipo_ediciones.idEquipo')
+                    ->on('vallas_menos_vencidas.idEdicion', '=', 'equipo_ediciones.idEdicion')
+                    ->on('vallas_menos_vencidas.idCategoria', '=', 'equipo_ediciones.idCategoria');
+            })
+            ->select(
+                'vallas_menos_vencidas.nombre as nombre_jugador',
+                'equipos.nombre as nombre_equipo',
+                'equipos.foto as foto_equipo',
+                'categorias.nombreCategoria as categoria_nombre',
+                'equipo_ediciones.golesContra as goles_recibidos'
+            )
             ->orderBy('categoria_nombre', 'desc')
             ->get();
 

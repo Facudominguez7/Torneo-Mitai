@@ -34,6 +34,7 @@ class ControladorInstanciaFinal extends Controller
         $idCopa = $request->idCopa;
         $estado = $request->estado; // 'pendiente', 'jugado' o null para todos
         $busquedaEquipo = $request->busqueda;
+        $fechaFiltro = $request->fecha; // Nueva: filtro por fecha
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
 
         $query = InstanciaFinal::query();
@@ -53,6 +54,11 @@ class ControladorInstanciaFinal extends Controller
         // Filtro por copa
         if ($idCopa) {
             $query->where('idCopa', $idCopa);
+        }
+
+        // Filtro por fecha (usando DATE para extraer solo la fecha del campo horario)
+        if ($fechaFiltro) {
+            $query->whereRaw('DATE(horario) = ?', [$fechaFiltro]);
         }
 
         // Filtro por estado (pendiente/jugado)
@@ -88,23 +94,39 @@ class ControladorInstanciaFinal extends Controller
             ->orderBy('instancias_finales.horario', 'asc')
             ->get();
 
-        $categorias = Categoria::where('idEdicion', $idEdicion)
+        $categorias = Categoria::whereIn('id', function($query) use ($idEdicion) {
+                $query->select('idCategoria')->from('instancias_finales')->where('idEdicion', $idEdicion)->distinct();
+            })
             ->select('id', 'nombreCategoria')
             ->orderBy('nombreCategoria', 'desc')
             ->get();
 
-        $fases = Fase::query()
+        $fases = Fase::whereIn('id', function($query) use ($idEdicion) {
+                $query->select('idFase')->from('instancias_finales')->where('idEdicion', $idEdicion)->distinct();
+            })
             ->select('id', 'nombre')
             ->orderBy('nombre', 'desc')
             ->get();
 
-        // Obtener las copas para el filtro
-        $copas = Copa::orderBy('nombre', 'asc')->get();
+        // Obtener las copas que tienen partidos en esta edición
+        $copas = Copa::whereIn('id', function($query) use ($idEdicion) {
+                $query->select('idCopa')->from('instancias_finales')->where('idEdicion', $idEdicion)->whereNotNull('idCopa')->distinct();
+            })
+            ->orderBy('nombre', 'asc')
+            ->get();
+
+        // Obtener las fechas únicas de partidos para el filtro
+        $fechasDisponibles = InstanciaFinal::where('idEdicion', $idEdicion)
+            ->whereNotNull('horario')
+            ->selectRaw('DATE(horario) as fecha')
+            ->distinct()
+            ->orderBy('fecha', 'asc')
+            ->pluck('fecha');
 
         $nombreFase = $fases->firstWhere('id', $idFase)->nombre ?? null;
         $nombreCategoria = $categorias->firstWhere('id', $idCategoria)->nombreCategoria ?? null;
 
-        return view('Panel.instancia_final.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fases', 'categorias', 'idCategoria', 'nombreFase', 'nombreCategoria', 'copas', 'estado', 'busquedaEquipo', 'idCopa'));
+        return view('Panel.instancia_final.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fases', 'categorias', 'idCategoria', 'nombreFase', 'nombreCategoria', 'copas', 'estado', 'busquedaEquipo', 'idCopa', 'fechaFiltro', 'fechasDisponibles'));
     }
 
     public function create(Request $request)
@@ -135,7 +157,8 @@ class ControladorInstanciaFinal extends Controller
         $data = $request->validated();
         InstanciaFinal::create($data);
         $idEdicion = $data['idEdicion'];
-        return to_route('instancia_final.index', ['idEdicion' => $idEdicion])->with('status', 'Partido creado con éxito.');
+        $fecha = $request->input('fecha');
+        return to_route('instancia_final.index', ['idEdicion' => $idEdicion, 'fecha' => $fecha])->with('status', 'Partido creado con éxito.');
     }
 
     public function cargarResultadoInstancia(Request $request)
@@ -169,7 +192,7 @@ class ControladorInstanciaFinal extends Controller
             $this->partidoService->actualizarHistorialInstanciasFinales($partido, $golesEquipoLocal, $golesEquipoVisitante);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoLocal, $partido->idEdicion, $idGrupo);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoVisitante, $partido->idEdicion, $idGrupo);
-            return to_route('instancia_final.index', ['idEdicion' => $idEdicion])->with('status', 'Resultado cargado con éxito.');
+            return to_route('instancia_final.index', ['idEdicion' => $idEdicion, 'fecha' => $request->input('fecha')])->with('status', 'Resultado cargado con éxito.');
         }
 
         $tipo = 'instancia_final';
@@ -206,12 +229,13 @@ class ControladorInstanciaFinal extends Controller
         $data = $request->validated();
         $instancia_final->update($data);
         $idEdicion = $data['idEdicion'];
-        return to_route('instancia_final.index', ['idEdicion' => $idEdicion])->with('status', 'Partido actualizado con éxito.');
+        $fecha = $request->input('fecha');
+        return to_route('instancia_final.index', ['idEdicion' => $idEdicion, 'fecha' => $fecha])->with('status', 'Partido actualizado con éxito.');
     }
 
     public function destroy(InstanciaFinal $instancia_final, Request $request)
     {
         $instancia_final->delete();
-        return to_route('instancia_final.index', ['idEdicion' => $request->idEdicion])->with('status', 'Partido eliminado con éxito.');
+        return to_route('instancia_final.index', ['idEdicion' => $request->idEdicion, 'fecha' => $request->fecha])->with('status', 'Partido eliminado con éxito.');
     }
 }

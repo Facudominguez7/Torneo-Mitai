@@ -135,6 +135,9 @@ Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
     Route::post('/enviar-manual', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarNotificacionManual'])
         ->middleware(UserAccesPanelMiddleware::class) // Solo admins
         ->name('push.enviar-manual');
+    Route::get('/suscriptores', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'listarSuscriptores'])
+        ->middleware(UserAccesPanelMiddleware::class) // Solo admins
+        ->name('push.suscriptores');
 });
 
 // Ruta pública para obtener la clave VAPID (no requiere autenticación)

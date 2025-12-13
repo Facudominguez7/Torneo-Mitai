@@ -51,7 +51,18 @@ class ControladorGoleador extends Controller
             ->where('equipo_ediciones.idCategoria', $idCategoria)
             ->select('equipo_ediciones.*', 'e.nombre as nombreEquipo')
             ->get();
-        return view('Panel.goleador.create', compact('ediciones', 'goleador', 'EdicionSeleccionada', 'equipos', 'CategoriaSeleccionada'));
+
+        // Obtener todos los goleadores ordenados por cantidad de goles para el SELECT
+        $listaGoleadores = collect();
+        if ($idEdicion && $idCategoria) {
+            $listaGoleadores = \App\Models\TablaGoleador::where('idEdicion', $idEdicion)
+                ->where('idCategoria', $idCategoria)
+                ->with(['jugador', 'equipo'])
+                ->orderByDesc('cantidadGoles')
+                ->get();
+        }
+
+        return view('Panel.goleador.create', compact('ediciones', 'goleador', 'EdicionSeleccionada', 'equipos', 'CategoriaSeleccionada', 'listaGoleadores'));
     }
 
     /**
