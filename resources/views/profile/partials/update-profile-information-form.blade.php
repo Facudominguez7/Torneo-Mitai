@@ -48,6 +48,15 @@
                         <p class="mt-3 rounded-xl border border-emerald-200/40 bg-emerald-400/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-emerald-100">
                             {{ __('Te enviamos un nuevo enlace de verificación.') }}
                         </p>
+                        <p class="mt-2 text-xs text-white/60">
+                            📬 Revisá tu bandeja de entrada y también la <strong>carpeta de spam</strong> si no lo encontrás.
+                        </p>
+                    @endif
+
+                    @if (session('email-error'))
+                        <p class="mt-3 rounded-xl border border-red-400/40 bg-red-500/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-red-200">
+                            {{ session('email-error') }}
+                        </p>
                     @endif
                 </div>
             @endif

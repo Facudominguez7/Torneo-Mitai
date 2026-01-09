@@ -22,6 +22,20 @@
                     </svg>
                     ¡Listo! Te enviamos un nuevo enlace de verificación.
                 </p>
+                <p class="text-xs text-green-200/70 mt-2 ml-7">
+                    📬 Revisá tu bandeja de entrada y también la <strong>carpeta de spam</strong> si no lo encontrás.
+                </p>
+            </div>
+        @endif
+
+        @if (session('email-error'))
+            <div class="rounded-lg bg-red-500/20 border border-red-500/30 p-4">
+                <p class="text-sm text-red-300 flex items-center gap-2">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    {{ session('email-error') }}
+                </p>
             </div>
         @endif
 

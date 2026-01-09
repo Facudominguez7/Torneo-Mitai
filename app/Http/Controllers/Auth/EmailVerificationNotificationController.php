@@ -17,8 +17,15 @@ class EmailVerificationNotificationController extends Controller
             return redirect()->intended(route('home', absolute: false));
         }
 
-        $request->user()->sendEmailVerificationNotification();
-
-        return back()->with('status', 'Email de verificación enviado');
+        try {
+            $request->user()->sendEmailVerificationNotification();
+            
+            return back()->with('status', 'verification-link-sent')
+                         ->with('email-success', '¡Email enviado! Revisá tu bandeja de entrada y la carpeta de spam.');
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar email de verificación: ' . $e->getMessage());
+            
+            return back()->with('email-error', 'No pudimos enviar el email. Por favor, intentá de nuevo más tarde.');
+        }
     }
 }
