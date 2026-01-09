@@ -141,9 +141,14 @@ Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
     Route::post('/suscriptores/{id}/reenviar-verificacion', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'reenviarVerificacionManual'])
         ->middleware(UserAccesPanelMiddleware::class) // Solo admins
         ->name('push.reenviar-verificacion');
-    Route::post('/ejecutar-recordatorios', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'ejecutarRecordatoriosManual'])
-        ->middleware(UserAccesPanelMiddleware::class) // Solo admins
-        ->name('push.ejecutar-recordatorios');
+    
+    // Rutas AJAX para envío de recordatorios por lotes
+    Route::get('/recordatorios/contar', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'contarUsuariosPendientes'])
+        ->middleware(UserAccesPanelMiddleware::class)
+        ->name('push.contar-pendientes');
+    Route::post('/recordatorios/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteRecordatorios'])
+        ->middleware(UserAccesPanelMiddleware::class)
+        ->name('push.enviar-lote');
 });
 
 // Ruta pública para obtener la clave VAPID (no requiere autenticación)

@@ -11,15 +11,24 @@
                 Gestión de Usuarios y Notificaciones
             </h1>
             <div class="flex items-center gap-3">
-                <form action="{{ route('push.ejecutar-recordatorios') }}" method="POST" class="inline-block" onsubmit="return confirm('¿Enviar recordatorios de verificación a todos los usuarios pendientes?')">
-                    @csrf
-                    <button type="submit" class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm transition">
+                <div id="recordatorios-container">
+                    <button type="button" id="btn-enviar-recordatorios" onclick="iniciarEnvioRecordatorios()" 
+                        class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                         </svg>
-                        Enviar Recordatorios
+                        <span id="btn-text">Enviar Recordatorios</span>
                     </button>
-                </form>
+                    <div id="progreso-recordatorios" class="hidden mt-2 text-sm text-gray-600">
+                        <div class="flex items-center gap-2">
+                            <svg class="animate-spin w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            <span id="progreso-texto">Iniciando...</span>
+                        </div>
+                    </div>
+                </div>
                 <span class="bg-blue-600 text-white px-4 py-2 rounded-full font-bold text-lg">
                     {{ $usuarios->total() }} Usuarios
                 </span>
@@ -162,4 +171,81 @@
             </div>
         @endif
     </div>
+
+    <script>
+        let enviando = false;
+        let totalEnviados = 0;
+        let totalErrores = 0;
+
+        async function iniciarEnvioRecordatorios() {
+            if (enviando) return;
+            
+            if (!confirm('¿Enviar recordatorios de verificación a todos los usuarios pendientes?')) {
+                return;
+            }
+
+            enviando = true;
+            totalEnviados = 0;
+            totalErrores = 0;
+            
+            const btn = document.getElementById('btn-enviar-recordatorios');
+            const btnText = document.getElementById('btn-text');
+            const progreso = document.getElementById('progreso-recordatorios');
+            const progresoTexto = document.getElementById('progreso-texto');
+            
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btnText.textContent = 'Enviando...';
+            progreso.classList.remove('hidden');
+            progresoTexto.textContent = 'Iniciando...';
+
+            await enviarLotes(progresoTexto);
+
+            // Finalizar
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btnText.textContent = 'Enviar Recordatorios';
+            progresoTexto.textContent = `✓ Completado. Enviados: ${totalEnviados}, Errores: ${totalErrores}`;
+            enviando = false;
+
+            // Ocultar progreso después de 5 segundos
+            setTimeout(() => {
+                progreso.classList.add('hidden');
+            }, 5000);
+        }
+
+        async function enviarLotes(progresoTexto) {
+            let done = false;
+            
+            while (!done) {
+                try {
+                    const response = await fetch('{{ route("push.enviar-lote") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    totalEnviados += data.sent;
+                    totalErrores += data.errors;
+                    
+                    progresoTexto.textContent = `Enviados: ${totalEnviados} | Restantes: ${data.remaining}`;
+                    
+                    done = data.done;
+                    
+                    // Pequeña pausa entre lotes para no saturar
+                    if (!done) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    progresoTexto.textContent = 'Error: ' + error.message;
+                    done = true;
+                }
+            }
+        }
+    </script>
 @endsection

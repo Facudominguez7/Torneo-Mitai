@@ -487,72 +487,87 @@ class ControladorNotificacionesPush extends Controller
      * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function ejecutarRecordatoriosManual(Request $request)
+    /**
+     * Obtener cantidad de usuarios pendientes de recordatorio.
+     * Usado por AJAX para iniciar el proceso de envío por lotes.
+     */
+    public function contarUsuariosPendientes(Request $request)
     {
-        try {
-            // Obtener usuarios sin verificar
-            $usuarios = \App\Models\User::query()
-                ->whereNull('email_verified_at')
-                ->whereNotNull('email')
-                ->where('created_at', '<', now()->subHours(24))
-                ->get();
+        $count = \App\Models\User::query()
+            ->whereNull('email_verified_at')
+            ->whereNotNull('email')
+            ->where('created_at', '<', now()->subHours(24))
+            ->count();
 
-            if ($usuarios->isEmpty()) {
-                return back()->with('info', 'No hay usuarios pendientes de recordatorio.');
-            }
+        return response()->json([
+            'count' => $count,
+            'message' => $count > 0 
+                ? "Hay {$count} usuarios pendientes de recordatorio."
+                : 'No hay usuarios pendientes de recordatorio.'
+        ]);
+    }
 
-            $contador = $usuarios->count();
+    /**
+     * Enviar recordatorios en lote (10 usuarios por request).
+     * Llamado repetidamente por AJAX hasta completar todos.
+     */
+    public function enviarLoteRecordatorios(Request $request)
+    {
+        $batchSize = 10; // Emails por request
 
-            // Preparar respuesta
-            $response = back()->with('success', "Enviando {$contador} recordatorios. Revisa el log para ver el progreso.");
+        // Obtener siguiente lote de usuarios
+        $usuarios = \App\Models\User::query()
+            ->whereNull('email_verified_at')
+            ->whereNotNull('email')
+            ->where('created_at', '<', now()->subHours(24))
+            ->whereNull('last_verification_reminder_at')
+            ->orWhere('last_verification_reminder_at', '<', now()->subDays(7))
+            ->take($batchSize)
+            ->get();
 
-            // Enviar respuesta al navegador inmediatamente
-            if (function_exists('fastcgi_finish_request')) {
-                session()->save();
-                $response->send();
-                fastcgi_finish_request();
-            }
-
-            // Continuar procesando en segundo plano
-            ignore_user_abort(true);
-            set_time_limit(600);
-
-            Log::channel('single')->info('Iniciando envío de recordatorios', [
-                'admin_id' => $request->user()->id,
-                'usuarios' => $contador,
+        if ($usuarios->isEmpty()) {
+            return response()->json([
+                'done' => true,
+                'sent' => 0,
+                'message' => 'Todos los recordatorios fueron enviados.'
             ]);
-
-            $enviados = 0;
-            $errores = 0;
-
-            // Enviar emails de forma síncrona (sin cola)
-            foreach ($usuarios as $usuario) {
-                try {
-                    $usuario->notify(new \App\Notifications\RecordatorioVerificacionEmail());
-                    $usuario->last_verification_reminder_at = now();
-                    $usuario->save();
-                    $enviados++;
-                } catch (\Exception $e) {
-                    $errores++;
-                    Log::channel('single')->error('Error enviando a ' . $usuario->email, [
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
-
-            Log::channel('single')->info('Recordatorios completados', [
-                'enviados' => $enviados,
-                'errores' => $errores,
-            ]);
-
-            return $response;
-
-        } catch (\Exception $e) {
-            Log::channel('single')->error('Error procesando recordatorios', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return back()->with('error', 'Error: ' . $e->getMessage());
         }
+
+        $enviados = 0;
+        $errores = [];
+
+        foreach ($usuarios as $usuario) {
+            try {
+                $usuario->notify(new \App\Notifications\RecordatorioVerificacionEmail());
+                $usuario->last_verification_reminder_at = now();
+                $usuario->save();
+                $enviados++;
+            } catch (\Exception $e) {
+                $errores[] = $usuario->email;
+                Log::channel('single')->error('Error enviando recordatorio', [
+                    'email' => $usuario->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // Ver cuántos quedan
+        $remaining = \App\Models\User::query()
+            ->whereNull('email_verified_at')
+            ->whereNotNull('email')
+            ->where('created_at', '<', now()->subHours(24))
+            ->where(function($q) {
+                $q->whereNull('last_verification_reminder_at')
+                  ->orWhere('last_verification_reminder_at', '<', now()->subDays(7));
+            })
+            ->count();
+
+        return response()->json([
+            'done' => $remaining === 0,
+            'sent' => $enviados,
+            'remaining' => $remaining,
+            'errors' => count($errores),
+            'message' => "Enviados: {$enviados}. Restantes: {$remaining}"
+        ]);
     }
 }
