@@ -490,32 +490,42 @@ class ControladorNotificacionesPush extends Controller
     public function ejecutarRecordatoriosManual(Request $request)
     {
         try {
-            // Ejecutar el comando con --force para enviar a todos los pendientes
-            $exitCode = \Illuminate\Support\Facades\Artisan::call('email:recordatorio-verificacion', [
-                '--force' => true,  // Siempre forzar cuando es manual
-            ]);
+            // Obtener usuarios sin verificar (misma lógica que el comando)
+            $usuarios = \App\Models\User::query()
+                ->whereNull('email_verified_at')
+                ->whereNotNull('email')
+                ->where('created_at', '<', now()->subHours(24))
+                ->get();
 
-            $output = \Illuminate\Support\Facades\Artisan::output();
+            if ($usuarios->isEmpty()) {
+                return back()->with('info', 'No hay usuarios pendientes de recordatorio.');
+            }
+
+            $contador = 0;
+            
+            // Encolar las notificaciones (se procesan en segundo plano)
+            foreach ($usuarios as $usuario) {
+                $usuario->notify(new \App\Notifications\RecordatorioVerificacionEmail());
+                $usuario->last_verification_reminder_at = now();
+                $usuario->save();
+                $contador++;
+            }
 
             // Registrar la ejecución manual
-            Log::channel('single')->info('Recordatorios de verificación ejecutados manualmente', [
+            Log::channel('single')->info('Recordatorios de verificación encolados manualmente', [
                 'admin_id' => $request->user()->id,
-                'exit_code' => $exitCode,
-                'force' => $request->has('force'),
+                'usuarios_encolados' => $contador,
             ]);
 
-            if ($exitCode === 0) {
-                return back()->with('success', 'Recordatorios enviados correctamente. ' . strip_tags($output));
-            } else {
-                return back()->with('warning', 'El comando se ejecutó pero hubo algunos errores. ' . strip_tags($output));
-            }
+            return back()->with('success', "Se encolaron {$contador} recordatorios. Se enviarán en segundo plano.");
+
         } catch (\Exception $e) {
-            Log::channel('single')->error('Error ejecutando recordatorios manualmente', [
+            Log::channel('single')->error('Error encolando recordatorios manualmente', [
                 'admin_id' => $request->user()->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Error al ejecutar los recordatorios: ' . $e->getMessage());
+            return back()->with('error', 'Error al encolar los recordatorios: ' . $e->getMessage());
         }
     }
 }
