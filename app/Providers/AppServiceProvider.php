@@ -23,6 +23,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Personalizar URL de verificación para usar query parameters (evita 403 Forbidden)
+        \Illuminate\Auth\Notifications\VerifyEmail::createUrlUsing(function (object $notifiable) {
+            return \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                'verification.verify',
+                \Illuminate\Support\Carbon::now()->addMinutes(\Illuminate\Support\Facades\Config::get('auth.verification.expire', 60)),
+                [
+                    'id' => $notifiable->getKey(),
+                    'hash' => sha1($notifiable->getEmailForVerification()),
+                ]
+            );
+        });
     }
 }

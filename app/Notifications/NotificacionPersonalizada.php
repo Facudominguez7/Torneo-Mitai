@@ -121,8 +121,9 @@ class NotificacionPersonalizada extends Notification
         // Construir URL completa para el enlace de acción
         $urlCompleta = url($this->url);
         
-        // Generar URL de desuscripción usando el ID del usuario
-        $urlDarseDeBaja = url('/email/baja/' . $notifiable->id . '/' . sha1($notifiable->email));
+        // Generar URL de desuscripción usando parámetros de consulta (query string)
+        // Esto evita problemas de 403 Forbidden en servidores con reglas de path estrictas
+        $urlDarseDeBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
 
         return (new MailMessage)
             ->subject("{$this->icono} {$this->titulo} - Torneos Mita'í")

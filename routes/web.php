@@ -153,8 +153,8 @@ Route::post('/email/toggle-suscripcion', [\App\Http\Controllers\ControladorNotif
     ->middleware(['auth', 'throttle:10,1'])
     ->name('email.toggle');
 
-// Darse de baja de emails sin login (usando token de verificación)
-Route::get('/email/baja/{id}/{token}', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'darseDeBajaEmail'])
+// Darse de baja de emails sin login (usando token de verificación via query string)
+Route::get('/email/baja', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'darseDeBajaEmail'])
     ->middleware('throttle:5,1')
     ->name('email.baja');
 
