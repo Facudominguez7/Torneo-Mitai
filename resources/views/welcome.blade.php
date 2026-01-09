@@ -5,6 +5,71 @@
 <body class="bg-[--color-primary]">
     @include('layouts.navigation')
     <main>
+        {{-- Alertas del sistema --}}
+        @if (session()->has('warning') || session()->has('success') || session()->has('error') || session()->has('info') || session()->has('status'))
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+                @if (session('warning'))
+                    <div class="rounded-xl bg-yellow-500/10 border border-yellow-500/30 p-4 flex items-start sm:items-center gap-4 animate-fade-in-down" role="alert">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-triangle-exclamation text-yellow-400 text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-yellow-400 mb-1">Atención</h3>
+                            <p class="text-sm text-yellow-100/90 leading-relaxed">{{ session('warning') }}</p>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-yellow-400/60 hover:text-yellow-400 transition">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+                @endif
+
+                @if (session('success') || session('status'))
+                    <div class="rounded-xl bg-green-500/10 border border-green-500/30 p-4 flex items-start sm:items-center gap-4 animate-fade-in-down my-3" role="alert">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-check text-green-400 text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-green-400 mb-1">¡Éxito!</h3>
+                            <p class="text-sm text-green-100/90 leading-relaxed">{{ session('success') ?? session('status') }}</p>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-green-400/60 hover:text-green-400 transition">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+                @endif
+
+                @if (session('error'))
+                    <div class="rounded-xl bg-red-500/10 border border-red-500/30 p-4 flex items-start sm:items-center gap-4 animate-fade-in-down my-3" role="alert">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-circle-xmark text-red-400 text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-red-400 mb-1">Error</h3>
+                            <p class="text-sm text-red-100/90 leading-relaxed">{{ session('error') }}</p>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-red-400/60 hover:text-red-400 transition">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+                @endif
+
+                @if (session('info'))
+                    <div class="rounded-xl bg-blue-500/10 border border-blue-500/30 p-4 flex items-start sm:items-center gap-4 animate-fade-in-down my-3" role="alert">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-circle-info text-blue-400 text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-blue-400 mb-1">Información</h3>
+                            <p class="text-sm text-blue-100/90 leading-relaxed">{{ session('info') }}</p>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-blue-400/60 hover:text-blue-400 transition">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+                @endif
+            </div>
+        @endif
+
         @php
             $edicionActual = $EdicionSeleccionada ?? $ultimaEdicion;
         @endphp
@@ -279,7 +344,7 @@
                                 <i class="fa-brands fa-facebook text-base"></i>
                                 Facebook
                             </a>
-                            <a href="mailto:hola@torneosmitai.com"
+                            <a href="mailto:info@torneosmitai.com"
                                 class="group inline-flex items-center gap-2 rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-1 hover:border-white hover:bg-white/10">
                                 <i class="fa-solid fa-envelope text-base"></i>
                                 Contacto directo

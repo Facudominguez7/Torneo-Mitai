@@ -365,16 +365,14 @@
     <div class="flex flex-col h-screen">
         @if (isset($EdicionSeleccionada))
             <div class="flex justify-end">
-                <section class="bg-emerald-300 p-2">
-                    <div
-                        class="flex max-w-xs items-center border-r-8 border-[--color-secondary] bg-white p-4 text-emerald-900 shadow-lg">
-                        <div class="min-w-0">
-                            <h2 class="overflow-hidden text-ellipsis whitespace-nowrap">
-                                {{ $EdicionSeleccionada->nombre }}
-                            </h2>
-                        </div>
+                <div
+                    class="flex max-w-xs items-center rounded-lg border-l-4 border-[--color-secondary] bg-white p-4 shadow-md">
+                    <div class="min-w-0">
+                        <h2 class="overflow-hidden text-ellipsis whitespace-nowrap text-lg font-semibold text-gray-800">
+                            {{ $EdicionSeleccionada->nombre }}
+                        </h2>
                     </div>
-                </section>
+                </div>
             </div>
         @endif
         @if (Route::is('admin'))

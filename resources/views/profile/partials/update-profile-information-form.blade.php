@@ -1,4 +1,4 @@
-<section class="space-y-6">
+<section class="space-y-6" x-data="{ resending: false }">
     <header class="space-y-2">
         <h2 class="text-lg font-semibold text-white">
             {{ __('Información de tu perfil') }}
@@ -9,7 +9,7 @@
         </p>
     </header>
 
-    <form id="send-verification" method="post" action="{{ route('verification.send') }}">
+    <form id="send-verification" method="post" action="{{ route('verification.send') }}" @submit="resending = true">
         @csrf
     </form>
 
@@ -31,16 +31,21 @@
             </div>
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <div class="sm:col-span-2 rounded-2xl border border-amber-300/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+                <div class="sm:col-span-2 rounded-2xl border border-amber-300/40 bg-amber-400/10 px-4 py-3 text-sm text-white">
                     <p class="font-medium">{{ __('Tu correo aún no fue verificado.') }}</p>
                     <p class="mt-1">{{ __('Hacelo ahora para asegurarte de recibir todas las novedades del torneo.') }}</p>
                     <button form="send-verification"
-                        class="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-200/50 bg-amber-400/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-amber-50 transition hover:bg-amber-400/30 focus:outline-none focus:ring focus:ring-amber-300/40">
-                        {{ __('Reenviar correo de verificación') }}
+                        :disabled="resending"
+                        class="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/30 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-white/10 focus:outline-none focus:ring focus:ring-white/40 disabled:opacity-50">
+                        <svg x-show="resending" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span x-text="resending ? 'Enviando...' : 'Reenviar notificación'"></span>
                     </button>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-3 rounded-full border border-emerald-200/40 bg-emerald-400/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100">
+                        <p class="mt-3 rounded-xl border border-emerald-200/40 bg-emerald-400/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-emerald-100">
                             {{ __('Te enviamos un nuevo enlace de verificación.') }}
                         </p>
                     @endif
@@ -49,9 +54,9 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-4">
-            <x-primary-button class="inline-flex items-center justify-center gap-2 rounded-full border border-[#f7f280]/40 bg-gradient-to-r from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/85 px-5 py-2 text-sm font-semibold text-white shadow-[0_12px_28px_-18px_rgba(14,75,94,0.7)] transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+            <x-primary-button-profile>
                 {{ __('Guardar cambios') }}
-            </x-primary-button>
+            </x-primary-button-profile>
 
             @if (session('status') === 'profile-updated')
                 <p

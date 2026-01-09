@@ -138,12 +138,30 @@ Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
     Route::get('/suscriptores', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'listarSuscriptores'])
         ->middleware(UserAccesPanelMiddleware::class) // Solo admins
         ->name('push.suscriptores');
+    Route::post('/suscriptores/{id}/reenviar-verificacion', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'reenviarVerificacionManual'])
+        ->middleware(UserAccesPanelMiddleware::class) // Solo admins
+        ->name('push.reenviar-verificacion');
 });
 
 // Ruta pública para obtener la clave VAPID (no requiere autenticación)
 Route::get('/push/vapid-public-key', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'getVapidPublicKey'])
     ->name('push.vapid');
 
+// Rutas para gestión de suscripción a emails de notificación
+// Toggle de suscripción (requiere autenticación)
+Route::post('/email/toggle-suscripcion', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'toggleEmailSubscription'])
+    ->middleware(['auth', 'throttle:10,1'])
+    ->name('email.toggle');
+
+// Darse de baja de emails sin login (usando token de verificación)
+Route::get('/email/baja/{id}/{token}', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'darseDeBajaEmail'])
+    ->middleware('throttle:5,1')
+    ->name('email.baja');
+
+// Estado de suscripción a emails (requiere autenticación)
+Route::get('/email/estado', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'estadoEmail'])
+    ->middleware('auth')
+    ->name('email.estado');
 
 
 require __DIR__ . '/auth.php';

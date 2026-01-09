@@ -39,6 +39,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'restablecer_password' => 'innecesario', // Usuario recién creado por sí mismo, no requiere reset
         ]);
 
         event(new Registered($user));

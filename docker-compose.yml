@@ -102,6 +102,19 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
 
+  # Servicio Mailhog (servidor SMTP para desarrollo)
+  # Interfaz web: http://localhost:8025
+  # Puerto SMTP: 1025
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mitai-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # Puerto SMTP para envío de emails
+      - "8025:8025"   # Interfaz web para ver emails capturados
+    networks:
+      - mitai-network
+
 networks:
   mitai-network:
     driver: bridge
