@@ -75,8 +75,9 @@ class EnviarRecordatorioVerificacion extends Command
 
         $enviados = 0;
         $errores = 0;
+        $lote = 0;
 
-        foreach ($usuarios as $usuario) {
+        foreach ($usuarios as $index => $usuario) {
             try {
                 // Enviar notificación de recordatorio
                 $usuario->notify(new \App\Notifications\RecordatorioVerificacionEmail());
@@ -87,6 +88,13 @@ class EnviarRecordatorioVerificacion extends Command
 
                 $enviados++;
                 $this->line("  ✓ Enviado a: {$usuario->email}");
+
+                // Pausar cada 10 emails para no sobrecargar el servidor
+                if (($enviados % 10) === 0) {
+                    $lote++;
+                    $this->info("  ... Lote {$lote} completado, pausando 2 segundos...");
+                    sleep(2);
+                }
 
             } catch (\Exception $e) {
                 $errores++;

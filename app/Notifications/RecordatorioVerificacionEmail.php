@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
@@ -13,12 +12,10 @@ use Illuminate\Notifications\Messages\MailMessage;
  * Se envía a usuarios que no han verificado su email para recordarles
  * que lo hagan para poder recibir notificaciones del torneo.
  * Incluye información sobre beneficios y opción de darse de baja.
- * 
- * Implementa ShouldQueue para procesarse en segundo plano y no bloquear el servidor.
  *
  * @package App\Notifications
  */
-class RecordatorioVerificacionEmail extends Notification implements ShouldQueue
+class RecordatorioVerificacionEmail extends Notification
 {
     use Queueable;
 

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\WebPush\WebPushChannel;
@@ -13,12 +14,23 @@ use NotificationChannels\WebPush\WebPushMessage;
  * 
  * Permite enviar notificaciones con título, mensaje y URL personalizados.
  * Se envía tanto por WebPush como por email a usuarios suscritos.
+ * Implementa ShouldQueue para procesarse en segundo plano.
  *
  * @package App\Notifications
  */
-class NotificacionPersonalizada extends Notification
+class NotificacionPersonalizada extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    /**
+     * Número de intentos antes de fallar.
+     */
+    public $tries = 3;
+
+    /**
+     * Tiempo máximo de procesamiento (segundos).
+     */
+    public $timeout = 60;
 
     /**
      * Título de la notificación.
@@ -122,17 +134,23 @@ class NotificacionPersonalizada extends Notification
         $urlCompleta = url($this->url);
         
         // Generar URL de desuscripción usando parámetros de consulta (query string)
-        // Esto evita problemas de 403 Forbidden en servidores con reglas de path estrictas
         $urlDarseDeBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
 
         return (new MailMessage)
-            ->subject("{$this->icono} {$this->titulo} - Torneos Mita'í")
+            ->subject("{$this->titulo} - Torneos Mita'í")
             ->greeting("¡Hola {$notifiable->name}!")
             ->line($this->mensaje)
             ->action('Ver más información', $urlCompleta)
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
-            ->salutation("Saludos, el equipo de Torneos Mita'í ⚽");
+            ->salutation("Saludos, el equipo de Torneos Mita'í")
+            // Headers anti-spam
+            ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
+                $message->getHeaders()
+                    ->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>")
+                    ->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click')
+                    ->addTextHeader('Precedence', 'bulk');
+            });
     }
 
     /**

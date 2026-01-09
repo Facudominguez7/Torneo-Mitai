@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\WebPush\WebPushChannel;
@@ -13,12 +14,23 @@ use NotificationChannels\WebPush\WebPushMessage;
  * 
  * Se envía cuando un administrador carga el resultado de un partido.
  * La notificación se envía vía Web Push y Email a usuarios suscritos.
+ * Implementa ShouldQueue para procesarse en segundo plano.
  *
  * @package App\Notifications
  */
-class ResultadoCargado extends Notification
+class ResultadoCargado extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    /**
+     * Número de intentos antes de fallar.
+     */
+    public $tries = 3;
+
+    /**
+     * Tiempo máximo de procesamiento (segundos).
+     */
+    public $timeout = 60;
 
     /**
      * Datos del partido (objeto o array).
@@ -138,7 +150,7 @@ class ResultadoCargado extends Notification
         $resultado = "**{$equipoLocal}** {$golesLocal} - {$golesVisitante} **{$equipoVisitante}**";
         
         $mail = (new MailMessage)
-            ->subject("⚽ Resultado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'í")
+            ->subject("Resultado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'í")
             ->greeting("¡Hola {$notifiable->name}!")
             ->line('Se ha cargado un nuevo resultado:')
             ->line('')
@@ -146,14 +158,21 @@ class ResultadoCargado extends Notification
 
         // Agregar categoría si existe
         if ($categoria) {
-            $mail->line("📋 Categoría: {$categoria}");
+            $mail->line("Categoría: {$categoria}");
         }
 
         return $mail
             ->action('Ver fixture completo', $urlFixture)
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
-            ->salutation("Saludos, el equipo de Torneos Mita'í ⚽");
+            ->salutation("Saludos, el equipo de Torneos Mita'í")
+            // Headers anti-spam
+            ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
+                $message->getHeaders()
+                    ->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>")
+                    ->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click')
+                    ->addTextHeader('Precedence', 'bulk');
+            });
     }
 
     /**

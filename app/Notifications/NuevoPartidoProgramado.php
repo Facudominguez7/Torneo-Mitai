@@ -148,7 +148,7 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
         $partidoTexto = "**{$equipoLocal}** vs **{$equipoVisitante}**";
         
         $mail = (new MailMessage)
-            ->subject("📅 Partido Programado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'í")
+            ->subject("Partido Programado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'í")
             ->greeting("¡Hola {$notifiable->name}!")
             ->line($this->mensaje ?? 'Se ha programado un nuevo partido:')
             ->line('')
@@ -170,7 +170,14 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
             ->action('Ver fixture completo', $urlFixture)
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
-            ->salutation("Saludos, el equipo de Torneos Mita'í ⚽");
+            ->salutation("Saludos, el equipo de Torneos Mita'í")
+            // Headers anti-spam
+            ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
+                $message->getHeaders()
+                    ->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>")
+                    ->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click')
+                    ->addTextHeader('Precedence', 'bulk');
+            });
     }
 
     /**
