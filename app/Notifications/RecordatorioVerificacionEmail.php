@@ -3,20 +3,17 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
 /**
  * Notificación de recordatorio para verificar email.
  * 
- * Se envía a usuarios que no han verificado su email para recordarles
- * que lo hagan para poder recibir notificaciones del torneo.
- * Usa cola para procesar en segundo plano.
+ * Envía de forma síncrona para evitar duplicados.
  *
  * @package App\Notifications
  */
-class RecordatorioVerificacionEmail extends Notification implements ShouldQueue
+class RecordatorioVerificacionEmail extends Notification
 {
     use Queueable;
 

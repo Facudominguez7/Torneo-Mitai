@@ -490,10 +490,7 @@ class ControladorNotificacionesPush extends Controller
     public function ejecutarRecordatoriosManual(Request $request)
     {
         try {
-            // Aumentar tiempo de ejecución para procesar muchos emails
-            set_time_limit(300); // 5 minutos
-
-            // Obtener usuarios sin verificar (misma lógica que el comando)
+            // Obtener usuarios sin verificar
             $usuarios = \App\Models\User::query()
                 ->whereNull('email_verified_at')
                 ->whereNotNull('email')
@@ -504,41 +501,58 @@ class ControladorNotificacionesPush extends Controller
                 return back()->with('info', 'No hay usuarios pendientes de recordatorio.');
             }
 
-            $contador = 0;
-            
-            // Encolar las notificaciones
-            foreach ($usuarios as $usuario) {
-                $usuario->notify(new \App\Notifications\RecordatorioVerificacionEmail());
-                $usuario->last_verification_reminder_at = now();
-                $usuario->save();
-                $contador++;
+            $contador = $usuarios->count();
+
+            // Preparar respuesta
+            $response = back()->with('success', "Enviando {$contador} recordatorios. Revisa el log para ver el progreso.");
+
+            // Enviar respuesta al navegador inmediatamente
+            if (function_exists('fastcgi_finish_request')) {
+                session()->save();
+                $response->send();
+                fastcgi_finish_request();
             }
 
-            Log::channel('single')->info('Recordatorios encolados, procesando cola...', [
+            // Continuar procesando en segundo plano
+            ignore_user_abort(true);
+            set_time_limit(600);
+
+            Log::channel('single')->info('Iniciando envío de recordatorios', [
                 'admin_id' => $request->user()->id,
-                'usuarios_encolados' => $contador,
+                'usuarios' => $contador,
             ]);
 
-            // Procesar la cola inmediatamente (en lotes de 50)
-            \Illuminate\Support\Facades\Artisan::call('queue:work', [
-                '--stop-when-empty' => true,
-                '--max-jobs' => 50,
-                '--max-time' => 240, // 4 minutos máximo
+            $enviados = 0;
+            $errores = 0;
+
+            // Enviar emails de forma síncrona (sin cola)
+            foreach ($usuarios as $usuario) {
+                try {
+                    $usuario->notify(new \App\Notifications\RecordatorioVerificacionEmail());
+                    $usuario->last_verification_reminder_at = now();
+                    $usuario->save();
+                    $enviados++;
+                } catch (\Exception $e) {
+                    $errores++;
+                    Log::channel('single')->error('Error enviando a ' . $usuario->email, [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            Log::channel('single')->info('Recordatorios completados', [
+                'enviados' => $enviados,
+                'errores' => $errores,
             ]);
 
-            Log::channel('single')->info('Cola procesada manualmente', [
-                'admin_id' => $request->user()->id,
-            ]);
-
-            return back()->with('success', "Se procesaron {$contador} recordatorios correctamente.");
+            return $response;
 
         } catch (\Exception $e) {
             Log::channel('single')->error('Error procesando recordatorios', [
-                'admin_id' => $request->user()->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Error al procesar los recordatorios: ' . $e->getMessage());
+            return back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
 }
