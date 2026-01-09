@@ -520,8 +520,10 @@ class ControladorNotificacionesPush extends Controller
             ->whereNull('email_verified_at')
             ->whereNotNull('email')
             ->where('created_at', '<', now()->subHours(24))
-            ->whereNull('last_verification_reminder_at')
-            ->orWhere('last_verification_reminder_at', '<', now()->subDays(7))
+            ->where(function($q) {
+                $q->whereNull('last_verification_reminder_at')
+                  ->orWhere('last_verification_reminder_at', '<', now()->subDays(7));
+            })
             ->take($batchSize)
             ->get();
 
@@ -542,6 +544,11 @@ class ControladorNotificacionesPush extends Controller
                 $usuario->last_verification_reminder_at = now();
                 $usuario->save();
                 $enviados++;
+                
+                Log::channel('single')->info('Recordatorio enviado', [
+                    'email' => $usuario->email,
+                    'nombre' => $usuario->name,
+                ]);
             } catch (\Exception $e) {
                 $errores[] = $usuario->email;
                 Log::channel('single')->error('Error enviando recordatorio', [
