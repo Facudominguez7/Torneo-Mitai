@@ -6,8 +6,24 @@
     @include('layouts.navigation')
     <main>
         {{-- Alertas del sistema --}}
-        @if (session()->has('warning') || session()->has('success') || session()->has('error') || session()->has('info') || session()->has('status'))
+        @if (session()->has('warning') || session()->has('success') || session()->has('error') || session()->has('info') || session()->has('status') || request()->query('verified') == '1')
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+                {{-- Alerta de email verificado exitosamente --}}
+                @if(request()->query('verified') == '1')
+                    <div class="rounded-xl bg-green-500/10 border border-green-500/30 p-4 flex items-start sm:items-center gap-4 animate-fade-in-down my-3" role="alert">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-envelope-circle-check text-green-400 text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-green-400 mb-1">¡Email verificado correctamente! 🎉</h3>
+                            <p class="text-sm text-green-100/90 leading-relaxed">Ahora recibirás notificaciones sobre las novedades del torneo.</p>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-green-400/60 hover:text-green-400 transition">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+                @endif
+
                 @if (session('warning'))
                     <div class="rounded-xl bg-yellow-500/10 border border-yellow-500/30 p-4 flex items-start sm:items-center gap-4 animate-fade-in-down" role="alert">
                         <div class="flex-shrink-0 w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
