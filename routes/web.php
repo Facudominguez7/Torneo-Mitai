@@ -141,6 +141,9 @@ Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
     Route::post('/suscriptores/{id}/reenviar-verificacion', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'reenviarVerificacionManual'])
         ->middleware(UserAccesPanelMiddleware::class) // Solo admins
         ->name('push.reenviar-verificacion');
+    Route::post('/ejecutar-recordatorios', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'ejecutarRecordatoriosManual'])
+        ->middleware(UserAccesPanelMiddleware::class) // Solo admins
+        ->name('push.ejecutar-recordatorios');
 });
 
 // Ruta pública para obtener la clave VAPID (no requiere autenticación)

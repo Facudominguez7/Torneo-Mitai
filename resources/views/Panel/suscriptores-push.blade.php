@@ -10,9 +10,20 @@
                 </svg>
                 Gestión de Usuarios y Notificaciones
             </h1>
-            <span class="bg-blue-600 text-white px-4 py-2 rounded-full font-bold text-lg">
-                {{ $usuarios->total() }} Usuarios
-            </span>
+            <div class="flex items-center gap-3">
+                <form action="{{ route('push.ejecutar-recordatorios') }}" method="POST" class="inline-block" onsubmit="return confirm('¿Enviar recordatorios de verificación a todos los usuarios pendientes?')">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        Enviar Recordatorios
+                    </button>
+                </form>
+                <span class="bg-blue-600 text-white px-4 py-2 rounded-full font-bold text-lg">
+                    {{ $usuarios->total() }} Usuarios
+                </span>
+            </div>
         </div>
 
         {{-- Filtros --}}

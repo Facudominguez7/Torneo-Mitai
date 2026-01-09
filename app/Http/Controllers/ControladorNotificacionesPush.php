@@ -479,4 +479,43 @@ class ControladorNotificacionesPush extends Controller
             'puede_recibir_emails' => $user->quiereRecibirEmails(),
         ]);
     }
+
+    /**
+     * Ejecutar manualmente el comando de recordatorios de verificación.
+     * Solo accesible por administradores.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function ejecutarRecordatoriosManual(Request $request)
+    {
+        try {
+            // Ejecutar el comando con --force para enviar a todos los pendientes
+            $exitCode = \Illuminate\Support\Facades\Artisan::call('email:recordatorio-verificacion', [
+                '--force' => true,  // Siempre forzar cuando es manual
+            ]);
+
+            $output = \Illuminate\Support\Facades\Artisan::output();
+
+            // Registrar la ejecución manual
+            Log::channel('single')->info('Recordatorios de verificación ejecutados manualmente', [
+                'admin_id' => $request->user()->id,
+                'exit_code' => $exitCode,
+                'force' => $request->has('force'),
+            ]);
+
+            if ($exitCode === 0) {
+                return back()->with('success', 'Recordatorios enviados correctamente. ' . strip_tags($output));
+            } else {
+                return back()->with('warning', 'El comando se ejecutó pero hubo algunos errores. ' . strip_tags($output));
+            }
+        } catch (\Exception $e) {
+            Log::channel('single')->error('Error ejecutando recordatorios manualmente', [
+                'admin_id' => $request->user()->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Error al ejecutar los recordatorios: ' . $e->getMessage());
+        }
+    }
 }
