@@ -149,6 +149,9 @@ Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
     Route::post('/recordatorios/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteRecordatorios'])
         ->middleware(UserAccesPanelMiddleware::class)
         ->name('push.enviar-lote');
+    Route::post('/recordatorios/log-completo', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'logEnvioCompleto'])
+        ->middleware(UserAccesPanelMiddleware::class)
+        ->name('push.log-completo');
 });
 
 // Ruta pública para obtener la clave VAPID (no requiere autenticación)

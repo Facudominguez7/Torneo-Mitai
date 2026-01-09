@@ -59,31 +59,36 @@ class RecordatorioVerificacionEmail extends Notification
             ]
         );
         
-        // URL para darse de baja de estos recordatorios (aunque no esté verificado)
+        // URL para darse de baja
         $urlBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
 
         return (new MailMessage)
-            ->subject("Verificá tu email para recibir notificaciones - Torneos Mita'í")
-            ->greeting("¡Hola {$notifiable->name}!")
-            ->line('Te escribimos porque todavía no verificaste tu email.')
+            ->subject("Verifica tu email - Torneos Mita'i")
+            ->greeting("Hola {$notifiable->name},")
+            ->line('Tu cuenta en Torneos Mita\'i todavia no tiene el email verificado.')
             ->line('')
-            ->line('**¿Por qué verificar?**')
-            ->line('✉️ Recibir resultados de partidos al instante')
-            ->line('📅 Enterarte de nuevos partidos programados')
-            ->line('📢 Recibir anuncios importantes del torneo')
+            ->line('Al verificar tu email podras:')
+            ->line('- Recibir resultados de partidos')
+            ->line('- Enterarte de partidos programados')
+            ->line('- Recibir noticias del torneo')
             ->line('')
-            ->line('Verificar tu email es muy fácil, solo hacé clic en el botón:')
-            ->action('Verificar mi email', $urlVerificacion)
+            ->line('Hace clic en el boton para verificar:')
+            ->action('Verificar Email', $urlVerificacion)
             ->line('')
-            ->line('---')
-            ->line("Si no querés recibir más emails nuestros, podés [darte de baja aquí]({$urlBaja}).")
-            ->salutation("Saludos, el equipo de Torneos Mita'í ⚽")
+            ->line('Si no creaste esta cuenta, podes ignorar este mensaje.')
+            ->salutation("Saludos, Torneos Mita'i")
             // Headers anti-spam
-            ->withSymfonyMessage(function ($message) use ($urlBaja) {
-                $message->getHeaders()
-                    ->addTextHeader('List-Unsubscribe', "<{$urlBaja}>")
-                    ->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click')
-                    ->addTextHeader('Precedence', 'bulk');
+            ->withSymfonyMessage(function ($message) use ($urlBaja, $notifiable) {
+                $headers = $message->getHeaders();
+                // Unsubscribe headers (requerido por Gmail/Outlook)
+                $headers->addTextHeader('List-Unsubscribe', "<{$urlBaja}>");
+                $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+                // Indica que es email masivo legítimo
+                $headers->addTextHeader('Precedence', 'bulk');
+                // Reply-To mejora reputación
+                $headers->addTextHeader('Reply-To', 'info@torneosmitai.com');
+                // Message-ID único
+                $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });
     }
 

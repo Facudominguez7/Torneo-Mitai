@@ -73,14 +73,14 @@ class ControladorListaBuenaFe extends Controller
             $jugadoresPorCategoria = $estadisticasService->obtenerJugadoresPorCategoriaDosUltimasFechas($EdicionSeleccionada->id);
         }
 
-        // Obtener equipos con más de 16 jugadores en la lista de buena fe
+        // Obtener equipos con más de 18 jugadores en la lista de buena fe
         $equiposExcedidos = [];
         if ($EdicionSeleccionada) {
             $equiposExcedidos = ListaBuenaFe::select('idEquipo', 'idCategoria', DB::raw('count(*) as total'))
                 ->where('idEdicion', $EdicionSeleccionada->id)
                 ->where('activo', true)
                 ->groupBy('idEquipo', 'idCategoria')
-                ->having('total', '>', 16)
+                ->having('total', '>', 18)
                 ->with(['equipo', 'categoria']) // Cargar relaciones
                 ->get();
         }

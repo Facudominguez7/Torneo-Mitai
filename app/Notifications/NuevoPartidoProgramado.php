@@ -148,8 +148,8 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
         $partidoTexto = "**{$equipoLocal}** vs **{$equipoVisitante}**";
         
         $mail = (new MailMessage)
-            ->subject("Partido Programado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'í")
-            ->greeting("¡Hola {$notifiable->name}!")
+            ->subject("Partido Programado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'i")
+            ->greeting("Hola {$notifiable->name},")
             ->line($this->mensaje ?? 'Se ha programado un nuevo partido:')
             ->line('')
             ->line($partidoTexto);
@@ -157,26 +157,28 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
         // Agregar fecha y hora si está disponible
         if ($horario) {
             $fecha = Carbon::parse($horario);
-            $mail->line("📆 Fecha: " . $fecha->format('d/m/Y'));
-            $mail->line("🕐 Hora: " . $fecha->format('H:i') . " hs");
+            $mail->line("Fecha: " . $fecha->format('d/m/Y'));
+            $mail->line("Hora: " . $fecha->format('H:i') . " hs");
         }
 
         // Agregar cancha si está disponible
         if ($cancha) {
-            $mail->line("🏟️ Cancha: {$cancha}");
+            $mail->line("Cancha: {$cancha}");
         }
 
         return $mail
             ->action('Ver fixture completo', $urlFixture)
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
-            ->salutation("Saludos, el equipo de Torneos Mita'í")
+            ->salutation("Saludos, Torneos Mita'i")
             // Headers anti-spam
             ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
-                $message->getHeaders()
-                    ->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>")
-                    ->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click')
-                    ->addTextHeader('Precedence', 'bulk');
+                $headers = $message->getHeaders();
+                $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
+                $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+                $headers->addTextHeader('Precedence', 'bulk');
+                $headers->addTextHeader('Reply-To', 'info@torneosmitai.com');
+                $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });
     }
 

@@ -577,4 +577,22 @@ class ControladorNotificacionesPush extends Controller
             'message' => "Enviados: {$enviados}. Restantes: {$remaining}"
         ]);
     }
+
+    /**
+     * Registrar finalización del envío masivo en el log.
+     */
+    public function logEnvioCompleto(Request $request)
+    {
+        $enviados = $request->input('enviados', 0);
+        $errores = $request->input('errores', 0);
+
+        Log::channel('single')->info('==========================================');
+        Log::channel('single')->info('PROCESO DE ENVÍO MASIVO COMPLETADO');
+        Log::channel('single')->info("Total Enviados: {$enviados}");
+        Log::channel('single')->info("Total Errores: {$errores}");
+        Log::channel('single')->info('Admin Responsable: ' . $request->user()->name . ' (ID: ' . $request->user()->id . ')');
+        Log::channel('single')->info('==========================================');
+
+        return response()->json(['status' => 'ok']);
+    }
 }

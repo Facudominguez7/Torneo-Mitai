@@ -150,8 +150,8 @@ class ResultadoCargado extends Notification implements ShouldQueue
         $resultado = "**{$equipoLocal}** {$golesLocal} - {$golesVisitante} **{$equipoVisitante}**";
         
         $mail = (new MailMessage)
-            ->subject("Resultado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'í")
-            ->greeting("¡Hola {$notifiable->name}!")
+            ->subject("Resultado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'i")
+            ->greeting("Hola {$notifiable->name},")
             ->line('Se ha cargado un nuevo resultado:')
             ->line('')
             ->line($resultado);
@@ -165,13 +165,15 @@ class ResultadoCargado extends Notification implements ShouldQueue
             ->action('Ver fixture completo', $urlFixture)
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
-            ->salutation("Saludos, el equipo de Torneos Mita'í")
+            ->salutation("Saludos, Torneos Mita'i")
             // Headers anti-spam
             ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
-                $message->getHeaders()
-                    ->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>")
-                    ->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click')
-                    ->addTextHeader('Precedence', 'bulk');
+                $headers = $message->getHeaders();
+                $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
+                $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+                $headers->addTextHeader('Precedence', 'bulk');
+                $headers->addTextHeader('Reply-To', 'info@torneosmitai.com');
+                $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });
     }
 

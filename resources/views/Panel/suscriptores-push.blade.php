@@ -12,13 +12,22 @@
             </h1>
             <div class="flex items-center gap-3">
                 <div id="recordatorios-container">
-                    <button type="button" id="btn-enviar-recordatorios" onclick="iniciarEnvioRecordatorios()" 
-                        class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                        <span id="btn-text">Enviar Recordatorios</span>
-                    </button>
+                    <div class="flex gap-2">
+                        <button type="button" id="btn-enviar-recordatorios" onclick="iniciarEnvioRecordatorios()" 
+                            class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            <span id="btn-text">Enviar Recordatorios</span>
+                        </button>
+                        <button type="button" id="btn-detener" onclick="detenerEnvio()" 
+                            class="hidden inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            Detener
+                        </button>
+                    </div>
                     <div id="progreso-recordatorios" class="hidden mt-2 text-sm text-gray-600">
                         <div class="flex items-center gap-2">
                             <svg class="animate-spin w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24">
@@ -176,76 +185,172 @@
         let enviando = false;
         let totalEnviados = 0;
         let totalErrores = 0;
+        let abortController = null;
 
-        async function iniciarEnvioRecordatorios() {
-            if (enviando) return;
+        // Recuperar estado al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const estadoGuardado = localStorage.getItem('mitai_recordatorios_estado');
+            if (estadoGuardado) {
+                const estado = JSON.parse(estadoGuardado);
+                if (estado.activo) {
+                    totalEnviados = estado.enviados;
+                    totalErrores = estado.errores;
+                    // Actualizar UI
+                    mostrarProgreso(true);
+                    actualizarTextoProgreso(`Recuperando sesión... Enviados previos: ${totalEnviados}`);
+                    // Reanudar automáticamente
+                    iniciarEnvioRecordatorios(true);
+                }
+            }
+        });
+
+        async function iniciarEnvioRecordatorios(esReanudacion = false) {
+            if (enviando && !esReanudacion) return;
             
-            if (!confirm('¿Enviar recordatorios de verificación a todos los usuarios pendientes?')) {
+            if (!esReanudacion && !confirm('¿Enviar recordatorios de verificación a todos los usuarios pendientes?')) {
                 return;
             }
 
             enviando = true;
-            totalEnviados = 0;
-            totalErrores = 0;
+            abortController = new AbortController();
+
+            if (!esReanudacion) {
+                totalEnviados = 0;
+                totalErrores = 0;
+            }
             
-            const btn = document.getElementById('btn-enviar-recordatorios');
-            const btnText = document.getElementById('btn-text');
-            const progreso = document.getElementById('progreso-recordatorios');
-            const progresoTexto = document.getElementById('progreso-texto');
-            
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
-            btnText.textContent = 'Enviando...';
-            progreso.classList.remove('hidden');
-            progresoTexto.textContent = 'Iniciando...';
+            mostrarProgreso(true);
+            actualizarEstadoLocal(true);
 
-            await enviarLotes(progresoTexto);
+            await enviarLotes();
 
-            // Finalizar
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            btnText.textContent = 'Enviar Recordatorios';
-            progresoTexto.textContent = `✓ Completado. Enviados: ${totalEnviados}, Errores: ${totalErrores}`;
-            enviando = false;
-
-            // Ocultar progreso después de 5 segundos
-            setTimeout(() => {
-                progreso.classList.add('hidden');
-            }, 5000);
+            finalizarEnvio();
         }
 
-        async function enviarLotes(progresoTexto) {
+        async function enviarLotes() {
             let done = false;
             
-            while (!done) {
+            while (!done && enviando) {
                 try {
                     const response = await fetch('{{ route("push.enviar-lote") }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        }
+                        },
+                        signal: abortController.signal
                     });
                     
                     const data = await response.json();
                     
-                    totalEnviados += data.sent;
-                    totalErrores += data.errors;
+                    // Sumar al total acumulado (la API devuelve el conteo del lote actual o podríamos cambiar la lógica)
+                    // Si la API devuelve el total acumulado en this session, usamos eso.
+                    // Pero como es un endpoint stateless, devuelve lo que procesó en ESE request.
+                    // Así que sumamos.
                     
-                    progresoTexto.textContent = `Enviados: ${totalEnviados} | Restantes: ${data.remaining}`;
+                    // IMPORTANTE: La API que hicimos antes devuelve 'sent' (int) del lote.
+                    // PERO si se recarga la página, 'totalEnviados' variable local empieza en lo guardado.
+                    totalEnviados += data.sent;
+                    // data.errors es int
+                    totalErrores += data.errors; 
+                    
+                    actualizarTextoProgreso(`Enviando... Total: ${totalEnviados} | Restantes aprox: ${data.remaining}`);
+                    actualizarEstadoLocal(true);
                     
                     done = data.done;
                     
-                    // Pequeña pausa entre lotes para no saturar
                     if (!done) {
                         await new Promise(resolve => setTimeout(resolve, 500));
                     }
                 } catch (error) {
-                    console.error('Error:', error);
-                    progresoTexto.textContent = 'Error: ' + error.message;
-                    done = true;
+                    if (error.name === 'AbortError') {
+                        console.log('Envío detenido por el usuario');
+                    } else {
+                        console.error('Error:', error);
+                        actualizarTextoProgreso('Error de conexión. Reintentando en 5s...');
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+                    }
                 }
             }
+        }
+
+        function detenerEnvio() {
+            if (confirm('¿Detener el envío de recordatorios?')) {
+                enviando = false;
+                if (abortController) abortController.abort();
+                actualizarEstadoLocal(false);
+                finalizarEnvio(true);
+            }
+        }
+
+        function finalizarEnvio(detenido = false) {
+            enviando = false;
+            actualizarEstadoLocal(false); // Limpiar estado activo
+            
+            const btn = document.getElementById('btn-enviar-recordatorios');
+            const btnText = document.getElementById('btn-text');
+            const progresoTexto = document.getElementById('progreso-texto');
+            
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('btn-detener').classList.add('hidden');
+            
+            if (detenido) {
+                btnText.textContent = 'Continuar Envío';
+                progresoTexto.textContent = `⏸️ Detenido. Enviados: ${totalEnviados}`;
+            } else {
+                btnText.textContent = 'Enviar Recordatorios';
+                progresoTexto.textContent = `✓ Completado. Total enviados: ${totalEnviados}`;
+                
+                // Registrar log final en el servidor
+                fetch('{{ route("push.log-completo") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        enviados: totalEnviados,
+                        errores: totalErrores
+                    })
+                }).catch(console.error);
+
+                // Limpiar storage completo al finalizar con éxito
+                localStorage.removeItem('mitai_recordatorios_estado');
+                setTimeout(() => {
+                    document.getElementById('progreso-recordatorios').classList.add('hidden');
+                }, 10000);
+            }
+        }
+
+        function mostrarProgreso(activo) {
+            const btn = document.getElementById('btn-enviar-recordatorios');
+            const btnText = document.getElementById('btn-text');
+            const progreso = document.getElementById('progreso-recordatorios');
+            const btnDetener = document.getElementById('btn-detener');
+
+            progreso.classList.remove('hidden');
+            
+            if (activo) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btnText.textContent = 'Enviando...';
+                btnDetener.classList.remove('hidden');
+            }
+        }
+
+        function actualizarTextoProgreso(texto) {
+            document.getElementById('progreso-texto').textContent = texto;
+        }
+
+        function actualizarEstadoLocal(activo) {
+            const estado = {
+                activo: activo,
+                enviados: totalEnviados,
+                errores: totalErrores,
+                timestamp: new Date().getTime()
+            };
+            localStorage.setItem('mitai_recordatorios_estado', JSON.stringify(estado));
         }
     </script>
 @endsection
