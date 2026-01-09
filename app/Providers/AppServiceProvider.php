@@ -23,6 +23,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Registrar listener para logear emails enviados
+        \Illuminate\Support\Facades\Event::listen(
+            \Illuminate\Notifications\Events\NotificationSent::class,
+            \App\Listeners\LogNotificacionEnviada::class
+        );
+
         // Personalizar URL de verificación para usar query parameters (evita 403 Forbidden)
         \Illuminate\Auth\Notifications\VerifyEmail::createUrlUsing(function (object $notifiable) {
             return \Illuminate\Support\Facades\URL::temporarySignedRoute(
