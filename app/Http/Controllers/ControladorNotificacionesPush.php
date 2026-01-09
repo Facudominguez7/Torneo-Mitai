@@ -490,6 +490,9 @@ class ControladorNotificacionesPush extends Controller
     public function ejecutarRecordatoriosManual(Request $request)
     {
         try {
+            // Aumentar tiempo de ejecución para procesar muchos emails
+            set_time_limit(300); // 5 minutos
+
             // Obtener usuarios sin verificar (misma lógica que el comando)
             $usuarios = \App\Models\User::query()
                 ->whereNull('email_verified_at')
@@ -503,7 +506,7 @@ class ControladorNotificacionesPush extends Controller
 
             $contador = 0;
             
-            // Encolar las notificaciones (se procesan en segundo plano)
+            // Encolar las notificaciones
             foreach ($usuarios as $usuario) {
                 $usuario->notify(new \App\Notifications\RecordatorioVerificacionEmail());
                 $usuario->last_verification_reminder_at = now();
@@ -511,21 +514,31 @@ class ControladorNotificacionesPush extends Controller
                 $contador++;
             }
 
-            // Registrar la ejecución manual
-            Log::channel('single')->info('Recordatorios de verificación encolados manualmente', [
+            Log::channel('single')->info('Recordatorios encolados, procesando cola...', [
                 'admin_id' => $request->user()->id,
                 'usuarios_encolados' => $contador,
             ]);
 
-            return back()->with('success', "Se encolaron {$contador} recordatorios. Se enviarán en segundo plano.");
+            // Procesar la cola inmediatamente (en lotes de 50)
+            \Illuminate\Support\Facades\Artisan::call('queue:work', [
+                '--stop-when-empty' => true,
+                '--max-jobs' => 50,
+                '--max-time' => 240, // 4 minutos máximo
+            ]);
+
+            Log::channel('single')->info('Cola procesada manualmente', [
+                'admin_id' => $request->user()->id,
+            ]);
+
+            return back()->with('success', "Se procesaron {$contador} recordatorios correctamente.");
 
         } catch (\Exception $e) {
-            Log::channel('single')->error('Error encolando recordatorios manualmente', [
+            Log::channel('single')->error('Error procesando recordatorios', [
                 'admin_id' => $request->user()->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Error al encolar los recordatorios: ' . $e->getMessage());
+            return back()->with('error', 'Error al procesar los recordatorios: ' . $e->getMessage());
         }
     }
 }

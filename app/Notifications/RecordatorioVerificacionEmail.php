@@ -12,8 +12,7 @@ use Illuminate\Notifications\Messages\MailMessage;
  * 
  * Se envía a usuarios que no han verificado su email para recordarles
  * que lo hagan para poder recibir notificaciones del torneo.
- * Incluye información sobre beneficios y opción de darse de baja.
- * Implementa ShouldQueue para procesarse en segundo plano.
+ * Usa cola para procesar en segundo plano.
  *
  * @package App\Notifications
  */
