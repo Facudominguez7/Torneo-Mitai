@@ -416,8 +416,15 @@ class ControladorNotificacionesPush extends Controller
      * @param string $token Token de verificación (sha1 del email)
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function darseDeBajaEmail(int $id, string $token)
+    public function darseDeBajaEmail(Request $request)
     {
+        $id = $request->query('id');
+        $token = $request->query('token');
+
+        if (!$id || !$token) {
+            return redirect('/')->with('error', 'Enlace incompleto.');
+        }
+
         $user = \App\Models\User::find($id);
 
         // Verificar que el usuario existe
@@ -432,7 +439,7 @@ class ControladorNotificacionesPush extends Controller
                 'user_id' => $id,
                 'ip' => request()->ip(),
             ]);
-            return redirect('/')->with('error', 'Enlace inválido.');
+            return redirect('/')->with('error', 'Enlace inválido o expirado.');
         }
 
         // Si ya está dado de baja, informar

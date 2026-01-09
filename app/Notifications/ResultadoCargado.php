@@ -131,9 +131,8 @@ class ResultadoCargado extends Notification
 
         // Construir URL del fixture
         $urlFixture = url('/fixture' . ($idEdicion ? "?idEdicion={$idEdicion}" : ''));
-        
-        // Generar URL de desuscripción
-        $urlDarseDeBaja = url('/email/baja/' . $notifiable->id . '/' . sha1($notifiable->email));
+        // URL para darse de baja de estos recordatorios
+        $urlDarseDeBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
 
         // Construir línea de resultado con formato atractivo
         $resultado = "**{$equipoLocal}** {$golesLocal} - {$golesVisitante} **{$equipoVisitante}**";

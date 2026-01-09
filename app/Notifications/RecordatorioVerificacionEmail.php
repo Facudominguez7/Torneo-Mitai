@@ -41,11 +41,18 @@ class RecordatorioVerificacionEmail extends Notification
      */
     public function toMail($notifiable): MailMessage
     {
-        // URL de verificación usando la acción firmada de Laravel
-        $urlVerificacion = url("/email/verify/{$notifiable->id}/" . sha1($notifiable->email));
+        // URL de verificación usando la acción firmada de Laravel con query params
+        $urlVerificacion = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'verification.verify',
+            \Illuminate\Support\Carbon::now()->addMinutes(\Illuminate\Support\Facades\Config::get('auth.verification.expire', 60)),
+            [
+                'id' => $notifiable->getKey(),
+                'hash' => sha1($notifiable->getEmailForVerification()),
+            ]
+        );
         
         // URL para darse de baja de estos recordatorios (aunque no esté verificado)
-        $urlBaja = url('/email/baja/' . $notifiable->id . '/' . sha1($notifiable->email));
+        $urlBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
 
         return (new MailMessage)
             ->subject("📧 ¡Verificá tu email para recibir notificaciones! - Torneos Mita'í")

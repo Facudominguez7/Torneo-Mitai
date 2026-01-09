@@ -142,7 +142,7 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
         $urlFixture = url('/fixture');
         
         // Generar URL de desuscripción
-        $urlDarseDeBaja = url('/email/baja/' . $notifiable->id . '/' . sha1($notifiable->email));
+        $urlDarseDeBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
 
         // Construir línea del partido
         $partidoTexto = "**{$equipoLocal}** vs **{$equipoVisitante}**";
