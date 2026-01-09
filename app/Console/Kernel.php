@@ -32,6 +32,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // Procesar trabajos en cola cada minuto (para emails diferidos)
+        $schedule->command('queue:work', ['--stop-when-empty', '--max-time=50'])
+                 ->everyMinute()
+                 ->withoutOverlapping()
+                 ->runInBackground();
+
         // Enviar recordatorios de verificación de email todos los días a las 10:00
         $schedule->command('email:recordatorio-verificacion')
                  ->dailyAt('10:00')

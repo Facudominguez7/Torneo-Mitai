@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
@@ -12,12 +13,24 @@ use Illuminate\Notifications\Messages\MailMessage;
  * Se envía a usuarios que no han verificado su email para recordarles
  * que lo hagan para poder recibir notificaciones del torneo.
  * Incluye información sobre beneficios y opción de darse de baja.
+ * 
+ * Implementa ShouldQueue para procesarse en segundo plano y no bloquear el servidor.
  *
  * @package App\Notifications
  */
-class RecordatorioVerificacionEmail extends Notification
+class RecordatorioVerificacionEmail extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    /**
+     * Número de intentos antes de fallar.
+     */
+    public $tries = 3;
+
+    /**
+     * Tiempo máximo de procesamiento (segundos).
+     */
+    public $timeout = 60;
 
     /**
      * Obtener los canales de entrega de la notificación.
@@ -55,7 +68,7 @@ class RecordatorioVerificacionEmail extends Notification
         $urlBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
 
         return (new MailMessage)
-            ->subject("📧 ¡Verificá tu email para recibir notificaciones! - Torneos Mita'í")
+            ->subject("Verificá tu email para recibir notificaciones - Torneos Mita'í")
             ->greeting("¡Hola {$notifiable->name}!")
             ->line('Te escribimos porque todavía no verificaste tu email.')
             ->line('')
@@ -69,7 +82,14 @@ class RecordatorioVerificacionEmail extends Notification
             ->line('')
             ->line('---')
             ->line("Si no querés recibir más emails nuestros, podés [darte de baja aquí]({$urlBaja}).")
-            ->salutation("Saludos, el equipo de Torneos Mita'í ⚽");
+            ->salutation("Saludos, el equipo de Torneos Mita'í ⚽")
+            // Headers anti-spam
+            ->withSymfonyMessage(function ($message) use ($urlBaja) {
+                $message->getHeaders()
+                    ->addTextHeader('List-Unsubscribe', "<{$urlBaja}>")
+                    ->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click')
+                    ->addTextHeader('Precedence', 'bulk');
+            });
     }
 
     /**
