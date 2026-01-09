@@ -5,7 +5,7 @@
             <p class="text-sm text-white/60">Accedé a todos los apartados del torneo y seguí tus equipos favoritos.</p>
         </div>
 
-        <form method="POST" action="{{ route('register') }}" class="space-y-5">
+        <form method="POST" action="{{ route('register') }}" class="space-y-5" id="register-form">
             @csrf
 
             <div class="space-y-2">
@@ -33,9 +33,16 @@
             </div>
 
             <div class="space-y-4">
-                <x-primary-button class="w-full justify-center">
-                    {{ __('Crear cuenta') }}
-                </x-primary-button>
+                {{-- Botón con loader --}}
+                <button type="submit" id="register-btn"
+                    class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-yellow-300 via-amber-300 to-yellow-400 px-6 py-3 text-sm font-semibold text-black shadow-lg shadow-yellow-500/40 transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-yellow-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-300 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed">
+                    {{-- Spinner (oculto por defecto) --}}
+                    <svg id="register-spinner" class="hidden animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="register-text">Crear cuenta</span>
+                </button>
 
                 <div class="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-white/40">
                     <span class="h-px flex-1 bg-white/20"></span>
@@ -61,4 +68,17 @@
             </div>
         </form>
     </div>
+
+    {{-- Script para loader --}}
+    <script>
+        document.getElementById('register-form').addEventListener('submit', function() {
+            const btn = document.getElementById('register-btn');
+            const spinner = document.getElementById('register-spinner');
+            const text = document.getElementById('register-text');
+            
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+            text.textContent = 'Creando cuenta...';
+        });
+    </script>
 </x-guest-layout>

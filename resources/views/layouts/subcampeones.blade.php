@@ -60,34 +60,46 @@
                             [
                                 'titulo' => 'Subcampeones Copa de Oro',
                                 'coleccion' => $subcampeonesOro,
-                                'gradiente' => 'from-amber-200/95 via-amber-300/90 to-yellow-200/80',
-                                'borde' => 'border-yellow-200/60',
+                                'card_classes' => 'group relative overflow-hidden rounded-3xl border border-yellow-400/50 bg-gradient-to-br from-black/80 via-black/60 to-black/80 p-6 text-white shadow-[0_0_30px_-10px_rgba(250,204,21,0.15)] transition-transform duration-300 hover:-translate-y-1 hover:border-yellow-400/80 hover:shadow-[0_0_40px_-5px_rgba(250,204,21,0.3)]',
+                                'icon_wrapper' => 'text-yellow-400',
+                                'shield_classes' => 'h-24 w-24 overflow-hidden rounded-full border border-yellow-400/30 bg-white/5 p-2 shadow-inner shadow-yellow-400/10',
+                                'text_muted' => 'text-gray-400',
                                 'icono' => 'fa-medal',
                                 'badge' => 'Perseverancia dorada',
+                                'badge_classes' => 'hidden sm:inline-flex items-center gap-2 rounded-full border border-yellow-400/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-yellow-200/80'
                             ],
                             [
                                 'titulo' => 'Subcampeones Copa de Plata',
                                 'coleccion' => $subcampeonesPlata,
-                                'gradiente' => 'from-slate-200/95 via-slate-300/90 to-slate-400/85',
-                                'borde' => 'border-white/40',
+                                'card_classes' => 'group relative overflow-hidden rounded-3xl border border-gray-400/50 bg-gradient-to-br from-black/80 via-black/60 to-black/80 p-6 text-white shadow-[0_0_30px_-10px_rgba(156,163,175,0.15)] transition-transform duration-300 hover:-translate-y-1 hover:border-gray-300/80 hover:shadow-[0_0_40px_-5px_rgba(156,163,175,0.3)]',
+                                'icon_wrapper' => 'text-gray-300',
+                                'shield_classes' => 'h-24 w-24 overflow-hidden rounded-full border border-gray-400/30 bg-white/5 p-2 shadow-inner shadow-gray-400/10',
+                                'text_muted' => 'text-gray-400',
                                 'icono' => 'fa-award',
                                 'badge' => 'Esfuerzo plateado',
+                                'badge_classes' => 'hidden sm:inline-flex items-center gap-2 rounded-full border border-gray-400/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-gray-300/80'
                             ],
                             [
                                 'titulo' => 'Subcampeones Copa de Bronce',
                                 'coleccion' => $subcampeonesBronce,
-                                'gradiente' => 'from-amber-300/95 via-amber-400/90 to-amber-500/85',
-                                'borde' => 'border-amber-300/60',
+                                'card_classes' => 'group relative overflow-hidden rounded-3xl border border-bronce-400/50 bg-gradient-to-br from-black/80 via-black/60 to-black/80 p-6 text-white shadow-[0_0_30px_-10px_rgba(205,127,50,0.15)] transition-transform duration-300 hover:-translate-y-1 hover:border-bronce-400/80 hover:shadow-[0_0_40px_-5px_rgba(205,127,50,0.3)]',
+                                'icon_wrapper' => 'text-bronce-400',
+                                'shield_classes' => 'h-24 w-24 overflow-hidden rounded-full border border-bronce-400/30 bg-white/5 p-2 shadow-inner shadow-bronce-400/10',
+                                'text_muted' => 'text-gray-400',
                                 'icono' => 'fa-shield-halved',
                                 'badge' => 'Espíritu bronce',
+                                'badge_classes' => 'hidden sm:inline-flex items-center gap-2 rounded-full border border-bronce-400/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-bronce-200/80'
                             ],
                             [
                                 'titulo' => "Subcampeones Copa Mita'í",
                                 'coleccion' => $subcampeonesMitai,
-                                'gradiente' => 'from-emerald-200/95 via-emerald-300/90 to-emerald-400/85',
-                                'borde' => 'border-emerald-200/60',
+                                'card_classes' => 'group relative overflow-hidden rounded-3xl border border-emerald-500/50 bg-gradient-to-br from-black/80 via-black/60 to-black/80 p-6 text-white shadow-[0_0_30px_-10px_rgba(16,185,129,0.15)] transition-transform duration-300 hover:-translate-y-1 hover:border-emerald-500/80 hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.3)]',
+                                'icon_wrapper' => 'text-emerald-500',
+                                'shield_classes' => 'h-24 w-24 overflow-hidden rounded-full border border-emerald-500/30 bg-white/5 p-2 shadow-inner shadow-emerald-500/10',
+                                'text_muted' => 'text-gray-400',
                                 'icono' => 'fa-star',
                                 'badge' => 'Orgullo mita\'í',
+                                'badge_classes' => 'hidden sm:inline-flex items-center gap-2 rounded-full border border-emerald-500/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300/80'
                             ],
                         ];
                     @endphp
@@ -96,9 +108,8 @@
                         <div class="mt-12 first:mt-10">
                             <div class="flex items-center justify-between gap-4">
                                 <h2 class="text-2xl sm:text-3xl font-bold text-white">{{ $bloque['titulo'] }}</h2>
-                                <span
-                                    class="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-                                    <i class="fa-solid {{ $bloque['icono'] }} text-yellow-100"></i>
+                                <span class="{{ $bloque['badge_classes'] }}">
+                                    <i class="fa-solid {{ $bloque['icono'] }}"></i>
                                     {{ $bloque['badge'] }}
                                 </span>
                             </div>
@@ -110,30 +121,27 @@
                             @else
                                 <div class="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                                     @foreach ($bloque['coleccion'] as $equipo)
-                                        <article
-                                            class="group relative overflow-hidden rounded-3xl border {{ $bloque['borde'] }} bg-gradient-to-br {{ $bloque['gradiente'] }} p-6 text-slate-900 shadow-[0_22px_58px_-34px_rgba(0,0,0,0.7)] transition-transform duration-300 hover:-translate-y-1">
-                                            <div
-                                                class="absolute -right-14 -top-20 h-40 w-40 rounded-full bg-white/50 blur-3xl opacity-60 transition-opacity duration-300 group-hover:opacity-90">
-                                            </div>
+                                        <article class="{{ $bloque['card_classes'] }}">
+                                            <!-- Glow effect -->
+                                            <div class="absolute -right-14 -top-20 h-40 w-40 rounded-full bg-white/5 blur-3xl opacity-60 transition-opacity duration-300 group-hover:opacity-90"></div>
+                                            
                                             <div class="relative flex h-full flex-col justify-between">
-                                                <div
-                                                    class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-slate-600/70">
+                                                <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
                                                     <span>{{ $equipo->categoria->nombreCategoria ?? 'Categoría' }}</span>
-                                                    <i class="fa-solid {{ $bloque['icono'] }} text-lg text-slate-700/80"></i>
+                                                    <i class="fa-solid {{ $bloque['icono'] }} text-lg {{ $bloque['icon_wrapper'] }}"></i>
                                                 </div>
                                                 <div class="mt-6 flex flex-col items-center text-center">
-                                                    <div
-                                                        class="h-24 w-24 overflow-hidden rounded-full border border-slate-200/60 bg-white/50 p-2 shadow-inner">
+                                                    <div class="{{ $bloque['shield_classes'] }}">
                                                         <img src="{{ asset('fotos/equipos/' . ($equipo->equipo->foto ?? 'Logo_Mitai_SinFondo.png')) }}"
                                                             alt="{{ $equipo->equipo->nombre ?? 'Equipo' }}"
                                                             class="h-full w-full object-contain"
                                                             onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';">
                                                     </div>
-                                                    <h3 class="mt-4 text-xl font-bold text-slate-900">
+                                                    <h3 class="mt-4 text-xl font-bold text-white tracking-wide">
                                                         {{ $equipo->equipo->nombre ?? 'Equipo por confirmar' }}
                                                     </h3>
                                                 </div>
-                                                <p class="mt-5 text-center text-sm text-slate-700/80">
+                                                <p class="mt-5 text-center text-sm {{ $bloque['text_muted'] }}">
                                                     El esfuerzo y la constancia también se celebran en el torneo.
                                                 </p>
                                             </div>

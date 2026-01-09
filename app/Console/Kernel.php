@@ -5,17 +5,43 @@ namespace App\Console;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
+/**
+ * Kernel de consola para comandos artisan.
+ * 
+ * Define los comandos disponibles y la programación de tareas automáticas.
+ */
 class Kernel extends ConsoleKernel
 {
+    /**
+     * Comandos artisan registrados.
+     *
+     * @var array
+     */
     protected $commands = [
         \App\Console\Commands\MergeInstitucionesDuplicadas::class,
+        \App\Console\Commands\EnviarRecordatorioVerificacion::class,
     ];
 
+    /**
+     * Definir la programación de comandos.
+     * 
+     * Los comandos aquí definidos se ejecutarán automáticamente
+     * según su programación cuando el scheduler esté activo.
+     *
+     * @param Schedule $schedule
+     */
     protected function schedule(Schedule $schedule): void
     {
-        // Programar comandos si es necesario
+        // Enviar recordatorios de verificación de email todos los días a las 10:00
+        $schedule->command('email:recordatorio-verificacion')
+                 ->dailyAt('10:00')
+                 ->withoutOverlapping()
+                 ->appendOutputTo(storage_path('logs/recordatorios.log'));
     }
 
+    /**
+     * Registrar comandos de consola.
+     */
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');

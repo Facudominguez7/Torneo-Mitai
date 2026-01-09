@@ -212,23 +212,42 @@ class ControladorNotificacionesPush extends Controller
         $url = $validated['url'] ?? '/';
         $icono = $validated['icono'] ?? '📢';
 
-        // Obtener usuarios con suscripciones push activas
-        $usuariosSuscritos = \App\Models\User::whereHas('pushSubscriptions')->get();
+        // Obtener TODOS los usuarios que deben recibir notificaciones:
+        // - Usuarios con email verificado y suscripción a email activa
+        // - Usuarios con push activo (independientemente del email)
+        $usuariosEmail = \App\Models\User::suscritosAEmail()->get();
+        $usuariosPush = \App\Models\User::whereHas('pushSubscriptions')->get();
+        
+        // Combinar ambos grupos sin duplicados
+        $todosLosUsuarios = $usuariosEmail->merge($usuariosPush)->unique('id');
 
-        if ($usuariosSuscritos->isEmpty()) {
+        if ($todosLosUsuarios->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'No hay usuarios suscritos a notificaciones',
+                'message' => 'No hay usuarios para notificar',
                 'count' => 0
             ]);
         }
 
-        // Enviar notificación a cada usuario suscrito
+        // Crear la notificación
         $notificacion = new \App\Notifications\NotificacionPersonalizada($titulo, $mensaje, $url, $icono);
         
-        foreach ($usuariosSuscritos as $usuario) {
+        $contadorPush = 0;
+        $contadorEmail = 0;
+
+        // Enviar notificación a cada usuario
+        // Cada notificación decide qué canales usar según las preferencias del usuario
+        foreach ($todosLosUsuarios as $usuario) {
             try {
                 $usuario->notify($notificacion);
+                
+                // Contar por tipo de notificación
+                if ($usuario->pushSubscriptions()->exists()) {
+                    $contadorPush++;
+                }
+                if ($usuario->quiereRecibirEmails()) {
+                    $contadorEmail++;
+                }
             } catch (\Exception $e) {
                 Log::channel('single')->error('Error enviando notificación a usuario', [
                     'user_id' => $usuario->id,
@@ -237,35 +256,220 @@ class ControladorNotificacionesPush extends Controller
             }
         }
 
-        // Registrar evento
+        // Registrar evento con detalles de envío
         Log::channel('single')->info('Notificación manual enviada', [
             'admin_id' => $request->user()->id,
             'titulo' => $titulo,
-            'usuarios_notificados' => $usuariosSuscritos->count(),
+            'usuarios_push' => $contadorPush,
+            'usuarios_email' => $contadorEmail,
+            'total_usuarios' => $todosLosUsuarios->count(),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Notificación enviada correctamente',
-            'count' => $usuariosSuscritos->count()
+            'message' => "Notificación enviada: {$contadorPush} push, {$contadorEmail} email",
+            'count' => $todosLosUsuarios->count(),
+            'push_count' => $contadorPush,
+            'email_count' => $contadorEmail
         ]);
     }
 
     /**
      * Listar usuarios con suscripciones push activas.
      * Solo accesible por administradores.
+     * 
+     * Muestra una tabla con todos los usuarios que tienen notificaciones push
+     * activas, incluyendo su estado de suscripción a emails.
+     *
+     * @return \Illuminate\View\View
      */
-    public function listarSuscriptores()
+    /**
+     * Listar usuarios para gestión de notificaciones.
+     * Solo accesible por administradores.
+     * 
+     * Muestra una tabla con todos los usuarios, permitiendo filtrar por:
+     * - Búsqueda de texto (nombre/email)
+     * - Estado de notificación Push
+     * - Estado de notificación Email
+     * - Estado de verificación de Email
+     *
+     * @param Request $request
+     * @return \Illuminate\View\View
+     */
+    public function listarSuscriptores(Request $request)
     {
-        $suscriptores = \App\Models\User::whereHas('pushSubscriptions')
-            ->withCount('pushSubscriptions')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = \App\Models\User::withCount('pushSubscriptions')
+            ->orderBy('created_at', 'desc');
+
+        // Filtro por búsqueda (nombre o email)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Filtro por estado de Push
+        if ($request->filled('push_status') && $request->push_status !== 'todos') {
+            if ($request->push_status === 'activo') {
+                $query->has('pushSubscriptions');
+            } else { // inactivo
+                $query->doesntHave('pushSubscriptions');
+            }
+        }
+
+        // Filtro por estado de Email (Suscripción)
+        if ($request->filled('email_notif_status') && $request->email_notif_status !== 'todos') {
+            if ($request->email_notif_status === 'activo') {
+                $query->where('email_subscribed', true);
+            } else { // inactivo
+                $query->where('email_subscribed', false);
+            }
+        }
+
+        // Filtro por estado de Verificación de Email
+        if ($request->filled('verified_status') && $request->verified_status !== 'todos') {
+            if ($request->verified_status === 'verificado') {
+                $query->whereNotNull('email_verified_at');
+            } else { // no_verificado
+                $query->whereNull('email_verified_at');
+            }
+        }
+
+        $usuarios = $query->paginate(20)->withQueryString();
 
         // Variables necesarias para el layout admin.blade.php
         $ediciones = \App\Models\Edicion::orderBy('id', 'desc')->get();
         $EdicionSeleccionada = $ediciones->first();
 
-        return view('Panel.suscriptores-push', compact('suscriptores', 'ediciones', 'EdicionSeleccionada'));
+        return view('Panel.suscriptores-push', compact('usuarios', 'ediciones', 'EdicionSeleccionada'));
+    }
+
+    /**
+     * Reenviar manualmente el correo de verificación a un usuario.
+     * Solo accesible por administradores.
+     *
+     * @param Request $request
+     * @param int $id ID del usuario
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function reenviarVerificacionManual(Request $request, int $id)
+    {
+        $user = \App\Models\User::findOrFail($id);
+
+        if ($user->hasVerifiedEmail()) {
+            return back()->with('info', "El usuario {$user->name} ya tiene el email verificado.");
+        }
+
+        $user->sendEmailVerificationNotification();
+        
+        Log::channel('single')->info('Email de verificación reenviado manualmente por admin', [
+            'admin_id' => $request->user()->id,
+            'target_user_id' => $user->id,
+        ]);
+
+        return back()->with('success', "Email de verificación enviado exitosamente a {$user->email}.");
+    }
+
+    /**
+     * Alternar la suscripción del usuario a notificaciones por email.
+     * 
+     * Permite a un usuario autenticado activar o desactivar
+     * la recepción de notificaciones por correo electrónico.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function toggleEmailSubscription(Request $request)
+    {
+        $user = $request->user();
+        
+        // Alternar el estado de suscripción
+        $user->email_subscribed = !$user->email_subscribed;
+        $user->save();
+
+        // Registrar el cambio para auditoría
+        Log::channel('single')->info('Suscripción email modificada', [
+            'user_id' => $user->id,
+            'email_subscribed' => $user->email_subscribed,
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'email_subscribed' => $user->email_subscribed,
+            'message' => $user->email_subscribed 
+                ? 'Notificaciones por email activadas' 
+                : 'Notificaciones por email desactivadas'
+        ]);
+    }
+
+    /**
+     * Dar de baja a un usuario de notificaciones por email.
+     * 
+     * Ruta pública que permite a usuarios darse de baja sin iniciar sesión,
+     * usando un token de verificación basado en sha1 del email.
+     * Esto se usa en los enlaces de baja incluidos en cada email.
+     *
+     * @param int $id ID del usuario
+     * @param string $token Token de verificación (sha1 del email)
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function darseDeBajaEmail(int $id, string $token)
+    {
+        $user = \App\Models\User::find($id);
+
+        // Verificar que el usuario existe
+        if (!$user) {
+            return redirect('/')->with('error', 'Usuario no encontrado.');
+        }
+
+        // Verificar el token de seguridad
+        $tokenEsperado = sha1($user->email);
+        if (!hash_equals($tokenEsperado, $token)) {
+            Log::channel('single')->warning('Intento de baja con token inválido', [
+                'user_id' => $id,
+                'ip' => request()->ip(),
+            ]);
+            return redirect('/')->with('error', 'Enlace inválido.');
+        }
+
+        // Si ya está dado de baja, informar
+        if (!$user->email_subscribed) {
+            return redirect('/')->with('info', 'Ya te diste de baja de las notificaciones por email.');
+        }
+
+        // Dar de baja al usuario
+        $user->email_subscribed = false;
+        $user->save();
+
+        // Registrar para auditoría
+        Log::channel('single')->info('Usuario dado de baja de emails via enlace', [
+            'user_id' => $user->id,
+            'ip' => request()->ip(),
+        ]);
+
+        return redirect('/')->with('success', '¡Te has dado de baja correctamente de las notificaciones por email!');
+    }
+
+    /**
+     * Obtener el estado actual de suscripción a emails del usuario.
+     * 
+     * Devuelve información sobre si el usuario tiene habilitadas
+     * las notificaciones por email.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function estadoEmail(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'email_subscribed' => $user->email_subscribed,
+            'email_verified' => $user->hasVerifiedEmail(),
+            'puede_recibir_emails' => $user->quiereRecibirEmails(),
+        ]);
     }
 }

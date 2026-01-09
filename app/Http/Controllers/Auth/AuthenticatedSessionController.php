@@ -21,6 +21,9 @@ class AuthenticatedSessionController extends Controller
 
     /**
      * Handle an incoming authentication request.
+     * 
+     * Valida credenciales, verifica si necesita restablecer contraseña,
+     * y advierte si el email no está verificado para recibir notificaciones.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
@@ -39,6 +42,14 @@ class AuthenticatedSessionController extends Controller
         }
     
         $request->session()->regenerate();
+
+        // Advertir al usuario si no tiene email verificado y reenviar correo
+        if (!$user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
+
+            return redirect()->intended(route('home', absolute: false))
+                ->with('warning', '⚠️ Tu email no está verificado. Te hemos enviado un nuevo enlace de verificación. Revisá tu bandeja de entrada o spam para recibir notificaciones.');
+        }
     
         return redirect()->intended(route('home', absolute: false));
     }

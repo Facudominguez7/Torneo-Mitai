@@ -93,29 +93,37 @@
                                 'icono' => 'fa-shield-halved',
                                 'badge' => 'Espíritu bronce',
                                 'detalleCopa' => 'Copa de Bronce',
-                                'card_classes' => 'group relative flex flex-col overflow-hidden rounded-3xl border border-amber-200/60 bg-gradient-to-br from-amber-600/95 via-amber-200/90 to-amber-600/85 p-6 text-amber-950 shadow-[0_24px_60px_-30px_rgba(217,119,6,0.9)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_32px_70px_-28px_rgba(217,119,6,1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-200',
-                                'glow_classes' => 'absolute -right-12 -top-12 h-32 w-32 rounded-full bg-amber-300 blur-3xl transition-opacity duration-300 group-hover:opacity-70',
-                                'icon_wrapper' => 'flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-200/60 text-2xl text-amber-900',
-                                'tag_classes' => 'text-xs font-semibold uppercase tracking-[0.3em] text-amber-800/80',
-                                'shield_wrapper' => 'h-24 w-24 overflow-hidden rounded-full border border-amber-200/70 bg-white/50 p-2 shadow-inner shadow-amber-600/20',
-                                'title_classes' => 'mt-4 text-2xl font-bold text-amber-950',
-                                'subtitle_classes' => 'mt-2 text-sm text-amber-900/80',
-                                'cta_classes' => 'mt-6 inline-flex items-center gap-2 text-sm font-semibold text-amber-950',
+                                'card_classes' => 'group relative flex flex-col overflow-hidden rounded-3xl border border-bronce-200/60 bg-gradient-to-br from-bronce-600/95 via-bronce-200/90 to-bronce-600/85 p-6 text-bronce-950 shadow-[0_24px_60px_-30px_rgba(205,127,50,0.9)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_32px_70px_-28px_rgba(205,127,50,1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-bronce-200',
+                                'glow_classes' => 'absolute -right-12 -top-12 h-32 w-32 rounded-full bg-bronce-300 blur-3xl transition-opacity duration-300 group-hover:opacity-70',
+                                'icon_wrapper' => 'flex h-12 w-12 items-center justify-center rounded-2xl bg-bronce-200/60 text-2xl text-bronce-900',
+                                'tag_classes' => 'text-xs font-semibold uppercase tracking-[0.3em] text-bronce-800/80',
+                                'shield_wrapper' => 'h-24 w-24 overflow-hidden rounded-full border border-bronce-200/70 bg-white/50 p-2 shadow-inner shadow-bronce-600/20',
+                                'title_classes' => 'mt-4 text-2xl font-bold text-bronce-950',
+                                'subtitle_classes' => 'mt-2 text-sm text-bronce-900/80',
+                                'cta_classes' => 'mt-6 inline-flex items-center gap-2 text-sm font-semibold text-bronce-950',
                             ],
                             [
-                                'titulo' => "Campeones Copa Mita'í",
-                                'coleccion' => $campeonesMitai,
-                                'icono' => 'fa-award',
-                                'badge' => 'Orgullo del torneo',
-                                'detalleCopa' => "Copa Mita'í",
-                                'card_classes' => 'group relative flex flex-col overflow-hidden rounded-3xl border-2 border-emerald-500 bg-emerald-300 p-6 text-black shadow-[0_24px_60px_-30px_rgba(52,211,153,0.9)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_32px_70px_-28px_rgba(52,211,153,1)]',
-                                'glow_classes' => 'absolute -right-12 -top-12 h-32 w-32 rounded-full bg-emerald-300 blur-3xl transition-opacity duration-300 group-hover:opacity-70',
-                                'icon_wrapper' => 'flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-300/80 text-2xl text-black',
-                                'tag_classes' => 'text-xs font-semibold uppercase tracking-[0.3em] text-black/80',
-                                'shield_wrapper' => 'h-24 w-24 overflow-hidden rounded-full border border-emerald-300 bg-white/80 p-2 shadow-inner shadow-emerald-600/20',
-                                'title_classes' => 'mt-4 text-2xl font-bold text-white',
-                                'subtitle_classes' => 'mt-2 text-sm text-black/80',
-                                'cta_classes' => 'mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white',
+                              'titulo' => "Campeones Copa Mita'í",
+                              'coleccion' => $campeonesMitai,
+                              'icono' => 'fa-award',
+                              'badge' => 'Orgullo del torneo',
+                              'detalleCopa' => "Copa Mita'í",
+
+                              'card_classes' => 'group relative flex flex-col overflow-hidden rounded-3xl border border-emerald-400/25 bg-gradient-to-br from-emerald-950/70 via-emerald-900/45 to-black/70 p-6 text-emerald-50 shadow-[0_24px_60px_-30px_rgba(16,185,129,0.35)] ring-1 ring-emerald-400/15 backdrop-blur-md transition-transform duration-300 hover:-translate-y-1 hover:ring-emerald-300/25 hover:shadow-[0_32px_70px_-28px_rgba(16,185,129,0.5)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-400',
+
+                              'glow_classes' => 'pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-emerald-500/20 blur-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-100',
+
+                              'icon_wrapper' => 'flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-400/20 text-2xl text-emerald-300',
+
+                              'tag_classes' => 'text-xs font-semibold uppercase tracking-[0.35em] text-emerald-200/80',
+
+                              'shield_wrapper' => 'h-24 w-24 overflow-hidden rounded-full bg-white/90 p-2 ring-1 ring-emerald-400/25 shadow-inner shadow-black/30',
+
+                              'title_classes' => 'mt-4 text-2xl font-bold text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)]',
+
+                              'subtitle_classes' => 'mt-2 text-sm text-emerald-200/80',
+
+                              'cta_classes' => 'mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-emerald-200',
                             ],
                         ];
                     @endphp
