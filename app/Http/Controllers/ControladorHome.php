@@ -49,14 +49,6 @@ class ControladorHome extends Controller
         $ediciones = Edicion::all();
         $idEdicion = $request->query('idEdicion');
         $horarioString = $request->query('horario');
-        $horario = $request->query('horario');
-        if ($horario) {
-            if (date('w', strtotime($horario)) == 0) { // Si es domingo
-                $horario = date('Y-m-d H:i:s', strtotime($horario));
-            } else {
-                $horario = date('Y-m-d H:i:s', strtotime('next Sunday ' . $horario));
-            }
-        }
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $busquedaFecha = $request->query('busqueda');
 
@@ -91,8 +83,9 @@ class ControladorHome extends Controller
                 return $query->where('partidos.idFechas', $ultimaFecha->id);
             });
 
-        if ($horario) {
-            $partidosQuery->where('partidos.horario_datetime', $horario);
+        // Filtrar por horario usando TIME() para comparar solo la hora
+        if ($horarioString) {
+            $partidosQuery->whereRaw('TIME(partidos.horario_datetime) = ?', [$horarioString . ':00']);
         }
 
         $partidos = $partidosQuery->orderByDesc('f.id')
