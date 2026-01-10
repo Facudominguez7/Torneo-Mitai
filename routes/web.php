@@ -98,6 +98,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
         Route::post('/migrar', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'migrarDesdePartidos'])->name('lista-buena-fe.migrar');
         Route::post('/migrar-todos', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'migrarTodos'])->name('lista-buena-fe.migrar-todos');
         Route::put('/resolver-conflicto/{id}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'resolverConflicto'])->name('lista-buena-fe.resolver-conflicto');
+        Route::get('/buscar-dni', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'buscarPorDni'])->name('lista-buena-fe.buscar-dni');
     });
     
     // En routes/web.php

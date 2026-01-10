@@ -517,6 +517,69 @@ class ControladorListaBuenaFe extends Controller
     }
 
     /**
+     * Buscar jugador por DNI para autocompletado
+     * 
+     * Busca si un DNI ya está registrado en el sistema y retorna
+     * los datos del jugador (nombre, apellido, fecha de nacimiento)
+     * para autocompletar el formulario de alta en Lista de Buena Fe.
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function buscarPorDni(Request $request)
+    {
+        $request->validate([
+            'dni' => 'required|digits_between:7,8',
+        ]);
+        
+        $dni = $request->dni;
+        
+        // Buscar jugador en la tabla principal
+        $jugador = Jugador::find($dni);
+        
+        if (!$jugador) {
+            return response()->json([
+                'encontrado' => false,
+                'mensaje' => 'DNI no registrado en el sistema'
+            ]);
+        }
+        
+        // Buscar fecha de nacimiento más reciente
+        $fechaNacimiento = null;
+        
+        // Primero buscar en lista_buena_fe (más confiable y reciente)
+        $registroLBF = ListaBuenaFe::where('dni_jugador', $dni)
+            ->whereNotNull('fecha_nacimiento')
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        if ($registroLBF && $registroLBF->fecha_nacimiento) {
+            $fechaNacimiento = $registroLBF->fecha_nacimiento->format('Y-m-d');
+        } else {
+            // Si no hay en lista_buena_fe, buscar en planilla_jugadores
+            $registroPlanilla = PlanillaJugador::where('dni_jugador', $dni)
+                ->whereNotNull('fecha_nacimiento')
+                ->orderBy('id', 'desc')
+                ->first();
+            
+            if ($registroPlanilla && $registroPlanilla->fecha_nacimiento) {
+                // La fecha puede venir como string o como Carbon, manejamos ambos casos
+                $fechaNacimiento = $registroPlanilla->fecha_nacimiento instanceof \Carbon\Carbon 
+                    ? $registroPlanilla->fecha_nacimiento->format('Y-m-d')
+                    : $registroPlanilla->fecha_nacimiento;
+            }
+        }
+        
+        return response()->json([
+            'encontrado' => true,
+            'nombre' => $jugador->nombre,
+            'apellido' => $jugador->apellido,
+            'fecha_nacimiento' => $fechaNacimiento,
+            'mensaje' => 'Jugador encontrado - Datos cargados automáticamente'
+        ]);
+    }
+
+    /**
      * Migrar jugadores existentes de planillas a lista de buena fe
      */
     public function migrarDesdePartidos(Request $request)

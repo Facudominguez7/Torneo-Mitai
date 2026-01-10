@@ -107,7 +107,7 @@
                         ➕ Agregar Jugador a la Lista de Buena Fe
                     </summary>
 
-                    <form method="POST" action="{{ route('lista-buena-fe.agregar') }}"
+                    <form method="POST" action="{{ route('lista-buena-fe.agregar') }}" id="formAgregarJugador"
                         class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         @csrf
                         <input type="hidden" name="idEquipo" value="{{ $equipoSeleccionado->idEquipo }}">
@@ -116,28 +116,44 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">DNI del Jugador:</label>
-                            <input type="text" name="dni_jugador" required pattern="\d{7,8}"
+                            <input type="text" name="dni_jugador" id="dni_jugador" required pattern="\d{7,8}"
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Ej: 12345678">
+                                placeholder="Ej: 12345678" autocomplete="off">
+                            {{-- Indicador de estado de búsqueda --}}
+                            <div id="dni_status" class="mt-1 text-sm hidden">
+                                <span id="dni_buscando" class="text-blue-600 hidden">
+                                    <svg class="animate-spin inline h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Buscando...
+                                </span>
+                                <span id="dni_encontrado" class="text-green-600 hidden">
+                                    ✅ <span id="dni_mensaje_encontrado"></span>
+                                </span>
+                                <span id="dni_no_encontrado" class="text-gray-500 hidden">
+                                    ℹ️ DNI no registrado - Complete los datos manualmente
+                                </span>
+                            </div>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nombre:</label>
-                            <input type="text" name="nombre_jugador" required
+                            <input type="text" name="nombre_jugador" id="nombre_jugador" required
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Nombre del jugador">
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Apellido:</label>
-                            <input type="text" name="apellido_jugador" required
+                            <input type="text" name="apellido_jugador" id="apellido_jugador" required
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Apellido del jugador">
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento:</label>
-                            <input type="date" name="fecha_nacimiento" required
+                            <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" required
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
 
@@ -439,5 +455,193 @@
             }
             printFrame.src = url;
         }
+
+        /**
+         * Autocompletado de datos de jugador por DNI
+         * 
+         * Cuando el usuario termina de escribir un DNI (7-8 dígitos),
+         * se busca automáticamente en la base de datos y se completan
+         * los campos de nombre, apellido y fecha de nacimiento.
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            const dniInput = document.getElementById('dni_jugador');
+            const nombreInput = document.getElementById('nombre_jugador');
+            const apellidoInput = document.getElementById('apellido_jugador');
+            const fechaInput = document.getElementById('fecha_nacimiento');
+            
+            // Elementos de estado
+            const statusContainer = document.getElementById('dni_status');
+            const buscandoSpan = document.getElementById('dni_buscando');
+            const encontradoSpan = document.getElementById('dni_encontrado');
+            const mensajeEncontrado = document.getElementById('dni_mensaje_encontrado');
+            const noEncontradoSpan = document.getElementById('dni_no_encontrado');
+            
+            let timeoutId = null;
+            let abortController = null;
+            
+            // Si no existen los elementos, no hacer nada (ej: formulario no visible)
+            if (!dniInput || !nombreInput || !apellidoInput || !fechaInput) {
+                return;
+            }
+            
+            /**
+             * Función para ocultar todos los estados
+             */
+            function ocultarEstados() {
+                statusContainer.classList.add('hidden');
+                buscandoSpan.classList.add('hidden');
+                encontradoSpan.classList.add('hidden');
+                noEncontradoSpan.classList.add('hidden');
+            }
+            
+            /**
+             * Función para mostrar estado "buscando"
+             */
+            function mostrarBuscando() {
+                statusContainer.classList.remove('hidden');
+                buscandoSpan.classList.remove('hidden');
+                encontradoSpan.classList.add('hidden');
+                noEncontradoSpan.classList.add('hidden');
+            }
+            
+            /**
+             * Función para mostrar estado "encontrado"
+             */
+            function mostrarEncontrado(mensaje) {
+                statusContainer.classList.remove('hidden');
+                buscandoSpan.classList.add('hidden');
+                encontradoSpan.classList.remove('hidden');
+                mensajeEncontrado.textContent = mensaje;
+                noEncontradoSpan.classList.add('hidden');
+            }
+            
+            /**
+             * Función para mostrar estado "no encontrado"
+             */
+            function mostrarNoEncontrado() {
+                statusContainer.classList.remove('hidden');
+                buscandoSpan.classList.add('hidden');
+                encontradoSpan.classList.add('hidden');
+                noEncontradoSpan.classList.remove('hidden');
+            }
+            
+            /**
+             * Función para aplicar estilo de campo autocompletado
+             */
+            function aplicarEstiloAutocompletado(input, valor) {
+                if (valor) {
+                    input.value = valor;
+                    input.classList.add('bg-green-50', 'border-green-300');
+                    input.classList.remove('bg-white');
+                }
+            }
+            
+            /**
+             * Función para remover estilo de campo autocompletado
+             */
+            function removerEstiloAutocompletado(input) {
+                input.classList.remove('bg-green-50', 'border-green-300');
+                input.classList.add('bg-white');
+            }
+            
+            /**
+             * Función para limpiar campos
+             */
+            function limpiarCampos() {
+                nombreInput.value = '';
+                apellidoInput.value = '';
+                fechaInput.value = '';
+                removerEstiloAutocompletado(nombreInput);
+                removerEstiloAutocompletado(apellidoInput);
+                removerEstiloAutocompletado(fechaInput);
+            }
+            
+            /**
+             * Función principal de búsqueda por DNI
+             */
+            async function buscarPorDni(dni) {
+                // Cancelar petición anterior si existe
+                if (abortController) {
+                    abortController.abort();
+                }
+                
+                abortController = new AbortController();
+                
+                mostrarBuscando();
+                
+                try {
+                    const response = await fetch(`{{ route('lista-buena-fe.buscar-dni') }}?dni=${dni}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        signal: abortController.signal
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.encontrado) {
+                        // Autocompletar campos
+                        aplicarEstiloAutocompletado(nombreInput, data.nombre);
+                        aplicarEstiloAutocompletado(apellidoInput, data.apellido);
+                        if (data.fecha_nacimiento) {
+                            aplicarEstiloAutocompletado(fechaInput, data.fecha_nacimiento);
+                        }
+                        mostrarEncontrado(data.mensaje || 'Jugador encontrado');
+                    } else {
+                        limpiarCampos();
+                        mostrarNoEncontrado();
+                    }
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        // Petición cancelada, ignorar
+                        return;
+                    }
+                    console.error('Error al buscar jugador:', error);
+                    ocultarEstados();
+                }
+            }
+            
+            /**
+             * Event listener con debounce para el campo DNI
+             */
+            dniInput.addEventListener('input', function(e) {
+                const dni = e.target.value.trim();
+                
+                // Limpiar timeout anterior
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+                
+                // Si el DNI no tiene el formato correcto, ocultar estados y limpiar
+                if (!/^\d{7,8}$/.test(dni)) {
+                    ocultarEstados();
+                    // Si está vacío o incompleto, limpiar los estilos pero no los valores
+                    if (dni.length === 0) {
+                        limpiarCampos();
+                    }
+                    return;
+                }
+                
+                // Debounce de 500ms
+                timeoutId = setTimeout(() => {
+                    buscarPorDni(dni);
+                }, 500);
+            });
+            
+            /**
+             * Remover estilos de autocompletado cuando el usuario edita manualmente
+             */
+            [nombreInput, apellidoInput, fechaInput].forEach(input => {
+                input.addEventListener('input', function() {
+                    removerEstiloAutocompletado(this);
+                });
+            });
+        });
     </script>
 @endsection
