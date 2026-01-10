@@ -169,4 +169,57 @@
             </button>
         </div>
     </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form[action*="cargar-resultado"]');
+            
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    const originalBtnText = submitBtn.innerText;
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = 'Guardando...';
+
+                    try {
+                        // 1. Guardar resultado
+                        const formData = new FormData(form);
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: formData
+                        });
+
+                        if (!response.ok) throw new Error('Error al guardar el resultado.');
+                        
+                        const result = await response.json();
+                        
+                        // 2. Mostrar exito y redirigir
+                        await Swal.fire({
+                            title: '¡Listo!',
+                            text: 'Resultado guardado. Las notificaciones se enviarán en segundo plano.',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        window.location.href = "{{ route('partido.index', ['idEdicion' => $EdicionSeleccionada->id]) }}";
+                        
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire('Error', 'Hubo un problema: ' + error.message, 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = originalBtnText;
+                    }
+                });
+            }
+        });
+    </script>
 @endsection

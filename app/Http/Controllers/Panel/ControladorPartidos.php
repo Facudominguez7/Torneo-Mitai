@@ -237,10 +237,24 @@ class ControladorPartidos extends Controller
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoLocal, $partido->idEdicion, $partido->idGrupo);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoVisitante, $partido->idEdicion, $partido->idGrupo);
 
-            // Enviar notificación push a todos los usuarios suscritos
-            $this->enviarNotificacionResultado($partido, $golesEquipoLocal, $golesEquipoVisitante);
+            // Ejecutar envío en segundo plano (Fire and Forget)
+            try {
+                $path = base_path();
+                // Redirigir salida a /dev/null y usar & para segundo plano
+                // Nota: Esto funciona en Linux/Unix. 
+                $command = "php {$path}/artisan mitai:notificar-resultado {$partido->id} > /dev/null 2>&1 &";
+                exec($command);
+                Log::info("Lanzado proceso de fondo: $command");
+            } catch (\Exception $e) {
+                Log::error("No se pudo lanzar proceso de fondo: " . $e->getMessage());
+            }
 
-            return to_route('partido.index', ['idEdicion' => $idEdicion])->with('status', 'Resultado guardado con éxito.');
+            // Si es AJAX o normal, devolvemos exito inmediatamente
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Resultado guardado. Notificaciones enviándose en segundo plano.']);
+            }
+
+            return to_route('partido.index', ['idEdicion' => $idEdicion])->with('status', 'Resultado guardado. Notificaciones enviándose en segundo plano.');
         }
 
         return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada'));
@@ -262,7 +276,13 @@ class ControladorPartidos extends Controller
                 'nombre_categoria' => $partido->categoria->nombreCategoria ?? '',
             ];
 
-            $usuariosSuscritos = User::whereHas('pushSubscriptions')->get();
+            $usuariosSuscritos = User::where(function ($q) {
+                $q->where(function($q2) {
+                    $q2->where('email_subscribed', true)
+                       ->whereNotNull('email_verified_at');
+                })
+                ->orWhereHas('pushSubscriptions');
+            })->get();
 
             foreach ($usuariosSuscritos as $usuario) {
                 $usuario->notify(new ResultadoCargado($datosPartido));

@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\WebPush\WebPushChannel;
@@ -18,7 +18,7 @@ use NotificationChannels\WebPush\WebPushMessage;
  *
  * @package App\Notifications
  */
-class NotificacionPersonalizada extends Notification implements ShouldQueue
+class NotificacionPersonalizada extends Notification
 {
     use Queueable;
 
@@ -138,6 +138,7 @@ class NotificacionPersonalizada extends Notification implements ShouldQueue
 
         return (new MailMessage)
             ->subject("{$this->titulo} - Torneos Mita'i")
+            ->replyTo('info@torneosmitai.com')
             ->greeting("Hola {$notifiable->name},")
             ->line($this->mensaje)
             ->action('Ver más información', $urlCompleta)
@@ -150,7 +151,7 @@ class NotificacionPersonalizada extends Notification implements ShouldQueue
                 $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
                 $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
                 $headers->addTextHeader('Precedence', 'bulk');
-                $headers->addTextHeader('Reply-To', 'info@torneosmitai.com');
+                // Reply-To manejado via ->replyTo() method
                 $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });
     }

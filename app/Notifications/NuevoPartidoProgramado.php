@@ -149,6 +149,7 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
         
         $mail = (new MailMessage)
             ->subject("Partido Programado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'i")
+            ->replyTo('info@torneosmitai.com')
             ->greeting("Hola {$notifiable->name},")
             ->line($this->mensaje ?? 'Se ha programado un nuevo partido:')
             ->line('')
@@ -177,7 +178,7 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
                 $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
                 $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
                 $headers->addTextHeader('Precedence', 'bulk');
-                $headers->addTextHeader('Reply-To', 'info@torneosmitai.com');
+                // Reply-To via replyTo()
                 $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });
     }
