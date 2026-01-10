@@ -40,6 +40,7 @@ class ListaBuenaFe extends Model
         'idEdicion',             // ID de la edición del torneo (FK a tabla ediciones)
         'idCategoria',           // ID de la categoría (FK a tabla categorias)
         'fecha_nacimiento',      // Fecha de nacimiento del jugador
+        'numero_camiseta',       // Número de camiseta del jugador
         'fecha_alta',            // Fecha en que se agregó a la lista
         'fecha_baja',            // Fecha en que se dio de baja (nullable)
         'motivo_baja',           // Razón de la baja (nullable)
