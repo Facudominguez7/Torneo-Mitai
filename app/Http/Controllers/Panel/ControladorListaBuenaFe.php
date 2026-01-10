@@ -520,7 +520,7 @@ class ControladorListaBuenaFe extends Controller
      * Buscar jugador por DNI para autocompletado
      * 
      * Busca si un DNI ya está registrado en el sistema y retorna
-     * los datos del jugador (nombre, apellido, fecha de nacimiento)
+     * los datos del jugador (nombre, apellido, fecha de nacimiento, numero_camiseta)
      * para autocompletar el formulario de alta en Lista de Buena Fe.
      * 
      * @param Request $request
@@ -544,29 +544,39 @@ class ControladorListaBuenaFe extends Controller
             ]);
         }
         
-        // Buscar fecha de nacimiento más reciente
+        // Buscar fecha de nacimiento y número de camiseta más reciente
         $fechaNacimiento = null;
+        $numeroCamiseta = null;
         
         // Primero buscar en lista_buena_fe (más confiable y reciente)
         $registroLBF = ListaBuenaFe::where('dni_jugador', $dni)
-            ->whereNotNull('fecha_nacimiento')
             ->orderBy('id', 'desc')
             ->first();
         
-        if ($registroLBF && $registroLBF->fecha_nacimiento) {
-            $fechaNacimiento = $registroLBF->fecha_nacimiento->format('Y-m-d');
-        } else {
-            // Si no hay en lista_buena_fe, buscar en planilla_jugadores
+        if ($registroLBF) {
+            if ($registroLBF->fecha_nacimiento) {
+                $fechaNacimiento = $registroLBF->fecha_nacimiento->format('Y-m-d');
+            }
+            if ($registroLBF->numero_camiseta) {
+                $numeroCamiseta = $registroLBF->numero_camiseta;
+            }
+        }
+        
+        // Si no hay fecha en lista_buena_fe, buscar en planilla_jugadores
+        if (!$fechaNacimiento || !$numeroCamiseta) {
             $registroPlanilla = PlanillaJugador::where('dni_jugador', $dni)
-                ->whereNotNull('fecha_nacimiento')
                 ->orderBy('id', 'desc')
                 ->first();
             
-            if ($registroPlanilla && $registroPlanilla->fecha_nacimiento) {
-                // La fecha puede venir como string o como Carbon, manejamos ambos casos
-                $fechaNacimiento = $registroPlanilla->fecha_nacimiento instanceof \Carbon\Carbon 
-                    ? $registroPlanilla->fecha_nacimiento->format('Y-m-d')
-                    : $registroPlanilla->fecha_nacimiento;
+            if ($registroPlanilla) {
+                if (!$fechaNacimiento && $registroPlanilla->fecha_nacimiento) {
+                    $fechaNacimiento = $registroPlanilla->fecha_nacimiento instanceof \Carbon\Carbon 
+                        ? $registroPlanilla->fecha_nacimiento->format('Y-m-d')
+                        : $registroPlanilla->fecha_nacimiento;
+                }
+                if (!$numeroCamiseta && $registroPlanilla->numero_camiseta) {
+                    $numeroCamiseta = $registroPlanilla->numero_camiseta;
+                }
             }
         }
         
@@ -575,6 +585,7 @@ class ControladorListaBuenaFe extends Controller
             'nombre' => $jugador->nombre,
             'apellido' => $jugador->apellido,
             'fecha_nacimiento' => $fechaNacimiento,
+            'numero_camiseta' => $numeroCamiseta,
             'mensaje' => 'Jugador encontrado - Datos cargados automáticamente'
         ]);
     }

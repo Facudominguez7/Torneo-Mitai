@@ -157,6 +157,13 @@
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         </div>
 
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de Camiseta: <span class="text-gray-400 font-normal">(opcional)</span></label>
+                            <input type="number" name="numero_camiseta" id="numero_camiseta" min="0" max="999"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Ej: 10">
+                        </div>
+
                         <div class="md:col-span-2">
                             <button type="submit"
                                 class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md font-medium transition">
@@ -468,6 +475,7 @@
             const nombreInput = document.getElementById('nombre_jugador');
             const apellidoInput = document.getElementById('apellido_jugador');
             const fechaInput = document.getElementById('fecha_nacimiento');
+            const camisetaInput = document.getElementById('numero_camiseta');
             
             // Elementos de estado
             const statusContainer = document.getElementById('dni_status');
@@ -551,9 +559,11 @@
                 nombreInput.value = '';
                 apellidoInput.value = '';
                 fechaInput.value = '';
+                if (camisetaInput) camisetaInput.value = '';
                 removerEstiloAutocompletado(nombreInput);
                 removerEstiloAutocompletado(apellidoInput);
                 removerEstiloAutocompletado(fechaInput);
+                if (camisetaInput) removerEstiloAutocompletado(camisetaInput);
             }
             
             /**
@@ -591,6 +601,9 @@
                         aplicarEstiloAutocompletado(apellidoInput, data.apellido);
                         if (data.fecha_nacimiento) {
                             aplicarEstiloAutocompletado(fechaInput, data.fecha_nacimiento);
+                        }
+                        if (data.numero_camiseta && camisetaInput) {
+                            aplicarEstiloAutocompletado(camisetaInput, data.numero_camiseta);
                         }
                         mostrarEncontrado(data.mensaje || 'Jugador encontrado');
                     } else {
@@ -637,7 +650,7 @@
             /**
              * Remover estilos de autocompletado cuando el usuario edita manualmente
              */
-            [nombreInput, apellidoInput, fechaInput].forEach(input => {
+            [nombreInput, apellidoInput, fechaInput, camisetaInput].filter(Boolean).forEach(input => {
                 input.addEventListener('input', function() {
                     removerEstiloAutocompletado(this);
                 });
