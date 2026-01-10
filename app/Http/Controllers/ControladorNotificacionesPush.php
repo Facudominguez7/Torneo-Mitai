@@ -526,6 +526,11 @@ class ControladorNotificacionesPush extends Controller
             })
             ->take($batchSize)
             ->get();
+            
+        Log::channel('single')->info('DEBUG ENVIO RECORDATORIOS:', [
+            'total_encontrados' => $usuarios->count(),
+            // 'sql' => $usuarios->toSql(), // Comentado porque da error en colección
+        ]);
 
         if ($usuarios->isEmpty()) {
             return response()->json([
@@ -537,6 +542,7 @@ class ControladorNotificacionesPush extends Controller
 
         $enviados = 0;
         $errores = [];
+        $lastError = null;
 
         foreach ($usuarios as $usuario) {
             try {
@@ -551,6 +557,8 @@ class ControladorNotificacionesPush extends Controller
                 ]);
             } catch (\Exception $e) {
                 $errores[] = $usuario->email;
+                $lastError = $e->getMessage(); // Capturar último error
+                
                 Log::channel('single')->error('Error enviando recordatorio', [
                     'email' => $usuario->email,
                     'error' => $e->getMessage(),
@@ -574,7 +582,113 @@ class ControladorNotificacionesPush extends Controller
             'sent' => $enviados,
             'remaining' => $remaining,
             'errors' => count($errores),
+            'last_error' => $lastError, // Enviar error al front
             'message' => "Enviados: {$enviados}. Restantes: {$remaining}"
+        ]);
+    }
+
+    /**
+     * Contar total de suscriptores (Email o Push) para iniciar envío masivo.
+     */
+    public function contarSuscriptores(Request $request)
+    {
+        $count = \App\Models\User::query()
+            ->where(function ($q) {
+                // Suscrito a emails (y verificado)
+                $q->where(function($q2) {
+                    $q2->where('email_subscribed', true)
+                       ->whereNotNull('email_verified_at');
+                })
+                // O suscrito a push
+                ->orWhereHas('pushSubscriptions');
+            })
+            ->count();
+
+        return response()->json([
+            'count' => $count,
+            'message' => "Total usuarios a notificar: {$count}"
+        ]);
+    }
+
+    /**
+     * Enviar notificación manual por lotes usando offset/limit.
+     */
+    public function enviarLoteNotificacionManual(Request $request)
+    {
+        // Validar datos de la notificación y paginación
+        $validated = $request->validate([
+            'titulo' => ['required', 'string', 'max:100'],
+            'mensaje' => ['required', 'string', 'max:255'],
+            'url' => ['nullable', 'string', 'max:255'],
+            'icono' => ['nullable', 'string', 'max:10'],
+            'offset' => ['required', 'integer', 'min:0'],
+            'limit' => ['required', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $limit = $validated['limit'];
+        $offset = $validated['offset'];
+        
+        $notificacion = new \App\Notifications\NotificacionPersonalizada(
+            $validated['titulo'],
+            $validated['mensaje'],
+            $validated['url'] ?? '/',
+            $validated['icono'] ?? '📢'
+        );
+
+        // Obtener lote de usuarios ordenados por ID para consistencia
+        $usuarios = \App\Models\User::query()
+            ->where(function ($q) {
+                $q->where(function($q2) {
+                    $q2->where('email_subscribed', true)
+                       ->whereNotNull('email_verified_at');
+                })
+                ->orWhereHas('pushSubscriptions');
+            })
+            ->orderBy('id')
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
+        if ($usuarios->isEmpty()) {
+            return response()->json([
+                'done' => true,
+                'sent' => 0,
+                'errors' => 0,
+                'message' => 'Fin del proceso.'
+            ]);
+        }
+
+        $enviados = 0;
+        $errores = [];
+        $lastError = null;
+        $contadorPush = 0;
+        $contadorEmail = 0;
+
+        foreach ($usuarios as $usuario) {
+            try {
+                $usuario->notify($notificacion);
+                // Actualizar timestamp
+                $usuario->forceFill(['last_notification_at' => now()])->saveQuietly();
+                $enviados++;
+
+                // Contar desglosado (aproximado, no verifica si realmente salió el push o email si notify falla, pero si notify no lanza excepción asumimos éxito)
+                if ($usuario->pushSubscriptions()->exists()) $contadorPush++;
+                if ($usuario->quiereRecibirEmails()) $contadorEmail++;
+
+            } catch (\Exception $e) {
+                $errores[] = $usuario->email;
+                $lastError = $e->getMessage();
+                Log::channel('single')->error("Error notif manual user {$usuario->id}", ['error' => $e->getMessage()]);
+            }
+        }
+
+        return response()->json([
+            'done' => $usuarios->count() < $limit, // Si devolvió menos que el límite, es el último lote
+            'sent' => $enviados,
+            'errors' => count($errores),
+            'last_error' => $lastError,
+            'push_count' => $contadorPush,
+            'email_count' => $contadorEmail
         ]);
     }
 
@@ -585,14 +699,99 @@ class ControladorNotificacionesPush extends Controller
     {
         $enviados = $request->input('enviados', 0);
         $errores = $request->input('errores', 0);
+        $tipo = $request->input('tipo', 'Gerenal');
 
         Log::channel('single')->info('==========================================');
-        Log::channel('single')->info('PROCESO DE ENVÍO MASIVO COMPLETADO');
+        Log::channel('single')->info("PROCESO DE ENVÍO MASIVO COMPLETADO ($tipo)");
         Log::channel('single')->info("Total Enviados: {$enviados}");
         Log::channel('single')->info("Total Errores: {$errores}");
         Log::channel('single')->info('Admin Responsable: ' . $request->user()->name . ' (ID: ' . $request->user()->id . ')');
         Log::channel('single')->info('==========================================');
 
         return response()->json(['status' => 'ok']);
+    }
+
+    /**
+     * Enviar notificación de resultado cargado por lotes.
+     */
+    public function enviarLoteResultado(Request $request)
+    {
+        $validated = $request->validate([
+            'partido_id' => ['required', 'integer', 'exists:partidos,id'],
+            'offset' => ['required', 'integer', 'min:0'],
+            'limit' => ['required', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $limit = $validated['limit'];
+        $offset = $validated['offset'];
+        $partidoId = $validated['partido_id'];
+
+        $partido = \App\Models\Partido::with(['equipoLocal', 'equipoVisitante', 'categoria'])
+            ->findOrFail($partidoId);
+        
+        // Preparar datos del partido para la notificación
+        $datosPartido = (object) [
+                'id' => $partido->id,
+                'idEdicion' => $partido->idEdicion,
+                'nombre_local' => $partido->equipoLocal->nombre ?? 'Equipo Local',
+                'nombre_visitante' => $partido->equipoVisitante->nombre ?? 'Equipo Visitante',
+                'golesEquipoLocal' => $partido->golesEquipoLocal,
+                'golesEquipoVisitante' => $partido->golesEquipoVisitante,
+                'nombre_categoria' => $partido->categoria->nombreCategoria ?? '',
+        ];
+
+        $notificacion = new \App\Notifications\ResultadoCargado($datosPartido);
+
+        $usuarios = \App\Models\User::query()
+            ->where(function ($q) {
+                $q->where(function($q2) {
+                    $q2->where('email_subscribed', true)
+                       ->whereNotNull('email_verified_at');
+                })
+                ->orWhereHas('pushSubscriptions');
+            })
+            ->orderBy('id')
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
+        if ($usuarios->isEmpty()) {
+             return response()->json([
+                'done' => true,
+                'sent' => 0,
+                'errors' => 0,
+                'message' => 'Fin del proceso.'
+            ]);
+        }
+
+        $enviados = 0;
+        $errores = [];
+        $lastError = null;
+        $contadorPush = 0;
+        $contadorEmail = 0;
+
+        foreach ($usuarios as $usuario) {
+            try {
+                $usuario->notify($notificacion);
+                // Actualizar timestamp
+                $usuario->forceFill(['last_notification_at' => now()])->saveQuietly();
+                $enviados++;
+                 if ($usuario->pushSubscriptions()->exists()) $contadorPush++;
+                 if ($usuario->quiereRecibirEmails()) $contadorEmail++;
+            } catch (\Exception $e) {
+                $errores[] = $usuario->email;
+                $lastError = $e->getMessage();
+                Log::channel('single')->error("Error notif resultado user {$usuario->id}", ['error' => $e->getMessage()]);
+            }
+        }
+
+        return response()->json([
+            'done' => $usuarios->count() < $limit,
+            'sent' => $enviados,
+            'errors' => count($errores),
+            'last_error' => $lastError,
+            'push_count' => $contadorPush,
+            'email_count' => $contadorEmail
+        ]);
     }
 }

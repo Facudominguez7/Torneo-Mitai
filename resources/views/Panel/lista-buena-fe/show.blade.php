@@ -60,7 +60,7 @@
                 <p class="text-sm text-gray-500">
                     Edición: <span class="font-semibold">{{ $EdicionSeleccionada->nombre }}</span> |
                     Jugadores Activos: <span
-                        class="font-semibold {{ $jugadoresActivos->count() >= 16 ? 'text-red-600' : 'text-green-600' }}">{{ $jugadoresActivos->count() }}/16</span>
+                        class="font-semibold {{ $jugadoresActivos->count() >= 18 ? 'text-red-600' : 'text-green-600' }}">{{ $jugadoresActivos->count() }}/18</span>
                 </p>
             </div>
 
@@ -99,7 +99,7 @@
         @endif
 
         {{-- Formulario para Agregar Jugador --}}
-        @if ($jugadoresActivos->count() < 16)
+        @if ($jugadoresActivos->count() < 18)
             <div class="bg-white shadow-md rounded-lg p-6 mb-6">
                 <details class="mb-4">
                     <summary
@@ -153,7 +153,7 @@
         @else
             <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-center">
                 <p class="text-red-700 font-semibold">
-                    ⛔ Este equipo ha alcanzado el límite de 16 jugadores.
+                    ⛔ Este equipo ha alcanzado el límite de 18 jugadores.
                 </p>
             </div>
         @endif
@@ -270,7 +270,7 @@
                                             {{ $jugador->motivo_baja ?? 'Sin especificar' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            @if ($jugadoresActivos->count() < 16)
+                                            @if ($jugadoresActivos->count() < 18)
                                                 <form method="POST" action="{{ route('lista-buena-fe.reactivar', $jugador->id) }}"
                                                     class="inline">
                                                     @csrf

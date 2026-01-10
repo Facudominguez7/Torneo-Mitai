@@ -39,6 +39,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'email_subscribed',
         'restablecer_password',
+        'last_notification_at',
     ];
 
     /**
@@ -98,6 +99,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_notification_at' => 'datetime',
             'password' => 'hashed',
             'email_subscribed' => 'boolean',
         ];

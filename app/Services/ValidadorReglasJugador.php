@@ -57,7 +57,7 @@ class ValidadorReglasJugador
         $resultado = $this->validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento);
         if ($resultado) return $resultado;
 
-        // 5. Validar límite de 16 jugadores activos (WARNING, no bloquear)
+        // 5. Validar límite de 18 jugadores activos (WARNING, no bloquear)
         $resultado = $this->validarLimiteJugadores($idEquipo, $idEdicion);
         if ($resultado) return $resultado;
 
@@ -226,7 +226,7 @@ private function validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $id
     return null;
 }
     /**
-     * Validar límite de 16 jugadores activos
+     * Validar límite de 18 jugadores activos
      * Retorna WARNING (no bloquea, solo advierte)
      */
     private function validarLimiteJugadores($idEquipo, $idEdicion)
@@ -236,10 +236,10 @@ private function validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $id
             ->where('activo', true)
             ->count();
 
-        if ($cantidadJugadores >= 16) {
+        if ($cantidadJugadores >= 18) {
             return [
                 'type' => 'warning',
-                'message' => 'El equipo ya tiene ' . $cantidadJugadores . ' jugadores activos. El límite recomendado es 16 jugadores por equipo.'
+                'message' => 'El equipo ya tiene ' . $cantidadJugadores . ' jugadores activos. El límite recomendado es 18 jugadores por equipo.'
             ];
         }
 

@@ -64,6 +64,7 @@ class RecordatorioVerificacionEmail extends Notification
 
         return (new MailMessage)
             ->subject("Verifica tu email - Torneos Mita'i")
+            ->replyTo('info@torneosmitai.com')
             ->greeting("Hola {$notifiable->name},")
             ->line('Tu cuenta en Torneos Mita\'i todavia no tiene el email verificado.')
             ->line('')
@@ -85,8 +86,8 @@ class RecordatorioVerificacionEmail extends Notification
                 $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
                 // Indica que es email masivo legítimo
                 $headers->addTextHeader('Precedence', 'bulk');
-                // Reply-To mejora reputación
-                $headers->addTextHeader('Reply-To', 'info@torneosmitai.com');
+                // Reply-To ahora se maneja con ->replyTo()
+                // $headers->addTextHeader('Reply-To', 'info@torneosmitai.com');
                 // Message-ID único
                 $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });

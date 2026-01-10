@@ -250,7 +250,7 @@ class ControladorPlanillaJugador extends Controller
                         ->where('activo', true)
                         ->count();
                     
-                    if ($cantidadActivos < 16) {
+                    if ($cantidadActivos < 18) {
                         $listaBuenaFe->reactivar();
                         // Actualizar datos si cambiaron
                         $listaBuenaFe->fecha_nacimiento = $fecha_nacimiento;
@@ -273,7 +273,7 @@ class ControladorPlanillaJugador extends Controller
                     ->where('activo', true)
                     ->count();
 
-                if ($cantidadActivos < 16) {
+                if ($cantidadActivos < 18) {
                     ListaBuenaFe::create([
                         'dni_jugador' => $jugador->dni,
                         'idEquipo' => $equipo->idEquipo,

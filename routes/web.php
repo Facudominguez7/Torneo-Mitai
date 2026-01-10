@@ -152,6 +152,19 @@ Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
     Route::post('/recordatorios/log-completo', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'logEnvioCompleto'])
         ->middleware(UserAccesPanelMiddleware::class)
         ->name('push.log-completo');
+
+    // Rutas para notificación manual masiva por lotes
+    Route::get('/manual/contar', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'contarSuscriptores'])
+        ->middleware(UserAccesPanelMiddleware::class)
+        ->name('push.manual.contar');
+    Route::post('/manual/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteNotificacionManual'])
+        ->middleware(UserAccesPanelMiddleware::class)
+        ->name('push.manual.enviar-lote');
+    
+    // Ruta para notificación de resultados masiva por lotes
+    Route::post('/resultado/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResultado'])
+        ->middleware(UserAccesPanelMiddleware::class)
+        ->name('push.resultado.enviar-lote');
 });
 
 // Ruta pública para obtener la clave VAPID (no requiere autenticación)

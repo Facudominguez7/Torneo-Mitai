@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\WebPush\WebPushChannel;
@@ -18,7 +18,7 @@ use NotificationChannels\WebPush\WebPushMessage;
  *
  * @package App\Notifications
  */
-class ResultadoCargado extends Notification implements ShouldQueue
+class ResultadoCargado extends Notification
 {
     use Queueable;
 
@@ -151,6 +151,7 @@ class ResultadoCargado extends Notification implements ShouldQueue
         
         $mail = (new MailMessage)
             ->subject("Resultado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'i")
+            ->replyTo('info@torneosmitai.com')
             ->greeting("Hola {$notifiable->name},")
             ->line('Se ha cargado un nuevo resultado:')
             ->line('')
@@ -172,7 +173,7 @@ class ResultadoCargado extends Notification implements ShouldQueue
                 $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
                 $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
                 $headers->addTextHeader('Precedence', 'bulk');
-                $headers->addTextHeader('Reply-To', 'info@torneosmitai.com');
+                // Reply-To via replyTo()
                 $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });
     }

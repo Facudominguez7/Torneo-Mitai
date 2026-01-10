@@ -38,8 +38,8 @@
         <!-- Equipo Local -->
         <h2 class="text-xl font-semibold mb-2 text-center">{{ $partido->equipoLocal->nombre }}</h2>
         @php $localCount = $jugadoresLocalPlanilla->count(); @endphp
-        <p class="text-center mb-2 font-medium {{ $localCount > 16 ? 'text-red-600' : ($localCount == 16 ? 'text-yellow-600' : 'text-green-600') }}">
-            Jugadores en planilla: {{ $localCount }} / 16
+        <p class="text-center mb-2 font-medium {{ $localCount > 18 ? 'text-red-600' : ($localCount == 18 ? 'text-yellow-600' : 'text-green-600') }}">
+            Jugadores en planilla: {{ $localCount }} / 18
         </p>
         <!-- Botón para generar el PDF -->
         <!-- Botón para generar el PDF -->
@@ -215,8 +215,8 @@
         <!-- Equipo Visitante -->
         <h2 class="text-xl font-semibold mb-2 text-center">{{ $partido->equipoVisitante->nombre }}</h2>
         @php $visitanteCount = $jugadoresVisitantePlanilla->count(); @endphp
-        <p class="text-center mb-2 font-medium {{ $visitanteCount > 16 ? 'text-red-600' : ($visitanteCount == 16 ? 'text-yellow-600' : 'text-green-600') }}">
-            Jugadores en planilla: {{ $visitanteCount }} / 16
+        <p class="text-center mb-2 font-medium {{ $visitanteCount > 18 ? 'text-red-600' : ($visitanteCount == 18 ? 'text-yellow-600' : 'text-green-600') }}">
+            Jugadores en planilla: {{ $visitanteCount }} / 18
         </p>
         <!-- Botón para generar el PDF -->
         <!-- Botón para generar el PDF -->
