@@ -314,12 +314,20 @@ class ControladorPartidos extends Controller
 
             // Ejecutar envío en segundo plano (Fire and Forget)
             try {
-                $path = base_path();
-                // Redirigir salida a /dev/null y usar & para segundo plano
-                // Nota: Esto funciona en Linux/Unix. 
-                $command = "php {$path}/artisan mitai:notificar-resultado {$partido->id} > /dev/null 2>&1 &";
-                exec($command);
-                Log::info("Lanzado proceso de fondo: $command");
+                $artisanPath = base_path('artisan');
+                
+                // Intentar con Laravel Process (funciona en más entornos)
+                if (class_exists(\Illuminate\Support\Facades\Process::class)) {
+                    \Illuminate\Support\Facades\Process::path(base_path())
+                        ->start("php {$artisanPath} mitai:notificar-resultado {$partido->id}");
+                    Log::info("Lanzado proceso de fondo con Process facade para partido {$partido->id}");
+                } else {
+                    // Fallback: ejecutar artisan directamente (síncrono pero funcional)
+                    \Illuminate\Support\Facades\Artisan::call('mitai:notificar-resultado', [
+                        'partidoId' => $partido->id
+                    ]);
+                    Log::info("Ejecutado comando artisan síncronamente para partido {$partido->id}");
+                }
             } catch (\Exception $e) {
                 Log::error("No se pudo lanzar proceso de fondo: " . $e->getMessage());
             }
