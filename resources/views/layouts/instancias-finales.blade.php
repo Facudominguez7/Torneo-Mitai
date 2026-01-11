@@ -23,28 +23,114 @@
                             <p class="text-sm sm:text-base text-white/70">Reviví cada fase decisiva de la {{ optional($EdicionSeleccionada)->nombre ?? 'vigente' }}. Filtrá por categoría y seguí el recorrido de tus equipos en copas y fases finales.</p>
                         </div>
                         <form method="GET" action="{{ route('instancias-finales') }}"
-                            class="grid gap-3 rounded-3xl border border-white/10 bg-black/50 px-4 py-4 text-sm text-white/80 shadow-lg sm:px-6 sm:py-5">
-                            <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
-                            <label for="categoria" class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Categoría</label>
-                            <div class="relative">
-                                <div class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
-                                    <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
-                                        <select name="categoria" id="categoria" onchange="this.form.submit()"
-                                            class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
-                                            style="color-scheme: dark;">
-                                            <option value="" style="background-color: #0e4b5e; color: white;">Todas las categorías</option>
-                                            @foreach ($categorias as $categoria)
-                                                <option value="{{ $categoria->id }}" style="background-color: #0e4b5e; color: white;" {{ $selectedCategoria == $categoria->id ? 'selected' : '' }}>
-                                                    {{ $categoria->nombreCategoria }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
-                                            <i class="fa-solid fa-chevron-down text-xs"></i>
-                                        </span>
+                            class="grid gap-4 rounded-3xl border border-white/10 bg-black/50 px-4 py-4 text-sm text-white/80 shadow-lg sm:px-6 sm:py-5">
+                            
+                            <!-- Filtro Edición -->
+                            <div class="grid gap-2">
+                                <label for="idEdicion" class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Edición</label>
+                                <div class="relative">
+                                    <div class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
+                                        <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
+                                            <select name="idEdicion" id="idEdicion" onchange="this.form.submit()"
+                                                class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
+                                                style="color-scheme: dark;">
+                                                @foreach ($ediciones as $edicion)
+                                                    <option value="{{ $edicion->id }}" style="background-color: #0e4b5e; color: white;" {{ $EdicionSeleccionada->id == $edicion->id ? 'selected' : '' }}>
+                                                        {{ $edicion->nombre }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                                <i class="fa-solid fa-chevron-down text-xs"></i>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Filtros en grid responsive -->
+                            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                <!-- Filtro Categoría -->
+                                <div class="grid gap-2">
+                                    <label for="categoria" class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Categoría</label>
+                                    <div class="relative">
+                                        <div class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
+                                            <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
+                                                <select name="categoria" id="categoria" onchange="this.form.submit()"
+                                                    class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
+                                                    style="color-scheme: dark;">
+                                                    <option value="" style="background-color: #0e4b5e; color: white;">Todas</option>
+                                                    @foreach ($categorias as $categoria)
+                                                        <option value="{{ $categoria->id }}" style="background-color: #0e4b5e; color: white;" {{ $selectedCategoria == $categoria->id ? 'selected' : '' }}>
+                                                            {{ $categoria->nombreCategoria }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Filtro Copa -->
+                                <div class="grid gap-2">
+                                    <label for="copa" class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Copa</label>
+                                    <div class="relative">
+                                        <div class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
+                                            <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
+                                                <select name="copa" id="copa" onchange="this.form.submit()"
+                                                    class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
+                                                    style="color-scheme: dark;">
+                                                    <option value="" style="background-color: #0e4b5e; color: white;">Todas</option>
+                                                    @foreach ($copas as $copa)
+                                                        <option value="{{ $copa->id }}" style="background-color: #0e4b5e; color: white;" {{ $selectedCopa == $copa->id ? 'selected' : '' }}>
+                                                            {{ $copa->nombre }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Filtro Fase -->
+                                <div class="grid gap-2">
+                                    <label for="fase" class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Fase</label>
+                                    <div class="relative">
+                                        <div class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
+                                            <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
+                                                <select name="fase" id="fase" onchange="this.form.submit()"
+                                                    class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
+                                                    style="color-scheme: dark;">
+                                                    <option value="" style="background-color: #0e4b5e; color: white;">Todas</option>
+                                                    @foreach ($fases as $fase)
+                                                        <option value="{{ $fase->id }}" style="background-color: #0e4b5e; color: white;" {{ $selectedFase == $fase->id ? 'selected' : '' }}>
+                                                            {{ $fase->nombre }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botón limpiar filtros -->
+                            @if ($selectedCategoria || $selectedCopa || $selectedFase)
+                                <a href="{{ route('instancias-finales', ['idEdicion' => $EdicionSeleccionada->id]) }}"
+                                    class="mt-2 inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/70 transition hover:bg-white/10 hover:text-white">
+                                    <i class="fa-solid fa-xmark"></i>
+                                    Limpiar filtros
+                                </a>
+                            @endif
                         </form>
                     </div>
                 </section>
@@ -57,7 +143,7 @@
                                 <p class="mt-2 text-sm text-white/60">Los cruces más determinantes de la copa.</p>
                             </header>
 
-                            @foreach ($partidosPorCategoria->groupBy('nombre_copa') as $copa => $partidosPorCopa)
+                            @foreach ($partidosPorCategoria->groupBy('nombre_copa')->sortBy(fn($items) => $items->first()->orden_copa) as $copa => $partidosPorCopa)
                                 <div class="space-y-6">
                                     <div class="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 px-6 py-5 text-center">
                                         <h3 class="text-xl font-semibold text-white">{{ $copa }}</h3>
@@ -67,7 +153,7 @@
                                         </span>
                                     </div>
 
-                                    @foreach ($partidosPorCopa->groupBy('nombre_fase') as $fase => $partidosPorFase)
+                                    @foreach ($partidosPorCopa->groupBy('nombre_fase')->sortBy(fn($items) => $items->first()->orden_fase) as $fase => $partidosPorFase)
                                         <div class="space-y-5">
                                             <h4 class="text-lg font-semibold uppercase tracking-[0.3em] text-white/60 text-center">{{ $fase }}</h4>
 

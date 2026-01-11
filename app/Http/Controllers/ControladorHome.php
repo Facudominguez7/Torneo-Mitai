@@ -531,22 +531,39 @@ class ControladorHome extends Controller
     {
         $ediciones = Edicion::all();
         $ultimaEdicion = Edicion::latest('id')->first();
-        $idEdicion = $request->query('idEdicion', $ultimaEdicion->id); // Proporcionar un valor por defecto si no está presente en la solicitud
+        $idEdicion = $request->query('idEdicion', $ultimaEdicion->id);
         $EdicionSeleccionada = Edicion::find($idEdicion);
 
         // Obtener las categorías disponibles para el filtro
         $categorias = Categoria::where('idEdicion', $idEdicion)->orderBy('nombreCategoria', 'desc')->get();
-        $selectedCategoria = $request->query('categoria'); // Obtener la categoría seleccionada
+        $selectedCategoria = $request->query('categoria');
 
+        // Obtener las copas disponibles para el filtro (del torneo actual)
+        $copas = \App\Models\Copa::orderBy('nombre', 'asc')->get();
+        $selectedCopa = $request->query('copa');
+
+        // Obtener las fases disponibles para el filtro (del torneo actual)
+        $fases = Fase::whereIn('id', function ($query) use ($idEdicion) {
+            $query->select('idFase')
+                ->from('instancias_finales')
+                ->where('idEdicion', $idEdicion)
+                ->distinct();
+        })->get();
+        $selectedFase = $request->query('fase');
+
+        // Ordenar por secuencia de fases (menor = mayor prioridad: Final primero)
         $partidosQuery = InstanciaFinal::select(
             'instancias_finales.*',
             'fases.nombre as nombre_fase',
+            'fases.id as id_fase',
+            'fases.secuencia as orden_fase',
             'el.nombre as nombre_local',
             'ev.nombre as nombre_visitante',
             'el.foto as foto_local',
             'ev.foto as foto_visitante',
             'categorias.nombreCategoria as nombre_categoria',
-            DB::raw("COALESCE(copas.nombre, '') as nombre_copa")
+            DB::raw("COALESCE(copas.nombre, '') as nombre_copa"),
+            DB::raw("COALESCE(copas.secuencia, 99) as orden_copa")
         )
             ->join('fases', 'instancias_finales.idFase', '=', 'fases.id')
             ->join('equipos as el', 'instancias_finales.idEquipoLocal', '=', 'el.id')
@@ -555,18 +572,37 @@ class ControladorHome extends Controller
             ->leftjoin('copas', 'instancias_finales.idCopa', '=', 'copas.id')
             ->where('instancias_finales.idEdicion', $idEdicion)
             ->orderBy('categorias.nombreCategoria', 'desc')
-            ->orderBy('copas.nombre', 'asc')
-            ->orderByRaw("
-            FIELD(fases.nombre, 'Final', 'Semifinal', 'Cuartos de Final') ASC
-        ");
+            ->orderBy('copas.secuencia', 'asc')
+            ->orderBy('fases.secuencia', 'asc');
 
         // Aplicar el filtro por categoría si se selecciona una
         if (!empty($selectedCategoria)) {
             $partidosQuery->where('categorias.id', (int) $selectedCategoria);
         }
 
+        // Aplicar el filtro por copa si se selecciona una
+        if (!empty($selectedCopa)) {
+            $partidosQuery->where('copas.id', (int) $selectedCopa);
+        }
+
+        // Aplicar el filtro por fase si se selecciona una
+        if (!empty($selectedFase)) {
+            $partidosQuery->where('fases.id', (int) $selectedFase);
+        }
+
         $partidos = $partidosQuery->get();
 
-        return view('layouts.instancias-finales', compact('ediciones', 'ultimaEdicion', 'EdicionSeleccionada', 'partidos', 'categorias', 'selectedCategoria'));
+        return view('layouts.instancias-finales', compact(
+            'ediciones', 
+            'ultimaEdicion', 
+            'EdicionSeleccionada', 
+            'partidos', 
+            'categorias', 
+            'selectedCategoria',
+            'copas',
+            'selectedCopa',
+            'fases',
+            'selectedFase'
+        ));
     }
 }
