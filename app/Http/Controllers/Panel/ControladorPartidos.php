@@ -144,6 +144,81 @@ class ControladorPartidos extends Controller
         return to_route('partido.index', ['idEdicion' => $idEdicion])->with('status', 'Partido creado con éxito.');
     }
 
+    /**
+     * Vista para crear un partido interzonal (entre equipos de diferentes grupos)
+     */
+    public function createInterzonal(Request $request)
+    {
+        $ediciones = Edicion::all();
+        $idEdicion = $request->idEdicion;
+        $idCategoria = $request->idCategoria;
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+        $CategoriaSeleccionada = $idCategoria ? Categoria::find($idCategoria) : null;
+        
+        $fechas = Fecha::where('idEdicion', $idEdicion)
+            ->select('id', 'nombre')
+            ->orderBy('id')
+            ->get();
+        
+        // Obtener todos los grupos de esta categoría
+        $grupos = Grupo::where('idCategoria', $idCategoria)
+            ->where('idEdicion', $idEdicion)
+            ->get();
+        
+        // Obtener equipos de todos los grupos de la categoría con su grupo
+        $equipos = collect();
+        foreach ($grupos as $grupo) {
+            $equiposGrupo = Equipo::select('equipos.id', 'equipos.nombre')
+                ->join('equipos_grupos', 'equipos.id', '=', 'equipos_grupos.idEquipo')
+                ->where('equipos_grupos.idGrupo', $grupo->id)
+                ->get()
+                ->map(function ($equipo) use ($grupo) {
+                    $equipo->grupo_nombre = $grupo->nombre;
+                    $equipo->grupo_id = $grupo->id;
+                    return $equipo;
+                });
+            $equipos = $equipos->merge($equiposGrupo);
+        }
+        
+        $partido = new Partido();
+        
+        return view('Panel.partido.create-interzonal', compact(
+            'ediciones', 
+            'partido', 
+            'EdicionSeleccionada', 
+            'CategoriaSeleccionada',
+            'fechas', 
+            'equipos',
+            'grupos',
+            'idCategoria'
+        ));
+    }
+
+    /**
+     * Guardar un partido interzonal
+     */
+    public function storeInterzonal(Request $request)
+    {
+        $data = $request->validate([
+            'idEdicion' => ['required', 'exists:ediciones,id'],
+            'idCategoria' => ['required', 'exists:categorias,id'],
+            'idEquipoLocal' => ['required', 'exists:equipos,id'],
+            'idEquipoVisitante' => ['required', 'exists:equipos,id', 'different:idEquipoLocal'],
+            'idFechas' => ['required', 'exists:fechas,id'],
+            'horario_datetime' => ['nullable', 'date'],
+            'cancha' => ['nullable', 'string', 'max:250'],
+        ]);
+
+        // Para interzonales, idGrupo será null ya que no pertenece a un grupo específico
+        $data['idGrupo'] = null;
+        $data['es_interzonal'] = true;
+        
+        Partido::create($data);
+        
+        return to_route('partido.index', ['idEdicion' => $data['idEdicion']])
+            ->with('status', 'Partido interzonal creado con éxito.');
+    }
+
     public function show(Partido $partido)
     {
         return view('partidos.show', compact('partido'));

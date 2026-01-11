@@ -22,7 +22,16 @@ class Partido extends Model
         'cancha',
         'jugado',
         'idCategoria',
+        'es_interzonal',
     ];
+
+    /**
+     * Determina si el partido es interzonal
+     */
+    public function esInterzonal(): bool
+    {
+        return (bool) $this->es_interzonal;
+    }
 
     public function equipoLocal()
     {

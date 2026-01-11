@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use App\Models\Grupo;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\TablaPosicion;
@@ -43,9 +44,20 @@ class PartidoService
         $equipoLocal = $partido->equipoLocal;
         $equipoVisitante = $partido->equipoVisitante;
 
+        // Para partidos interzonales, obtener el grupo real de cada equipo
+        if ($partido->esInterzonal()) {
+            $grupoLocal = $this->obtenerGrupoEquipo($equipoLocal->id, $partido->idCategoria, $partido->idEdicion);
+            $grupoVisitante = $this->obtenerGrupoEquipo($equipoVisitante->id, $partido->idCategoria, $partido->idEdicion);
+            $idGrupoLocal = $grupoLocal ? $grupoLocal->id : $partido->idGrupo;
+            $idGrupoVisitante = $grupoVisitante ? $grupoVisitante->id : $partido->idGrupo;
+        } else {
+            $idGrupoLocal = $partido->idGrupo;
+            $idGrupoVisitante = $partido->idGrupo;
+        }
+
         // Verificar si la combinación ya existe para el equipo local (con bloqueo)
         $tablaLocal = TablaPosicion::where([
-            ['idGrupo', '=', $partido->idGrupo],
+            ['idGrupo', '=', $idGrupoLocal],
             ['idEquipo', '=', $equipoLocal->id],
             ['idEdicion', '=', $partido->idEdicion],
         ])->lockForUpdate()->first();
@@ -53,7 +65,7 @@ class PartidoService
         if (!$tablaLocal) {
             // Si no existe, se crea un nuevo registro
             $tablaLocal = TablaPosicion::create([
-                'idGrupo' => $partido->idGrupo,
+                'idGrupo' => $idGrupoLocal,
                 'idEquipo' => $equipoLocal->id,
                 'idEdicion' => $partido->idEdicion,
                 'golesFavor' => 0,
@@ -69,7 +81,7 @@ class PartidoService
 
         // Verificar si la combinación ya existe para el equipo visitante (con bloqueo)
         $tablaVisitante = TablaPosicion::where([
-            ['idGrupo', '=', $partido->idGrupo],
+            ['idGrupo', '=', $idGrupoVisitante],
             ['idEquipo', '=', $equipoVisitante->id],
             ['idEdicion', '=', $partido->idEdicion],
         ])->lockForUpdate()->first();
@@ -77,7 +89,7 @@ class PartidoService
         if (!$tablaVisitante) {
             // Si no existe, se crea un nuevo registro
             $tablaVisitante = TablaPosicion::create([
-                'idGrupo' => $partido->idGrupo,
+                'idGrupo' => $idGrupoVisitante,
                 'idEquipo' => $equipoVisitante->id,
                 'idEdicion' => $partido->idEdicion,
                 'golesFavor' => 0,
@@ -99,8 +111,19 @@ class PartidoService
 
     protected function revertirTablaPosiciones(Partido $partido, $golesEquipoLocal, $golesEquipoVisitante)
     {
+        // Para partidos interzonales, obtener el grupo real de cada equipo
+        if ($partido->esInterzonal()) {
+            $grupoLocal = $this->obtenerGrupoEquipo($partido->idEquipoLocal, $partido->idCategoria, $partido->idEdicion);
+            $grupoVisitante = $this->obtenerGrupoEquipo($partido->idEquipoVisitante, $partido->idCategoria, $partido->idEdicion);
+            $idGrupoLocal = $grupoLocal ? $grupoLocal->id : $partido->idGrupo;
+            $idGrupoVisitante = $grupoVisitante ? $grupoVisitante->id : $partido->idGrupo;
+        } else {
+            $idGrupoLocal = $partido->idGrupo;
+            $idGrupoVisitante = $partido->idGrupo;
+        }
+
         $tablaLocal = TablaPosicion::where([
-            ['idGrupo', '=', $partido->idGrupo],
+            ['idGrupo', '=', $idGrupoLocal],
             ['idEquipo', '=', $partido->idEquipoLocal],
             ['idEdicion', '=', $partido->idEdicion],
         ])->lockForUpdate()->first();
@@ -110,7 +133,7 @@ class PartidoService
         }
 
         $tablaVisitante = TablaPosicion::where([
-            ['idGrupo', '=', $partido->idGrupo],
+            ['idGrupo', '=', $idGrupoVisitante],
             ['idEquipo', '=', $partido->idEquipoVisitante],
             ['idEdicion', '=', $partido->idEdicion],
         ])->lockForUpdate()->first();
@@ -118,6 +141,19 @@ class PartidoService
         if ($tablaVisitante) {
             $this->actualizarEstadisticasEquipo($tablaVisitante, $golesEquipoVisitante, $golesEquipoLocal, -1);
         }
+    }
+
+    /**
+     * Obtener el grupo al que pertenece un equipo en una categoría y edición
+     */
+    protected function obtenerGrupoEquipo($equipoId, $categoriaId, $edicionId)
+    {
+        return Grupo::where('idCategoria', $categoriaId)
+            ->where('idEdicion', $edicionId)
+            ->whereHas('equipos', function($q) use ($equipoId) {
+                $q->where('equipos.id', $equipoId);
+            })
+            ->first();
     }
 
 

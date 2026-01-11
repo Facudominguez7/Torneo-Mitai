@@ -216,6 +216,117 @@
                                 @endif
                             </section>
                         @endforeach
+
+                        {{-- Sección de Partidos Interzonales --}}
+                        @php $partidosInterzonales = $partidos->whereNull('idGrupo'); @endphp
+                        @if ($partidosInterzonales->isNotEmpty())
+                            <section class="space-y-6">
+                                <div class="flex flex-col gap-4 rounded-3xl border border-amber-400/40 bg-gradient-to-br from-amber-500/20 via-amber-600/15 to-amber-500/20 px-6 py-5 shadow-[0_24px_60px_-40px_rgba(245,158,11,0.5)] sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                        <div>
+                                            <h2 class="text-2xl font-bold text-white">Partidos Interzonales</h2>
+                                            <p class="text-sm text-amber-200/70">Enfrentamientos entre equipos de diferentes grupos</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-6">
+                                    @foreach ($partidosInterzonales as $p)
+                                        @php
+                                            $esFuturo = optional(\Carbon\Carbon::parse($p->horario_datetime))->isFuture();
+                                        @endphp
+                                        <article class="partido-card rounded-3xl border border-amber-400/40 bg-gradient-to-br from-[#0e4b5e] via-amber-900/30 to-[#0e4b5e] px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(245,158,11,0.5)] transition hover:border-amber-400/60 md:shadow-[0_32px_80px_-48px_rgba(245,158,11,0.6)]" data-jugado="{{ (int) $p->jugado }}" data-horario="{{ \Carbon\Carbon::parse($p->horario_datetime)->toIso8601String() }}" id="partido-{{ $p->id }}">
+                                            @php
+                                                $statusLabel = 'Pendiente';
+                                                $statusClasses = 'bg-amber-500/20 text-amber-300 border border-amber-400/50';
+
+                                                if ($p->jugado) {
+                                                    $statusLabel = 'Finalizado';
+                                                    $statusClasses = 'bg-gradient-to-r from-amber-600/30 to-amber-700/30 text-amber-200 border border-amber-400/60';
+                                                } elseif ($esFuturo) {
+                                                    $statusLabel = 'Próximo';
+                                                    $statusClasses = 'bg-gradient-to-r from-amber-500/15 to-amber-600/15 text-white border border-amber-400/40';
+                                                }
+                                            @endphp
+
+                                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-1 text-xs font-semibold text-amber-300 border border-amber-400/40">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                        </svg>
+                                                        Interzonal
+                                                    </span>
+                                                    <span class="text-sm font-semibold uppercase tracking-[0.3em] text-white/65">
+                                                        {{ $p->fecha->nombre }}
+                                                    </span>
+                                                </div>
+                                                <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold {{ $statusClasses }}">
+                                                    <span class="inline-flex h-2 w-2 rounded-full bg-amber-400"></span>
+                                                    {{ $statusLabel }}
+                                                </span>
+                                            </div>
+
+                                            <div class="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4 md:hidden">
+                                                <div class="flex flex-col items-center gap-3 text-center">
+                                                    <div class="h-16 w-16 overflow-hidden rounded-full border border-amber-400/30 bg-black/25 p-2.5">
+                                                        <img src="{{ asset('fotos/equipos/' . $p->foto_local) }}" alt="{{ $p->nombre_local }}" class="h-full w-full object-contain" onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';">
+                                                    </div>
+                                                    <h3 class="text-sm font-bold text-white/95">{{ $p->nombre_local }}</h3>
+                                                </div>
+                                                <div class="flex min-w-[80px] flex-col items-center gap-1 text-center">
+                                                    <span class="text-[11px] font-semibold uppercase tracking-[0.35em] text-white/60">vs</span>
+                                                    <span class="text-2xl font-bold text-white">{{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}</span>
+                                                </div>
+                                                <div class="flex flex-col items-center gap-3 text-center">
+                                                    <div class="h-16 w-16 overflow-hidden rounded-full border border-amber-400/30 bg-black/25 p-2.5">
+                                                        <img src="{{ asset('fotos/equipos/' . $p->foto_visitante) }}" alt="{{ $p->nombre_visitante }}" class="h-full w-full object-contain" onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';">
+                                                    </div>
+                                                    <h3 class="text-sm font-bold text-white/95">{{ $p->nombre_visitante }}</h3>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-6 hidden md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-6">
+                                                <div class="flex flex-col items-center gap-3 text-center">
+                                                    <div class="h-20 w-20 overflow-hidden rounded-full border border-amber-400/30 bg-black/25 p-3">
+                                                        <img src="{{ asset('fotos/equipos/' . $p->foto_local) }}" alt="{{ $p->nombre_local }}" class="h-full w-full object-contain" onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';">
+                                                    </div>
+                                                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Local</p>
+                                                    <h3 class="text-lg font-bold text-white">{{ $p->nombre_local }}</h3>
+                                                </div>
+
+                                                <div class="flex flex-col items-center justify-center gap-1 text-center">
+                                                    <span class="text-xs font-semibold uppercase tracking-[0.35em] text-white/40">vs</span>
+                                                    <span class="text-3xl font-bold text-white md:text-4xl">{{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}</span>
+                                                </div>
+
+                                                <div class="flex flex-col items-center gap-3 text-center">
+                                                    <div class="h-20 w-20 overflow-hidden rounded-full border border-amber-400/30 bg-black/25 p-3">
+                                                        <img src="{{ asset('fotos/equipos/' . $p->foto_visitante) }}" alt="{{ $p->nombre_visitante }}" class="h-full w-full object-contain" onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';">
+                                                    </div>
+                                                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Visita</p>
+                                                    <h3 class="text-lg font-bold text-white">{{ $p->nombre_visitante }}</h3>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-6 flex flex-col gap-3 text-sm text-white/70 md:flex-row md:items-center md:justify-between md:text-white/60">
+                                                <div class="inline-flex items-center gap-2">
+                                                    <i class="fa-regular fa-clock text-amber-300"></i>
+                                                    <span>{{ \Carbon\Carbon::parse($p->horario_datetime)->format('d/m/Y · H:i') }}</span>
+                                                </div>
+                                                <div class="inline-flex items-center gap-2">
+                                                    <i class="fa-solid fa-location-dot text-emerald-300"></i>
+                                                    <span>Cancha {{ $p->cancha }}</span>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    @endforeach
+                                </div>
+                            </section>
+                        @endif
                     </div>
                 @else
                     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">

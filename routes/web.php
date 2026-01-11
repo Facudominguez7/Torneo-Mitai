@@ -65,6 +65,8 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::resource('equipogrupo', ControladorEquiposGrupos::class);
     Route::resource('equipoedicion', ControladorEquiposEdiciones::class);
     Route::resource('partido', ControladorPartidos::class);
+    Route::get('partido-interzonal/create', [ControladorPartidos::class, 'createInterzonal'])->name('partido.create-interzonal');
+    Route::post('partido-interzonal/store', [ControladorPartidos::class, 'storeInterzonal'])->name('partido.store-interzonal');
     Route::resource('tabla_goleador', ControladorTablaGoleadores::class);
     Route::resource('instancia_final', ControladorInstanciaFinal::class);
     Route::get('/instancia_final/{idEdicion}/{horario?}', [ControladorInstanciaFinal::class, 'index'])->name('instancia_final');

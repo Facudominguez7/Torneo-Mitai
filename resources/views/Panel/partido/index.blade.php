@@ -2,7 +2,7 @@
 
 @section('contenido')
     @if (isset($EdicionSeleccionada))
-        <div class="flex flex-row justify-center mb-2 px-2">
+        <div class="flex flex-row justify-center mb-2 px-2 gap-2 flex-wrap">
             <div>
                 <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada, 'tipo' => 'partido']) }}">
                     <button
@@ -11,6 +11,19 @@
                     </button>
                 </a>
             </div>
+            @if (isset($idCategoria) && $idCategoria)
+                <div>
+                    <a href="{{ route('partido.create-interzonal', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria]) }}">
+                        <button
+                            class="bg-amber-500 hover:bg-amber-600 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg w-full md:w-auto flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Partido Interzonal
+                        </button>
+                    </a>
+                </div>
+            @endif
         </div>
     @endif
     <div class="bg-white p-6">
@@ -116,7 +129,17 @@
             <div class="grid gap-4 p-4 md:p-6 bg-gray-300">
                 <div class="bg-card rounded-lg shadow-xl bg-white">
                     <div class="px-4 md:px-6 py-3 text-muted-foreground grid grid-cols-1 gap-2">
-                        <div class="text-sm md:text-base text-center font-semibold text-gray-600 uppercase tracking-wide">{{ $p->fecha->nombre }}</div>
+                        <div class="text-sm md:text-base text-center font-semibold text-gray-600 uppercase tracking-wide flex items-center justify-center gap-2">
+                            {{ $p->fecha->nombre }}
+                            @if ($p->es_interzonal)
+                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-xs font-semibold">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    Interzonal
+                                </span>
+                            @endif
+                        </div>
                         <div class="flex flex-col md:flex-row items-center justify-center gap-4">
                             <div class="flex flex-col items-center gap-2">
                                 <img src="{{ asset('fotos/equipos/' . $p->equipoLocal->foto) }}" width="60" height="60" alt="{{ $p->equipoLocal->nombre }}" class="w-14 h-14 md:w-[60px] md:h-[60px] rounded-full object-cover" />
