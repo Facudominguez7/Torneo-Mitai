@@ -100,6 +100,16 @@
                                     </x-dropdown>
                                 </div>
 
+                                {{-- Buscador por nombre de equipo --}}
+                                <div class="relative">
+                                    <input type="text" id="buscar-equipo" placeholder="Buscar equipo..."
+                                        class="w-full rounded-2xl border border-[#f7f280]/40 bg-gradient-to-r from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/85 px-4 py-3 pl-10 text-sm font-semibold text-white placeholder-white/50 shadow-lg transition focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-white/60 text-sm"></i>
+                                    <button type="button" id="limpiar-busqueda" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition hidden">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -134,7 +144,7 @@
                                             @php
                                                 $esFuturo = optional(\Carbon\Carbon::parse($p->horario_datetime))->isFuture();
                                             @endphp
-                                            <article class="partido-card rounded-3xl border border-[#f7f280]/30 bg-gradient-to-br from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(14,75,94,0.75)] transition hover:border-[#f7f280]/45 md:shadow-[0_32px_80px_-48px_rgba(14,75,94,0.9)]" data-jugado="{{ (int) $p->jugado }}" data-horario="{{ \Carbon\Carbon::parse($p->horario_datetime)->toIso8601String() }}" id="partido-{{ $p->id }}">
+                                            <article class="partido-card rounded-3xl border border-[#f7f280]/30 bg-gradient-to-br from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(14,75,94,0.75)] transition hover:border-[#f7f280]/45 md:shadow-[0_32px_80px_-48px_rgba(14,75,94,0.9)]" data-jugado="{{ (int) $p->jugado }}" data-horario="{{ \Carbon\Carbon::parse($p->horario_datetime)->toIso8601String() }}" data-local="{{ strtolower($p->nombre_local) }}" data-visitante="{{ strtolower($p->nombre_visitante) }}" id="partido-{{ $p->id }}">
                                                 @php
                                                     $statusLabel = 'Pendiente';
                                                     $statusClasses = 'bg-[#f7f280]/15 text-[#f7f280] border border-[#f7f280]/40';
@@ -238,7 +248,7 @@
                                         @php
                                             $esFuturo = optional(\Carbon\Carbon::parse($p->horario_datetime))->isFuture();
                                         @endphp
-                                        <article class="partido-card rounded-3xl border border-amber-400/40 bg-gradient-to-br from-[#0e4b5e] via-amber-900/30 to-[#0e4b5e] px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(245,158,11,0.5)] transition hover:border-amber-400/60 md:shadow-[0_32px_80px_-48px_rgba(245,158,11,0.6)]" data-jugado="{{ (int) $p->jugado }}" data-horario="{{ \Carbon\Carbon::parse($p->horario_datetime)->toIso8601String() }}" id="partido-{{ $p->id }}">
+                                        <article class="partido-card rounded-3xl border border-amber-400/40 bg-gradient-to-br from-[#0e4b5e] via-amber-900/30 to-[#0e4b5e] px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(245,158,11,0.5)] transition hover:border-amber-400/60 md:shadow-[0_32px_80px_-48px_rgba(245,158,11,0.6)]" data-jugado="{{ (int) $p->jugado }}" data-horario="{{ \Carbon\Carbon::parse($p->horario_datetime)->toIso8601String() }}" data-local="{{ strtolower($p->nombre_local) }}" data-visitante="{{ strtolower($p->nombre_visitante) }}" id="partido-{{ $p->id }}">
                                             @php
                                                 $statusLabel = 'Pendiente';
                                                 $statusClasses = 'bg-amber-500/20 text-amber-300 border border-amber-400/50';
@@ -457,6 +467,53 @@
                 setTimeout(() => objetivo.classList.remove('ring-2','ring-blue-400','ring-offset-2','ring-offset-white'), 3000);
             }
         } catch (e) {}
+
+        // Buscador de equipos en tiempo real
+        const buscadorInput = document.getElementById('buscar-equipo');
+        const btnLimpiar = document.getElementById('limpiar-busqueda');
+        
+        if (buscadorInput) {
+            buscadorInput.addEventListener('input', function() {
+                const termino = this.value.toLowerCase().trim();
+                const cards = document.querySelectorAll('.partido-card');
+                const secciones = document.querySelectorAll('section.space-y-6');
+                
+                // Mostrar/ocultar botón limpiar
+                if (btnLimpiar) {
+                    btnLimpiar.classList.toggle('hidden', termino === '');
+                }
+                
+                if (termino === '') {
+                    // Mostrar todo si no hay búsqueda
+                    cards.forEach(card => card.classList.remove('hidden'));
+                    secciones.forEach(sec => sec.classList.remove('hidden'));
+                    return;
+                }
+                
+                // Filtrar tarjetas por nombre de equipo
+                cards.forEach(card => {
+                    const local = card.dataset.local || '';
+                    const visitante = card.dataset.visitante || '';
+                    const coincide = local.includes(termino) || visitante.includes(termino);
+                    card.classList.toggle('hidden', !coincide);
+                });
+                
+                // Ocultar secciones vacías (grupos sin partidos visibles)
+                secciones.forEach(sec => {
+                    const cardsVisibles = sec.querySelectorAll('.partido-card:not(.hidden)');
+                    sec.classList.toggle('hidden', cardsVisibles.length === 0);
+                });
+            });
+            
+            // Botón para limpiar búsqueda
+            if (btnLimpiar) {
+                btnLimpiar.addEventListener('click', function() {
+                    buscadorInput.value = '';
+                    buscadorInput.dispatchEvent(new Event('input'));
+                    buscadorInput.focus();
+                });
+            }
+        }
     });
         window.addEventListener('pageshow', function(event) {
             if (event.persisted) {

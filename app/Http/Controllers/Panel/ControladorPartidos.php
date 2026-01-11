@@ -57,17 +57,12 @@ class ControladorPartidos extends Controller
                 'equipoLocal:id,nombre,foto',
                 'equipoVisitante:id,nombre,foto',
                 'fecha:id,nombre',
+                'categoria:id,nombreCategoria',
+                'grupo:id,nombre',
             ])
             ->select('partidos.*')
             ->orderByDesc('partidos.id')
-            ->paginate(7);
-
-        $partidos->appends([
-            'idEdicion' => $idEdicion,
-            'idFecha' => $idFecha,
-            'idGrupo' => $idGrupo,
-            'idCategoria' => $idCategoria
-        ]);
+            ->get();
 
         $categorias = Categoria::where('idEdicion', $idEdicion)
             ->select('id', 'nombreCategoria')
