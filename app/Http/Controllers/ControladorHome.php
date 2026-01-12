@@ -721,6 +721,100 @@ class ControladorHome extends Controller
     }
 
     /**
+     * Imprimir fixture de instancias finales de una edición.
+     */
+    public function imprimirFixtureInstanciasFinales(Request $request)
+    {
+        $idEdicion = $request->query('idEdicion');
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
+        if (!$EdicionSeleccionada) {
+            return redirect()->back()->with('error', 'Debe seleccionar una edición');
+        }
+
+        // Obtener todos los partidos de instancias finales
+        $partidos = InstanciaFinal::select(
+            'instancias_finales.*',
+            'fases.nombre as nombre_fase',
+            'fases.secuencia as orden_fase',
+            'el.nombre as nombre_local',
+            'ev.nombre as nombre_visitante',
+            'el.foto as foto_local',
+            'ev.foto as foto_visitante',
+            'categorias.nombreCategoria as nombre_categoria',
+            DB::raw("COALESCE(copas.nombre, '') as nombre_copa"),
+            DB::raw("COALESCE(copas.secuencia, 99) as orden_copa")
+        )
+            ->join('fases', 'instancias_finales.idFase', '=', 'fases.id')
+            ->join('equipos as el', 'instancias_finales.idEquipoLocal', '=', 'el.id')
+            ->join('equipos as ev', 'instancias_finales.idEquipoVisitante', '=', 'ev.id')
+            ->join('categorias', 'instancias_finales.idCategoria', '=', 'categorias.id')
+            ->leftjoin('copas', 'instancias_finales.idCopa', '=', 'copas.id')
+            ->where('instancias_finales.idEdicion', $idEdicion)
+            ->orderBy('categorias.nombreCategoria', 'desc')
+            ->orderBy('copas.secuencia', 'asc')
+            ->orderBy('fases.secuencia', 'asc')
+            ->orderBy('instancias_finales.horario', 'asc')
+            ->get();
+
+        return view('Panel.imprimir.fixture-instancias-finales', compact('partidos', 'EdicionSeleccionada'));
+    }
+
+    /**
+     * Imprimir fixture para árbitros (instancias finales) con espacios para resultado y goleadores.
+     * Solo muestra partidos pendientes (sin resultado cargado).
+     * Soporta filtro opcional por horario.
+     */
+    public function imprimirFixtureArbitros(Request $request)
+    {
+        $idEdicion = $request->query('idEdicion');
+        $horarioFiltro = $request->query('horario'); // Formato: HH:mm
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
+        if (!$EdicionSeleccionada) {
+            return redirect()->back()->with('error', 'Debe seleccionar una edición');
+        }
+
+        // Obtener partidos de instancias finales PENDIENTES (sin resultado)
+        $query = InstanciaFinal::select(
+            'instancias_finales.*',
+            'fases.nombre as nombre_fase',
+            'fases.secuencia as orden_fase',
+            'el.nombre as nombre_local',
+            'ev.nombre as nombre_visitante',
+            'el.foto as foto_local',
+            'ev.foto as foto_visitante',
+            'categorias.nombreCategoria as nombre_categoria',
+            DB::raw("COALESCE(copas.nombre, '') as nombre_copa"),
+            DB::raw("COALESCE(copas.secuencia, 99) as orden_copa")
+        )
+            ->join('fases', 'instancias_finales.idFase', '=', 'fases.id')
+            ->join('equipos as el', 'instancias_finales.idEquipoLocal', '=', 'el.id')
+            ->join('equipos as ev', 'instancias_finales.idEquipoVisitante', '=', 'ev.id')
+            ->join('categorias', 'instancias_finales.idCategoria', '=', 'categorias.id')
+            ->leftjoin('copas', 'instancias_finales.idCopa', '=', 'copas.id')
+            ->where('instancias_finales.idEdicion', $idEdicion)
+            // Solo partidos pendientes (sin resultado cargado)
+            ->whereNull('instancias_finales.golesEquipoLocal')
+            ->whereNull('instancias_finales.golesEquipoVisitante');
+
+        // Filtro por horario si se proporciona
+        if ($horarioFiltro) {
+            $query->whereRaw('TIME(instancias_finales.horario) = ?', [$horarioFiltro . ':00']);
+        }
+
+        $partidos = $query
+            ->orderBy('instancias_finales.horario', 'asc')
+            ->orderBy('instancias_finales.cancha', 'asc')
+            ->orderBy('categorias.nombreCategoria', 'desc')
+            ->orderBy('copas.secuencia', 'asc')
+            ->orderBy('fases.secuencia', 'asc')
+            ->get();
+
+        return view('Panel.imprimir.fixture-arbitros', compact('partidos', 'EdicionSeleccionada', 'horarioFiltro'));
+    }
+
+    /**
      * API: Obtener grupos de una categoría para el dropdown de impresión.
      */
     public function gruposPorCategoria($idCategoria)

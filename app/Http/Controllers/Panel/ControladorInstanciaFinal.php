@@ -60,6 +60,12 @@ class ControladorInstanciaFinal extends Controller
         if ($fechaFiltro) {
             $query->whereRaw('DATE(horario) = ?', [$fechaFiltro]);
         }
+        
+        // Filtro por hora (HH:mm)
+        $horaFiltro = $request->horario;
+        if ($horaFiltro) {
+             $query->whereRaw('TIME(horario) = ?', [$horaFiltro . ':00']);
+        }
 
         // Filtro por estado (pendiente/jugado)
         if ($estado === 'pendiente') {
