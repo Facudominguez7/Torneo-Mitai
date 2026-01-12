@@ -605,4 +605,153 @@ class ControladorHome extends Controller
             'selectedFase'
         ));
     }
+
+    /**
+     * Imprimir tabla de posiciones de TODAS las categorías y grupos de una edición.
+     */
+    public function imprimirTablaPosiciones(Request $request)
+    {
+        $idEdicion = $request->query('idEdicion');
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
+        if (!$EdicionSeleccionada) {
+            return redirect()->back()->with('error', 'Debe seleccionar una edición');
+        }
+
+        // Obtener todas las categorías de la edición, ordenadas de mayor a menor
+        $categorias = Categoria::where('idEdicion', $idEdicion)
+            ->orderBy('nombreCategoria', 'desc')
+            ->get();
+
+        // Estructura para almacenar todas las tablas por categoría y grupo
+        $tablasPorCategoria = [];
+
+        foreach ($categorias as $categoria) {
+            // Obtener todos los grupos de esta categoría
+            $grupos = Grupo::where('idCategoria', $categoria->id)
+                ->where('idEdicion', $idEdicion)
+                ->orderBy('nombre')
+                ->get();
+
+            $gruposConTabla = [];
+
+            foreach ($grupos as $grupo) {
+                // Obtener la tabla de posiciones de cada grupo
+                $tablaPosiciones = TablaPosicion::select(
+                    'tabla_posiciones.*',
+                    'equipos.nombre as nombreEquipo',
+                    'equipos.foto as fotoEquipo',
+                    'equipos.id as idEquipo'
+                )
+                    ->join('equipos', 'tabla_posiciones.idEquipo', '=', 'equipos.id')
+                    ->where('tabla_posiciones.idGrupo', $grupo->id)
+                    ->where(function ($query) use ($idEdicion) {
+                        $query->where('tabla_posiciones.idEdicion', $idEdicion)
+                            ->orWhere('tabla_posiciones.idEdicion', 0);
+                    })
+                    ->orderBy('tabla_posiciones.puntos', 'DESC')
+                    ->orderBy('tabla_posiciones.diferenciaGoles', 'DESC')
+                    ->get();
+
+                if ($tablaPosiciones->isNotEmpty()) {
+                    $gruposConTabla[] = [
+                        'grupo' => $grupo,
+                        'tabla' => $tablaPosiciones
+                    ];
+                }
+            }
+
+            if (!empty($gruposConTabla)) {
+                $tablasPorCategoria[] = [
+                    'categoria' => $categoria,
+                    'grupos' => $gruposConTabla
+                ];
+            }
+        }
+
+        return view('Panel.imprimir.tabla-posiciones', compact('tablasPorCategoria', 'EdicionSeleccionada'));
+    }
+
+    /**
+     * Imprimir fixture de TODOS los partidos de una edición.
+     */
+    public function imprimirFixture(Request $request)
+    {
+        $idEdicion = $request->query('idEdicion');
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
+        if (!$EdicionSeleccionada) {
+            return redirect()->back()->with('error', 'Debe seleccionar una edición');
+        }
+
+        // Obtener todas las categorías de la edición, ordenadas de mayor a menor
+        $categorias = Categoria::where('idEdicion', $idEdicion)
+            ->orderBy('nombreCategoria', 'desc')
+            ->get();
+
+        // Obtener todos los grupos para referencia
+        $grupos = Grupo::where('idEdicion', $idEdicion)->get()->keyBy('id');
+
+        // Obtener todos los partidos de la edición
+        $partidos = Partido::select(
+            'partidos.*',
+            'el.nombre as nombre_local',
+            'ev.nombre as nombre_visitante',
+            'el.foto as foto_local',
+            'ev.foto as foto_visitante',
+            'f.nombre as nombre_fecha',
+            'f.id as idFecha',
+            'cat.nombreCategoria as nombre_categoria',
+            'cat.id as idCategoriaPartido'
+        )
+            ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
+            ->join('equipos as ev', 'partidos.idEquipoVisitante', '=', 'ev.id')
+            ->join('fechas as f', 'partidos.idFechas', '=', 'f.id')
+            ->leftJoin('categorias as cat', 'partidos.idCategoria', '=', 'cat.id')
+            ->where('partidos.idEdicion', $idEdicion)
+            ->orderBy('cat.nombreCategoria', 'desc')
+            ->orderBy('f.id', 'asc')
+            ->orderBy('partidos.horario_datetime', 'asc')
+            ->get();
+
+        // Agrupar partidos por categoría
+        $partidosPorCategoria = $partidos->groupBy('idCategoriaPartido');
+
+        return view('Panel.imprimir.fixture', compact('partidosPorCategoria', 'categorias', 'grupos', 'EdicionSeleccionada'));
+    }
+
+    /**
+     * API: Obtener grupos de una categoría para el dropdown de impresión.
+     */
+    public function gruposPorCategoria($idCategoria)
+    {
+        $grupos = Grupo::where('idCategoria', $idCategoria)
+            ->select('id', 'nombre')
+            ->orderBy('nombre')
+            ->get();
+
+        return response()->json($grupos);
+    }
+
+    /**
+     * API: Obtener fechas de una categoría para el dropdown de impresión.
+     */
+    public function fechasPorCategoria($idCategoria)
+    {
+        $categoria = Categoria::find($idCategoria);
+        if (!$categoria) {
+            return response()->json([]);
+        }
+
+        $fechas = Fecha::where('idEdicion', $categoria->idEdicion)
+            ->where(function ($query) use ($idCategoria) {
+                $query->where('idCategoria', $idCategoria)
+                    ->orWhereNull('idCategoria');
+            })
+            ->select('id', 'nombre')
+            ->orderBy('id')
+            ->get();
+
+        return response()->json($fechas);
+    }
 }

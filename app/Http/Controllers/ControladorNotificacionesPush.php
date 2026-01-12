@@ -794,4 +794,89 @@ class ControladorNotificacionesPush extends Controller
             'email_count' => $contadorEmail
         ]);
     }
+
+    /**
+     * Enviar notificación de resultado de instancia final cargado por lotes.
+     */
+    public function enviarLoteResultadoInstancia(Request $request)
+    {
+        $validated = $request->validate([
+            'partido_id' => ['required', 'integer', 'exists:instancias_finales,id'],
+            'offset' => ['required', 'integer', 'min:0'],
+            'limit' => ['required', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $limit = $validated['limit'];
+        $offset = $validated['offset'];
+        $partidoId = $validated['partido_id'];
+
+        $partido = \App\Models\InstanciaFinal::with(['equipoLocal', 'equipoVisitante', 'categoria', 'fase'])
+            ->findOrFail($partidoId);
+        
+        // Preparar datos del partido para la notificación
+        $nombreFase = $partido->fase->nombre ?? '';
+        $datosPartido = (object) [
+                'id' => $partido->id,
+                'idEdicion' => $partido->idEdicion,
+                'nombre_local' => $partido->equipoLocal->nombre ?? 'Equipo Local',
+                'nombre_visitante' => $partido->equipoVisitante->nombre ?? 'Equipo Visitante',
+                'golesEquipoLocal' => $partido->golesEquipoLocal,
+                'golesEquipoVisitante' => $partido->golesEquipoVisitante,
+                'nombre_categoria' => ($partido->categoria->nombreCategoria ?? '') . ($nombreFase ? " - {$nombreFase}" : ''),
+        ];
+
+        $notificacion = new \App\Notifications\ResultadoCargado($datosPartido);
+
+        $usuarios = \App\Models\User::query()
+            ->where(function ($q) {
+                $q->where(function($q2) {
+                    $q2->where('email_subscribed', true)
+                       ->whereNotNull('email_verified_at');
+                })
+                ->orWhereHas('pushSubscriptions');
+            })
+            ->orderBy('id')
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
+        if ($usuarios->isEmpty()) {
+             return response()->json([
+                'done' => true,
+                'sent' => 0,
+                'errors' => 0,
+                'message' => 'Fin del proceso.'
+            ]);
+        }
+
+        $enviados = 0;
+        $errores = [];
+        $lastError = null;
+        $contadorPush = 0;
+        $contadorEmail = 0;
+
+        foreach ($usuarios as $usuario) {
+            try {
+                $usuario->notify($notificacion);
+                // Actualizar timestamp
+                $usuario->forceFill(['last_notification_at' => now()])->saveQuietly();
+                $enviados++;
+                 if ($usuario->pushSubscriptions()->exists()) $contadorPush++;
+                 if ($usuario->quiereRecibirEmails()) $contadorEmail++;
+            } catch (\Exception $e) {
+                $errores[] = $usuario->email;
+                $lastError = $e->getMessage();
+                Log::channel('single')->error("Error notif resultado instancia user {$usuario->id}", ['error' => $e->getMessage()]);
+            }
+        }
+
+        return response()->json([
+            'done' => $usuarios->count() < $limit,
+            'sent' => $enviados,
+            'errors' => count($errores),
+            'last_error' => $lastError,
+            'push_count' => $contadorPush,
+            'email_count' => $contadorEmail
+        ]);
+    }
 }

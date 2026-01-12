@@ -265,7 +265,77 @@
 
             var url = "{{ route('instancia_final.index') }}";
 
-
+            // ===== PROCESAR NOTIFICACIONES PENDIENTES =====
+            (async function procesarNotificacionesPendientes() {
+                const pending = localStorage.getItem('pendingNotification');
+                if (!pending) return;
+                
+                try {
+                    const data = JSON.parse(pending);
+                    // Verificar que no sea muy viejo (máximo 5 minutos)
+                    if (Date.now() - data.timestamp > 5 * 60 * 1000) {
+                        localStorage.removeItem('pendingNotification');
+                        return;
+                    }
+                    
+                    // Limpiar inmediatamente para evitar doble procesamiento
+                    localStorage.removeItem('pendingNotification');
+                    
+                    const endpoint = data.es_instancia_final 
+                        ? '/Panel/push/resultado-instancia/enviar-lote' 
+                        : '/Panel/push/resultado/enviar-lote';
+                    
+                    console.log(`Enviando notificaciones para partido ${data.partido_id}...`);
+                    
+                    let offset = 0;
+                    const LIMITE = 50;
+                    let continuar = true;
+                    let totalEnviados = 0;
+                    
+                    while (continuar) {
+                        try {
+                            const response = await fetch(endpoint, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({
+                                    partido_id: data.partido_id,
+                                    offset: offset,
+                                    limit: LIMITE
+                                })
+                            });
+                            
+                            if (!response.ok) {
+                                console.error('Error en lote:', offset);
+                                continuar = false;
+                                break;
+                            }
+                            
+                            const result = await response.json();
+                            totalEnviados += result.sent || 0;
+                            
+                            if (result.done) {
+                                continuar = false;
+                            } else {
+                                offset += LIMITE;
+                            }
+                        } catch (err) {
+                            console.error('Error enviando notificaciones:', err);
+                            continuar = false;
+                        }
+                    }
+                    
+                    console.log(`Notificaciones completadas: ${totalEnviados} enviadas`);
+                } catch (e) {
+                    console.error('Error procesando notificación pendiente:', e);
+                    localStorage.removeItem('pendingNotification');
+                }
+            })();
+            // ===== FIN NOTIFICACIONES PENDIENTES =====
             // Actualizar la URL con los filtros seleccionados
             function updateUrl(params) {
                 var newUrl = new URL(url, window.location.origin);

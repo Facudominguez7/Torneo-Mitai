@@ -192,6 +192,17 @@ class ControladorInstanciaFinal extends Controller
             $this->partidoService->actualizarHistorialInstanciasFinales($partido, $golesEquipoLocal, $golesEquipoVisitante);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoLocal, $partido->idEdicion, $idGrupo);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoVisitante, $partido->idEdicion, $idGrupo);
+            
+            // Las notificaciones se envían desde el frontend via AJAX por lotes
+            // Si es AJAX, devolvemos el partido_id para que el frontend envíe notificaciones
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Resultado guardado.',
+                    'partido_id' => $partido->id
+                ]);
+            }
+            
             return to_route('instancia_final.index', ['idEdicion' => $idEdicion, 'fecha' => $request->input('fecha')])->with('status', 'Resultado cargado con éxito.');
         }
 

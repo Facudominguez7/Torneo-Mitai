@@ -236,7 +236,15 @@ class ControladorPartidos extends Controller
             ->orderBy('id')
             ->get();
 
-        if ($idEdicion > 3) {
+        // Verificar si es partido interzonal (sin grupo)
+        if ($partido->es_interzonal || $idGrupo === null) {
+            // Para interzonales: obtener todos los equipos de la categoría
+            $equipos = Equipo::select('equipos.id', 'equipos.nombre')
+                ->join('equipo_ediciones', 'equipos.id', '=', 'equipo_ediciones.idEquipo')
+                ->where('equipo_ediciones.idCategoria', $idCategoria)
+                ->where('equipo_ediciones.idEdicion', $idEdicion)
+                ->get();
+        } elseif ($idEdicion > 3) {
             $equipos = Equipo::select('equipos.id', 'equipos.nombre')
                 ->join('equipo_ediciones', 'equipos.id', '=', 'equipo_ediciones.idEquipo')
                 ->join('equipos_grupos', 'equipos.id', '=', 'equipos_grupos.idEquipo')
@@ -307,29 +315,16 @@ class ControladorPartidos extends Controller
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoLocal, $partido->idEdicion, $partido->idGrupo);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoVisitante, $partido->idEdicion, $partido->idGrupo);
 
-            // Ejecutar envío en segundo plano (Fire and Forget)
-            try {
-                $artisanPath = base_path('artisan');
-                
-                // Intentar con Laravel Process (funciona en más entornos)
-                if (class_exists(\Illuminate\Support\Facades\Process::class)) {
-                    \Illuminate\Support\Facades\Process::path(base_path())
-                        ->start("php {$artisanPath} mitai:notificar-resultado {$partido->id}");
-                    Log::info("Lanzado proceso de fondo con Process facade para partido {$partido->id}");
-                } else {
-                    // Fallback: ejecutar artisan directamente (síncrono pero funcional)
-                    \Illuminate\Support\Facades\Artisan::call('mitai:notificar-resultado', [
-                        'partidoId' => $partido->id
-                    ]);
-                    Log::info("Ejecutado comando artisan síncronamente para partido {$partido->id}");
-                }
-            } catch (\Exception $e) {
-                Log::error("No se pudo lanzar proceso de fondo: " . $e->getMessage());
-            }
+            // Las notificaciones se envían desde el frontend via AJAX por lotes
+            // para evitar bloquear la respuesta al usuario
 
-            // Si es AJAX o normal, devolvemos exito inmediatamente
+            // Si es AJAX, devolvemos el partido_id para que el frontend envíe notificaciones por lotes
             if ($request->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Resultado guardado. Notificaciones enviándose en segundo plano.']);
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Resultado guardado.',
+                    'partido_id' => $partido->id
+                ]);
             }
 
             return to_route('partido.index', ['idEdicion' => $idEdicion])->with('status', 'Resultado guardado. Notificaciones enviándose en segundo plano.');

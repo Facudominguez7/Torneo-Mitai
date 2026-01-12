@@ -79,6 +79,14 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::get('buscar-equipos', [ControladorEquiposEdiciones::class, 'buscarEquipos'])->name('equipoedicion.buscar');
     Route::get('/admin', [ControladorHome::class, 'admin'])
         ->name('admin');
+    Route::get('/admin/imprimir-tabla-posiciones', [ControladorHome::class, 'imprimirTablaPosiciones'])
+        ->name('admin.imprimir-tabla-posiciones');
+    Route::get('/admin/imprimir-fixture', [ControladorHome::class, 'imprimirFixture'])
+        ->name('admin.imprimir-fixture');
+    Route::get('/admin/grupos-por-categoria/{idCategoria}', [ControladorHome::class, 'gruposPorCategoria'])
+        ->name('admin.grupos-por-categoria');
+    Route::get('/admin/fechas-por-categoria/{idCategoria}', [ControladorHome::class, 'fechasPorCategoria'])
+        ->name('admin.fechas-por-categoria');
     Route::prefix('planilla')->group(function () {
         Route::get('/{partidoId}/{idEdicion}/{tipoPartido}/{horario?}', [ControladorPlanillaJugador::class, 'mostrarPlanilla'])->name('planilla.show');
         Route::post('/agregar-jugador', [ControladorPlanillaJugador::class, 'agregarJugador'])->name('planilla.agregarJugador');
@@ -168,6 +176,11 @@ Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
     Route::post('/resultado/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResultado'])
         ->middleware(UserAccesPanelMiddleware::class)
         ->name('push.resultado.enviar-lote');
+    
+    // Ruta para notificación de resultados de instancias finales por lotes
+    Route::post('/resultado-instancia/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResultadoInstancia'])
+        ->middleware(UserAccesPanelMiddleware::class)
+        ->name('push.resultado-instancia.enviar-lote');
 });
 
 // Ruta pública para obtener la clave VAPID (no requiere autenticación)

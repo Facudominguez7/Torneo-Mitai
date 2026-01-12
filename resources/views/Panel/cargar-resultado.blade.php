@@ -174,6 +174,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.querySelector('form[action*="cargar-resultado"]');
+            const esInstanciaFinal = {{ (isset($tipo) && $tipo === 'instancia_final') ? 'true' : 'false' }};
             
             if (form) {
                 form.addEventListener('submit', async function(e) {
@@ -201,16 +202,32 @@
                         
                         const result = await response.json();
                         
-                        // 2. Mostrar exito y redirigir
-                        await Swal.fire({
+                        // 2. Guardar partido pendiente para enviar notificaciones desde la página destino
+                        if (result.partido_id) {
+                            localStorage.setItem('pendingNotification', JSON.stringify({
+                                partido_id: result.partido_id,
+                                es_instancia_final: esInstanciaFinal,
+                                timestamp: Date.now()
+                            }));
+                        }
+
+                        // 3. Mostrar éxito breve y redirigir
+                        Swal.fire({
                             title: '¡Listo!',
-                            text: 'Resultado guardado. Las notificaciones se enviarán en segundo plano.',
+                            text: 'Resultado guardado.',
                             icon: 'success',
-                            timer: 2000,
+                            timer: 1000,
                             showConfirmButton: false
                         });
 
-                        window.location.href = "{{ route('partido.index', ['idEdicion' => $EdicionSeleccionada->id]) }}";
+                        // 4. Redirigir inmediatamente (las notificaciones se enviarán en la otra página)
+                        setTimeout(() => {
+                            @if(isset($tipo) && $tipo === 'instancia_final')
+                                window.location.href = "{{ route('instancia_final.index', ['idEdicion' => $EdicionSeleccionada->id, 'fecha' => request('fecha')]) }}";
+                            @else
+                                window.location.href = "{{ route('partido.index', ['idEdicion' => $EdicionSeleccionada->id]) }}";
+                            @endif
+                        }, 500);
                         
                     } catch (error) {
                         console.error(error);

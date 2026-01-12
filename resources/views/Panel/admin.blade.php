@@ -395,6 +395,27 @@
                     </a>
                 </div>
 
+                {{-- Botón Imprimir Tabla de Posiciones (todas las categorías y grupos) --}}
+                <div>
+                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-tabla-posiciones', ['idEdicion' => $EdicionSeleccionada->id ?? '']) }}')"
+                        class="bg-green-600 hover:bg-green-700 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Imprimir Tablas de Posiciones
+                    </button>
+                </div>
+
+                {{-- Botón Imprimir Fixture (todos los partidos) --}}
+                <div>
+                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-fixture', ['idEdicion' => $EdicionSeleccionada->id ?? '']) }}')"
+                        class="bg-blue-600 hover:bg-blue-700 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Imprimir Fixture Completo
+                    </button>
+                </div>
 
             </div>
             <!-- Filtro de horario -->
@@ -571,6 +592,45 @@
         });
 
 
+    </script>
+
+    {{-- Función para imprimir usando iframe oculto --}}
+    <script>
+        function imprimirEnIframe(url) {
+            // Crear iframe oculto
+            let iframe = document.getElementById('print-iframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'print-iframe';
+                iframe.style.position = 'absolute';
+                iframe.style.width = '0';
+                iframe.style.height = '0';
+                iframe.style.border = 'none';
+                iframe.style.left = '-9999px';
+                document.body.appendChild(iframe);
+            }
+            
+            // Mostrar loading
+            Swal.fire({
+                title: 'Preparando impresión...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Cargar contenido e imprimir
+            iframe.onload = function() {
+                Swal.close();
+                setTimeout(() => {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                }, 500);
+            };
+            
+            iframe.src = url;
+        }
     </script>
     @yield('scripts')
 </body>
