@@ -6,7 +6,6 @@ use App\Models\Categoria;
 use App\Models\Equipo;
 use App\Models\ListaBuenaFe;
 use App\Models\PlanillaJugador;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Servicio de Validación de Reglas de Negocio para Jugadores
@@ -27,7 +26,7 @@ class ValidadorReglasJugador
      * Tipos de retorno:
      * - null: Todas las validaciones pasaron
      * - ['type' => 'error', 'message' => '...']: Error bloqueante (HARD)
-     * - ['type' => 'warning', 'message' => '...']: Advertencia que puede forzarse (SOFT)
+     * - ['type' => 'warning', 'message' => '...']: Advertencia administrativa (SOFT)
      * 
      * @param string $dni_jugador DNI del jugador
      * @param int $idEquipo ID del equipo destino
@@ -66,6 +65,25 @@ class ValidadorReglasJugador
         if ($resultado) return $resultado;
 
         return null; // Todas las validaciones pasaron
+    }
+
+    /**
+     * Validar exclusivamente reglas de categoría y edad.
+     *
+     * Este método se usa en flujos de edición de datos donde no corresponde
+     * ejecutar validaciones de duplicidad/equipo (por ejemplo, update de
+     * fecha de nacimiento en Lista de Buena Fe).
+     *
+     * @param string $dni_jugador DNI del jugador
+     * @param int $idEquipo ID del equipo destino
+     * @param int $idEdicion ID de la edición
+     * @param int $idCategoria ID de la categoría
+     * @param string $fecha_nacimiento Fecha de nacimiento del jugador
+     * @return array|null Null si OK, array con tipo y mensaje si falla
+     */
+    public function validarSoloCategoriaYEdad($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento)
+    {
+        return $this->validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento);
     }
 
     /**
@@ -115,7 +133,7 @@ class ValidadorReglasJugador
 
     /**
      * Validar si el jugador existe como inactivo en el mismo equipo
-     * (Advertir al usuario para que decida si reactivar)
+     * (Advertencia administrativa para registrar observación)
      */
     private function validarJugadorInactivo($dni_jugador, $idEquipo, $idEdicion)
     {
@@ -136,95 +154,99 @@ class ValidadorReglasJugador
     }
 
     /**
- * Validar reglas de categorías y edad
- */
-private function validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento)
-{
-    // Helper para extraer año de categoría
-    $extraerAnioCategoria = function (string $nombre) {
-        if (preg_match('/(20\d{2})/', $nombre, $m)) {
-            return (int) $m[1];
-        }
-        return null;
-    };
+     * Validar reglas de categorías y edad.
+     *
+     * Reglas clave:
+     * - Permite que un jugador más chico participe en una categoría más grande.
+     * - Bloquea que un jugador más grande participe en una categoría más chica.
+     * - Mantiene advertencias administrativas para casos especiales (institución).
+     */
+    private function validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento)
+    {
+        // Helper para extraer año de categoría
+        $extraerAnioCategoria = function (string $nombre) {
+            if (preg_match('/(20\d{2})/', $nombre, $m)) {
+                return (int) $m[1];
+            }
 
-    // Calcular edad del jugador
-    $anioActual = now()->year;
-    $anioNacimiento = (int) \Carbon\Carbon::parse($fecha_nacimiento)->year;
-    $edadJugador = $anioActual - $anioNacimiento;
+            return null;
+        };
 
-    $categoriaEquipoActual = Categoria::find($idCategoria);
-    $anioEquipoActual = $extraerAnioCategoria($categoriaEquipoActual->nombreCategoria);
-    
-    // VALIDACIÓN PRIORITARIA: Verificar si la fecha de nacimiento corresponde a la categoría actual
-    if (!is_null($anioEquipoActual)) {
-        // El jugador debe haber nacido en el año de la categoría o después
-        // Por ejemplo, para categoría 2015: jugador puede nacer en 2015, 2016, etc.
-        if ($anioNacimiento < $anioEquipoActual) {
-            // El jugador nació ANTES del año de la categoría (es más grande de lo permitido)
+        // Calcular edad del jugador
+        $anioActual = (int) date('Y');
+        $anioNacimiento = (int) \Carbon\Carbon::parse($fecha_nacimiento)->year;
+        $edadJugador = $anioActual - $anioNacimiento;
+
+        $categoriaEquipoActual = Categoria::find($idCategoria);
+        if (!$categoriaEquipoActual) {
             return [
-                'type' => 'warning',
-                'message' => 'La fecha de nacimiento del jugador (' . $anioNacimiento . ') no corresponde a la categoría ' . $categoriaEquipoActual->nombreCategoria . '. El jugador es mayor que la edad permitida.'
+                'type' => 'error',
+                'message' => 'No se pudo validar la categoría del equipo destino.'
             ];
         }
-        
-        // Validar edad máxima
-        $edadMaximaCalculada = ($anioActual - $anioEquipoActual);
-        if ($edadJugador > $edadMaximaCalculada) {
-            return [
-                'type' => 'warning',
-                'message' => 'El jugador excede la edad permitida para ' . $categoriaEquipoActual->nombreCategoria . '.'
-            ];
+
+        $anioEquipoActual = $extraerAnioCategoria($categoriaEquipoActual->nombreCategoria);
+
+        // Categorías por año (ej: 2015, 2016)
+        if (!is_null($anioEquipoActual)) {
+            // Bloquea SOLO si es más grande que la categoría permitida.
+            // Ejemplo: categoría 2015 -> no puede un 2014 (más grande).
+            if ($anioNacimiento < $anioEquipoActual) {
+                return [
+                    'type' => 'error',
+                    'message' => 'La fecha de nacimiento del jugador (' . $anioNacimiento . ') no corresponde a "' . $categoriaEquipoActual->nombreCategoria . '". El jugador es mayor que la edad permitida.'
+                ];
+            }
+        } else {
+            // Categorías especiales (ej: Femenino Sub 13)
+            if (preg_match('/Sub\s*(\d{1,2})/i', $categoriaEquipoActual->nombreCategoria, $mSub)) {
+                $limite = (int) $mSub[1];
+                if ($edadJugador > $limite) {
+                    return [
+                        'type' => 'error',
+                        'message' => 'El jugador excede la edad límite para ' . $categoriaEquipoActual->nombreCategoria . '.'
+                    ];
+                }
+            }
         }
-    } else {
-        // Categorías especiales (ej: Femenino Sub 13)
-        if (preg_match('/Sub\s*(\d{1,2})/i', $categoriaEquipoActual->nombreCategoria, $mSub)) {
-            $limite = (int) $mSub[1];
-            if ($edadJugador > $limite) {
+
+        // Obtener historial de categorías del jugador
+        $categoriasJugador = PlanillaJugador::join('equipo_ediciones', function ($join) {
+            $join->on('planilla_jugadores.idEquipo', '=', 'equipo_ediciones.idEquipo')
+                ->on('planilla_jugadores.idEdicion', '=', 'equipo_ediciones.idEdicion');
+        })
+            ->join('categorias', 'equipo_ediciones.idCategoria', '=', 'categorias.id')
+            ->join('equipos', 'equipo_ediciones.idEquipo', '=', 'equipos.id')
+            ->where('planilla_jugadores.dni_jugador', $dni_jugador)
+            ->where('planilla_jugadores.idEdicion', $idEdicion)
+            ->select('categorias.nombreCategoria', 'equipos.nombre as nombreEquipo', 'equipo_ediciones.idEquipo as idEquipoCategoria', 'equipos.idInstitucion')
+            ->distinct()
+            ->get();
+
+        $equipoDestino = Equipo::find($idEquipo);
+        $institucionDestinoId = $equipoDestino?->idInstitucion;
+
+        foreach ($categoriasJugador as $categoriaJugador) {
+            $anioCategoriaJugador = $extraerAnioCategoria($categoriaJugador->nombreCategoria);
+            $institucionOrigenId = $categoriaJugador->idInstitucion;
+
+            if (is_null($anioCategoriaJugador) || is_null($anioEquipoActual)) {
+                continue;
+            }
+
+            // Regla administrativa: Menor subiendo a Mayor, solo misma institución.
+            // Se informa como WARNING para registro conflictivo, sin bloquear por edad.
+            $mismaInstitucion = $institucionDestinoId && $institucionDestinoId === $institucionOrigenId;
+            if ($anioCategoriaJugador > $anioEquipoActual && !$mismaInstitucion) {
                 return [
                     'type' => 'warning',
-                    'message' => 'El jugador excede la edad límite para ' . $categoriaEquipoActual->nombreCategoria . '.'
+                    'message' => 'El jugador ya pertenece al equipo "' . $categoriaJugador->nombreEquipo . '" en la "' . $categoriaJugador->nombreCategoria . '". Solo puede jugar en una categoría más grande dentro de la misma institución.'
                 ];
             }
         }
+
+        return null;
     }
-
-    // Obtener historial de categorías del jugador
-    $categoriasJugador = PlanillaJugador::join('equipo_ediciones', function ($join) {
-        $join->on('planilla_jugadores.idEquipo', '=', 'equipo_ediciones.idEquipo')
-            ->on('planilla_jugadores.idEdicion', '=', 'equipo_ediciones.idEdicion');
-    })
-        ->join('categorias', 'equipo_ediciones.idCategoria', '=', 'categorias.id')
-        ->join('equipos', 'equipo_ediciones.idEquipo', '=', 'equipos.id')
-        ->where('planilla_jugadores.dni_jugador', $dni_jugador)
-        ->where('planilla_jugadores.idEdicion', $idEdicion)
-        ->select('categorias.nombreCategoria', 'equipos.nombre as nombreEquipo', 'equipo_ediciones.idEquipo as idEquipoCategoria', 'equipos.idInstitucion')
-        ->distinct()
-        ->get();
-
-    $equipoDestino = Equipo::find($idEquipo);
-    $institucionDestinoId = $equipoDestino?->idInstitucion;
-
-    foreach ($categoriasJugador as $categoriaJugador) {
-        $anioCategoriaJugador = $extraerAnioCategoria($categoriaJugador->nombreCategoria);
-        $institucionOrigenId = $categoriaJugador->idInstitucion;
-
-        if (is_null($anioCategoriaJugador) || is_null($anioEquipoActual)) {
-            continue;
-        }
-
-        // Regla: Menor subiendo a Mayor - Solo misma institución
-        $mismaInstitucion = $institucionDestinoId && $institucionDestinoId === $institucionOrigenId;
-        if ($anioCategoriaJugador > $anioEquipoActual && !$mismaInstitucion) {
-            return [
-                'type' => 'warning',
-                'message' => 'El jugador ya pertenece al equipo "' . $categoriaJugador->nombreEquipo . '" en la "' . $categoriaJugador->nombreCategoria . '". Solo puede jugar en una categoría más grande dentro de la misma institución.'
-            ];
-        }
-    }
-
-    return null;
-}
     /**
      * Validar límite de 18 jugadores activos
      * Retorna WARNING (no bloquea, solo advierte)

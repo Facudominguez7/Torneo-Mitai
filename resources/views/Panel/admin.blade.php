@@ -2,6 +2,13 @@
 @include('components.loader')
 
 <body class="bg-[--color-primary]  font-[Poppins]">
+    @php
+        /**
+         * Contexto de edición activo para mantener la navegación consistente.
+         */
+        $idEdicionActual = $idEdicionActual ?? ($EdicionSeleccionada->id ?? request()->query('idEdicion'));
+        $parametrosEdicionActual = $idEdicionActual ? ['idEdicion' => $idEdicionActual] : [];
+    @endphp
     <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
         aria-controls="sidebar-multi-level-sidebar" type="button"
         class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200">
@@ -33,7 +40,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('admin', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         <svg class="w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
                             aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
@@ -81,7 +88,7 @@
                     </ul>
                 </li>
                 <li>
-                    <a href="{{ route('edicion.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('edicion.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Calendario (representa ediciones/años) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -93,7 +100,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('categoria.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('categoria.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Etiquetas (representa categorías/clasificaciones) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -105,7 +112,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('equipo.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('equipo.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Usuarios/Grupo (representa equipos) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -117,7 +124,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('instancia_final.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('instancia_final.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Trofeo (representa instancias finales/playoffs) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -129,7 +136,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('lista-buena-fe.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('lista-buena-fe.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
                             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
@@ -163,7 +170,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('institucion.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('institucion.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
                             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
@@ -174,7 +181,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('grupos.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('grupos.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Cuadrícula (representa grupos/zonas) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -186,7 +193,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('fecha.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('fecha.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Calendario con día (representa fechas de juego) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -198,7 +205,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('copa.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('copa.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Copa/Trofeo (representa copas del torneo) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -210,7 +217,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('fase.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('fase.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Escalera/Niveles (representa fases del torneo) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -228,7 +235,7 @@
                 </li>
 
                 <li>
-                    <a href="{{ route('tabla_goleador.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('tabla_goleador.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Balón de fútbol (representa goleadores) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -240,7 +247,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('estadisticas-jugadores', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('estadisticas-jugadores', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Gráfico de barras (representa estadísticas) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-indigo-500 transition duration-75 group-hover:text-indigo-600"
@@ -252,7 +259,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('campeon.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('campeon.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Medalla (representa campeones - color dorado) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-yellow-500 transition duration-75 group-hover:text-yellow-600"
@@ -264,7 +271,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('subcampeon.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('subcampeon.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Medalla (representa subcampeones - color plateado) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-400 transition duration-75 group-hover:text-gray-500"
@@ -276,7 +283,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('goleador.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('goleador.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Estrella (representa goleadores destacados del torneo) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -288,7 +295,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('valla.index', isset($EdicionSeleccionada) ? ['idEdicion' => $EdicionSeleccionada] : []) }}"
+                    <a href="{{ route('valla.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Escudo (representa valla menos vencida/defensa) --}}
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
@@ -379,7 +386,7 @@
             <div class="flex flex-row flex-wrap justify-center mb-2 gap-2">
                 <div>
                     <a
-                        href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada, 'tipo' => 'equipogrupo']) }}">
+                        href="{{ route('seleccionar-categoria', ['idEdicion' => $idEdicionActual, 'tipo' => 'equipogrupo']) }}">
                         <button
                             class="bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg">
                             Agregar Equipo a Grupo
@@ -387,7 +394,7 @@
                     </a>
                 </div>
                 <div>
-                    <a href="{{ route('partido.index', ['idEdicion' => $EdicionSeleccionada]) }}">
+                    <a href="{{ route('partido.index', ['idEdicion' => $idEdicionActual]) }}">
                         <button
                             class="bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg">
                             Partidos
@@ -397,7 +404,7 @@
 
                 {{-- Botón Imprimir Tabla de Posiciones (todas las categorías y grupos) --}}
                 <div>
-                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-tabla-posiciones', ['idEdicion' => $EdicionSeleccionada->id ?? '']) }}')"
+                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-tabla-posiciones', ['idEdicion' => $idEdicionActual ?? '']) }}')"
                         class="bg-green-600 hover:bg-green-700 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -408,7 +415,7 @@
 
                 {{-- Botón Imprimir Fixture (todos los partidos) --}}
                 <div>
-                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-fixture', ['idEdicion' => $EdicionSeleccionada->id ?? '']) }}')"
+                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-fixture', ['idEdicion' => $idEdicionActual ?? '']) }}')"
                         class="bg-blue-600 hover:bg-blue-700 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -424,7 +431,7 @@
                     <p class="text-center text-gray-800 font-semibold bg-gray-200 py-2 rounded-lg shadow-md mb-2">
                         Filtro por Horario
                     </p>
-                    <form action="{{ route('admin', ['idEdicion' => $EdicionSeleccionada]) }}" method="GET"
+                    <form action="{{ route('admin', $parametrosEdicionActual) }}" method="GET"
                         class="flex items-center gap-4">
                         <div class="relative w-full">
                             <select id="horario" name="horario"
@@ -495,7 +502,7 @@
                                 </div>
                                 <div class="flex justify-center my-2">
                                     <a
-                                        href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0]) }}">
+                                        href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $idEdicionActual, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0]) }}">
                                         <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                                             Planillas
                                         </button>
@@ -549,7 +556,7 @@
                 Swal.fire({
                     icon: 'success',
                     title: '¡Éxito!',
-                    text: "{{ session('success') }}",
+                    text: @json(session('success')),
                     confirmButtonColor: '#3085d6',
                 });
             @endif
@@ -559,7 +566,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: "{{ session('error') }}",
+                    text: @json(session('error')),
                     confirmButtonColor: '#d33',
                 });
             @endif
@@ -569,7 +576,7 @@
                 Swal.fire({
                     icon: 'info',
                     title: 'Información',
-                    text: "{{ session('status') }}",
+                    text: @json(session('status')),
                     confirmButtonColor: '#3085d6',
                 });
             @endif

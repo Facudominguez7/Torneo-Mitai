@@ -7,7 +7,6 @@ use App\Http\Requests\Edicion\StoreRequest;
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
-use App\Models\Grupo;
 use Illuminate\Http\Request;
 
 
@@ -57,103 +56,27 @@ class ControladorEdicion extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request)
+    public function create()
     {
-        // Obtener las 3 últimas ediciones ordenadas por ID descendente
-        $ediciones = Edicion::orderBy('id', 'desc')->take(3)->get();
         $edicion = new Edicion();
 
-        // Inicializar variables
-        $categorias = collect();
-        $equipos = collect();
-
-        // Si el formulario se envió con una edición seleccionada, cargar categorías y equipos
-        $idEdicion = $request->input('idEdicion');
-        $idCategoria = $request->input('idCategoria');
-
-        // Obtener categorías de la edición seleccionada
-        if ($idEdicion) {
-            $categorias = Categoria::where('idEdicion', $idEdicion)->get();
-        }
-
-        // Obtener equipos de la categoría seleccionada
-        if ($idCategoria) {
-            $equipos = Equipo::where('idCategoria', $idCategoria)->get();
-        }
-
-        return view('Panel.edicion.create', compact('ediciones', 'edicion', 'categorias', 'equipos', 'idEdicion', 'idCategoria'));
+        return view('Panel.edicion.create', compact('edicion'));
     }
 
     /**
      * Store a newly created resource in storage.
+     *
+     * La edición se crea sin copiar equipos/categorías desde otras ediciones.
+     * La asociación de equipos históricos se realiza exclusivamente desde
+     * "Agregar Equipo de una Edición Anterior" en el módulo de equipos.
      */
     public function store(StoreRequest $request)
     {
         $data = $request->validated();
 
-        // Crear la nueva edición
-        $edicion = Edicion::create([
+        Edicion::create([
             'nombre' => $data['nombre'],
         ]);
-
-        // Mapa para relacionar categorías existentes o nuevas
-        $categoriasMap = [];
-
-        // Usar un array para evitar duplicados
-        $uniqueEquipos = array_unique($data['equipos']);
-
-        foreach ($uniqueEquipos as $idEquipo) {
-            $equipo = Equipo::find($idEquipo);
-
-            // Verificar si la categoría del equipo ya está creada en la nueva edición
-            $categoria = Categoria::where('nombreCategoria', $equipo->categoria->nombreCategoria)
-                ->where('idEdicion', $edicion->id)
-                ->first();
-
-            // Si no existe, crearla
-            if (!$categoria) {
-                $categoria = Categoria::create([
-                    'nombreCategoria' => $equipo->categoria->nombreCategoria,
-                    'idEdicion' => $edicion->id,
-                ]);
-            }
-
-            // Guardar la categoría en el mapa
-            $categoriasMap[$equipo->categoria->id] = $categoria->id;
-
-            // Crear la relación en la tabla `equipos_ediciones`
-            $edicion->equiposEdiciones()->create([
-                'idEquipo' => $idEquipo,
-                'idCategoria' => $categoria->id,
-                'golesContra' => 0, // Inicializar goles en contra
-            ]);
-        }
-
-        // Crear grupos si se definieron en el wizard
-        if ($request->has('grupos')) {
-            foreach ($request->input('grupos') as $nombreCategoria => $nombresGrupos) {
-                if (empty($nombresGrupos)) continue;
-
-                // Buscar la categoría por nombre en la nueva edición
-                // Nota: Las categorías ya fueron creadas en el bucle anterior
-                $categoriaNueva = Categoria::where('nombreCategoria', $nombreCategoria)
-                    ->where('idEdicion', $edicion->id)
-                    ->first();
-
-                if ($categoriaNueva) {
-                    $listaGrupos = array_map('trim', explode(',', $nombresGrupos));
-                    foreach ($listaGrupos as $nombreGrupo) {
-                        if (empty($nombreGrupo)) continue;
-
-                        Grupo::create([
-                            'nombre' => $nombreGrupo,
-                            'idCategoria' => $categoriaNueva->id,
-                            'idEdicion' => $edicion->id,
-                        ]);
-                    }
-                }
-            }
-        }
 
         return to_route('edicion.index')->with('status', 'Edición creada con éxito.');
     }
