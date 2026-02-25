@@ -8,7 +8,7 @@
          />
 </div>
 <div class="mb-5">
-    <label for="nombre" class="mb-3 block text-base font-medium text-white">
+    <label for="idEdicion" class="mb-3 block text-base font-medium text-white">
         Edicion
     </label>
     <select name="idEdicion" id="idEdicion"

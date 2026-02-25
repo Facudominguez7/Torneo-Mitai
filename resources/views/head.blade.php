@@ -31,7 +31,21 @@
     <title>Torneo Mitai</title>
     <link rel="shortcut icon" type="image/png" href="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}">
 
-    @vite(['resources/css/app.css', 'resources/js/welcome.js', 'resources/js/app.js', 'resources/js/admin/admin.js', 'resources/js/push-notifications.js'])
+    @php
+        $esRutaPanel = request()->is('Panel*');
+        $assetsVite = [
+            'resources/css/app.css',
+            'resources/js/welcome.js',
+            'resources/js/app.js',
+            'resources/js/push-notifications.js',
+        ];
+
+        if ($esRutaPanel) {
+            $assetsVite[] = 'resources/js/admin/admin.js';
+        }
+    @endphp
+
+    @vite($assetsVite)
 
     {{-- SweetAlert2 para diálogos y notificaciones --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>

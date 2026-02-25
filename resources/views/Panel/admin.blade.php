@@ -11,6 +11,7 @@
     @endphp
     <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
         aria-controls="sidebar-multi-level-sidebar" type="button"
+        aria-expanded="false"
         class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200">
         <span class="sr-only">Open sidebar</span>
         <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
@@ -130,7 +131,7 @@
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
                             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor">
                             <path
-                                d="M400 0H176c-26.5 0-48.1 21.8-47.1 48.2c.2 5.3 .4 10.6 .7 15.8H24C10.7 64 0 74.7 0 88c0 92.6 33.5 157 78.5 200.7c44.3 43.1 98.3 64.8 138.1 75.8c23.4 6.5 39.4 26 39.4 45.6c0 20.9-17 37.9-37.9 37.9H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H384c17.7 0 32-14.3 32-32s-14.3-32-32-32H357.9C337 448 320 431 320 googl10.1c0-19.6 15.9-39.2 39.4-45.6c39.9-11 93.9-32.7 138.1-75.8C542.5 245 576 180.6 576 88c0-13.3-10.7-24-24-24H446.4c.3-5.2 .5-10.4 .7-15.8C googl8.1 21.8 426.5 0 400 0zM48.9 112h84.4c9.1 90.1 29.2 150.3 51.9 190.6c-24.9-11-48.8-27.1-67.5-45.3C76.1 googl8.1 52 204.1 48.9 112zM464.1 256.4c-18.7 18.2-42.7 34.3-67.5 45.3c22.7-40.3 42.8-100.5 51.9-190.6h84.4c-3 92.1-27.2 145.1-68.8 googl45.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z" />
+                                d="M400 0H176c-26.5 0-48.1 21.8-47.1 48.2c.2 5.3 .4 10.6 .7 15.8H24C10.7 64 0 74.7 0 88c0 92.6 33.5 157 78.5 200.7c44.3 43.1 98.3 64.8 138.1 75.8c23.4 6.5 39.4 26 39.4 45.6c0 20.9-17 37.9-37.9 37.9H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H384c17.7 0 32-14.3 32-32s-14.3-32-32-32H357.9C337 448 320 431 320 410.1c0-19.6 15.9-39.2 39.4-45.6c39.9-11 93.9-32.7 138.1-75.8C542.5 245 576 180.6 576 88c0-13.3-10.7-24-24-24H446.4c.3-5.2 .5-10.4 .7-15.8C448.1 21.8 426.5 0 400 0zM48.9 112h84.4c9.1 90.1 29.2 150.3 51.9 190.6c-24.9-11-48.8-27.1-67.5-45.3C76.1 218.1 52 165.1 48.9 112zM464.1 257.3c-18.7 18.2-42.7 34.3-67.5 45.3c22.7-40.3 42.8-100.5 51.9-190.6h84.4c-3.1 53.1-27.2 106.1-68.8 145.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z" />
                         </svg>
                         <span class="flex-1 ms-3 whitespace-nowrap"> Instancias Finales</span>
                     </a>
@@ -289,7 +290,7 @@
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
                             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor">
                             <path
-                                d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L googl18.2 329 522.4 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L googl1 150.3 316.9 18z" />
+                                d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.4 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.1 150.3 316.9 18z" />
                         </svg>
                         <span class="flex-1 ms-3 whitespace-nowrap">Goleadores del Torneo</span>
                     </a>
@@ -369,7 +370,7 @@
             @endif
         </div>
     </aside>
-    <div class="flex flex-col h-screen">
+    <div class="flex min-h-screen flex-col lg:pl-64">
         @if (isset($EdicionSeleccionada))
             <div class="flex justify-end">
                 <div
@@ -435,7 +436,7 @@
                         class="flex items-center gap-4">
                         <div class="relative w-full">
                             <select id="horario" name="horario"
-                                class="appearance-none bg-white text-gray-800 font-medium border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none hover:border-gray-400 px-4 py-2 rounded-lg shadow-md w-auto transition ease-in-out duration-200">
+                                class="appearance-none bg-white text-gray-800 font-medium border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none hover:border-gray-400 px-4 py-2 rounded-lg shadow-md w-full transition ease-in-out duration-200">
                                 <option value="">Mostrar Todos</option>
                                 @foreach ($horariosDisponibles as $horario)
                                     <option value="{{ $horario }}" {{ request('horario') == $horario ? 'selected' : '' }}>
@@ -475,15 +476,15 @@
                     @foreach ($partidos as $p)
                         <div class="flex justify-center mb-5">
                             <div class="grid gap-6 p-1 bg-gray-50 w-full md:w-1/2">
-                                <div class=" }rounded-lg shadow-lg overflow-x-auto md:overflow-x-visible">
+                                <div class="rounded-lg shadow-lg overflow-x-auto md:overflow-x-visible">
                                     <div class="flex flex-col md:flex-row items-center justify-between md:px-6 py-4 border-b">
                                         <div class="flex items-center gap-4">
-                                            <img src="{{ asset('fotos/equipos/' . $p->foto_local) }}" width="40" height="40" alt=""
+                                            <img src="{{ asset('fotos/equipos/' . $p->foto_local) }}" width="40" height="40" alt="Escudo {{ $p->nombre_local }}"
                                                 class="object-cover" />
                                             <div class="font-medium text-lg">{{ $p->nombre_local }}</div>
                                             <div class="text-gray-500">vs</div>
                                             <div class="font-medium text-lg">{{ $p->nombre_visitante }}</div>
-                                            <img src="{{ asset('fotos/equipos/' . $p->foto_visitante) }}" width="40" height="40" alt=""
+                                            <img src="{{ asset('fotos/equipos/' . $p->foto_visitante) }}" width="40" height="40" alt="Escudo {{ $p->nombre_visitante }}"
                                                 class="object-cover" />
                                         </div>
                                         <div class="text-2xl font-bold mt-4 md:mt-0 text-center text-[--color-primary]">
@@ -514,7 +515,7 @@
                 @endforeach
             @endforeach
         @endif
-        <div class="flex-grow flex items-center justify-center lg:pl-36 mt-0">
+        <div class="mt-0 flex flex-grow items-center justify-center lg:pl-0">
             <section class="w-full md:w-3/4 px-4 md:px-0">
                 @if (session('status'))
                     <div class="flex justify-center">
@@ -536,7 +537,7 @@
                     <script>
                         setTimeout(function () {
                             document.getElementById('status-message').remove();
-                        }, 60000);
+                        }, 8000);
                     </script>
                 @endif
                 @if (Str::endsWith(request()->route()->getName(), '.show'))
@@ -547,8 +548,6 @@
             </section>
         </div>
     </div>
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Mensajes de éxito
@@ -568,16 +567,6 @@
                     title: 'Error',
                     text: @json(session('error')),
                     confirmButtonColor: '#d33',
-                });
-            @endif
-
-            // Mensajes de estado (status) - a veces usados como éxito
-            @if (session('status'))
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Información',
-                    text: @json(session('status')),
-                    confirmButtonColor: '#3085d6',
                 });
             @endif
 
