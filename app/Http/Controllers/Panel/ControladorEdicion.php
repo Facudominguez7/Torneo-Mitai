@@ -9,7 +9,6 @@ use App\Models\Edicion;
 use App\Models\Equipo;
 use Illuminate\Http\Request;
 
-
 class ControladorEdicion extends Controller
 {
     /**
@@ -20,6 +19,7 @@ class ControladorEdicion extends Controller
         $ediciones = Edicion::all();
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.edicion.index', compact('ediciones', 'EdicionSeleccionada', 'idEdicion'));
     }
 
@@ -31,13 +31,13 @@ class ControladorEdicion extends Controller
         // Si no hay categorías para la edición seleccionada, devolver un error
         if ($categorias->isEmpty()) {
             return response()->json([
-                'error' => 'No se encontraron categorías para esta edición.'
+                'error' => 'No se encontraron categorías para esta edición.',
             ], 404);
         }
 
         // Devolver las categorías en formato JSON
         return response()->json([
-            'categorias' => $categorias
+            'categorias' => $categorias,
         ]);
     }
 
@@ -49,7 +49,7 @@ class ControladorEdicion extends Controller
 
         return response()->json([
             'equipos' => $equipos,
-            'categoria' => $categoria ? $categoria->nombreCategoria : 'Categoría'
+            'categoria' => $categoria ? $categoria->nombreCategoria : 'Categoría',
         ]);
     }
 
@@ -81,15 +81,18 @@ class ControladorEdicion extends Controller
         return to_route('edicion.index')->with('status', 'Edición creada con éxito.');
     }
 
-
-
     /**
-     * Display the specified resource.
+     * Muestra el detalle de una edición sin perder el contexto del panel.
+     *
+     * Se envía también la edición seleccionada para que el layout mantenga
+     * el selector superior y los enlaces con el mismo `idEdicion` activo.
      */
     public function show(Request $request, Edicion $edicion)
     {
         $ediciones = Edicion::all();
-        return view('Panel.edicion.show', compact('ediciones'));
+        $EdicionSeleccionada = $edicion;
+
+        return view('Panel.edicion.show', compact('edicion', 'ediciones', 'EdicionSeleccionada'));
     }
 
     /**
@@ -98,6 +101,7 @@ class ControladorEdicion extends Controller
     public function edit(Edicion $edicion)
     {
         $ediciones = Edicion::all();
+
         return view('Panel.edicion.edit', compact('ediciones', 'edicion'));
     }
 
@@ -109,6 +113,7 @@ class ControladorEdicion extends Controller
         $data = $request->validated();
 
         $edicion->update($data);
+
         return to_route('edicion.index', ['idEdicion' => $request->id]);
     }
 
@@ -118,6 +123,7 @@ class ControladorEdicion extends Controller
     public function destroy(Request $request, Edicion $edicion)
     {
         $edicion->delete();
+
         return to_route('edicion.index', ['idEdicion' => $request->id]);
     }
 }
