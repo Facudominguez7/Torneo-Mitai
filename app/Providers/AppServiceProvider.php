@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Edicion;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Support\Facades\Event as FacadesEvent;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\View as ViewContract;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -44,5 +47,31 @@ class AppServiceProvider extends ServiceProvider
         if($this->app->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
+
+        /**
+         * Compartir contexto global del panel en el layout base.
+         *
+         * Evita que cada controlador tenga que enviar siempre `ediciones`
+         * y `EdicionSeleccionada` manualmente.
+         */
+        View::composer('Panel.admin', function (ViewContract $view): void {
+            $ediciones = Edicion::orderByDesc('id')->get();
+
+            $idEdicionActual = request()->attributes->get('panel.idEdicion');
+            if (!$idEdicionActual) {
+                $idEdicionActual = request()->query('idEdicion') ?: request()->session()->get('panel.idEdicion');
+            }
+
+            $edicionSeleccionada = request()->attributes->get('panel.edicion');
+            if (!$edicionSeleccionada && $idEdicionActual) {
+                $edicionSeleccionada = $ediciones->firstWhere('id', (int) $idEdicionActual);
+            }
+
+            $view->with([
+                'ediciones' => $ediciones,
+                'EdicionSeleccionada' => $edicionSeleccionada,
+                'idEdicionActual' => $idEdicionActual ? (int) $idEdicionActual : null,
+            ]);
+        });
     }
 }

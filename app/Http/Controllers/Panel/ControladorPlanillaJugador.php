@@ -99,6 +99,7 @@ class ControladorPlanillaJugador extends Controller
             $jugadoresBuenaFe = ListaBuenaFe::with('jugador')
                 ->deEquipo($equipoId, $idEdicion)
                 ->activos()
+                ->where('idCategoria', $partido->idCategoria)
                 ->get();
 
             // Si no hay jugadores en la lista de buena fe, intentar migrar desde el último partido
@@ -137,7 +138,7 @@ class ControladorPlanillaJugador extends Controller
                         'fecha_nacimiento' => $listaBuenaFe->fecha_nacimiento,
                         'idEquipo' => $equipoId,
                         'idEdicion' => $idEdicion,
-                        'idCategoria' => $listaBuenaFe->idCategoria,
+                        'idCategoria' => $partido->idCategoria,
                         'numero_camiseta' => $listaBuenaFe->numero_camiseta ?? 0,
                         'goles' => 0,
                         'asistio' => false,
@@ -157,6 +158,13 @@ class ControladorPlanillaJugador extends Controller
         }
     }
 
+    /**
+     * Agregar jugador manualmente a planilla.
+     *
+     * Flujo simplificado:
+     * - Bloquea solo validaciones duras (type=error).
+     * - Si hay warning administrativo, permite alta y marca conflicto en Lista de Buena Fe.
+     */
     public function agregarJugador(Request $request)
     {
         $idEdicion = $request->idEdicion;
@@ -191,15 +199,20 @@ class ControladorPlanillaJugador extends Controller
             $request->dni_jugador,
             $request->equipo_id,
             $idEdicion,
-            $request->idCategoria,
+            $equipo->idCategoria,
             $fecha_nacimiento
         );
 
+        $motivoConflicto = null;
+
         if ($resultadoValidacion) {
-             // En planilla, tratamos warnings como errores para simplificar el flujo rápido
-             if ($resultadoValidacion['type'] === 'error' || $resultadoValidacion['type'] === 'warning') {
-                 return redirect()->back()->with('status', $resultadoValidacion['message']);
-             }
+            if ($resultadoValidacion['type'] === 'error') {
+                return redirect()->back()->with('status', $resultadoValidacion['message']);
+            }
+
+            if ($resultadoValidacion['type'] === 'warning') {
+                $motivoConflicto = $resultadoValidacion['message'];
+            }
         }
 
         // 4. Crear o buscar Jugador
@@ -255,6 +268,14 @@ class ControladorPlanillaJugador extends Controller
                         // Actualizar datos si cambiaron
                         $listaBuenaFe->fecha_nacimiento = $fecha_nacimiento;
                         $listaBuenaFe->idCategoria = $equipo->idCategoria;
+                        if ($motivoConflicto) {
+                            $listaBuenaFe->conflictivo = true;
+                            $listaBuenaFe->motivo_conflicto = $motivoConflicto;
+                            $listaBuenaFe->resuelto = false;
+                            $listaBuenaFe->fecha_resolucion = null;
+                            $listaBuenaFe->resuelto_por = null;
+                            $listaBuenaFe->notas_resolucion = null;
+                        }
                         $listaBuenaFe->save();
                     } else {
                         Log::warning("Jugador agregado a planilla pero Lista de Buena Fe llena. No se pudo reactivar en la lista.");
@@ -263,6 +284,14 @@ class ControladorPlanillaJugador extends Controller
                     // Ya está activo, actualizar datos
                     $listaBuenaFe->fecha_nacimiento = $fecha_nacimiento;
                     $listaBuenaFe->idCategoria = $equipo->idCategoria;
+                    if ($motivoConflicto) {
+                        $listaBuenaFe->conflictivo = true;
+                        $listaBuenaFe->motivo_conflicto = $motivoConflicto;
+                        $listaBuenaFe->resuelto = false;
+                        $listaBuenaFe->fecha_resolucion = null;
+                        $listaBuenaFe->resuelto_por = null;
+                        $listaBuenaFe->notas_resolucion = null;
+                    }
                     $listaBuenaFe->save();
                 }
             } else {
@@ -282,6 +311,8 @@ class ControladorPlanillaJugador extends Controller
                         'fecha_nacimiento' => $fecha_nacimiento,
                         'fecha_alta' => now(),
                         'activo' => true,
+                        'conflictivo' => !is_null($motivoConflicto),
+                        'motivo_conflicto' => $motivoConflicto,
                     ]);
                 } else {
                      Log::warning("Jugador agregado a planilla pero Lista de Buena Fe llena. No se pudo agregar a la lista.");
@@ -291,20 +322,25 @@ class ControladorPlanillaJugador extends Controller
             Log::error("Error sincronizando Lista de Buena Fe al agregar en planilla: " . $e->getMessage());
         }
 
+        $mensajeStatus = 'Jugador agregado a la planilla con éxito.';
+        if (!is_null($motivoConflicto)) {
+            $mensajeStatus .= ' (Marcado como CONFLICTIVO en Lista de Buena Fe).';
+        }
+
         if ($tipoPartido === 'instanciaFinal') {
             return redirect()->route('planilla.show', [
                 'partidoId' => $partidoId,
                 'idEdicion' => $idEdicion,
                 'tipoPartido' => $tipoPartido,
                 'horario' => 0,
-            ])->with('status', 'Jugador agregado a la planilla con éxito.');
+            ])->with('status', $mensajeStatus);
         } else {
             return redirect()->route('planilla.show', [
                 'partidoId' => $partidoId,
                 'idEdicion' => $idEdicion,
                 'tipoPartido' => $tipoPartido,
                 'horario' => $horarioSeleccionado,
-            ])->with('status', 'Jugador agregado a la planilla con éxito.');
+            ])->with('status', $mensajeStatus);
         }
     }
 
@@ -536,19 +572,34 @@ class ControladorPlanillaJugador extends Controller
 
     /**
      * Sincroniza la planilla del partido con la Lista de Buena Fe.
-     * - Agrega jugadores activos que no estén en la planilla.
-     * - Elimina jugadores inactivos de la planilla SI no tienen estadísticas (goles, rojas, asistencia).
+     *
+     * Reglas del flujo simplificado:
+     * - Agrega solo jugadores activos de la categoría real del equipo en la edición.
+     * - Elimina de planilla a quienes no estén activos/categorizados correctamente.
      */
     private function sincronizarPlanilla($partidoId, $equipoId, $idEdicion, $tipoPartido)
     {
         try {
-            // 1. Obtener jugadores de la Lista de Buena Fe (Activos e Inactivos para comparar)
-            // Necesitamos saber quiénes están activos para agregarlos, y quiénes NO para eliminarlos.
+            $equipoEdicion = EquipoEdicion::where('idEquipo', $equipoId)
+                ->where('idEdicion', $idEdicion)
+                ->first();
+
+            if (!$equipoEdicion) {
+                Log::warning("No se encontró equipo_ediciones para Equipo {$equipoId} y Edición {$idEdicion}");
+                return;
+            }
+
+            // 1. Obtener jugadores de la Lista de Buena Fe (activos e inactivos para comparar).
             $jugadoresBuenaFe = ListaBuenaFe::where('idEquipo', $equipoId)
                 ->where('idEdicion', $idEdicion)
                 ->get();
 
-            $activosDni = $jugadoresBuenaFe->where('activo', true)->pluck('dni_jugador')->toArray();
+            // Solo se consideran activos que pertenezcan a la categoría del equipo.
+            $jugadoresActivosCategoria = $jugadoresBuenaFe->filter(function ($jugador) use ($equipoEdicion) {
+                return $jugador->activo && (int) $jugador->idCategoria === (int) $equipoEdicion->idCategoria;
+            });
+
+            $activosDni = $jugadoresActivosCategoria->pluck('dni_jugador')->toArray();
             
             // 2. Obtener jugadores actuales en la planilla
             $planillaActual = PlanillaJugador::where('partido_id', $partidoId)
@@ -562,7 +613,10 @@ class ControladorPlanillaJugador extends Controller
             $altasDni = array_diff($activosDni, $planillaDni);
 
             foreach ($altasDni as $dni) {
-                $jugadorBF = $jugadoresBuenaFe->where('dni_jugador', $dni)->first();
+                $jugadorBF = $jugadoresActivosCategoria->where('dni_jugador', $dni)->first();
+                if (!$jugadorBF) {
+                    continue;
+                }
                 
                 // Verificar suspensión
                 if ($jugadorBF->estaSuspendido()) {
@@ -577,7 +631,7 @@ class ControladorPlanillaJugador extends Controller
                     'fecha_nacimiento' => $jugadorBF->fecha_nacimiento,
                     'idEquipo' => $equipoId,
                     'idEdicion' => $idEdicion,
-                    'idCategoria' => $jugadorBF->idCategoria,
+                    'idCategoria' => $equipoEdicion->idCategoria,
                     'numero_camiseta' => $jugadorBF->numero_camiseta ?? 0,
                     'goles' => 0,
                     'asistio' => false,

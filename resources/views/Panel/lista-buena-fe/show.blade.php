@@ -319,135 +319,6 @@
     </div>
     </div>
 
-    {{-- DEBUG: Verificar si llega la sesión --}}
-    @if (session('warning'))
-        <div class="bg-red-500 text-white p-4 text-center font-bold text-xl"
-            style="position: fixed; top: 0; left: 0; width: 100%; z-index: 9999;">
-            DEBUG: HAY WARNING EN SESIÓN: {{ session('warning') }}
-        </div>
-    @endif
-
-    {{-- Modal de Confirmación para Advertencias --}}
-    @if (session('warning'))
-        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                <div
-                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div
-                                class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
-                                <svg class="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            </div>
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                    Advertencia de Validación
-                                </h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500">
-                                        {{ session('warning') }}
-                                    </p>
-                                    <p class="text-sm text-gray-500 mt-2">
-                                        ¿Deseas agregar al jugador de todos modos?
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <form method="POST" action="{{ route('lista-buena-fe.agregar') }}">
-                            @csrf
-                            {{-- Repoblar campos ocultos con los datos del intento anterior --}}
-                            @foreach (session('warning_data', []) as $key => $value)
-                                @if($key !== '_token' && $key !== 'force' && $key !== 'motivo_conflicto')
-                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                                @endif
-                            @endforeach
-                            <input type="hidden" name="force" value="1">
-                            {{-- Guardar el mensaje de advertencia como motivo del conflicto --}}
-                            <input type="hidden" name="motivo_conflicto" value="{{ session('warning') }}">
-
-                            <button type="submit"
-                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                Agregar Igualmente
-                            </button>
-                        </form>
-                        <a href="{{ request()->fullUrl() }}"
-                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Cancelar
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    {{-- Modal de Confirmación para Reactivación con Advertencias --}}
-    @if (session('warning_reactivar'))
-        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-reactivar-title" role="dialog" aria-modal="true">
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                <div
-                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div
-                                class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
-                                <svg class="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            </div>
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-reactivar-title">
-                                    Advertencia de Reactivación
-                                </h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500">
-                                        {{ session('warning_reactivar') }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <form method="POST" action="{{ route('lista-buena-fe.reactivar', session('warning_reactivar_id')) }}"
-                            class="inline">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="force" value="1">
-                            {{-- Guardar el mensaje de advertencia como motivo del conflicto --}}
-                            <input type="hidden" name="motivo_conflicto" value="{{ session('warning_reactivar') }}">
-
-                            <button type="submit"
-                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                Reactivar Igualmente
-                            </button>
-                        </form>
-                        <a href="{{ request()->fullUrl() }}"
-                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
-                            Cancelar
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
-
 @endsection
 
 @section('scripts')
@@ -462,6 +333,110 @@
             }
             printFrame.src = url;
         }
+
+        /**
+         * Gestionar advertencias conflictivas con modal de confirmación.
+         *
+         * Si el usuario confirma, se reenvía la operación con `force=1`
+         * para registrar el caso como conflictivo.
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            const warningMessage = @json(session('warning'));
+            const warningData = @json(session('warning_data', []));
+
+            if (warningMessage) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Posible caso conflictivo',
+                    text: warningMessage,
+                    showCancelButton: true,
+                    confirmButtonText: 'Continuar y marcar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#d97706',
+                    cancelButtonColor: '#6b7280',
+                }).then(function(result) {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = @json(route('lista-buena-fe.agregar'));
+
+                    const csrf = document.createElement('input');
+                    csrf.type = 'hidden';
+                    csrf.name = '_token';
+                    csrf.value = @json(csrf_token());
+                    form.appendChild(csrf);
+
+                    const forceInput = document.createElement('input');
+                    forceInput.type = 'hidden';
+                    forceInput.name = 'force';
+                    forceInput.value = '1';
+                    form.appendChild(forceInput);
+
+                    Object.entries(warningData).forEach(function([key, value]) {
+                        if (value === null || typeof value === 'undefined') {
+                            return;
+                        }
+
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = String(value);
+                        form.appendChild(input);
+                    });
+
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            }
+
+            const warningReactivarMessage = @json(session('warning_reactivar'));
+            const warningReactivarAction = @json(session('warning_reactivar_id') ? route('lista-buena-fe.reactivar', session('warning_reactivar_id')) : null);
+
+            if (warningReactivarMessage && warningReactivarAction) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Posible caso conflictivo',
+                    text: warningReactivarMessage,
+                    showCancelButton: true,
+                    confirmButtonText: 'Reactivar y marcar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#d97706',
+                    cancelButtonColor: '#6b7280',
+                }).then(function(result) {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = warningReactivarAction;
+
+                    const csrf = document.createElement('input');
+                    csrf.type = 'hidden';
+                    csrf.name = '_token';
+                    csrf.value = @json(csrf_token());
+                    form.appendChild(csrf);
+
+                    const methodInput = document.createElement('input');
+                    methodInput.type = 'hidden';
+                    methodInput.name = '_method';
+                    methodInput.value = 'PUT';
+                    form.appendChild(methodInput);
+
+                    const forceInput = document.createElement('input');
+                    forceInput.type = 'hidden';
+                    forceInput.name = 'force';
+                    forceInput.value = '1';
+                    form.appendChild(forceInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            }
+        });
 
         /**
          * Autocompletado de datos de jugador por DNI

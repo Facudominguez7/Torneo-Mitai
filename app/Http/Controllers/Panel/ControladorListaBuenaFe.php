@@ -191,6 +191,10 @@ class ControladorListaBuenaFe extends Controller
 
     /**
      * Agregar un jugador a la lista de buena fe
+     *
+     * Flujo simplificado:
+     * - Si la validación devuelve error, bloquea el alta.
+     * - Si devuelve warning, permite el alta y marca el registro como conflictivo.
      */
     public function agregarJugador(Request $request)
     {
@@ -228,23 +232,28 @@ class ControladorListaBuenaFe extends Controller
 
         Log::info("Resultado validación:", $resultadoValidacion ?? ['null']);
 
-        if ($resultadoValidacion) {
-            // Si es un error bloqueante (HARD), retornamos error siempre
-            if ($resultadoValidacion['type'] === 'error') {
-                return redirect()->back()->with('error', $resultadoValidacion['message']);
-            }
-
-            // Si es una advertencia (SOFT) y NO se forzó, pedimos confirmación
-            if ($resultadoValidacion['type'] === 'warning' && !$request->boolean('force')) {
-                Log::info("Advertencia detectada, redirigiendo con warning session.");
-                // Guardamos los datos del intento en sesión para repoblar el modal o formulario si es necesario
-                // Retornamos SIN haber iniciado transacción para que la sesión se guarde correctamente
-                return redirect()->back()
-                    ->withInput()
-                    ->with('warning', $resultadoValidacion['message'])
-                    ->with('warning_data', $request->all());
-            }
+        if ($resultadoValidacion && $resultadoValidacion['type'] === 'error') {
+            return redirect()->back()->with('error', $resultadoValidacion['message']);
         }
+
+        if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning' && !$request->boolean('force')) {
+            return redirect()->back()
+                ->withInput()
+                ->with('warning', $resultadoValidacion['message'])
+                ->with('warning_data', [
+                    'dni_jugador' => $request->dni_jugador,
+                    'nombre_jugador' => $request->nombre_jugador,
+                    'apellido_jugador' => $request->apellido_jugador,
+                    'fecha_nacimiento' => $request->fecha_nacimiento,
+                    'numero_camiseta' => $request->numero_camiseta,
+                    'idEquipo' => $request->idEquipo,
+                    'idEdicion' => $request->idEdicion,
+                    'idCategoria' => $request->idCategoria,
+                ]);
+        }
+
+        $esConflictivo = $resultadoValidacion && $resultadoValidacion['type'] === 'warning';
+        $motivoConflicto = $esConflictivo ? $resultadoValidacion['message'] : null;
 
         // Solo ahora iniciamos la transacción para guardar en lista de buena fe
         try {
@@ -260,13 +269,16 @@ class ControladorListaBuenaFe extends Controller
                 'fecha_nacimiento' => $request->fecha_nacimiento,
                 'fecha_alta' => now(),
                 'activo' => true,
-                'conflictivo' => $request->boolean('force'), // Si se forzó, es conflictivo
-                'motivo_conflicto' => $request->boolean('force') ? $request->input('motivo_conflicto') : null,
+                'conflictivo' => $esConflictivo,
+                'motivo_conflicto' => $motivoConflicto,
             ]);
 
             DB::commit();
 
             Log::info("Jugador agregado a Lista de Buena Fe: {$request->dni_jugador} en Equipo {$request->idEquipo}");
+            if ($esConflictivo) {
+                Log::warning("Jugador agregado con observación administrativa: {$motivoConflicto}");
+            }
 
             $mensaje = 'Jugador agregado correctamente.';
             if ($nuevoJugador->conflictivo) {
@@ -404,28 +416,27 @@ class ControladorListaBuenaFe extends Controller
                 true // esReactivacion
             );
 
-            if ($resultadoValidacion) {
-                // Si es un error bloqueante (HARD), retornamos error siempre
-                if ($resultadoValidacion['type'] === 'error') {
-                    return redirect()->back()->with('error', $resultadoValidacion['message']);
-                }
-
-                // Si es una advertencia (SOFT) y NO se forzó, pedimos confirmación con modal
-                if ($resultadoValidacion['type'] === 'warning' && !$request->boolean('force')) {
-                    return redirect()->back()
-                        ->with('warning_reactivar', $resultadoValidacion['message'])
-                        ->with('warning_reactivar_id', $id);
-                }
+            if ($resultadoValidacion && $resultadoValidacion['type'] === 'error') {
+                return redirect()->back()->with('error', $resultadoValidacion['message']);
             }
+
+            if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning' && !$request->boolean('force')) {
+                return redirect()->back()
+                    ->with('warning_reactivar', $resultadoValidacion['message'])
+                    ->with('warning_reactivar_id', $id);
+            }
+
+            $esConflictivo = $resultadoValidacion && $resultadoValidacion['type'] === 'warning';
+            $motivoConflicto = $esConflictivo ? $resultadoValidacion['message'] : null;
 
             // Reactivar el jugador
             $listaBuenaFe->reactivar();
 
-            // Si se forzó la reactivación, marcar como conflictivo
-            if ($request->boolean('force')) {
+            // Si hay advertencia administrativa, marcar como conflictivo
+            if ($esConflictivo) {
                 $listaBuenaFe->conflictivo = true;
-                $listaBuenaFe->motivo_conflicto = $request->input('motivo_conflicto');
-                $listaBuenaFe->resuelto = false; // Resetear resolución si se fuerza con warning
+                $listaBuenaFe->motivo_conflicto = $motivoConflicto;
+                $listaBuenaFe->resuelto = false;
                 $listaBuenaFe->fecha_resolucion = null;
                 $listaBuenaFe->resuelto_por = null;
                 $listaBuenaFe->notas_resolucion = null;
@@ -492,6 +503,9 @@ class ControladorListaBuenaFe extends Controller
 
     /**
      * Actualizar datos de un jugador en la lista de buena fe
+     *
+     * Revalida categoría/edad al modificar fecha de nacimiento para evitar
+     * inconsistencias silenciosas entre regla de negocio y dato persistido.
      */
     public function actualizar(Request $request, $id)
     {
@@ -502,8 +516,31 @@ class ControladorListaBuenaFe extends Controller
 
         try {
             $listaBuenaFe = ListaBuenaFe::findOrFail($id);
+
+            $resultadoValidacion = $this->validadorReglas->validarSoloCategoriaYEdad(
+                $listaBuenaFe->dni_jugador,
+                $listaBuenaFe->idEquipo,
+                $listaBuenaFe->idEdicion,
+                $listaBuenaFe->idCategoria,
+                $request->fecha_nacimiento
+            );
+
+            if ($resultadoValidacion && $resultadoValidacion['type'] === 'error') {
+                return redirect()->back()->with('error', $resultadoValidacion['message']);
+            }
+
             $listaBuenaFe->numero_camiseta = $request->numero_camiseta;
             $listaBuenaFe->fecha_nacimiento = $request->fecha_nacimiento;
+
+            if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning') {
+                $listaBuenaFe->conflictivo = true;
+                $listaBuenaFe->motivo_conflicto = $resultadoValidacion['message'];
+                $listaBuenaFe->resuelto = false;
+                $listaBuenaFe->fecha_resolucion = null;
+                $listaBuenaFe->resuelto_por = null;
+                $listaBuenaFe->notas_resolucion = null;
+            }
+
             $listaBuenaFe->save();
 
             Log::info("Datos actualizados para jugador {$listaBuenaFe->dni_jugador} en Lista de Buena Fe");

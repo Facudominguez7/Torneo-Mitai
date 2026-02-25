@@ -124,6 +124,9 @@ class ControladorEquiposEdiciones extends Controller
 
     /**
      * Store a newly created resource in storage.
+     *
+     * Si la categoría equivalente no existe en la edición destino,
+     * se crea automáticamente para simplificar el alta desde ediciones anteriores.
      */
     public function store(StoreRequest $request)
     {
@@ -156,12 +159,17 @@ class ControladorEquiposEdiciones extends Controller
         $normalizadoOrigen = $normalizar($nombreCategoriaOrigen);
 
         // Traer categorías de la edición destino y buscar por nombre normalizado
-        $categoriaDestino = Categoria::where('idEdicion', $edicionDestinoId)->get()->first(function($cat) use ($normalizar, $normalizadoOrigen){
-            return $normalizar($cat->nombreCategoria) === $normalizadoOrigen;
-        });
+        $categoriaDestino = Categoria::where('idEdicion', $edicionDestinoId)
+            ->get()
+            ->first(function($cat) use ($normalizar, $normalizadoOrigen){
+                return $normalizar($cat->nombreCategoria) === $normalizadoOrigen;
+            });
 
         if(!$categoriaDestino){
-            return back()->withErrors(['idCategoria' => 'No existe en la edición destino una categoría equivalente a "'.$nombreCategoriaOrigen.'".'])->withInput();
+            $categoriaDestino = Categoria::create([
+                'nombreCategoria' => $nombreCategoriaOrigen,
+                'idEdicion' => $edicionDestinoId,
+            ]);
         }
 
         // Evitar duplicado exacto: mismo equipo + misma edición + misma categoría destino
@@ -175,12 +183,14 @@ class ControladorEquiposEdiciones extends Controller
             ])->withInput();
         }
 
-        EquipoEdicion::create([
-            'idEquipo' => $equipo->id,
-            'idEdicion' => $edicionDestinoId,
-            'idCategoria' => $categoriaDestino->id,
-            'golesContra' => 0,
-        ]);
+        DB::transaction(function() use ($equipo, $edicionDestinoId, $categoriaDestino){
+            EquipoEdicion::create([
+                'idEquipo' => $equipo->id,
+                'idEdicion' => $edicionDestinoId,
+                'idCategoria' => $categoriaDestino->id,
+                'golesContra' => 0,
+            ]);
+        });
 
         return redirect()->action([ControladorEquipo::class,'index'], ['idEdicion' => $edicionDestinoId])
             ->with('status','Equipo asociado a la nueva edición correctamente');

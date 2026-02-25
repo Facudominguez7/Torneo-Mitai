@@ -24,6 +24,7 @@ use App\Http\Controllers\Panel\ControladorValla;
 use App\Http\Controllers\Panel\ControladorConsultaJugador;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\PanelEdicionContextMiddleware;
 use App\Http\Middleware\UserAccesPanelMiddleware;
 use App\Models\Categoria;
 
@@ -51,7 +52,7 @@ Route::get('forgot-password/{restablecer?}', [PasswordResetLinkController::class
 
 
 
-Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAccesPanelMiddleware::class]], function () {
+Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAccesPanelMiddleware::class, PanelEdicionContextMiddleware::class]], function () {
     Route::resource('equipo', ControladorEquipo::class);
     Route::resource('categoria', ControladorCategoria::class);
     Route::resource('edicion', ControladorEdicion::class);
@@ -209,4 +210,3 @@ Route::get('/email/estado', [\App\Http\Controllers\ControladorNotificacionesPush
 
 
 require __DIR__ . '/auth.php';
-
