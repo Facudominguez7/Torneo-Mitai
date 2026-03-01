@@ -3,20 +3,17 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
 /**
  * Notificación push y email personalizada para anuncios del administrador.
- * 
+ *
  * Permite enviar notificaciones con título, mensaje y URL personalizados.
  * Se envía tanto por WebPush como por email a usuarios suscritos.
  * Implementa ShouldQueue para procesarse en segundo plano.
- *
- * @package App\Notifications
  */
 class NotificacionPersonalizada extends Notification
 {
@@ -55,10 +52,10 @@ class NotificacionPersonalizada extends Notification
     /**
      * Crear una nueva instancia de la notificación.
      *
-     * @param string $titulo Título de la notificación
-     * @param string $mensaje Cuerpo del mensaje
-     * @param string $url URL a abrir al hacer clic (opcional)
-     * @param string $icono Icono/emoji para el título (opcional)
+     * @param  string  $titulo  Título de la notificación
+     * @param  string  $mensaje  Cuerpo del mensaje
+     * @param  string  $url  URL a abrir al hacer clic (opcional)
+     * @param  string  $icono  Icono/emoji para el título (opcional)
      */
     public function __construct(string $titulo, string $mensaje, string $url = '/', string $icono = '📢')
     {
@@ -70,12 +67,12 @@ class NotificacionPersonalizada extends Notification
 
     /**
      * Obtener los canales de entrega de la notificación.
-     * 
+     *
      * Determina dinámicamente qué canales usar según las preferencias del usuario:
      * - WebPush: Si tiene suscripciones push activas
      * - Mail: Si tiene email habilitado y está suscrito a emails
      *
-     * @param mixed $notifiable Usuario que recibirá la notificación
+     * @param  mixed  $notifiable  Usuario que recibirá la notificación
      * @return array Canales de notificación a usar
      */
     public function via($notifiable): array
@@ -98,8 +95,8 @@ class NotificacionPersonalizada extends Notification
     /**
      * Obtener la representación Web Push de la notificación.
      *
-     * @param mixed $notifiable Usuario destinatario
-     * @param mixed $notification Instancia de la notificación
+     * @param  mixed  $notifiable  Usuario destinatario
+     * @param  mixed  $notification  Instancia de la notificación
      * @return WebPushMessage Mensaje push configurado
      */
     public function toWebPush($notifiable, $notification): WebPushMessage
@@ -109,32 +106,32 @@ class NotificacionPersonalizada extends Notification
             ->icon('/fotos/Logo_Mitai_SinFondo.png')
             ->badge('/fotos/Logo_Mitai_SinFondo.png')
             ->body($this->mensaje)
-            ->tag('anuncio-' . time())
+            ->tag('anuncio-'.time())
             ->data([
-                'url' => $this->url
+                'url' => $this->url,
             ])
             ->options([
                 'TTL' => 86400,
-                'urgency' => 'normal'
+                'urgency' => 'normal',
             ]);
     }
 
     /**
      * Obtener la representación en email de la notificación.
-     * 
+     *
      * Genera un email con diseño atractivo usando los componentes
      * de Laravel Mail. Incluye enlace de desuscripción.
      *
-     * @param mixed $notifiable Usuario destinatario
+     * @param  mixed  $notifiable  Usuario destinatario
      * @return MailMessage Mensaje de email configurado
      */
     public function toMail($notifiable): MailMessage
     {
         // Construir URL completa para el enlace de acción
         $urlCompleta = url($this->url);
-        
+
         // Generar URL de desuscripción usando parámetros de consulta (query string)
-        $urlDarseDeBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
+        $urlDarseDeBaja = url('/email/baja?id='.$notifiable->id.'&token='.sha1($notifiable->email));
 
         return (new MailMessage)
             ->subject("{$this->titulo} - Torneos Mita'i")
@@ -145,23 +142,20 @@ class NotificacionPersonalizada extends Notification
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
             ->salutation("Saludos, Torneos Mita'i")
-            // Headers anti-spam
+            // Headers para deliverability y one-click unsubscribe (RFC 8058)
             ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
                 $headers = $message->getHeaders();
                 $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
                 $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
-                $headers->addTextHeader('Precedence', 'bulk');
-                // Reply-To manejado via ->replyTo() method
-                $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });
     }
 
     /**
      * Obtener la representación en array de la notificación.
-     * 
+     *
      * Usado para almacenar la notificación en base de datos si se requiere.
      *
-     * @param mixed $notifiable Usuario destinatario
+     * @param  mixed  $notifiable  Usuario destinatario
      * @return array Datos de la notificación
      */
     public function toArray($notifiable): array

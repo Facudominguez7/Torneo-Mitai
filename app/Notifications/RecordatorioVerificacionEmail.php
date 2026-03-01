@@ -3,15 +3,13 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 /**
  * Notificación de recordatorio para verificar email.
- * 
- * Envía de forma síncrona para evitar duplicados.
  *
- * @package App\Notifications
+ * Envía de forma síncrona para evitar duplicados.
  */
 class RecordatorioVerificacionEmail extends Notification
 {
@@ -29,12 +27,11 @@ class RecordatorioVerificacionEmail extends Notification
 
     /**
      * Obtener los canales de entrega de la notificación.
-     * 
+     *
      * Solo usa canal de email ya que el usuario no tiene email verificado
      * y por lo tanto no puede recibir otras notificaciones.
      *
-     * @param mixed $notifiable
-     * @return array
+     * @param  mixed  $notifiable
      */
     public function via($notifiable): array
     {
@@ -44,8 +41,7 @@ class RecordatorioVerificacionEmail extends Notification
     /**
      * Obtener la representación en email de la notificación.
      *
-     * @param mixed $notifiable Usuario destinatario
-     * @return MailMessage
+     * @param  mixed  $notifiable  Usuario destinatario
      */
     public function toMail($notifiable): MailMessage
     {
@@ -58,9 +54,9 @@ class RecordatorioVerificacionEmail extends Notification
                 'hash' => sha1($notifiable->getEmailForVerification()),
             ]
         );
-        
+
         // URL para darse de baja
-        $urlBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
+        $urlBaja = url('/email/baja?id='.$notifiable->id.'&token='.sha1($notifiable->email));
 
         return (new MailMessage)
             ->subject("Verifica tu email - Torneos Mita'i")
@@ -78,26 +74,18 @@ class RecordatorioVerificacionEmail extends Notification
             ->line('')
             ->line('Si no creaste esta cuenta, podes ignorar este mensaje.')
             ->salutation("Saludos, Torneos Mita'i")
-            // Headers anti-spam
-            ->withSymfonyMessage(function ($message) use ($urlBaja, $notifiable) {
+            // Headers para deliverability y one-click unsubscribe (RFC 8058)
+            ->withSymfonyMessage(function ($message) use ($urlBaja) {
                 $headers = $message->getHeaders();
-                // Unsubscribe headers (requerido por Gmail/Outlook)
                 $headers->addTextHeader('List-Unsubscribe', "<{$urlBaja}>");
                 $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
-                // Indica que es email masivo legítimo
-                $headers->addTextHeader('Precedence', 'bulk');
-                // Reply-To ahora se maneja con ->replyTo()
-                // $headers->addTextHeader('Reply-To', 'info@torneosmitai.com');
-                // Message-ID único
-                $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });
     }
 
     /**
      * Obtener la representación en array de la notificación.
      *
-     * @param mixed $notifiable
-     * @return array
+     * @param  mixed  $notifiable
      */
     public function toArray($notifiable): array
     {

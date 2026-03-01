@@ -2,21 +2,19 @@
 
 namespace App\Notifications;
 
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
-use Carbon\Carbon;
 
 /**
  * Notificación de nuevo partido programado.
- * 
+ *
  * Se puede enviar para alertar sobre partidos próximos o cambios en fixtures.
  * La notificación se envía vía Web Push y Email a usuarios suscritos.
- *
- * @package App\Notifications
  */
 class NuevoPartidoProgramado extends Notification implements ShouldQueue
 {
@@ -24,14 +22,14 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
 
     /**
      * Datos del partido (objeto o array).
-     * 
+     *
      * @var mixed
      */
     protected $partido;
 
     /**
      * Mensaje personalizado opcional para la notificación.
-     * 
+     *
      * @var string|null
      */
     protected $mensaje;
@@ -39,8 +37,8 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
     /**
      * Crear una nueva instancia de la notificación.
      *
-     * @param mixed $partido Objeto o array con datos del partido
-     * @param string|null $mensaje Mensaje personalizado opcional
+     * @param  mixed  $partido  Objeto o array con datos del partido
+     * @param  string|null  $mensaje  Mensaje personalizado opcional
      */
     public function __construct($partido, ?string $mensaje = null)
     {
@@ -50,12 +48,12 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
 
     /**
      * Obtener los canales de entrega de la notificación.
-     * 
+     *
      * Determina dinámicamente qué canales usar según las preferencias del usuario:
      * - WebPush: Si tiene suscripciones push activas
      * - Mail: Si tiene email verificado y está suscrito a emails
      *
-     * @param mixed $notifiable Usuario que recibirá la notificación
+     * @param  mixed  $notifiable  Usuario que recibirá la notificación
      * @return array Canales de notificación a usar
      */
     public function via($notifiable): array
@@ -78,8 +76,8 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
     /**
      * Obtener la representación Web Push de la notificación.
      *
-     * @param mixed $notifiable Usuario destinatario
-     * @param mixed $notification Instancia de la notificación
+     * @param  mixed  $notifiable  Usuario destinatario
+     * @param  mixed  $notification  Instancia de la notificación
      * @return WebPushMessage Mensaje push configurado
      */
     public function toWebPush($notifiable, $notification): WebPushMessage
@@ -93,13 +91,13 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
 
         // Construir cuerpo del mensaje
         $body = $this->mensaje ?? "{$equipoLocal} vs {$equipoVisitante}";
-        
+
         // Agregar fecha y hora si está disponible
         if ($horario) {
             $fecha = Carbon::parse($horario);
-            $body .= " | " . $fecha->format('d/m H:i') . " hs";
+            $body .= ' | '.$fecha->format('d/m H:i').' hs';
         }
-        
+
         // Agregar cancha si está disponible
         if ($cancha) {
             $body .= " | Cancha {$cancha}";
@@ -110,24 +108,24 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
             ->icon('/fotos/Logo_Mitai_SinFondo.png')
             ->badge('/fotos/Logo_Mitai_SinFondo.png')
             ->body($body)
-            ->tag('partido-' . ($partidoId ?? time()))
+            ->tag('partido-'.($partidoId ?? time()))
             ->data([
                 'url' => '/fixture',
-                'partido_id' => $partidoId
+                'partido_id' => $partidoId,
             ])
             ->options([
                 'TTL' => 86400 * 3, // 3 días
-                'urgency' => 'normal'
+                'urgency' => 'normal',
             ]);
     }
 
     /**
      * Obtener la representación en email de la notificación.
-     * 
+     *
      * Genera un email con los detalles del partido programado usando
      * componentes de Laravel Mail. Incluye enlace de desuscripción.
      *
-     * @param mixed $notifiable Usuario destinatario
+     * @param  mixed  $notifiable  Usuario destinatario
      * @return MailMessage Mensaje de email configurado
      */
     public function toMail($notifiable): MailMessage
@@ -140,13 +138,13 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
 
         // Construir URL del fixture
         $urlFixture = url('/fixture');
-        
+
         // Generar URL de desuscripción
-        $urlDarseDeBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
+        $urlDarseDeBaja = url('/email/baja?id='.$notifiable->id.'&token='.sha1($notifiable->email));
 
         // Construir línea del partido
         $partidoTexto = "**{$equipoLocal}** vs **{$equipoVisitante}**";
-        
+
         $mail = (new MailMessage)
             ->subject("Partido Programado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'i")
             ->replyTo('info@torneosmitai.com')
@@ -158,8 +156,8 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
         // Agregar fecha y hora si está disponible
         if ($horario) {
             $fecha = Carbon::parse($horario);
-            $mail->line("Fecha: " . $fecha->format('d/m/Y'));
-            $mail->line("Hora: " . $fecha->format('H:i') . " hs");
+            $mail->line('Fecha: '.$fecha->format('d/m/Y'));
+            $mail->line('Hora: '.$fecha->format('H:i').' hs');
         }
 
         // Agregar cancha si está disponible
@@ -172,23 +170,20 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
             ->salutation("Saludos, Torneos Mita'i")
-            // Headers anti-spam
+            // Headers para deliverability y one-click unsubscribe (RFC 8058)
             ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
                 $headers = $message->getHeaders();
                 $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
                 $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
-                $headers->addTextHeader('Precedence', 'bulk');
-                // Reply-To via replyTo()
-                $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });
     }
 
     /**
      * Obtener la representación en array de la notificación.
-     * 
+     *
      * Usado para almacenar la notificación en base de datos si se requiere.
      *
-     * @param mixed $notifiable Usuario destinatario
+     * @param  mixed  $notifiable  Usuario destinatario
      * @return array Datos de la notificación
      */
     public function toArray($notifiable): array
