@@ -104,6 +104,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::prefix('lista-buena-fe')->group(function () {
         Route::get('/conflictivos', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'conflictivos'])->name('lista-buena-fe.conflictivos');
         Route::get('/', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'index'])->name('lista-buena-fe.index');
+        Route::get('/imprimir-planillas/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'imprimirPlanillas'])->name('lista-buena-fe.imprimir-planillas');
         Route::get('/{idEquipo}/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'show'])->name('lista-buena-fe.show');
         Route::get('/pdf/{idEquipo}/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'pdf'])->name('lista-buena-fe.pdf');
         Route::get('/imprimir-planilla/{idEquipo}/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'imprimirPlanilla'])->name('lista-buena-fe.imprimir-planilla');
