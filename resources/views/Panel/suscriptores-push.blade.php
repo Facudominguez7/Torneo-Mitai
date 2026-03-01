@@ -475,14 +475,14 @@
                 count_route: '{{ route("push.manual.contar") }}',
                 send_route: '{{ route("push.manual.enviar-lote") }}',
                 log_route: '{{ route("push.log-completo") }}',
-                batch_size: 100,
+                batch_size: 40,
             },
             resumen_fecha: {
                 start_msg: 'Enviando resumen de fecha...',
                 count_route: '{{ route("push.resumen-fecha.contar") }}',
                 send_route: '{{ route("push.resumen-fecha.enviar-lote") }}',
                 log_route: '{{ route("push.log-completo") }}',
-                batch_size: 100,
+                batch_size: 40,
             }
         };
 
