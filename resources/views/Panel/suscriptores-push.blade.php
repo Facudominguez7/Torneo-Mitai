@@ -476,8 +476,11 @@
          */
         const RATE_LIMIT_DELAYS = [60000, 120000, 180000];
 
-        /** Tras este número de rate limits consecutivos se auto-pausa el proceso. */
+        /** Tras este número de rate limits consecutivos se entra en cooldown largo. */
         const MAX_RATE_LIMIT_RETRIES = 3;
+
+        /** Cooldown largo en ms (15 minutos) tras agotar reintentos cortos. */
+        const COOLDOWN_LARGO_MS = 900000;
 
         const ENDPOINTS = {
             recordatorios: {
@@ -933,19 +936,33 @@
                             errDiv.classList.remove('hidden');
                         }
 
-                        // Auto-pausa si se superó el máximo de reintentos
+                        // Cooldown largo: esperar 15 min y reintentar automáticamente
                         if (rateLimitRetries > MAX_RATE_LIMIT_RETRIES) {
-                            actualizarTextoProgreso(
-                                `Rate limit persistente de Hostinger. Proceso pausado. ` +
-                                `Enviados: ${totalEnviados}. Reintentá en 15-30 minutos.`
-                            );
-                            finalizarEnvio(true);
-                            // Sobreescribir mensaje genérico de "detenido"
-                            actualizarTextoProgreso(
-                                `Rate limit persistente de Hostinger. Proceso pausado. ` +
-                                `Enviados hasta ahora: ${totalEnviados}. Reintentá en 15-30 minutos.`
-                            );
-                            return;
+                            const horaReintento = new Date(Date.now() + COOLDOWN_LARGO_MS);
+                            const horaStr = horaReintento.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+                            const cooldownSec = Math.round(COOLDOWN_LARGO_MS / 1000);
+
+                            // Mostrar error técnico
+                            const errDivCooldown = document.getElementById('error-debug-msg');
+                            if (errDivCooldown) {
+                                errDivCooldown.textContent = 'Cooldown: rate limit persistente de Hostinger. Reintento automático programado.';
+                                errDivCooldown.classList.remove('hidden');
+                            }
+
+                            for (let restante = cooldownSec; restante > 0 && enviando; restante--) {
+                                const minutos = Math.floor(restante / 60);
+                                const segundos = restante % 60;
+                                actualizarTextoProgreso(
+                                    `Cooldown de Hostinger. Reintentando automaticamente a las ${horaStr} ` +
+                                    `(faltan ${minutos}:${String(segundos).padStart(2, '0')}). ` +
+                                    `Enviados: ${totalEnviados} de ${totalEnviados + (data.remaining ?? 0)}. No cierres esta pestaña.`
+                                );
+                                await new Promise(r => setTimeout(r, 1000));
+                            }
+
+                            // Resetear contador para un nuevo ciclo de reintentos cortos
+                            rateLimitRetries = 0;
+                            continue;
                         }
 
                         // Countdown visible con delay escalonado
