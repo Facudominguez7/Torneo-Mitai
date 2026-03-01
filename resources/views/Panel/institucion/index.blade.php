@@ -153,10 +153,16 @@
                                     ID: {{ $institucion->id }}
                                 </span>
                                 <h3 class="font-semibold text-gray-800">{{ $institucion->nombre }}</h3>
-                                <span class="text-sm text-gray-500">({{ $institucion->equipos_count }} equipos total)</span>
+                                @if ($EdicionSeleccionada)
+                                    <span class="text-sm text-gray-500">
+                                        ({{ $equipos->count() }} en esta edición / {{ $institucion->equipos_count }} total)
+                                    </span>
+                                @else
+                                    <span class="text-sm text-gray-500">({{ $institucion->equipos_count }} equipos total)</span>
+                                @endif
                             </div>
                             <div class="flex items-center gap-2">
-                                <button onclick="toggleEdit({{ $institucion->id }})"
+                                <button onclick="toggleEdit(this.dataset.institucionId)" data-institucion-id="{{ $institucion->id }}"
                                     class="text-blue-600 hover:text-blue-800 text-sm">
                                     <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -179,7 +185,7 @@
                                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3 rounded">
                                     Guardar
                                 </button>
-                                <button type="button" onclick="toggleEdit({{ $institucion->id }})" class="text-gray-600 text-sm">
+                                <button type="button" onclick="toggleEdit(this.dataset.institucionId)" data-institucion-id="{{ $institucion->id }}" class="text-gray-600 text-sm">
                                     Cancelar
                                 </button>
                             </form>

@@ -83,6 +83,20 @@
                     @endif
                 </form>
 
+                @php
+                    $urlImpresionMasiva = route('lista-buena-fe.imprimir-planillas', [
+                        'idEdicion' => $EdicionSeleccionada->id,
+                        'idCategoria' => $idCategoria,
+                        'search' => request('search'),
+                    ]);
+                @endphp
+                <button type="button"
+                        data-print-url="{{ $urlImpresionMasiva }}"
+                        class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow flex items-center justify-center"
+                        onclick="printExternal(this.dataset.printUrl)">
+                    <span class="mr-2">🖨️</span> Imprimir Todas las Planillas
+                </button>
+
                 {{-- Botón de Migración Masiva --}}
                 <form method="POST" action="{{ route('lista-buena-fe.migrar-todos') }}" class="w-full md:w-auto">
                     @csrf
@@ -192,4 +206,20 @@
             </div>
         </div>
     @endif
+@endsection
+
+@section('scripts')
+    <script>
+        function printExternal(url) {
+            let printFrame = document.getElementById('printFrame');
+            if (!printFrame) {
+                printFrame = document.createElement('iframe');
+                printFrame.id = 'printFrame';
+                printFrame.style.display = 'none';
+                document.body.appendChild(printFrame);
+            }
+
+            printFrame.src = url;
+        }
+    </script>
 @endsection

@@ -9,10 +9,31 @@
             font-size: 12px;
         }
         .header {
-            text-align: center;
             margin-bottom: 20px;
             border-bottom: 2px solid #333;
             padding-bottom: 10px;
+        }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+        .header-table td {
+            border: none;
+            padding: 0;
+            vertical-align: middle;
+        }
+        .logo-cell {
+            width: 72px;
+            text-align: center;
+        }
+        .header-logo {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+        }
+        .title-cell {
+            text-align: center;
         }
         .header h1 {
             margin: 0;
@@ -73,8 +94,24 @@
 </head>
 <body>
     <div class="header">
-        <h1>Planilla de Partido</h1>
-        <h2>{{ $EdicionSeleccionada->nombre }}</h2>
+        <table class="header-table">
+            <tr>
+                <td class="logo-cell">
+                    <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="Logo Mitai" class="header-logo">
+                </td>
+                <td class="title-cell">
+                    <h1>Planilla de Partido</h1>
+                    <h2>{{ $EdicionSeleccionada->nombre }}</h2>
+                </td>
+                <td class="logo-cell">
+                    @if($equipoSeleccionado->equipo->foto)
+                        <img src="{{ asset('fotos/equipos/' . $equipoSeleccionado->equipo->foto) }}" alt="Logo {{ $equipoSeleccionado->equipo->nombre }}" class="header-logo">
+                    @else
+                        <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="Logo {{ $equipoSeleccionado->equipo->nombre }}" class="header-logo">
+                    @endif
+                </td>
+            </tr>
+        </table>
     </div>
 
     <div class="info">
@@ -95,18 +132,27 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($jugadoresActivos as $index => $jugador)
+            @php
+                $cantidadFilas = max(16, $jugadoresActivos->count());
+            @endphp
+
+            @for ($index = 0; $index < $cantidadFilas; $index++)
+                @php
+                    $jugador = $jugadoresActivos[$index] ?? null;
+                @endphp
                 <tr>
                     <td style="text-align: center;">{{ $index + 1 }}</td>
-                    <td>{{ $jugador->dni_jugador }}</td>
-                    <td>{{ $jugador->jugador->apellido }}, {{ $jugador->jugador->nombre }}</td>
-                    <td>{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('d/m/Y') }}</td>
+                    <td>{{ $jugador?->dni_jugador ?? '' }}</td>
+                    <td>
+                        @if($jugador?->jugador)
+                            {{ $jugador->jugador->apellido }}, {{ $jugador->jugador->nombre }}
+                        @endif
+                    </td>
+                    <td>{{ $jugador?->fecha_nacimiento ? \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('d/m/Y') : '' }}</td>
                     <td style="border: 1px solid #ddd;"></td> <!-- N° Camiseta -->
-                    <td style="border: 1px solid #ddd; text-align: center;">
-                        <div style="width: 15px; height: 15px; border: 1px solid #000; display: inline-block;"></div>
-                    </td> <!-- Asistió -->
+                    <td style="border: 1px solid #ddd; height: 28px;"></td> <!-- Asistió/Firma -->
                 </tr>
-            @endforeach
+            @endfor
         </tbody>
     </table>
 

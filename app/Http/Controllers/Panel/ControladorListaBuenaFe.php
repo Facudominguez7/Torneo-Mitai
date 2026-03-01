@@ -26,12 +26,14 @@ class ControladorListaBuenaFe extends Controller
         $this->validadorReglas = $validadorReglas;
     }
     /**
-     * Mostrar la lista de equipos para la lista de buena fe
+     * Construye el listado base de gestión para que filtros de edición, categoría
+     * y búsqueda se reutilicen también en la impresión masiva.
      */
     public function index(Request $request)
     {
         $idEdicion = $request->get('idEdicion');
         $idCategoria = $request->get('idCategoria');
+        $search = $request->get('search');
 
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : Edicion::latest()->first();
         $ediciones = Edicion::all();
@@ -42,27 +44,11 @@ class ControladorListaBuenaFe extends Controller
             $categorias = collect(); // Colección vacía si no hay edición
         }
 
-        // Obtener equipos de la edición seleccionada
-        $equipos = [];
-
-        if ($EdicionSeleccionada) {
-            $query = EquipoEdicion::with('equipo', 'categoria')
-                ->where('idEdicion', $EdicionSeleccionada->id);
-
-            if ($idCategoria) {
-                $query->where('idCategoria', $idCategoria);
-            }
-
-            // Filtro por nombre de equipo
-            if ($request->has('search') && !empty($request->search)) {
-                $search = $request->search;
-                $query->whereHas('equipo', function ($q) use ($search) {
-                    $q->where('nombre', 'LIKE', '%' . $search . '%');
-                });
-            }
-
-            $equipos = $query->get();
-        }
+        $equipos = $this->obtenerEquiposFiltrados(
+            $EdicionSeleccionada?->id,
+            $idCategoria,
+            $search
+        );
 
         // Obtener estadísticas de jugadores
         $estadisticasJugadores = null;
@@ -140,7 +126,8 @@ class ControladorListaBuenaFe extends Controller
     }
 
     /**
-     * Imprimir planilla de partido (Vista HTML con auto-print)
+     * Genera la planilla individual con auto-impresión para un equipo,
+     * usando el formato de mesa de control.
      */
     public function imprimirPlanilla($idEquipo, $idEdicion)
     {
@@ -159,6 +146,38 @@ class ControladorListaBuenaFe extends Controller
         return view('Panel.lista-buena-fe.imprimir', compact(
             'EdicionSeleccionada',
             'equipoSeleccionado',
+            'jugadoresActivos'
+        ));
+    }
+
+    /**
+     * Centraliza la impresión de todas las planillas para evitar imprimir equipo por equipo.
+     *
+     * Respeta los mismos filtros visibles en la pantalla principal de Lista de Buena Fe.
+     */
+    public function imprimirPlanillas(Request $request, $idEdicion)
+    {
+        $idCategoria = $request->get('idCategoria');
+        $search = $request->get('search');
+
+        $EdicionSeleccionada = Edicion::findOrFail($idEdicion);
+        $equipos = $this->obtenerEquiposFiltrados($idEdicion, $idCategoria, $search);
+
+        $jugadoresActivos = ListaBuenaFe::with(['jugador', 'categoria'])
+            ->where('idEdicion', $idEdicion)
+            ->where('activo', true)
+            ->when($idCategoria, function ($query) use ($idCategoria) {
+                $query->where('idCategoria', $idCategoria);
+            })
+            ->whereIn('idEquipo', $equipos->pluck('idEquipo')->unique()->values())
+            ->get()
+            ->groupBy(function ($jugador) {
+                return $jugador->idEquipo.'-'.$jugador->idCategoria;
+            });
+
+        return view('Panel.lista-buena-fe.imprimir-todas', compact(
+            'EdicionSeleccionada',
+            'equipos',
             'jugadoresActivos'
         ));
     }
@@ -809,4 +828,30 @@ class ControladorListaBuenaFe extends Controller
     }
 
     // NOTA: Método validarJugador() eliminado - ahora se usa ValidadorReglasJugador service
+
+    /**
+     * Reutiliza el armado del listado para que pantalla e impresión compartan
+     * exactamente los mismos criterios de filtrado.
+     */
+    private function obtenerEquiposFiltrados($idEdicion, $idCategoria = null, $search = null)
+    {
+        if (!$idEdicion) {
+            return collect();
+        }
+
+        $query = EquipoEdicion::with('equipo', 'categoria')
+            ->where('idEdicion', $idEdicion);
+
+        if ($idCategoria) {
+            $query->where('idCategoria', $idCategoria);
+        }
+
+        if (!empty($search)) {
+            $query->whereHas('equipo', function ($subQuery) use ($search) {
+                $subQuery->where('nombre', 'LIKE', '%'.$search.'%');
+            });
+        }
+
+        return $query->get();
+    }
 }
