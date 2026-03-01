@@ -2,11 +2,11 @@
 
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\ControladorHome;
-use App\Http\Controllers\Panel\ControladorTablaGoleadores;
 use App\Http\Controllers\Google\LoginController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\Panel\ControladorCampeon;
 use App\Http\Controllers\Panel\ControladorCategoria;
+use App\Http\Controllers\Panel\ControladorConsultaJugador;
 use App\Http\Controllers\Panel\ControladorCopa;
 use App\Http\Controllers\Panel\ControladorEdicion;
 use App\Http\Controllers\Panel\ControladorEquipo;
@@ -20,13 +20,12 @@ use App\Http\Controllers\Panel\ControladorInstanciaFinal;
 use App\Http\Controllers\Panel\ControladorPartidos;
 use App\Http\Controllers\Panel\ControladorPlanillaJugador;
 use App\Http\Controllers\Panel\ControladorSubcampeon;
+use App\Http\Controllers\Panel\ControladorTablaGoleadores;
 use App\Http\Controllers\Panel\ControladorValla;
-use App\Http\Controllers\Panel\ControladorConsultaJugador;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\PanelEdicionContextMiddleware;
 use App\Http\Middleware\UserAccesPanelMiddleware;
-use App\Models\Categoria;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/auth/redirect', [LoginController::class, 'redirect']);
 Route::get('/auth/google/callback', [LoginController::class, 'callback']);
@@ -49,8 +48,6 @@ Route::get('/tabla-de-goleadores', [ControladorHome::class, 'tablaGoleadores'])-
 Route::get('/tabla-de-vallas', [ControladorHome::class, 'tablaVallas'])->name('tabla-vallas');
 Route::get('/instancias-finales', [ControladorHome::class, 'instanciasFinales'])->name('instancias-finales');
 Route::get('forgot-password/{restablecer?}', [PasswordResetLinkController::class, 'create'])->name('password.request');
-
-
 
 Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAccesPanelMiddleware::class, PanelEdicionContextMiddleware::class]], function () {
     Route::resource('equipo', ControladorEquipo::class);
@@ -90,6 +87,8 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
         ->name('admin.imprimir-fixture-instancias-finales');
     Route::get('/admin/imprimir-fixture-arbitros', [ControladorHome::class, 'imprimirFixtureArbitros'])
         ->name('admin.imprimir-fixture-arbitros');
+    Route::get('/admin/imprimir-fixture-arbitros-partidos', [ControladorHome::class, 'imprimirFixtureArbitrosPartidos'])
+        ->name('admin.imprimir-fixture-arbitros-partidos');
     Route::get('/admin/grupos-por-categoria/{idCategoria}', [ControladorHome::class, 'gruposPorCategoria'])
         ->name('admin.grupos-por-categoria');
     Route::get('/admin/fechas-por-categoria/{idCategoria}', [ControladorHome::class, 'fechasPorCategoria'])
@@ -100,7 +99,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
         Route::post('/actualizar-jugador', [ControladorPlanillaJugador::class, 'actualizarJugadores'])->name('planilla.actualizarJugadores');
         Route::post('/eliminar-jugador', [ControladorPlanillaJugador::class, 'eliminarJugador'])->name('planilla.eliminarJugador');
     });
-    
+
     // Lista de Buena Fe
     Route::prefix('lista-buena-fe')->group(function () {
         Route::get('/conflictivos', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'conflictivos'])->name('lista-buena-fe.conflictivos');
@@ -117,12 +116,12 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
         Route::put('/resolver-conflicto/{id}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'resolverConflicto'])->name('lista-buena-fe.resolver-conflicto');
         Route::get('/buscar-dni', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'buscarPorDni'])->name('lista-buena-fe.buscar-dni');
     });
-    
+
     // En routes/web.php
     Route::get('/categorias-por-edicion/{id}', [ControladorEdicion::class, 'categoriasPorEdicion'])->name('categorias.por.edicion');
     Route::get('/equipos-por-categoria/{id}', [ControladorEdicion::class, 'equiposPorCategoria']);
     Route::get('/reporte-jugadores/{equipoId}/{idEdicion}/{partidoId}', [ControladorPlanillaJugador::class, 'generarReportePDF'])->name('reporte.jugadores');
-    
+
     // Consulta de jugador
     Route::get('/consulta-jugador', [ControladorConsultaJugador::class, 'index'])->name('jugador.consulta');
     Route::post('/consulta-jugador/buscar', [ControladorConsultaJugador::class, 'buscar'])->name('jugador.buscar');
@@ -159,7 +158,7 @@ Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
     Route::post('/suscriptores/{id}/reenviar-verificacion', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'reenviarVerificacionManual'])
         ->middleware(UserAccesPanelMiddleware::class) // Solo admins
         ->name('push.reenviar-verificacion');
-    
+
     // Rutas AJAX para envío de recordatorios por lotes
     Route::get('/recordatorios/contar', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'contarUsuariosPendientes'])
         ->middleware(UserAccesPanelMiddleware::class)
@@ -186,12 +185,12 @@ Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
     Route::post('/resumen-fecha/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResumenFecha'])
         ->middleware(UserAccesPanelMiddleware::class)
         ->name('push.resumen-fecha.enviar-lote');
-    
+
     // Ruta para notificación de resultados masiva por lotes
     Route::post('/resultado/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResultado'])
         ->middleware(UserAccesPanelMiddleware::class)
         ->name('push.resultado.enviar-lote');
-    
+
     // Ruta para notificación de resultados de instancias finales por lotes
     Route::post('/resultado-instancia/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResultadoInstancia'])
         ->middleware(UserAccesPanelMiddleware::class)
@@ -213,6 +212,11 @@ Route::get('/email/baja', [\App\Http\Controllers\ControladorNotificacionesPush::
     ->middleware('throttle:5,1')
     ->name('email.baja');
 
+// One-click unsubscribe via POST (RFC 8058 - requerido por Gmail/Outlook)
+Route::post('/email/baja', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'oneClickUnsubscribe'])
+    ->middleware('throttle:10,1')
+    ->name('email.baja.post');
+
 // Baja general para envíos masivos en BCC
 Route::get('/email/baja-general', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'formularioBajaGeneral'])
     ->middleware('throttle:20,1')
@@ -226,5 +230,4 @@ Route::get('/email/estado', [\App\Http\Controllers\ControladorNotificacionesPush
     ->middleware('auth')
     ->name('email.estado');
 
-
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

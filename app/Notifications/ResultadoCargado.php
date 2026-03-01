@@ -3,20 +3,17 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
 /**
  * Notificación de resultado de partido cargado.
- * 
+ *
  * Se envía cuando un administrador carga el resultado de un partido.
  * La notificación se envía vía Web Push y Email a usuarios suscritos.
  * Implementa ShouldQueue para procesarse en segundo plano.
- *
- * @package App\Notifications
  */
 class ResultadoCargado extends Notification
 {
@@ -34,7 +31,7 @@ class ResultadoCargado extends Notification
 
     /**
      * Datos del partido (objeto o array).
-     * 
+     *
      * @var mixed
      */
     protected $partido;
@@ -42,7 +39,7 @@ class ResultadoCargado extends Notification
     /**
      * Crear una nueva instancia de la notificación.
      *
-     * @param mixed $partido Objeto o array con datos del partido
+     * @param  mixed  $partido  Objeto o array con datos del partido
      */
     public function __construct($partido)
     {
@@ -51,12 +48,12 @@ class ResultadoCargado extends Notification
 
     /**
      * Obtener los canales de entrega de la notificación.
-     * 
+     *
      * Determina dinámicamente qué canales usar según las preferencias del usuario:
      * - WebPush: Si tiene suscripciones push activas
      * - Mail: Si tiene email verificado y está suscrito a emails
      *
-     * @param mixed $notifiable Usuario que recibirá la notificación
+     * @param  mixed  $notifiable  Usuario que recibirá la notificación
      * @return array Canales de notificación a usar
      */
     public function via($notifiable): array
@@ -79,8 +76,8 @@ class ResultadoCargado extends Notification
     /**
      * Obtener la representación Web Push de la notificación.
      *
-     * @param mixed $notifiable Usuario destinatario
-     * @param mixed $notification Instancia de la notificación
+     * @param  mixed  $notifiable  Usuario destinatario
+     * @param  mixed  $notification  Instancia de la notificación
      * @return WebPushMessage Mensaje push configurado
      */
     public function toWebPush($notifiable, $notification): WebPushMessage
@@ -103,7 +100,7 @@ class ResultadoCargado extends Notification
         // Construir URL con idEdicion (sanitizado como entero por seguridad)
         $url = '/';
         if ($idEdicion) {
-            $url = '/fixture?idEdicion=' . (int) $idEdicion;
+            $url = '/fixture?idEdicion='.(int) $idEdicion;
         }
 
         return (new WebPushMessage)
@@ -111,24 +108,24 @@ class ResultadoCargado extends Notification
             ->icon('/fotos/Logo_Mitai_SinFondo.png')
             ->badge('/fotos/Logo_Mitai_SinFondo.png')
             ->body($body)
-            ->tag('resultado-' . ($partidoId ?? time()))
+            ->tag('resultado-'.($partidoId ?? time()))
             ->data([
                 'url' => $url,
-                'partido_id' => $partidoId
+                'partido_id' => $partidoId,
             ])
             ->options([
                 'TTL' => 86400, // 24 horas
-                'urgency' => 'normal'
+                'urgency' => 'normal',
             ]);
     }
 
     /**
      * Obtener la representación en email de la notificación.
-     * 
+     *
      * Genera un email con el resultado del partido usando componentes
      * de Laravel Mail. Incluye enlace de desuscripción.
      *
-     * @param mixed $notifiable Usuario destinatario
+     * @param  mixed  $notifiable  Usuario destinatario
      * @return MailMessage Mensaje de email configurado
      */
     public function toMail($notifiable): MailMessage
@@ -142,13 +139,13 @@ class ResultadoCargado extends Notification
         $idEdicion = $this->partido->idEdicion ?? $this->partido['idEdicion'] ?? null;
 
         // Construir URL del fixture
-        $urlFixture = url('/fixture' . ($idEdicion ? "?idEdicion={$idEdicion}" : ''));
+        $urlFixture = url('/fixture'.($idEdicion ? "?idEdicion={$idEdicion}" : ''));
         // URL para darse de baja de estos recordatorios
-        $urlDarseDeBaja = url('/email/baja?id=' . $notifiable->id . '&token=' . sha1($notifiable->email));
+        $urlDarseDeBaja = url('/email/baja?id='.$notifiable->id.'&token='.sha1($notifiable->email));
 
         // Construir línea de resultado con formato atractivo
         $resultado = "**{$equipoLocal}** {$golesLocal} - {$golesVisitante} **{$equipoVisitante}**";
-        
+
         $mail = (new MailMessage)
             ->subject("Resultado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'i")
             ->replyTo('info@torneosmitai.com')
@@ -167,23 +164,20 @@ class ResultadoCargado extends Notification
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
             ->salutation("Saludos, Torneos Mita'i")
-            // Headers anti-spam
+            // Headers para deliverability y one-click unsubscribe (RFC 8058)
             ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
                 $headers = $message->getHeaders();
                 $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
                 $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
-                $headers->addTextHeader('Precedence', 'bulk');
-                // Reply-To via replyTo()
-                $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
             });
     }
 
     /**
      * Obtener la representación en array de la notificación.
-     * 
+     *
      * Usado para almacenar la notificación en base de datos si se requiere.
      *
-     * @param mixed $notifiable Usuario destinatario
+     * @param  mixed  $notifiable  Usuario destinatario
      * @return array Datos de la notificación
      */
     public function toArray($notifiable): array

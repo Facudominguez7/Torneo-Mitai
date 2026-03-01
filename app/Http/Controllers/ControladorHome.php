@@ -867,6 +867,53 @@ class ControladorHome extends Controller
     }
 
     /**
+     * Imprimir planilla para árbitros de partidos de fase regular.
+     *
+     * Regla operativa: se listan solo encuentros pendientes para facilitar
+     * carga en cancha y evitar que se impriman cruces ya cerrados.
+     */
+    public function imprimirFixtureArbitrosPartidos(Request $request)
+    {
+        $idEdicion = $request->query('idEdicion');
+        $horarioFiltro = $request->query('horario'); // Formato: HH:mm
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
+        if (! $EdicionSeleccionada) {
+            return redirect()->back()->with('error', 'Debe seleccionar una edición');
+        }
+
+        $query = Partido::select(
+            'partidos.*',
+            'el.nombre as nombre_local',
+            'ev.nombre as nombre_visitante',
+            'f.nombre as nombre_fecha',
+            'cat.nombreCategoria as nombre_categoria',
+            DB::raw("COALESCE(g.nombre, '') as nombre_grupo")
+        )
+            ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
+            ->join('equipos as ev', 'partidos.idEquipoVisitante', '=', 'ev.id')
+            ->join('fechas as f', 'partidos.idFechas', '=', 'f.id')
+            ->leftJoin('categorias as cat', 'partidos.idCategoria', '=', 'cat.id')
+            ->leftJoin('grupos as g', 'partidos.idGrupo', '=', 'g.id')
+            ->where('partidos.idEdicion', $idEdicion)
+            ->whereNull('partidos.golesEquipoLocal')
+            ->whereNull('partidos.golesEquipoVisitante');
+
+        if ($horarioFiltro) {
+            $query->whereRaw('TIME(partidos.horario_datetime) = ?', [$horarioFiltro . ':00']);
+        }
+
+        $partidos = $query
+            ->orderBy('partidos.horario_datetime', 'asc')
+            ->orderBy('partidos.cancha', 'asc')
+            ->orderBy('cat.nombreCategoria', 'desc')
+            ->orderBy('f.id', 'asc')
+            ->get();
+
+        return view('Panel.imprimir.fixture-arbitros-partidos', compact('partidos', 'EdicionSeleccionada', 'horarioFiltro'));
+    }
+
+    /**
      * API: Obtener grupos de una categoría para el dropdown de impresión.
      */
     public function gruposPorCategoria($idCategoria)

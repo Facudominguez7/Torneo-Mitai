@@ -29,7 +29,7 @@ class ResumenResultadosFechaMail extends Mailable
      * Se usa una sola plantilla para múltiples destinatarios en BCC,
      * optimizando cuota SMTP y evitando exposición de correos.
      *
-     * @param array<string, mixed> $resumen
+     * @param  array<string, mixed>  $resumen
      */
     public function __construct(array $resumen, string $urlBajaGeneral)
     {
@@ -66,8 +66,7 @@ class ResumenResultadosFechaMail extends Mailable
             ->withSymfonyMessage(function ($message) {
                 $headers = $message->getHeaders();
                 $headers->addTextHeader('List-Unsubscribe', "<{$this->urlBajaGeneral}>");
-                $headers->addTextHeader('Precedence', 'bulk');
-                $headers->addTextHeader('X-Mailer', 'Torneos-Mitai-Laravel');
+                $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
             });
     }
 }

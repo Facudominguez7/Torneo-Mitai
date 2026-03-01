@@ -5,18 +5,15 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * Controlador para gestionar las suscripciones de notificaciones push.
- * 
+ *
  * Este controlador maneja:
  * - Suscripción de usuarios a notificaciones push
  * - Cancelación de suscripciones
  * - Estado de suscripción del usuario
  * - Entrega de clave pública VAPID
- * 
- * @package App\Http\Controllers
  */
 class ControladorNotificacionesPush extends Controller
 {
@@ -26,7 +23,7 @@ class ControladorNotificacionesPush extends Controller
      */
     private const ALLOWED_PUSH_SERVICES = [
         'fcm.googleapis.com',
-        'updates.push.services.mozilla.com', 
+        'updates.push.services.mozilla.com',
         'wns.windows.com',
         'push.apple.com',
         'web.push.apple.com',
@@ -67,7 +64,7 @@ class ControladorNotificacionesPush extends Controller
 
     /**
      * Suscribir al usuario autenticado a notificaciones push.
-     * 
+     *
      * Validaciones de seguridad:
      * - Requiere autenticación
      * - Valida formato del endpoint
@@ -75,7 +72,6 @@ class ControladorNotificacionesPush extends Controller
      * - Limita cantidad de suscripciones por usuario
      * - Registra el evento para auditoría
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function subscribe(Request $request)
@@ -88,16 +84,16 @@ class ControladorNotificacionesPush extends Controller
         ]);
 
         // Validar que el endpoint sea de un servicio push legítimo
-        if (!$this->isValidPushEndpoint($request->endpoint)) {
+        if (! $this->isValidPushEndpoint($request->endpoint)) {
             Log::channel('single')->warning('Intento de suscripción con endpoint no válido', [
                 'user_id' => $request->user()->id,
                 'endpoint' => $request->endpoint,
                 'ip' => $request->ip(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Servicio de notificaciones no válido'
+                'message' => 'Servicio de notificaciones no válido',
             ], 422);
         }
 
@@ -125,16 +121,15 @@ class ControladorNotificacionesPush extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '¡Notificaciones activadas correctamente!'
+            'message' => '¡Notificaciones activadas correctamente!',
         ]);
     }
 
     /**
      * Cancelar la suscripción del usuario a notificaciones push.
-     * 
+     *
      * El usuario solo puede eliminar sus propias suscripciones.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function unsubscribe(Request $request)
@@ -159,14 +154,13 @@ class ControladorNotificacionesPush extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Notificaciones desactivadas'
+            'message' => 'Notificaciones desactivadas',
         ]);
     }
 
     /**
      * Verificar el estado de suscripción del usuario.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function status(Request $request)
@@ -189,22 +183,19 @@ class ControladorNotificacionesPush extends Controller
     public function getVapidPublicKey()
     {
         return response()->json([
-            'publicKey' => config('webpush.vapid.public_key')
+            'publicKey' => config('webpush.vapid.public_key'),
         ]);
     }
 
     /**
      * Validar que el endpoint pertenezca a un servicio de push legítimo.
      * Esto previene ataques donde un atacante intenta usar endpoints maliciosos.
-     *
-     * @param string $endpoint
-     * @return bool
      */
     private function isValidPushEndpoint(string $endpoint): bool
     {
         $host = parse_url($endpoint, PHP_URL_HOST);
-        
-        if (!$host) {
+
+        if (! $host) {
             return false;
         }
 
@@ -221,7 +212,6 @@ class ControladorNotificacionesPush extends Controller
      * Enviar una notificación manual a todos los usuarios suscritos.
      * Solo accesible por administradores.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function enviarNotificacionManual(Request $request)
@@ -244,7 +234,7 @@ class ControladorNotificacionesPush extends Controller
         // - Usuarios con push activo (independientemente del email)
         $usuariosEmail = \App\Models\User::suscritosAEmail()->get();
         $usuariosPush = \App\Models\User::whereHas('pushSubscriptions')->get();
-        
+
         // Combinar ambos grupos sin duplicados
         $todosLosUsuarios = $usuariosEmail->merge($usuariosPush)->unique('id');
 
@@ -252,13 +242,13 @@ class ControladorNotificacionesPush extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'No hay usuarios para notificar',
-                'count' => 0
+                'count' => 0,
             ]);
         }
 
         // Crear la notificación
         $notificacion = new \App\Notifications\NotificacionPersonalizada($titulo, $mensaje, $url, $icono);
-        
+
         $contadorPush = 0;
         $contadorEmail = 0;
 
@@ -267,7 +257,7 @@ class ControladorNotificacionesPush extends Controller
         foreach ($todosLosUsuarios as $usuario) {
             try {
                 $usuario->notify($notificacion);
-                
+
                 // Contar por tipo de notificación
                 if ($usuario->pushSubscriptions()->exists()) {
                     $contadorPush++;
@@ -297,14 +287,14 @@ class ControladorNotificacionesPush extends Controller
             'message' => "Notificación enviada: {$contadorPush} push, {$contadorEmail} email",
             'count' => $todosLosUsuarios->count(),
             'push_count' => $contadorPush,
-            'email_count' => $contadorEmail
+            'email_count' => $contadorEmail,
         ]);
     }
 
     /**
      * Listar usuarios con suscripciones push activas.
      * Solo accesible por administradores.
-     * 
+     *
      * Muestra una tabla con todos los usuarios que tienen notificaciones push
      * activas, incluyendo su estado de suscripción a emails.
      *
@@ -313,14 +303,13 @@ class ControladorNotificacionesPush extends Controller
     /**
      * Listar usuarios para gestión de notificaciones.
      * Solo accesible por administradores.
-     * 
+     *
      * Muestra una tabla con todos los usuarios, permitiendo filtrar por:
      * - Búsqueda de texto (nombre/email)
      * - Estado de notificación Push
      * - Estado de notificación Email
      * - Estado de verificación de Email
      *
-     * @param Request $request
      * @return \Illuminate\View\View
      */
     public function listarSuscriptores(Request $request)
@@ -331,9 +320,9 @@ class ControladorNotificacionesPush extends Controller
         // Filtro por búsqueda (nombre o email)
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -414,8 +403,7 @@ class ControladorNotificacionesPush extends Controller
      * Reenviar manualmente el correo de verificación a un usuario.
      * Solo accesible por administradores.
      *
-     * @param Request $request
-     * @param int $id ID del usuario
+     * @param  int  $id  ID del usuario
      * @return \Illuminate\Http\RedirectResponse
      */
     public function reenviarVerificacionManual(Request $request, int $id)
@@ -427,7 +415,7 @@ class ControladorNotificacionesPush extends Controller
         }
 
         $user->sendEmailVerificationNotification();
-        
+
         Log::channel('single')->info('Email de verificación reenviado manualmente por admin', [
             'admin_id' => $request->user()->id,
             'target_user_id' => $user->id,
@@ -438,19 +426,18 @@ class ControladorNotificacionesPush extends Controller
 
     /**
      * Alternar la suscripción del usuario a notificaciones por email.
-     * 
+     *
      * Permite a un usuario autenticado activar o desactivar
      * la recepción de notificaciones por correo electrónico.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function toggleEmailSubscription(Request $request)
     {
         $user = $request->user();
-        
+
         // Alternar el estado de suscripción
-        $user->email_subscribed = !$user->email_subscribed;
+        $user->email_subscribed = ! $user->email_subscribed;
         $user->save();
 
         // Registrar el cambio para auditoría
@@ -463,21 +450,21 @@ class ControladorNotificacionesPush extends Controller
         return response()->json([
             'success' => true,
             'email_subscribed' => $user->email_subscribed,
-            'message' => $user->email_subscribed 
-                ? 'Notificaciones por email activadas' 
-                : 'Notificaciones por email desactivadas'
+            'message' => $user->email_subscribed
+                ? 'Notificaciones por email activadas'
+                : 'Notificaciones por email desactivadas',
         ]);
     }
 
     /**
      * Dar de baja a un usuario de notificaciones por email.
-     * 
+     *
      * Ruta pública que permite a usuarios darse de baja sin iniciar sesión,
      * usando un token de verificación basado en sha1 del email.
      * Esto se usa en los enlaces de baja incluidos en cada email.
      *
-     * @param int $id ID del usuario
-     * @param string $token Token de verificación (sha1 del email)
+     * @param  int  $id  ID del usuario
+     * @param  string  $token  Token de verificación (sha1 del email)
      * @return \Illuminate\Http\RedirectResponse
      */
     public function darseDeBajaEmail(Request $request)
@@ -485,29 +472,30 @@ class ControladorNotificacionesPush extends Controller
         $id = $request->query('id');
         $token = $request->query('token');
 
-        if (!$id || !$token) {
+        if (! $id || ! $token) {
             return redirect('/')->with('error', 'Enlace incompleto.');
         }
 
         $user = \App\Models\User::find($id);
 
         // Verificar que el usuario existe
-        if (!$user) {
+        if (! $user) {
             return redirect('/')->with('error', 'Usuario no encontrado.');
         }
 
         // Verificar el token de seguridad
         $tokenEsperado = sha1($user->email);
-        if (!hash_equals($tokenEsperado, $token)) {
+        if (! hash_equals($tokenEsperado, $token)) {
             Log::channel('single')->warning('Intento de baja con token inválido', [
                 'user_id' => $id,
                 'ip' => request()->ip(),
             ]);
+
             return redirect('/')->with('error', 'Enlace inválido o expirado.');
         }
 
         // Si ya está dado de baja, informar
-        if (!$user->email_subscribed) {
+        if (! $user->email_subscribed) {
             return redirect('/')->with('info', 'Ya te diste de baja de las notificaciones por email.');
         }
 
@@ -568,30 +556,58 @@ class ControladorNotificacionesPush extends Controller
     }
 
     /**
-     * Obtener el estado actual de suscripción a emails del usuario.
-     * 
-     * Devuelve información sobre si el usuario tiene habilitadas
-     * las notificaciones por email.
+     * Endpoint POST para one-click unsubscribe segun RFC 8058.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * Gmail, Outlook y otros clientes envian un POST automatico cuando
+     * el usuario hace clic en "Cancelar suscripcion" desde la interfaz del
+     * proveedor de correo. Este handler procesa esa solicitud sin
+     * redireccion (responde 200 OK).
+     *
+     * @param  Request  $request  Con query params 'id' y 'token'
+     * @return \Illuminate\Http\Response
      */
-    public function estadoEmail(Request $request)
+    public function oneClickUnsubscribe(Request $request)
     {
-        $user = $request->user();
+        $id = $request->query('id') ?? $request->input('id');
+        $token = $request->query('token') ?? $request->input('token');
 
-        return response()->json([
-            'email_subscribed' => $user->email_subscribed,
-            'email_verified' => $user->hasVerifiedEmail(),
-            'puede_recibir_emails' => $user->quiereRecibirEmails(),
-        ]);
+        if (! $id || ! $token) {
+            return response('Enlace incompleto.', 400);
+        }
+
+        $user = \App\Models\User::find($id);
+
+        if (! $user) {
+            return response('OK', 200);
+        }
+
+        $tokenEsperado = sha1($user->email);
+        if (! hash_equals($tokenEsperado, $token)) {
+            Log::channel('single')->warning('Intento de one-click unsubscribe con token inválido', [
+                'user_id' => $id,
+                'ip' => $request->ip(),
+            ]);
+
+            return response('OK', 200);
+        }
+
+        if ($user->email_subscribed) {
+            $user->email_subscribed = false;
+            $user->save();
+
+            Log::channel('single')->info('Usuario dado de baja via one-click unsubscribe (RFC 8058)', [
+                'user_id' => $user->id,
+                'ip' => $request->ip(),
+            ]);
+        }
+
+        return response('OK', 200);
     }
 
     /**
      * Ejecutar manualmente el comando de recordatorios de verificación.
      * Solo accesible por administradores.
      *
-     * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
     /**
@@ -608,9 +624,9 @@ class ControladorNotificacionesPush extends Controller
 
         return response()->json([
             'count' => $count,
-            'message' => $count > 0 
+            'message' => $count > 0
                 ? "Hay {$count} usuarios pendientes de recordatorio."
-                : 'No hay usuarios pendientes de recordatorio.'
+                : 'No hay usuarios pendientes de recordatorio.',
         ]);
     }
 
@@ -627,13 +643,13 @@ class ControladorNotificacionesPush extends Controller
             ->whereNull('email_verified_at')
             ->whereNotNull('email')
             ->where('created_at', '<', now()->subHours(24))
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('last_verification_reminder_at')
-                  ->orWhere('last_verification_reminder_at', '<', now()->subDays(7));
+                    ->orWhere('last_verification_reminder_at', '<', now()->subDays(7));
             })
             ->take($batchSize)
             ->get();
-            
+
         Log::channel('single')->info('DEBUG ENVIO RECORDATORIOS:', [
             'total_encontrados' => $usuarios->count(),
             // 'sql' => $usuarios->toSql(), // Comentado porque da error en colección
@@ -643,7 +659,7 @@ class ControladorNotificacionesPush extends Controller
             return response()->json([
                 'done' => true,
                 'sent' => 0,
-                'message' => 'Todos los recordatorios fueron enviados.'
+                'message' => 'Todos los recordatorios fueron enviados.',
             ]);
         }
 
@@ -657,7 +673,7 @@ class ControladorNotificacionesPush extends Controller
                 $usuario->last_verification_reminder_at = now();
                 $usuario->save();
                 $enviados++;
-                
+
                 Log::channel('single')->info('Recordatorio enviado', [
                     'email' => $usuario->email,
                     'nombre' => $usuario->name,
@@ -665,7 +681,7 @@ class ControladorNotificacionesPush extends Controller
             } catch (\Exception $e) {
                 $errores[] = $usuario->email;
                 $lastError = $e->getMessage(); // Capturar último error
-                
+
                 Log::channel('single')->error('Error enviando recordatorio', [
                     'email' => $usuario->email,
                     'error' => $e->getMessage(),
@@ -678,9 +694,9 @@ class ControladorNotificacionesPush extends Controller
             ->whereNull('email_verified_at')
             ->whereNotNull('email')
             ->where('created_at', '<', now()->subHours(24))
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('last_verification_reminder_at')
-                  ->orWhere('last_verification_reminder_at', '<', now()->subDays(7));
+                    ->orWhere('last_verification_reminder_at', '<', now()->subDays(7));
             })
             ->count();
 
@@ -690,7 +706,7 @@ class ControladorNotificacionesPush extends Controller
             'remaining' => $remaining,
             'errors' => count($errores),
             'last_error' => $lastError, // Enviar error al front
-            'message' => "Enviados: {$enviados}. Restantes: {$remaining}"
+            'message' => "Enviados: {$enviados}. Restantes: {$remaining}",
         ]);
     }
 
@@ -732,12 +748,12 @@ class ControladorNotificacionesPush extends Controller
             'url' => ['nullable', 'string', 'max:255'],
             'icono' => ['nullable', 'string', 'max:10'],
             'offset' => ['required', 'integer', 'min:0'],
-            'limit' => ['required', 'integer', 'min:1', 'max:' . self::MAX_DESTINATARIOS_BCC],
+            'limit' => ['required', 'integer', 'min:1', 'max:'.self::MAX_DESTINATARIOS_BCC],
         ]);
 
         $limit = $validated['limit'];
         $offset = $validated['offset'];
-        
+
         $idsDestinatarios = $this->usuariosEmailResumenQuery()
             ->orderBy('id')
             ->limit(self::MAX_DESTINATARIOS_RESUMEN_FECHA)
@@ -756,7 +772,7 @@ class ControladorNotificacionesPush extends Controller
                 'done' => true,
                 'sent' => 0,
                 'errors' => 0,
-                'message' => 'Fin del proceso.'
+                'message' => 'Fin del proceso.',
             ]);
         }
 
@@ -890,7 +906,7 @@ class ControladorNotificacionesPush extends Controller
             'mensaje' => ['nullable', 'string', 'max:500'],
             'url' => ['nullable', 'string', 'max:255'],
             'offset' => ['required', 'integer', 'min:0'],
-            'limit' => ['required', 'integer', 'min:1', 'max:' . self::MAX_DESTINATARIOS_BCC],
+            'limit' => ['required', 'integer', 'min:1', 'max:'.self::MAX_DESTINATARIOS_BCC],
         ]);
 
         $idEdicion = $this->obtenerIdUltimaEdicion();
@@ -1055,7 +1071,7 @@ class ControladorNotificacionesPush extends Controller
         Log::channel('single')->info("PROCESO DE ENVÍO MASIVO COMPLETADO ($tipo)");
         Log::channel('single')->info("Total Enviados: {$enviados}");
         Log::channel('single')->info("Total Errores: {$errores}");
-        Log::channel('single')->info('Admin Responsable: ' . $request->user()->name . ' (ID: ' . $request->user()->id . ')');
+        Log::channel('single')->info('Admin Responsable: '.$request->user()->name.' (ID: '.$request->user()->id.')');
         Log::channel('single')->info('==========================================');
 
         return response()->json(['status' => 'ok']);
@@ -1078,16 +1094,16 @@ class ControladorNotificacionesPush extends Controller
 
         $partido = \App\Models\Partido::with(['equipoLocal', 'equipoVisitante', 'categoria'])
             ->findOrFail($partidoId);
-        
+
         // Preparar datos del partido para la notificación
         $datosPartido = (object) [
-                'id' => $partido->id,
-                'idEdicion' => $partido->idEdicion,
-                'nombre_local' => $partido->equipoLocal->nombre ?? 'Equipo Local',
-                'nombre_visitante' => $partido->equipoVisitante->nombre ?? 'Equipo Visitante',
-                'golesEquipoLocal' => $partido->golesEquipoLocal,
-                'golesEquipoVisitante' => $partido->golesEquipoVisitante,
-                'nombre_categoria' => $partido->categoria->nombreCategoria ?? '',
+            'id' => $partido->id,
+            'idEdicion' => $partido->idEdicion,
+            'nombre_local' => $partido->equipoLocal->nombre ?? 'Equipo Local',
+            'nombre_visitante' => $partido->equipoVisitante->nombre ?? 'Equipo Visitante',
+            'golesEquipoLocal' => $partido->golesEquipoLocal,
+            'golesEquipoVisitante' => $partido->golesEquipoVisitante,
+            'nombre_categoria' => $partido->categoria->nombreCategoria ?? '',
         ];
 
         $notificacion = new \App\Notifications\ResultadoCargado($datosPartido);
@@ -1100,11 +1116,11 @@ class ControladorNotificacionesPush extends Controller
             ->get();
 
         if ($usuarios->isEmpty()) {
-             return response()->json([
+            return response()->json([
                 'done' => true,
                 'sent' => 0,
                 'errors' => 0,
-                'message' => 'Fin del proceso.'
+                'message' => 'Fin del proceso.',
             ]);
         }
 
@@ -1120,8 +1136,12 @@ class ControladorNotificacionesPush extends Controller
                 // Actualizar timestamp
                 $usuario->forceFill(['last_notification_at' => now()])->saveQuietly();
                 $enviados++;
-                 if ($usuario->pushSubscriptions()->exists()) $contadorPush++;
-                 if ($usuario->quiereRecibirEmails()) $contadorEmail++;
+                if ($usuario->pushSubscriptions()->exists()) {
+                    $contadorPush++;
+                }
+                if ($usuario->quiereRecibirEmails()) {
+                    $contadorEmail++;
+                }
             } catch (\Exception $e) {
                 $errores[] = $usuario->email;
                 $lastError = $e->getMessage();
@@ -1135,7 +1155,7 @@ class ControladorNotificacionesPush extends Controller
             'errors' => count($errores),
             'last_error' => $lastError,
             'push_count' => $contadorPush,
-            'email_count' => $contadorEmail
+            'email_count' => $contadorEmail,
         ]);
     }
 
@@ -1156,17 +1176,17 @@ class ControladorNotificacionesPush extends Controller
 
         $partido = \App\Models\InstanciaFinal::with(['equipoLocal', 'equipoVisitante', 'categoria', 'fase'])
             ->findOrFail($partidoId);
-        
+
         // Preparar datos del partido para la notificación
         $nombreFase = $partido->fase->nombre ?? '';
         $datosPartido = (object) [
-                'id' => $partido->id,
-                'idEdicion' => $partido->idEdicion,
-                'nombre_local' => $partido->equipoLocal->nombre ?? 'Equipo Local',
-                'nombre_visitante' => $partido->equipoVisitante->nombre ?? 'Equipo Visitante',
-                'golesEquipoLocal' => $partido->golesEquipoLocal,
-                'golesEquipoVisitante' => $partido->golesEquipoVisitante,
-                'nombre_categoria' => ($partido->categoria->nombreCategoria ?? '') . ($nombreFase ? " - {$nombreFase}" : ''),
+            'id' => $partido->id,
+            'idEdicion' => $partido->idEdicion,
+            'nombre_local' => $partido->equipoLocal->nombre ?? 'Equipo Local',
+            'nombre_visitante' => $partido->equipoVisitante->nombre ?? 'Equipo Visitante',
+            'golesEquipoLocal' => $partido->golesEquipoLocal,
+            'golesEquipoVisitante' => $partido->golesEquipoVisitante,
+            'nombre_categoria' => ($partido->categoria->nombreCategoria ?? '').($nombreFase ? " - {$nombreFase}" : ''),
         ];
 
         $notificacion = new \App\Notifications\ResultadoCargado($datosPartido);
@@ -1179,11 +1199,11 @@ class ControladorNotificacionesPush extends Controller
             ->get();
 
         if ($usuarios->isEmpty()) {
-             return response()->json([
+            return response()->json([
                 'done' => true,
                 'sent' => 0,
                 'errors' => 0,
-                'message' => 'Fin del proceso.'
+                'message' => 'Fin del proceso.',
             ]);
         }
 
@@ -1199,8 +1219,12 @@ class ControladorNotificacionesPush extends Controller
                 // Actualizar timestamp
                 $usuario->forceFill(['last_notification_at' => now()])->saveQuietly();
                 $enviados++;
-                 if ($usuario->pushSubscriptions()->exists()) $contadorPush++;
-                 if ($usuario->quiereRecibirEmails()) $contadorEmail++;
+                if ($usuario->pushSubscriptions()->exists()) {
+                    $contadorPush++;
+                }
+                if ($usuario->quiereRecibirEmails()) {
+                    $contadorEmail++;
+                }
             } catch (\Exception $e) {
                 $errores[] = $usuario->email;
                 $lastError = $e->getMessage();
@@ -1214,7 +1238,7 @@ class ControladorNotificacionesPush extends Controller
             'errors' => count($errores),
             'last_error' => $lastError,
             'push_count' => $contadorPush,
-            'email_count' => $contadorEmail
+            'email_count' => $contadorEmail,
         ]);
     }
 
@@ -1278,7 +1302,7 @@ class ControladorNotificacionesPush extends Controller
             'edicion_nombre' => $edicionNombre,
             'fecha_nombre' => $fecha->nombre,
             'categoria_nombre' => $categoriaNombre,
-            'url_fixture' => '/fixture?idEdicion=' . $idEdicion,
+            'url_fixture' => '/fixture?idEdicion='.$idEdicion,
             'partidos_count' => $partidos->count(),
             'partidos' => $partidos->map(function ($partido): array {
                 return [
@@ -1288,7 +1312,7 @@ class ControladorNotificacionesPush extends Controller
                     'goles_local' => (int) $partido->golesEquipoLocal,
                     'goles_visitante' => (int) $partido->golesEquipoVisitante,
                     'grupo' => $this->formatearEtiquetaGrupo($partido->grupo->nombre ?? null),
-                    'cancha' => $partido->cancha ? ('Cancha ' . $partido->cancha) : null,
+                    'cancha' => $partido->cancha ? ('Cancha '.$partido->cancha) : null,
                     'horario' => $partido->horario_datetime
                         ? \Carbon\Carbon::parse($partido->horario_datetime)->format('d/m H:i')
                         : ($partido->horario ?: null),
@@ -1319,7 +1343,7 @@ class ControladorNotificacionesPush extends Controller
             return $nombreNormalizado;
         }
 
-        return 'Grupo ' . $nombreNormalizado;
+        return 'Grupo '.$nombreNormalizado;
     }
 
     /**
@@ -1346,7 +1370,7 @@ class ControladorNotificacionesPush extends Controller
             return $tituloNormalizado;
         }
 
-        return $iconoNormalizado . ' ' . $tituloNormalizado;
+        return $iconoNormalizado.' '.$tituloNormalizado;
     }
 
     /**
@@ -1357,8 +1381,8 @@ class ControladorNotificacionesPush extends Controller
      * para que el caller pueda señalizar al frontend y pausar el proceso.
      * Si detecta exceso de destinatarios (452), divide el lote y reintenta.
      *
-     * @param array<int, string> $emails
-     * @param callable():\Illuminate\Mail\Mailable $crearMailable
+     * @param  array<int, string>  $emails
+     * @param  callable():\Illuminate\Mail\Mailable  $crearMailable
      */
     private function enviarCorreoBccConFallback(array $emails, callable $crearMailable): int
     {

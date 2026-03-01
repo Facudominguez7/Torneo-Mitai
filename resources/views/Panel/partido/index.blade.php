@@ -2,7 +2,13 @@
 
 @section('contenido')
     @if (isset($EdicionSeleccionada))
-        <div class="mb-2 grid grid-cols-1 gap-2 px-2 sm:grid-cols-2 xl:grid-cols-3">
+        @php
+            $urlImprimirArbitros = route('admin.imprimir-fixture-arbitros-partidos', [
+                'idEdicion' => $EdicionSeleccionada->id,
+                'horario' => request('horario'),
+            ]);
+        @endphp
+        <div class="mb-2 grid grid-cols-1 gap-2 px-2 sm:grid-cols-2 xl:grid-cols-4">
             <div>
                 <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'partido', 'forzarSeleccion' => 1]) }}">
                     <button
@@ -34,6 +40,15 @@
                     </a>
                 </div>
             @endif
+            <div>
+                <button onclick="imprimirEnIframe('{{ $urlImprimirArbitros }}')"
+                    class="mt-2 mb-2 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition-all duration-300 hover:bg-blue-700 sm:text-base md:py-3 md:px-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Imprimir Planilla Árbitros
+                </button>
+            </div>
         </div>
     @endif
     <div class="rounded-lg bg-white p-3 sm:p-4 md:p-6">
