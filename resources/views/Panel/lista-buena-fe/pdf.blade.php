@@ -97,7 +97,7 @@
     </table>
 
     <div class="footer">
-        <p>Documento generado automáticamente por el sistema Mitai.</p>
+        <p>Documento generado automáticamente por el sistema Mita'í.</p>
     </div>
 </body>
 </html>

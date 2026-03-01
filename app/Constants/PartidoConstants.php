@@ -23,9 +23,14 @@ class PartidoConstants
      */
     public static function getModelClass(string $tipo): string
     {
-        return $tipo === self::TIPO_INSTANCIA_FINAL 
-            ? self::CLASS_INSTANCIA_FINAL 
-            : self::CLASS_PARTIDO;
+        $tipoNormalizado = strtolower(str_replace(['-', ' '], '_', trim($tipo)));
+
+        // Compatibilidad con variantes legacy usadas en rutas y formularios.
+        if (in_array($tipoNormalizado, [self::TIPO_INSTANCIA_FINAL, 'instanciafinal'], true)) {
+            return self::CLASS_INSTANCIA_FINAL;
+        }
+
+        return self::CLASS_PARTIDO;
     }
     
     /**
@@ -36,6 +41,8 @@ class PartidoConstants
      */
     public static function isInstanciaFinal(string $tipo): bool
     {
-        return $tipo === self::TIPO_INSTANCIA_FINAL;
+        $tipoNormalizado = strtolower(str_replace(['-', ' '], '_', trim($tipo)));
+
+        return in_array($tipoNormalizado, [self::TIPO_INSTANCIA_FINAL, 'instanciafinal'], true);
     }
 }
