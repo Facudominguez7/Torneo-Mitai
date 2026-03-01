@@ -60,7 +60,7 @@
                 <p class="text-sm text-gray-500 sm:text-base">
                     Edición: <span class="font-semibold">{{ $EdicionSeleccionada->nombre }}</span> |
                     Jugadores Activos: <span
-                        class="font-semibold {{ $jugadoresActivos->count() >= 18 ? 'text-red-600' : 'text-green-600' }}">{{ $jugadoresActivos->count() }}/18</span>
+                        class="font-semibold {{ $jugadoresActivos->count() >= $limiteJugadoresPorPlanilla ? 'text-red-600' : 'text-green-600' }}">{{ $jugadoresActivos->count() }}/{{ $limiteJugadoresPorPlanilla }}</span>
                 </p>
             </div>
 
@@ -99,7 +99,7 @@
         @endif
 
         {{-- Formulario para Agregar Jugador --}}
-        @if ($jugadoresActivos->count() < 18)
+        @if ($jugadoresActivos->count() < $limiteJugadoresPorPlanilla)
             <div class="mb-6 rounded-lg bg-white p-4 shadow-md sm:p-6">
                 <details class="mb-4">
                     <summary
@@ -176,7 +176,7 @@
         @else
             <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-center">
                 <p class="text-red-700 font-semibold">
-                    ⛔ Este equipo ha alcanzado el límite de 18 jugadores.
+                    ⛔ Este equipo ha alcanzado el límite de {{ $limiteJugadoresPorPlanilla }} jugadores.
                 </p>
             </div>
         @endif
@@ -293,7 +293,7 @@
                                             {{ $jugador->motivo_baja ?? 'Sin especificar' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            @if ($jugadoresActivos->count() < 18)
+                                            @if ($jugadoresActivos->count() < $limiteJugadoresPorPlanilla)
                                                 <form method="POST" action="{{ route('lista-buena-fe.reactivar', $jugador->id) }}"
                                                     class="inline">
                                                     @csrf

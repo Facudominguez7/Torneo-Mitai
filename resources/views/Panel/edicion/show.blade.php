@@ -11,14 +11,18 @@
         </div>
 
         <div class="overflow-hidden rounded-xl bg-white shadow-lg">
-            <div class="grid gap-0 sm:grid-cols-2">
+            <div class="grid gap-0 sm:grid-cols-3">
                 <div class="border-b border-gray-100 p-4 sm:border-b-0 sm:border-r">
                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">ID</p>
                     <p class="mt-2 text-lg font-semibold text-gray-800">{{ $edicion->id }}</p>
                 </div>
-                <div class="p-4">
+                <div class="border-b border-gray-100 p-4 sm:border-b-0 sm:border-r">
                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Nombre</p>
                     <p class="mt-2 text-lg font-semibold text-gray-800">{{ $edicion->nombre }}</p>
+                </div>
+                <div class="p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Jugadores por Planilla</p>
+                    <p class="mt-2 text-lg font-semibold text-gray-800">{{ $edicion->jugadores_por_planilla ?? 18 }}</p>
                 </div>
             </div>
         </div>

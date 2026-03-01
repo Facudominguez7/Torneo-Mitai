@@ -257,6 +257,8 @@ class ControladorPlanillaJugador extends Controller
 
         // --- Sincronización con Lista de Buena Fe ---
         try {
+            $limiteJugadores = $this->obtenerLimiteJugadoresPorEdicion($idEdicion);
+
             // Verificar si ya existe en la lista (activo o inactivo)
             $listaBuenaFe = ListaBuenaFe::where('dni_jugador', $jugador->dni)
                 ->where('idEquipo', $equipo->idEquipo)
@@ -272,7 +274,7 @@ class ControladorPlanillaJugador extends Controller
                         ->where('activo', true)
                         ->count();
 
-                    if ($cantidadActivos < 18) {
+                    if ($cantidadActivos < $limiteJugadores) {
                         $listaBuenaFe->reactivar();
                         // Actualizar datos si cambiaron
                         $listaBuenaFe->fecha_nacimiento = $fecha_nacimiento;
@@ -287,7 +289,7 @@ class ControladorPlanillaJugador extends Controller
                         }
                         $listaBuenaFe->save();
                     } else {
-                        Log::warning('Jugador agregado a planilla pero Lista de Buena Fe llena. No se pudo reactivar en la lista.');
+                        Log::warning('Jugador agregado a planilla pero Lista de Buena Fe llena (límite edición: '.$limiteJugadores.'). No se pudo reactivar en la lista.');
                     }
                 } else {
                     // Ya está activo, actualizar datos
@@ -311,7 +313,7 @@ class ControladorPlanillaJugador extends Controller
                     ->where('activo', true)
                     ->count();
 
-                if ($cantidadActivos < 18) {
+                if ($cantidadActivos < $limiteJugadores) {
                     ListaBuenaFe::create([
                         'dni_jugador' => $jugador->dni,
                         'idEquipo' => $equipo->idEquipo,
@@ -324,7 +326,7 @@ class ControladorPlanillaJugador extends Controller
                         'motivo_conflicto' => $motivoConflicto,
                     ]);
                 } else {
-                    Log::warning('Jugador agregado a planilla pero Lista de Buena Fe llena. No se pudo agregar a la lista.');
+                    Log::warning('Jugador agregado a planilla pero Lista de Buena Fe llena (límite edición: '.$limiteJugadores.'). No se pudo agregar a la lista.');
                 }
             }
         } catch (\Exception $e) {
@@ -685,5 +687,17 @@ class ControladorPlanillaJugador extends Controller
         } catch (\Exception $e) {
             Log::error('Error en sincronizarPlanilla: '.$e->getMessage());
         }
+    }
+
+    /**
+     * Resuelve el límite de jugadores por edición para mantener sincronizada
+     * la carga de planilla con la regla configurable de Lista de Buena Fe.
+     */
+    private function obtenerLimiteJugadoresPorEdicion($idEdicion)
+    {
+        $edicion = Edicion::find($idEdicion);
+        $limite = (int) ($edicion->jugadores_por_planilla ?? 18);
+
+        return $limite > 0 ? $limite : 18;
     }
 }

@@ -200,7 +200,8 @@
         </thead>
         <tbody>
             @php
-                $cantidadFilas = max(16, $jugadoresActivos->count());
+                $filasConfiguradas = max(1, (int) $limiteJugadoresPorPlanilla);
+                $cantidadFilas = max($filasConfiguradas, $jugadoresActivos->count());
             @endphp
 
             @for ($index = 0; $index < $cantidadFilas; $index++)

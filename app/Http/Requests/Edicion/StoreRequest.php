@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Edicion;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreRequest extends FormRequest
 {
@@ -21,8 +22,17 @@ class StoreRequest extends FormRequest
      */
     public function rules(): array
     {
+        $edicionId = $this->route('edicion')?->id ?? $this->route('edicion');
+
         return [
-            'nombre' => 'required|unique:ediciones,nombre|min:5|max:50',
+            'nombre' => [
+                'required',
+                'string',
+                'min:5',
+                'max:50',
+                Rule::unique('ediciones', 'nombre')->ignore($edicionId),
+            ],
+            'jugadores_por_planilla' => 'required|integer|min:1|max:40',
         ];
     }
 }
