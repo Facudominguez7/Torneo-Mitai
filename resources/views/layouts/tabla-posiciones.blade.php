@@ -20,7 +20,7 @@
                                 Tabla general
                             </span>
                             <h1 class="text-3xl sm:text-4xl font-bold text-white">Tabla de posiciones · {{ $nombreCategoria }}</h1>
-                            <p class="max-w-2xl text-sm sm:text-base text-white/70">Resumen actualizado de puntos, victorias y diferencia de gol para cada equipo del grupo. Los datos se ordenan automáticamente por puntaje y diferencia para que detectes rápido quién lidera.</p>
+                            <p class="max-w-2xl text-sm sm:text-base text-white/70">Resumen actualizado de puntos, victorias y diferencia de gol para cada equipo del grupo. El orden prioriza puntaje y, en caso de empate, ubica primero a los equipos que ya jugaron.</p>
                         </div>
                     </div>
 
@@ -145,4 +145,3 @@
         </div>
     </div>
 </body>
-

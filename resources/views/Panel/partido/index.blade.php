@@ -2,20 +2,30 @@
 
 @section('contenido')
     @if (isset($EdicionSeleccionada))
-        <div class="flex flex-row justify-center mb-2 px-2 gap-2 flex-wrap">
+        <div class="mb-2 grid grid-cols-1 gap-2 px-2 sm:grid-cols-2 xl:grid-cols-3">
             <div>
-                <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada, 'tipo' => 'partido']) }}">
+                <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'partido', 'forzarSeleccion' => 1]) }}">
                     <button
-                        class="bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg w-full md:w-auto">
+                        class="mt-2 mb-2 w-full rounded-lg bg-gray-800 px-4 py-2 text-sm text-white transition-all duration-300 hover:bg-gray-900 sm:text-base md:py-3 md:px-6">
                         Agregar Partido
                     </button>
                 </a>
             </div>
+            @if (isset($idCategoria, $idGrupo) && $idCategoria && $idGrupo)
+                <div>
+                    <a href="{{ route('partido.create', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria, 'idGrupo' => $idGrupo, 'idFecha' => request('idFecha')]) }}">
+                        <button
+                            class="mt-2 mb-2 w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white transition-all duration-300 hover:bg-emerald-700 sm:text-base md:py-3 md:px-6">
+                            Agregar en este contexto
+                        </button>
+                    </a>
+                </div>
+            @endif
             @if (isset($idCategoria) && $idCategoria)
                 <div>
                     <a href="{{ route('partido.create-interzonal', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria]) }}">
                         <button
-                            class="bg-amber-500 hover:bg-amber-600 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg w-full md:w-auto flex items-center gap-2">
+                            class="mt-2 mb-2 flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm text-white transition-all duration-300 hover:bg-amber-600 sm:text-base md:py-3 md:px-6">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
@@ -26,9 +36,9 @@
             @endif
         </div>
     @endif
-    <div class="bg-white p-6">
-        <h1 class="text-2xl font-bold">Partidos de Fútbol</h1>
-        <div class="mt-2 px-2">
+    <div class="rounded-lg bg-white p-3 sm:p-4 md:p-6">
+        <h1 class="text-xl font-bold sm:text-2xl">Partidos de Futbol</h1>
+        <div class="mt-2 flex flex-wrap items-center gap-2 px-0 sm:px-2">
             <div x-data="{ open: false }" class="relative text-left md:ml-5 filtro-fecha hidden">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
@@ -98,13 +108,13 @@
                     </x-slot>
                 </x-dropdown>
             </div>
-            <div class="md:ml-5 inline-block items-center mt-4 w-full md:w-auto">
+            <div class="mt-2 inline-block w-full items-center md:ml-2 md:mt-0 md:w-auto">
                 <button id="reset-filters" class="btn btn-eliminar w-full md:w-auto">
                     Eliminar Filtros
                 </button>
             </div>
             {{-- Buscador por nombre de equipo --}}
-            <div class="md:ml-5 inline-block items-center mt-4 w-full md:w-auto relative">
+            <div class="relative mt-2 inline-block w-full items-center md:ml-2 md:mt-0 md:w-auto">
                 <input type="text" id="buscar-equipo" placeholder="Buscar equipo..."
                     class="w-full md:w-64 rounded-full border border-gray-300 bg-white py-2 px-4 pl-10 text-sm text-gray-700 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-gray-400">
                 <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,29 +127,55 @@
                 </button>
             </div>
         </div>
-        <div class="flex items-center justify-center flex-col md:flex-row gap-2 mt-5 mb-0 px-2 text-center">
+        <div class="mt-5 mb-0 flex flex-col items-center justify-center gap-2 px-2 text-center md:flex-row">
             @if (isset($nombreFecha))
                 <div class="md:mr-5">
-                    <h1 class="text-3xl font-bold">{{ $nombreFecha }}</h1>
+                    <h1 class="text-2xl font-bold sm:text-3xl">{{ $nombreFecha }}</h1>
                 </div>
             @endif
             @if (isset($nombreGrupo))
                 <div class="md:mr-5">
-                    <h1 class="text-3xl font-bold">{{ $nombreGrupo }}</h1>
+                    <h1 class="text-2xl font-bold sm:text-3xl">{{ $nombreGrupo }}</h1>
                 </div>
             @endif
             @if (isset($nombreCategoria))
                 <div class="md:mr-5">
-                    <h1 class="text-3xl font-bold">{{ $nombreCategoria }}</h1>
+                    <h1 class="text-2xl font-bold sm:text-3xl">{{ $nombreCategoria }}</h1>
                 </div>
             @endif
 
         </div>
 
+        @if (request()->filled('idCategoria') || request()->filled('idGrupo') || request()->filled('idFecha'))
+            <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+                @if (request()->filled('idCategoria') && isset($nombreCategoria))
+                    <a href="{{ route('partido.index', array_filter(['idEdicion' => $EdicionSeleccionada->id, 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')])) }}"
+                        class="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800 hover:bg-blue-200">
+                        Categoría: {{ $nombreCategoria }}
+                        <span aria-hidden="true">x</span>
+                    </a>
+                @endif
+                @if (request()->filled('idGrupo') && isset($nombreGrupo))
+                    <a href="{{ route('partido.index', array_filter(['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFecha' => request('idFecha')])) }}"
+                        class="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800 hover:bg-green-200">
+                        Grupo: {{ $nombreGrupo }}
+                        <span aria-hidden="true">x</span>
+                    </a>
+                @endif
+                @if (request()->filled('idFecha') && isset($nombreFecha))
+                    <a href="{{ route('partido.index', array_filter(['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo')])) }}"
+                        class="inline-flex items-center gap-2 rounded-full bg-purple-100 px-3 py-1 text-sm font-semibold text-purple-800 hover:bg-purple-200">
+                        Fecha: {{ $nombreFecha }}
+                        <span aria-hidden="true">x</span>
+                    </a>
+                @endif
+            </div>
+        @endif
+
     </div>
-    <div class="bg-white p-4 md:p-6">
+    <div class="mt-2 rounded-lg bg-white p-3 sm:p-4 md:p-6">
         @foreach ($partidos as $p)
-            <div class="grid gap-4 p-4 md:p-6 bg-gray-300 partido-card" data-local="{{ strtolower($p->equipoLocal->nombre) }}" data-visitante="{{ strtolower($p->equipoVisitante->nombre) }}">
+            <div class="partido-card grid gap-4 bg-gray-300 p-3 sm:p-4 md:p-6" data-local="{{ strtolower($p->equipoLocal->nombre) }}" data-visitante="{{ strtolower($p->equipoVisitante->nombre) }}">
                 <div class="bg-card rounded-lg shadow-xl bg-white">
                     <div class="px-4 md:px-6 py-3 text-muted-foreground grid grid-cols-1 gap-2">
                         <div class="text-sm md:text-base text-center font-semibold text-gray-600 uppercase tracking-wide flex items-center justify-center gap-2 flex-wrap">
@@ -187,19 +223,19 @@
                             </div>
                         </div>
                     </div>
-                    <div class="px-4 md:px-6 py-4 grid grid-cols-1 md:flex md:justify-center md:items-center gap-3">
-                        <a href="{{ route('cargar-resultado', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id]) }}"
+                    <div class="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 md:flex md:items-center md:justify-center md:px-6">
+                        <a href="{{ route('cargar-resultado', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')]) }}"
                             class="inline-flex justify-center">
                             <button class="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full transition">
                                 {{ $p->golesEquipoLocal === null && $p->golesEquipoVisitante === null ? 'Cargar Resultado' : 'Editar Resultado' }}
                             </button>
                         </a>
-                        <a href="{{ route('partido.edit', $p->id) }}" class="inline-flex justify-center">
+                        <a href="{{ route('partido.edit', ['partido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')]) }}" class="inline-flex justify-center">
                             <button class="w-full md:w-auto bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-full transition">
                                 Editar
                             </button>
                         </a>
-                        <a href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0]) }}" class="inline-flex justify-center">
+                        <a href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0, 'origen' => 'partido-index', 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha'), 'horario_filtro' => request('horario'), 'busqueda' => request('busqueda')]) }}" class="inline-flex justify-center">
                             <button class="w-full md:w-auto bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-full transition">
                                 Planillas
                             </button>
@@ -217,80 +253,9 @@
             var idCategoria = new URLSearchParams(window.location.search).get('idCategoria') || '';
             var idFecha = new URLSearchParams(window.location.search).get('idFecha') || '';
             var idGrupo = new URLSearchParams(window.location.search).get('idGrupo') || '';
+            var horario = new URLSearchParams(window.location.search).get('horario') || '';
 
             var url = "{{ route('partido.index') }}";
-
-            // ===== PROCESAR NOTIFICACIONES PENDIENTES =====
-            (async function procesarNotificacionesPendientes() {
-                const pending = localStorage.getItem('pendingNotification');
-                if (!pending) return;
-                
-                try {
-                    const data = JSON.parse(pending);
-                    // Verificar que no sea muy viejo (máximo 5 minutos)
-                    if (Date.now() - data.timestamp > 5 * 60 * 1000) {
-                        localStorage.removeItem('pendingNotification');
-                        return;
-                    }
-                    
-                    // Limpiar inmediatamente para evitar doble procesamiento
-                    localStorage.removeItem('pendingNotification');
-                    
-                    const endpoint = data.es_instancia_final 
-                        ? '/Panel/push/resultado-instancia/enviar-lote' 
-                        : '/Panel/push/resultado/enviar-lote';
-                    
-                    console.log(`Enviando notificaciones para partido ${data.partido_id}...`);
-                    
-                    let offset = 0;
-                    const LIMITE = 50;
-                    let continuar = true;
-                    let totalEnviados = 0;
-                    
-                    while (continuar) {
-                        try {
-                            const response = await fetch(endpoint, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                },
-                                body: JSON.stringify({
-                                    partido_id: data.partido_id,
-                                    offset: offset,
-                                    limit: LIMITE
-                                })
-                            });
-                            
-                            if (!response.ok) {
-                                console.error('Error en lote:', offset);
-                                continuar = false;
-                                break;
-                            }
-                            
-                            const result = await response.json();
-                            totalEnviados += result.sent || 0;
-                            
-                            if (result.done) {
-                                continuar = false;
-                            } else {
-                                offset += LIMITE;
-                            }
-                        } catch (err) {
-                            console.error('Error enviando notificaciones:', err);
-                            continuar = false;
-                        }
-                    }
-                    
-                    console.log(`Notificaciones completadas: ${totalEnviados} enviadas`);
-                } catch (e) {
-                    console.error('Error procesando notificación pendiente:', e);
-                    localStorage.removeItem('pendingNotification');
-                }
-            })();
-            // ===== FIN NOTIFICACIONES PENDIENTES =====
 
             // Mostrar u ocultar filtros
             function toggleFiltersVisibility() {
@@ -316,6 +281,9 @@
                         newUrl.searchParams.delete(key);
                     }
                 });
+                if (horario) {
+                    newUrl.searchParams.set('horario', horario);
+                }
                 window.location.href = newUrl;
             }
 
@@ -323,6 +291,8 @@
             document.querySelectorAll('.filtro-categoria [data-id]').forEach(function(item) {
                 item.addEventListener('click', function() {
                     idCategoria = this.getAttribute('data-id');
+                    idGrupo = '';
+                    idFecha = '';
                     document.querySelectorAll('.filtro-categoria [data-id]').forEach(function(i) {
                         i.classList.remove('active');
                     });

@@ -5,11 +5,18 @@
         <div class="flex flex-col items-center gap-3 mb-4">
             {{-- Fila de botones principales --}}
             <div class="flex flex-row flex-wrap justify-center gap-2">
-                <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada, 'tipo' => 'instancia_final']) }}">
+                <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final']) }}">
                     <button class="bg-gray-800 hover:bg-gray-900 text-white py-2 px-4 rounded-lg transition-all duration-300 md:py-3 md:px-6">
                         + Agregar Partido
                     </button>
                 </a>
+                @if(request()->filled('idCategoria'))
+                    <a href="{{ route('instancia_final.create', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}">
+                        <button class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-lg transition-all duration-300 md:py-3 md:px-6">
+                            + Agregar en esta categoría
+                        </button>
+                    </a>
+                @endif
                 <button onclick="imprimirEnIframe('{{ route('admin.imprimir-fixture-instancias-finales', ['idEdicion' => $EdicionSeleccionada->id ?? '']) }}')"
                     class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-all duration-300 md:py-3 md:px-6 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -79,6 +86,39 @@
                 </div>
             @endif
         </div>
+
+        @if (request()->filled('idCategoria') || request()->filled('idFase') || request()->filled('idCopa') || request()->filled('estado') || request()->filled('fecha') || request()->filled('horario'))
+            <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+                @if (request()->filled('idCategoria') && isset($nombreCategoria))
+                    <a href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('idCategoria'), ['idEdicion' => $EdicionSeleccionada->id]))) }}"
+                        class="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800 hover:bg-blue-200">
+                        Categoría: {{ $nombreCategoria }}
+                        <span aria-hidden="true">x</span>
+                    </a>
+                @endif
+                @if (request()->filled('idFase') && isset($nombreFase))
+                    <a href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('idFase'), ['idEdicion' => $EdicionSeleccionada->id]))) }}"
+                        class="inline-flex items-center gap-2 rounded-full bg-purple-100 px-3 py-1 text-sm font-semibold text-purple-800 hover:bg-purple-200">
+                        Fase: {{ $nombreFase }}
+                        <span aria-hidden="true">x</span>
+                    </a>
+                @endif
+                @if (request()->filled('horario'))
+                    <a href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('horario'), ['idEdicion' => $EdicionSeleccionada->id]))) }}"
+                        class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 hover:bg-emerald-200">
+                        Horario: {{ request('horario') }}
+                        <span aria-hidden="true">x</span>
+                    </a>
+                @endif
+                @if (request()->filled('fecha'))
+                    <a href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('fecha'), ['idEdicion' => $EdicionSeleccionada->id]))) }}"
+                        class="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800 hover:bg-amber-200">
+                        Fecha: {{ request('fecha') }}
+                        <span aria-hidden="true">x</span>
+                    </a>
+                @endif
+            </div>
+        @endif
 
         {{-- Estadísticas resumen --}}
         @php
@@ -177,24 +217,24 @@
                         {{-- Botones de acción --}}
                         <div class="flex flex-wrap justify-center gap-2 px-6 py-4 bg-gray-50">
                             @if ($p->golesEquipoLocal === null && $p->golesEquipoVisitante === null)
-                                <a href="{{ route('cargar-resultado-instancia', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final', 'fecha' => request('fecha')]) }}">
+                                <a href="{{ route('cargar-resultado-instancia', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final', 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}">
                                     <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                                         Cargar Resultado
                                     </button>
                                 </a>
                             @endif
-                            <a href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'instanciaFinal', 'horario' => 0, 'fecha' => request('fecha')]) }}">
+                            <a href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'instanciaFinal', 'horario' => 0, 'origen' => 'instancia-final-index', 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario_filtro' => request('horario')]) }}">
                                 <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                                     Planillas
                                 </button>
                             </a>
-                            <a href="{{ route('instancia_final.edit', ['instancia_final' => $p->id, 'fecha' => request('fecha')]) }}">
+                            <a href="{{ route('instancia_final.edit', ['instancia_final' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}">
                                 <button class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
                                     Editar
                                 </button>
                             </a>
                             <form
-                                action="{{ route('instancia_final.destroy', ['instancia_final' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'fecha' => request('fecha')]) }}"
+                                action="{{ route('instancia_final.destroy', ['instancia_final' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}"
                                 method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este partido?');">
                                 @csrf
                                 @method('DELETE')
@@ -217,78 +257,6 @@
 
             var url = "{{ route('instancia_final.index') }}";
 
-            // ===== PROCESAR NOTIFICACIONES PENDIENTES =====
-            (async function procesarNotificacionesPendientes() {
-                const pending = localStorage.getItem('pendingNotification');
-                if (!pending) return;
-                
-                try {
-                    const data = JSON.parse(pending);
-                    // Verificar que no sea muy viejo (máximo 5 minutos)
-                    if (Date.now() - data.timestamp > 5 * 60 * 1000) {
-                        localStorage.removeItem('pendingNotification');
-                        return;
-                    }
-                    
-                    // Limpiar inmediatamente para evitar doble procesamiento
-                    localStorage.removeItem('pendingNotification');
-                    
-                    const endpoint = data.es_instancia_final 
-                        ? '/Panel/push/resultado-instancia/enviar-lote' 
-                        : '/Panel/push/resultado/enviar-lote';
-                    
-                    console.log(`Enviando notificaciones para partido ${data.partido_id}...`);
-                    
-                    let offset = 0;
-                    const LIMITE = 50;
-                    let continuar = true;
-                    let totalEnviados = 0;
-                    
-                    while (continuar) {
-                        try {
-                            const response = await fetch(endpoint, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                },
-                                body: JSON.stringify({
-                                    partido_id: data.partido_id,
-                                    offset: offset,
-                                    limit: LIMITE
-                                })
-                            });
-                            
-                            if (!response.ok) {
-                                console.error('Error en lote:', offset);
-                                continuar = false;
-                                break;
-                            }
-                            
-                            const result = await response.json();
-                            totalEnviados += result.sent || 0;
-                            
-                            if (result.done) {
-                                continuar = false;
-                            } else {
-                                offset += LIMITE;
-                            }
-                        } catch (err) {
-                            console.error('Error enviando notificaciones:', err);
-                            continuar = false;
-                        }
-                    }
-                    
-                    console.log(`Notificaciones completadas: ${totalEnviados} enviadas`);
-                } catch (e) {
-                    console.error('Error procesando notificación pendiente:', e);
-                    localStorage.removeItem('pendingNotification');
-                }
-            })();
-            // ===== FIN NOTIFICACIONES PENDIENTES =====
-            
             // Actualizar la URL con los filtros seleccionados
             function updateUrl(params) {
                 var newUrl = new URL(url, window.location.origin);

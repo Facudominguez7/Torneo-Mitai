@@ -101,9 +101,18 @@ class ControladorTablaGoleadores extends Controller
     }
 
     // Actualizar goleador
+    /**
+     * Actualiza los goles del jugador sin permitir cambiar su equipo manualmente.
+     *
+     * Regla de negocio: en edicion, el equipo se mantiene segun el jugador
+     * asociado al registro para evitar inconsistencias en la tabla.
+     */
     public function update(StoreRequest $request, TablaGoleador $tabla_goleador)
     {
         $data = $request->validated();
+        $data['idEquipo'] = $tabla_goleador->idEquipo;
+        unset($data['nombre']);
+
         $tabla_goleador->update($data);
         return to_route('tabla_goleador.index', ['idEdicion' => $request->idEdicion])->with('status', 'Jugador Actualizado');
     }

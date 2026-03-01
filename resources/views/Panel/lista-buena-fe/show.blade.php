@@ -1,13 +1,13 @@
 @extends('Panel.admin')
 
 @section('detalle')
-    <div class="container mx-auto px-4 py-6">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-3xl font-bold text-white">📋 Lista de Buena Fe</h1>
-            <div class="flex space-x-4">
+    <div class="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
+        <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h1 class="text-2xl font-bold text-white sm:text-3xl">📋 Lista de Buena Fe</h1>
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:space-x-4 sm:gap-0">
                 <button
                     onclick="printExternal('{{ route('lista-buena-fe.imprimir-planilla', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}')"
-                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded inline-flex items-center cursor-pointer">
+                    class="inline-flex w-full items-center justify-center rounded bg-green-500 px-4 py-2 font-bold text-white hover:bg-green-600 sm:w-auto">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -17,7 +17,7 @@
                     <span>Imprimir Planilla</span>
                 </button>
                 <a href="{{ route('lista-buena-fe.index', ['idEdicion' => $EdicionSeleccionada->id]) }}"
-                    class="hover:text-blue-500 font-medium text-white flex items-center">
+                    class="flex items-center justify-center font-medium text-white hover:text-blue-500 sm:justify-start">
                     &larr; Volver a Equipos
                 </a>
             </div>
@@ -49,15 +49,15 @@
         @endif
 
         {{-- Información del Equipo --}}
-        <div class="bg-white shadow-md rounded-lg p-6 mb-6 border-l-4 border-blue-500 flex justify-between items-center">
+        <div class="mb-6 flex flex-col gap-4 rounded-lg border-l-4 border-blue-500 bg-white p-4 shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-1">
+                <h2 class="mb-1 text-xl font-bold text-gray-800 sm:text-2xl">
                     {{ $equipoSeleccionado->equipo->nombre }}
                 </h2>
-                <p class="text-lg text-blue-600 font-medium mb-2">
+                <p class="mb-2 text-base font-medium text-blue-600 sm:text-lg">
                     {{ $equipoSeleccionado->categoria->nombreCategoria }}
                 </p>
-                <p class="text-sm text-gray-500">
+                <p class="text-sm text-gray-500 sm:text-base">
                     Edición: <span class="font-semibold">{{ $EdicionSeleccionada->nombre }}</span> |
                     Jugadores Activos: <span
                         class="font-semibold {{ $jugadoresActivos->count() >= 18 ? 'text-red-600' : 'text-green-600' }}">{{ $jugadoresActivos->count() }}/18</span>
@@ -67,7 +67,7 @@
             {{-- Botón PDF --}}
             <div>
                 <a href="{{ route('lista-buena-fe.pdf', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}"
-                    class="flex items-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md shadow transition">
+                    class="flex w-full items-center justify-center rounded-md bg-red-600 px-4 py-2 text-white shadow transition hover:bg-red-700 sm:w-auto">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -100,10 +100,10 @@
 
         {{-- Formulario para Agregar Jugador --}}
         @if ($jugadoresActivos->count() < 18)
-            <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+            <div class="mb-6 rounded-lg bg-white p-4 shadow-md sm:p-6">
                 <details class="mb-4">
                     <summary
-                        class="cursor-pointer text-lg font-medium text-gray-700 bg-gray-200 p-3 rounded-md hover:bg-gray-300 transition">
+                        class="cursor-pointer rounded-md bg-gray-200 p-3 text-base font-medium text-gray-700 transition hover:bg-gray-300 sm:text-lg">
                         ➕ Agregar Jugador a la Lista de Buena Fe
                     </summary>
 
@@ -182,7 +182,7 @@
         @endif
 
         {{-- Tabla de Jugadores Activos --}}
-        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div class="mb-6 overflow-hidden rounded-lg bg-white shadow-md">
             <div class="bg-green-600 text-white px-6 py-3">
                 <h3 class="text-xl font-semibold">✅ Jugadores Activos</h3>
             </div>
@@ -193,7 +193,7 @@
                 </div>
             @else
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table class="min-w-[880px] divide-y divide-gray-200 sm:min-w-full">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DNI</th>
@@ -230,13 +230,13 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    <td class="px-6 py-4 text-center text-sm font-medium">
                                         <form method="POST" action="{{ route('lista-buena-fe.dar-baja', $jugador->id) }}"
-                                            class="inline">
+                                            class="inline-flex flex-col items-center gap-2 lg:flex-row lg:justify-center">
                                             @csrf
                                             @method('PUT')
                                             <input type="text" name="motivo_baja" placeholder="Motivo (opcional)"
-                                                class="text-xs border-gray-300 rounded px-2 py-1 mb-1 w-32">
+                                                class="mb-1 w-36 rounded border-gray-300 px-2 py-1 text-xs lg:mb-0">
                                             <button type="submit"
                                                 class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
                                                 onclick="return confirm('¿Dar de baja a este jugador?')">
@@ -254,16 +254,16 @@
 
         {{-- Tabla de Jugadores Inactivos (Historial) --}}
         @if ($jugadoresInactivos->isNotEmpty())
-            <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <div class="overflow-hidden rounded-lg bg-white shadow-md">
                 <details>
                     <summary
-                        class="bg-gray-500 text-white px-6 py-3 cursor-pointer hover:bg-gray-600 transition flex justify-between items-center">
-                        <span class="text-xl font-semibold">📜 Historial - Jugadores Dados de Baja</span>
+                        class="flex cursor-pointer flex-col gap-2 bg-gray-500 px-4 py-3 text-white transition hover:bg-gray-600 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                        <span class="text-base font-semibold sm:text-xl">📜 Historial - Jugadores Dados de Baja</span>
                         <span class="bg-gray-700 px-2 py-1 rounded text-sm">{{ $jugadoresInactivos->count() }}</span>
                     </summary>
 
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table class="min-w-[900px] divide-y divide-gray-200 sm:min-w-full">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DNI</th>

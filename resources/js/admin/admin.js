@@ -6,6 +6,37 @@
  * la orientación del usuario dentro del módulo actual.
  */
 document.addEventListener('DOMContentLoaded', () => {
+    const selectorContextoForm = document.getElementById('selector-contexto-form');
+    const selectorContextoTipo = document.getElementById('selector-contexto-tipo');
+
+    /**
+     * Redirige al índice correspondiente del módulo seleccionado.
+     *
+     * Usa el destino precalculado en cada opción para conservar `idEdicion`
+     * y evitar pasar por flujos intermedios cuando el usuario cambia de módulo.
+     */
+    const redirigirSegunContexto = () => {
+        if (!selectorContextoTipo) {
+            return false;
+        }
+
+        const opcionSeleccionada = selectorContextoTipo.options[selectorContextoTipo.selectedIndex];
+        const destino = opcionSeleccionada?.dataset?.destino;
+
+        if (!destino) {
+            return false;
+        }
+
+        window.location.assign(destino);
+
+        return true;
+    };
+
+    selectorContextoForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        redirigirSegunContexto();
+    });
+
     const dropdownBtn = document.querySelector('[data-collapse-toggle="dropdown-example"]');
     const dropdown = document.getElementById('dropdown-example');
 
@@ -20,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sidebarBtn = document.querySelector('[data-drawer-toggle="sidebar-multi-level-sidebar"]');
     const sidebar = document.getElementById('sidebar-multi-level-sidebar');
+    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
 
     if (!sidebarBtn || !sidebar) {
         return;
@@ -35,12 +67,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const esDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
 
     /**
+     * Sincroniza overlay y scroll del body con el estado del sidebar en mobile.
+     */
+    const sincronizarBackdrop = () => {
+        if (!sidebarBackdrop) {
+            return;
+        }
+
+        const sidebarOculto = sidebar.classList.contains('-translate-x-full');
+
+        if (!esDesktop() && !sidebarOculto) {
+            sidebarBackdrop.classList.remove('opacity-0', 'pointer-events-none');
+            sidebarBackdrop.classList.add('opacity-100');
+            document.body.classList.add('overflow-hidden');
+            return;
+        }
+
+        sidebarBackdrop.classList.add('opacity-0', 'pointer-events-none');
+        sidebarBackdrop.classList.remove('opacity-100');
+        document.body.classList.remove('overflow-hidden');
+    };
+
+    /**
      * Oculta la barra lateral solo en mobile para no cortar el flujo.
      */
     const ocultarSidebar = () => {
         if (!esDesktop()) {
             sidebar.classList.add('-translate-x-full');
             sidebarBtn.setAttribute('aria-expanded', 'false');
+            sincronizarBackdrop();
         }
     };
 
@@ -50,9 +105,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const alternarSidebar = () => {
         sidebar.classList.toggle('-translate-x-full');
         sidebarBtn.setAttribute('aria-expanded', sidebar.classList.contains('-translate-x-full') ? 'false' : 'true');
+        sincronizarBackdrop();
     };
 
     sidebarBtn.setAttribute('aria-expanded', sidebar.classList.contains('-translate-x-full') ? 'false' : 'true');
+    sincronizarBackdrop();
 
     sidebarBtn.addEventListener('click', (event) => {
         event.stopPropagation();
@@ -63,6 +120,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!esDesktop() && !sidebar.contains(event.target) && !sidebarBtn.contains(event.target)) {
             ocultarSidebar();
         }
+    });
+
+    sidebarBackdrop?.addEventListener('click', () => {
+        ocultarSidebar();
     });
 
     document.addEventListener('keydown', (event) => {
@@ -79,11 +140,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (esDesktop()) {
             sidebar.classList.remove('-translate-x-full');
             sidebarBtn.setAttribute('aria-expanded', 'true');
+            sincronizarBackdrop();
             return;
         }
 
         sidebar.classList.add('-translate-x-full');
         sidebarBtn.setAttribute('aria-expanded', 'false');
+        sincronizarBackdrop();
     });
 
     links.forEach((link) => {

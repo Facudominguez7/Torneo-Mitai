@@ -64,6 +64,8 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::resource('valla', ControladorValla::class);
     Route::resource('grupos', ControladorGrupos::class);
     Route::resource('equipogrupo', ControladorEquiposGrupos::class);
+    Route::post('equipogrupo/asignar-pendientes', [ControladorEquiposGrupos::class, 'asignarPendientes'])
+        ->name('equipogrupo.asignar-pendientes');
     Route::resource('equipoedicion', ControladorEquiposEdiciones::class);
     Route::resource('partido', ControladorPartidos::class);
     Route::get('partido-interzonal/create', [ControladorPartidos::class, 'createInterzonal'])->name('partido.create-interzonal');
@@ -176,6 +178,14 @@ Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
     Route::post('/manual/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteNotificacionManual'])
         ->middleware(UserAccesPanelMiddleware::class)
         ->name('push.manual.enviar-lote');
+
+    // Rutas para resumen de resultados por fecha (envío centralizado)
+    Route::get('/resumen-fecha/contar', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'contarDestinatariosResumenFecha'])
+        ->middleware(UserAccesPanelMiddleware::class)
+        ->name('push.resumen-fecha.contar');
+    Route::post('/resumen-fecha/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResumenFecha'])
+        ->middleware(UserAccesPanelMiddleware::class)
+        ->name('push.resumen-fecha.enviar-lote');
     
     // Ruta para notificación de resultados masiva por lotes
     Route::post('/resultado/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResultado'])
@@ -202,6 +212,14 @@ Route::post('/email/toggle-suscripcion', [\App\Http\Controllers\ControladorNotif
 Route::get('/email/baja', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'darseDeBajaEmail'])
     ->middleware('throttle:5,1')
     ->name('email.baja');
+
+// Baja general para envíos masivos en BCC
+Route::get('/email/baja-general', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'formularioBajaGeneral'])
+    ->middleware('throttle:20,1')
+    ->name('email.baja-general.form');
+Route::post('/email/baja-general', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'procesarBajaGeneral'])
+    ->middleware('throttle:20,1')
+    ->name('email.baja-general.procesar');
 
 // Estado de suscripción a emails (requiere autenticación)
 Route::get('/email/estado', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'estadoEmail'])

@@ -35,7 +35,7 @@
         </select>
     </div>
 @else
-    <input class="hidden" type="number" name="idGrupo" id="idGrupo" value="{{ $idGrupo }}">
+    <input class="hidden" type="number" name="idGrupo" id="idGrupo" value="{{ $idGrupo ?? '' }}">
 @endif
 @if (isset($CategoriaSeleccionada))
     <div class="mb-5">
@@ -50,5 +50,5 @@
         </select>
     </div>
 @else
-    <input class="hidden" type="number" name="idCategoria" id="idCategoria" value="{{ $idCategoria }}">
+    <input class="hidden" type="number" name="idCategoria" id="idCategoria" value="{{ $idCategoria ?? '' }}">
 @endif

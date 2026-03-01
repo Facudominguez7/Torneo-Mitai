@@ -73,7 +73,7 @@ class NotificacionPersonalizada extends Notification
      * 
      * Determina dinámicamente qué canales usar según las preferencias del usuario:
      * - WebPush: Si tiene suscripciones push activas
-     * - Mail: Si tiene email verificado y está suscrito a emails
+     * - Mail: Si tiene email habilitado y está suscrito a emails
      *
      * @param mixed $notifiable Usuario que recibirá la notificación
      * @return array Canales de notificación a usar

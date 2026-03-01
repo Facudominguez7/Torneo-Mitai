@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
@@ -37,6 +38,19 @@ class ControladorNotificacionesPush extends Controller
      * Esto previene el abuso de recursos del servidor.
      */
     private const MAX_SUBSCRIPTIONS_PER_USER = 5;
+
+    /**
+     * Límite operativo de destinatarios por corrida de resumen por fecha.
+     *
+     * Se mantiene por debajo del límite diario del proveedor de correo para
+     * evitar cortes por cuota y dejar margen para otros envíos del sistema.
+     */
+    private const MAX_DESTINATARIOS_RESUMEN_FECHA = 900;
+
+    /**
+     * Máximo de destinatarios por correo usando BCC según proveedor SMTP.
+     */
+    private const MAX_DESTINATARIOS_BCC = 100;
 
     /**
      * Suscribir al usuario autenticado a notificaciones push.
@@ -213,7 +227,7 @@ class ControladorNotificacionesPush extends Controller
         $icono = $validated['icono'] ?? '📢';
 
         // Obtener TODOS los usuarios que deben recibir notificaciones:
-        // - Usuarios con email verificado y suscripción a email activa
+        // - Usuarios con suscripción a email activa (sin exigir verificación)
         // - Usuarios con push activo (independientemente del email)
         $usuariosEmail = \App\Models\User::suscritosAEmail()->get();
         $usuariosPush = \App\Models\User::whereHas('pushSubscriptions')->get();
@@ -341,9 +355,46 @@ class ControladorNotificacionesPush extends Controller
 
         // Variables necesarias para el layout admin.blade.php
         $ediciones = \App\Models\Edicion::orderBy('id', 'desc')->get();
-        $EdicionSeleccionada = $ediciones->first();
+        $EdicionSeleccionada = $ediciones->firstWhere('id', (int) $request->query('idEdicion')) ?? $ediciones->first();
 
-        return view('Panel.suscriptores-push', compact('usuarios', 'ediciones', 'EdicionSeleccionada'));
+        $resumenEdicionActual = $ediciones->first();
+        $resumenIdEdicion = (int) ($resumenEdicionActual->id ?? 0);
+        $resumenNombreEdicion = (string) ($resumenEdicionActual->nombre ?? 'Edición vigente');
+        $resumenIdCategoria = $request->query('resumen_idCategoria');
+        $resumenIdFecha = $request->query('resumen_idFecha');
+
+        $categoriasResumen = collect();
+        $fechasResumen = collect();
+
+        if ($resumenIdEdicion > 0) {
+            $categoriasResumen = \App\Models\Categoria::query()
+                ->where('idEdicion', $resumenIdEdicion)
+                ->orderBy('nombreCategoria')
+                ->get(['id', 'nombreCategoria']);
+
+            $consultaFechas = \App\Models\Fecha::query()
+                ->where('idEdicion', $resumenIdEdicion);
+
+            if (! empty($resumenIdCategoria)) {
+                $consultaFechas->where('idCategoria', $resumenIdCategoria);
+            }
+
+            $fechasResumen = $consultaFechas
+                ->orderBy('id')
+                ->get(['id', 'nombre', 'idCategoria']);
+        }
+
+        return view('Panel.suscriptores-push', compact(
+            'usuarios',
+            'ediciones',
+            'EdicionSeleccionada',
+            'categoriasResumen',
+            'fechasResumen',
+            'resumenIdEdicion',
+            'resumenNombreEdicion',
+            'resumenIdCategoria',
+            'resumenIdFecha'
+        ));
     }
 
     /**
@@ -458,6 +509,49 @@ class ControladorNotificacionesPush extends Controller
         ]);
 
         return redirect('/')->with('success', '¡Te has dado de baja correctamente de las notificaciones por email!');
+    }
+
+    /**
+     * Muestra formulario simple para baja general desde correos BCC.
+     *
+     * Este flujo no requiere token por usuario porque el correo se envía
+     * en lote y comparte el mismo contenido para múltiples destinatarios.
+     */
+    public function formularioBajaGeneral()
+    {
+        return view('emails.baja-general');
+    }
+
+    /**
+     * Procesa la baja general usando email ingresado por el usuario.
+     *
+     * Se usa una respuesta neutral cuando no existe coincidencia para evitar
+     * enumeración de cuentas y mantener consistencia de privacidad.
+     */
+    public function procesarBajaGeneral(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $email = mb_strtolower(trim((string) $validated['email']));
+
+        $usuario = \App\Models\User::query()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->first();
+
+        if ($usuario) {
+            $usuario->forceFill([
+                'email_subscribed' => false,
+            ])->saveQuietly();
+
+            Log::channel('single')->info('Usuario dado de baja por formulario general', [
+                'user_id' => $usuario->id,
+                'ip' => $request->ip(),
+            ]);
+        }
+
+        return redirect('/')->with('success', 'Si el correo está registrado, la baja se procesó correctamente.');
     }
 
     /**
@@ -588,30 +682,33 @@ class ControladorNotificacionesPush extends Controller
     }
 
     /**
-     * Contar total de suscriptores (Email o Push) para iniciar envío masivo.
+     * Cuenta destinatarios de correo para notificaciones masivas manuales.
+     *
+     * Este conteo refleja exactamente la base que luego se usa en el envío
+     * por BCC. Así el panel puede mostrar una confirmación realista del
+     * alcance, cantidad estimada de correos y límites operativos.
      */
     public function contarSuscriptores(Request $request)
     {
-        $count = \App\Models\User::query()
-            ->where(function ($q) {
-                // Suscrito a emails (y verificado)
-                $q->where(function($q2) {
-                    $q2->where('email_subscribed', true)
-                       ->whereNotNull('email_verified_at');
-                })
-                // O suscrito a push
-                ->orWhereHas('pushSubscriptions');
-            })
-            ->count();
+        $totalNotificables = $this->usuariosEmailResumenQuery()->count();
+        $totalPermitidos = min($totalNotificables, self::MAX_DESTINATARIOS_RESUMEN_FECHA);
+        $correosEstimados = (int) ceil($totalPermitidos / self::MAX_DESTINATARIOS_BCC);
 
         return response()->json([
-            'count' => $count,
-            'message' => "Total usuarios a notificar: {$count}"
+            'success' => true,
+            'count' => $totalPermitidos,
+            'limite_operativo' => self::MAX_DESTINATARIOS_RESUMEN_FECHA,
+            'lote_bcc' => self::MAX_DESTINATARIOS_BCC,
+            'correos_estimados' => $correosEstimados,
+            'message' => "Total usuarios a notificar: {$totalPermitidos}",
         ]);
     }
 
     /**
-     * Enviar notificación manual por lotes usando offset/limit.
+     * Envía notificación manual por lotes usando BCC para cuidar cuota SMTP.
+     *
+     * Se procesa en bloques de hasta 100 destinatarios por request y limita
+     * el universo máximo por corrida para respetar restricciones del proveedor.
      */
     public function enviarLoteNotificacionManual(Request $request)
     {
@@ -622,32 +719,24 @@ class ControladorNotificacionesPush extends Controller
             'url' => ['nullable', 'string', 'max:255'],
             'icono' => ['nullable', 'string', 'max:10'],
             'offset' => ['required', 'integer', 'min:0'],
-            'limit' => ['required', 'integer', 'min:1', 'max:100'],
+            'limit' => ['required', 'integer', 'min:1', 'max:' . self::MAX_DESTINATARIOS_BCC],
         ]);
 
         $limit = $validated['limit'];
         $offset = $validated['offset'];
         
-        $notificacion = new \App\Notifications\NotificacionPersonalizada(
-            $validated['titulo'],
-            $validated['mensaje'],
-            $validated['url'] ?? '/',
-            $validated['icono'] ?? '📢'
-        );
-
-        // Obtener lote de usuarios ordenados por ID para consistencia
-        $usuarios = \App\Models\User::query()
-            ->where(function ($q) {
-                $q->where(function($q2) {
-                    $q2->where('email_subscribed', true)
-                       ->whereNotNull('email_verified_at');
-                })
-                ->orWhereHas('pushSubscriptions');
-            })
+        $idsDestinatarios = $this->usuariosEmailResumenQuery()
             ->orderBy('id')
-            ->skip($offset)
-            ->take($limit)
-            ->get();
+            ->limit(self::MAX_DESTINATARIOS_RESUMEN_FECHA)
+            ->pluck('id')
+            ->values();
+
+        $idsLote = $idsDestinatarios->slice($offset, $limit)->values();
+
+        $usuarios = \App\Models\User::query()
+            ->whereIn('id', $idsLote)
+            ->orderBy('id')
+            ->get(['id', 'name', 'email']);
 
         if ($usuarios->isEmpty()) {
             return response()->json([
@@ -661,35 +750,275 @@ class ControladorNotificacionesPush extends Controller
         $enviados = 0;
         $errores = [];
         $lastError = null;
-        $contadorPush = 0;
         $contadorEmail = 0;
 
-        foreach ($usuarios as $usuario) {
+        $emails = $usuarios->pluck('email')
+            ->filter(static fn ($email) => ! empty($email))
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($emails !== []) {
             try {
-                $usuario->notify($notificacion);
-                // Actualizar timestamp
-                $usuario->forceFill(['last_notification_at' => now()])->saveQuietly();
-                $enviados++;
+                $resumenManual = [
+                    'edicion_nombre' => 'Comunicado general',
+                    'fecha_nombre' => 'Notificación del torneo',
+                    'categoria_nombre' => null,
+                    'url_fixture' => $validated['url'] ?? '/',
+                    'partidos' => [],
+                    'partidos_count' => 0,
+                    'titulo_personalizado' => $this->construirTituloPersonalizado(
+                        $validated['titulo'],
+                        $validated['icono'] ?? '📢'
+                    ),
+                    'mensaje_personalizado' => $validated['mensaje'],
+                ];
 
-                // Contar desglosado (aproximado, no verifica si realmente salió el push o email si notify falla, pero si notify no lanza excepción asumimos éxito)
-                if ($usuario->pushSubscriptions()->exists()) $contadorPush++;
-                if ($usuario->quiereRecibirEmails()) $contadorEmail++;
+                $mailFrom = config('mail.from.address') ?: 'info@torneosmitai.com';
+                Mail::to($mailFrom)
+                    ->bcc($emails)
+                    ->send(new \App\Mail\ResumenResultadosFechaMail($resumenManual, route('email.baja-general.form')));
 
+                $enviados = count($emails);
+                $contadorEmail = $enviados;
+
+                \App\Models\User::query()
+                    ->whereIn('id', $usuarios->pluck('id'))
+                    ->update(['last_notification_at' => now()]);
             } catch (\Exception $e) {
-                $errores[] = $usuario->email;
+                $errores = $emails;
                 $lastError = $e->getMessage();
-                Log::channel('single')->error("Error notif manual user {$usuario->id}", ['error' => $e->getMessage()]);
+                Log::channel('single')->error('Error notif manual por BCC', ['error' => $e->getMessage()]);
             }
         }
 
+        $remaining = max(0, $idsDestinatarios->count() - ($offset + $usuarios->count()));
+
         return response()->json([
-            'done' => $usuarios->count() < $limit, // Si devolvió menos que el límite, es el último lote
+            'done' => $remaining === 0,
             'sent' => $enviados,
             'errors' => count($errores),
             'last_error' => $lastError,
-            'push_count' => $contadorPush,
-            'email_count' => $contadorEmail
+            'push_count' => 0,
+            'email_count' => $contadorEmail,
+            'remaining' => $remaining,
         ]);
+    }
+
+    /**
+     * Cuenta destinatarios y valida disponibilidad del resumen por fecha.
+     *
+     * Se usa antes de iniciar el proceso en lotes para dar feedback claro
+     * al administrador sobre alcance del envío y partidos incluidos.
+     */
+    public function contarDestinatariosResumenFecha(Request $request)
+    {
+        $validated = $request->validate([
+            'idFecha' => ['required', 'integer', 'exists:fechas,id'],
+            'idCategoria' => ['nullable', 'integer', 'exists:categorias,id'],
+        ]);
+
+        $idEdicion = $this->obtenerIdUltimaEdicion();
+        if ($idEdicion === null) {
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+                'message' => 'No hay ediciones disponibles para enviar notificaciones.',
+            ], 422);
+        }
+
+        $resumen = $this->obtenerResumenResultadosFecha(
+            $idEdicion,
+            (int) $validated['idFecha'],
+            isset($validated['idCategoria']) ? (int) $validated['idCategoria'] : null
+        );
+
+        if ($resumen === null) {
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+                'message' => 'No hay partidos con resultado cargado para la fecha seleccionada.',
+            ], 422);
+        }
+
+        $totalNotificables = $this->usuariosEmailResumenQuery()->count();
+        $totalPermitidos = min($totalNotificables, self::MAX_DESTINATARIOS_RESUMEN_FECHA);
+        $correosEstimados = (int) ceil($totalPermitidos / self::MAX_DESTINATARIOS_BCC);
+
+        return response()->json([
+            'success' => true,
+            'count' => $totalPermitidos,
+            'partidos_count' => $resumen['partidos_count'],
+            'fecha_nombre' => $resumen['fecha_nombre'],
+            'categoria_nombre' => $resumen['categoria_nombre'],
+            'limite_operativo' => self::MAX_DESTINATARIOS_RESUMEN_FECHA,
+            'lote_bcc' => self::MAX_DESTINATARIOS_BCC,
+            'correos_estimados' => $correosEstimados,
+            'message' => "Se enviará a {$totalPermitidos} usuario(s).",
+        ]);
+    }
+
+    /**
+     * Envía en lotes el correo resumen con todos los resultados de una fecha.
+     *
+     * El envío está acotado por un límite operativo para respetar cuotas
+     * diarias del proveedor SMTP y reducir riesgo de bloqueos.
+     */
+    public function enviarLoteResumenFecha(Request $request)
+    {
+        $validated = $request->validate([
+            'idFecha' => ['required', 'integer', 'exists:fechas,id'],
+            'idCategoria' => ['nullable', 'integer', 'exists:categorias,id'],
+            'titulo' => ['nullable', 'string', 'max:120'],
+            'mensaje' => ['nullable', 'string', 'max:500'],
+            'url' => ['nullable', 'string', 'max:255'],
+            'offset' => ['required', 'integer', 'min:0'],
+            'limit' => ['required', 'integer', 'min:1', 'max:' . self::MAX_DESTINATARIOS_BCC],
+        ]);
+
+        $idEdicion = $this->obtenerIdUltimaEdicion();
+        if ($idEdicion === null) {
+            return response()->json([
+                'done' => true,
+                'sent' => 0,
+                'errors' => 1,
+                'remaining' => 0,
+                'message' => 'No hay edición activa para enviar resúmenes.',
+            ], 422);
+        }
+
+        $resumen = $this->obtenerResumenResultadosFecha(
+            $idEdicion,
+            (int) $validated['idFecha'],
+            isset($validated['idCategoria']) ? (int) $validated['idCategoria'] : null
+        );
+
+        if ($resumen !== null) {
+            if (! empty($validated['titulo'])) {
+                $resumen['titulo_personalizado'] = $validated['titulo'];
+            }
+
+            if (! empty($validated['mensaje'])) {
+                $resumen['mensaje_personalizado'] = $validated['mensaje'];
+            }
+
+            if (! empty($validated['url'])) {
+                $resumen['url_fixture'] = $validated['url'];
+            }
+        }
+
+        if ($resumen === null) {
+            return response()->json([
+                'done' => true,
+                'sent' => 0,
+                'errors' => 0,
+                'remaining' => 0,
+                'message' => 'No hay resultados para enviar en esa fecha.',
+            ], 422);
+        }
+
+        $offset = (int) $validated['offset'];
+        $limit = (int) $validated['limit'];
+
+        $idsDestinatarios = $this->usuariosEmailResumenQuery()
+            ->orderBy('id')
+            ->limit(self::MAX_DESTINATARIOS_RESUMEN_FECHA)
+            ->pluck('id')
+            ->values();
+
+        $totalDestinatarios = $idsDestinatarios->count();
+        if ($totalDestinatarios === 0) {
+            return response()->json([
+                'done' => true,
+                'sent' => 0,
+                'errors' => 0,
+                'remaining' => 0,
+                'message' => 'No hay destinatarios activos para notificar.',
+            ]);
+        }
+
+        $idsLote = $idsDestinatarios->slice($offset, $limit)->values();
+        if ($idsLote->isEmpty()) {
+            return response()->json([
+                'done' => true,
+                'sent' => 0,
+                'errors' => 0,
+                'remaining' => 0,
+                'message' => 'Fin del proceso.',
+            ]);
+        }
+
+        $usuarios = \App\Models\User::query()
+            ->whereIn('id', $idsLote)
+            ->orderBy('id')
+            ->get(['id', 'name', 'email']);
+
+        $enviados = 0;
+        $errores = [];
+        $lastError = null;
+        $contadorEmail = 0;
+
+        $emails = $usuarios->pluck('email')
+            ->filter(static fn ($email) => ! empty($email))
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($emails !== []) {
+            try {
+                $mailFrom = config('mail.from.address') ?: 'info@torneosmitai.com';
+
+                Mail::to($mailFrom)
+                    ->bcc($emails)
+                    ->send(new \App\Mail\ResumenResultadosFechaMail($resumen, route('email.baja-general.form')));
+
+                $enviados = count($emails);
+                $contadorEmail = $enviados;
+
+                \App\Models\User::query()
+                    ->whereIn('id', $usuarios->pluck('id'))
+                    ->update(['last_notification_at' => now()]);
+            } catch (\Exception $e) {
+                $errores = $emails;
+                $lastError = $e->getMessage();
+                Log::channel('single')->error('Error enviando resumen fecha por BCC', [
+                    'error' => $e->getMessage(),
+                    'idEdicion' => $idEdicion,
+                    'idFecha' => $validated['idFecha'],
+                    'idCategoria' => $validated['idCategoria'] ?? null,
+                ]);
+            }
+        }
+
+        $remaining = max(0, $totalDestinatarios - ($offset + $usuarios->count()));
+
+        return response()->json([
+            'done' => $remaining === 0,
+            'sent' => $enviados,
+            'errors' => count($errores),
+            'last_error' => $lastError,
+            'remaining' => $remaining,
+            'push_count' => 0,
+            'email_count' => $contadorEmail,
+            'partidos_count' => $resumen['partidos_count'],
+            'message' => "Lote procesado ({$contadorEmail} emails enviados por BCC).",
+        ]);
+    }
+
+    /**
+     * Obtiene el identificador de la última edición disponible.
+     *
+     * Se centraliza esta consulta porque el resumen consolidado siempre debe
+     * enviarse sobre la edición más reciente, evitando errores por filtros
+     * de UI desactualizados o parámetros manipulados manualmente.
+     */
+    private function obtenerIdUltimaEdicion(): ?int
+    {
+        $idEdicion = \App\Models\Edicion::query()
+            ->orderByDesc('id')
+            ->value('id');
+
+        return $idEdicion !== null ? (int) $idEdicion : null;
     }
 
     /**
@@ -743,13 +1072,7 @@ class ControladorNotificacionesPush extends Controller
         $notificacion = new \App\Notifications\ResultadoCargado($datosPartido);
 
         $usuarios = \App\Models\User::query()
-            ->where(function ($q) {
-                $q->where(function($q2) {
-                    $q2->where('email_subscribed', true)
-                       ->whereNotNull('email_verified_at');
-                })
-                ->orWhereHas('pushSubscriptions');
-            })
+            ->whereIn('id', $this->usuariosNotificablesQuery()->select('id'))
             ->orderBy('id')
             ->skip($offset)
             ->take($limit)
@@ -828,13 +1151,7 @@ class ControladorNotificacionesPush extends Controller
         $notificacion = new \App\Notifications\ResultadoCargado($datosPartido);
 
         $usuarios = \App\Models\User::query()
-            ->where(function ($q) {
-                $q->where(function($q2) {
-                    $q2->where('email_subscribed', true)
-                       ->whereNotNull('email_verified_at');
-                })
-                ->orWhereHas('pushSubscriptions');
-            })
+            ->whereIn('id', $this->usuariosNotificablesQuery()->select('id'))
             ->orderBy('id')
             ->skip($offset)
             ->take($limit)
@@ -878,5 +1195,169 @@ class ControladorNotificacionesPush extends Controller
             'push_count' => $contadorPush,
             'email_count' => $contadorEmail
         ]);
+    }
+
+    /**
+     * Obtiene el resumen consolidado de resultados para una fecha de liga.
+     *
+     * Se usa para enviar un único correo por usuario con todos los marcadores
+     * de la fecha seleccionada y así reducir el volumen total de envíos.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function obtenerResumenResultadosFecha(int $idEdicion, int $idFecha, ?int $idCategoria = null): ?array
+    {
+        $fecha = \App\Models\Fecha::query()
+            ->where('idEdicion', $idEdicion)
+            ->whereKey($idFecha)
+            ->first();
+
+        if (! $fecha) {
+            return null;
+        }
+
+        $idCategoriaFinal = $idCategoria ?: (int) $fecha->idCategoria;
+
+        $consulta = \App\Models\Partido::query()
+            ->with(['equipoLocal:id,nombre', 'equipoVisitante:id,nombre', 'grupo:id,nombre', 'categoria:id,nombreCategoria'])
+            ->where('idEdicion', $idEdicion)
+            ->where('idFechas', $idFecha)
+            ->whereNotNull('golesEquipoLocal')
+            ->whereNotNull('golesEquipoVisitante');
+
+        if ($idCategoriaFinal > 0) {
+            $consulta->where('idCategoria', $idCategoriaFinal);
+        }
+
+        $partidos = $consulta
+            ->orderBy('idGrupo')
+            ->orderBy('horario_datetime')
+            ->orderBy('id')
+            ->get();
+
+        if ($partidos->isEmpty()) {
+            return null;
+        }
+
+        $edicionNombre = \App\Models\Edicion::query()
+            ->whereKey($idEdicion)
+            ->value('nombre') ?? 'Edición vigente';
+
+        $categoriaNombre = null;
+        if ($idCategoriaFinal > 0) {
+            $categoriaNombre = \App\Models\Categoria::query()
+                ->whereKey($idCategoriaFinal)
+                ->value('nombreCategoria');
+        }
+
+        return [
+            'id_edicion' => $idEdicion,
+            'id_fecha' => $idFecha,
+            'id_categoria' => $idCategoriaFinal > 0 ? $idCategoriaFinal : null,
+            'edicion_nombre' => $edicionNombre,
+            'fecha_nombre' => $fecha->nombre,
+            'categoria_nombre' => $categoriaNombre,
+            'url_fixture' => '/fixture?idEdicion=' . $idEdicion,
+            'partidos_count' => $partidos->count(),
+            'partidos' => $partidos->map(function ($partido): array {
+                return [
+                    'id' => $partido->id,
+                    'equipo_local' => $partido->equipoLocal->nombre ?? 'Local',
+                    'equipo_visitante' => $partido->equipoVisitante->nombre ?? 'Visitante',
+                    'goles_local' => (int) $partido->golesEquipoLocal,
+                    'goles_visitante' => (int) $partido->golesEquipoVisitante,
+                    'grupo' => $this->formatearEtiquetaGrupo($partido->grupo->nombre ?? null),
+                    'cancha' => $partido->cancha ? ('Cancha ' . $partido->cancha) : null,
+                    'horario' => $partido->horario_datetime
+                        ? \Carbon\Carbon::parse($partido->horario_datetime)->format('d/m H:i')
+                        : ($partido->horario ?: null),
+                ];
+            })->values()->all(),
+        ];
+    }
+
+    /**
+     * Formatea el nombre de grupo evitando duplicar el prefijo "Grupo".
+     *
+     * Hay ediciones legacy donde el nombre ya viene como "Grupo Único" y en
+     * otras solo viene la letra o código. Este helper unifica la etiqueta para
+     * la plantilla sin mostrar textos repetidos.
+     */
+    private function formatearEtiquetaGrupo(?string $nombreGrupo): ?string
+    {
+        if ($nombreGrupo === null) {
+            return null;
+        }
+
+        $nombreNormalizado = trim($nombreGrupo);
+        if ($nombreNormalizado === '') {
+            return null;
+        }
+
+        if (preg_match('/^grupo\b/i', $nombreNormalizado) === 1) {
+            return $nombreNormalizado;
+        }
+
+        return 'Grupo ' . $nombreNormalizado;
+    }
+
+    /**
+     * Construye el título final evitando repetir el ícono al inicio.
+     *
+     * Algunas acciones predefinidas ya traen un título con emoji y, además,
+     * envían el ícono en un campo separado. Este helper evita duplicados
+     * visuales como "📅 📅 Fixture Actualizado" en asunto y encabezado.
+     */
+    private function construirTituloPersonalizado(string $titulo, ?string $icono = null): string
+    {
+        $tituloNormalizado = trim($titulo);
+        $iconoNormalizado = trim((string) $icono);
+
+        if ($iconoNormalizado === '') {
+            return $tituloNormalizado;
+        }
+
+        if ($tituloNormalizado === '') {
+            return $iconoNormalizado;
+        }
+
+        if (str_starts_with($tituloNormalizado, $iconoNormalizado)) {
+            return $tituloNormalizado;
+        }
+
+        return $iconoNormalizado . ' ' . $tituloNormalizado;
+    }
+
+    /**
+     * Base de usuarios destinatarios para resúmenes por email.
+     *
+     * Solo considera usuarios con email cargado y suscripción activa,
+     * ya que el resumen se envía por BCC para optimizar cupos SMTP.
+     */
+    private function usuariosEmailResumenQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return \App\Models\User::query()
+            ->where('email_subscribed', true)
+            ->whereNotNull('email')
+            ->where('email', '!=', '');
+    }
+
+    /**
+     * Define la base de usuarios aptos para recibir notificaciones.
+     *
+     * Se considera notificable a quien cumpla al menos una condición:
+     * - Tiene email habilitado (`email_subscribed`) y correo cargado.
+     * - Tiene una o más suscripciones push activas.
+     */
+    private function usuariosNotificablesQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return \App\Models\User::query()
+            ->where(function ($q) {
+                $q->where(function ($q2) {
+                    $q2->where('email_subscribed', true)
+                        ->whereNotNull('email');
+                })
+                    ->orWhereHas('pushSubscriptions');
+            });
     }
 }

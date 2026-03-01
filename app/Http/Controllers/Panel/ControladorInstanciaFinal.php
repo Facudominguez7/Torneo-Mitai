@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\InstanciaFinal\StoreRequest;
 use App\Models\Categoria;
 use App\Models\Copa;
-use App\Models\Dia;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\Fase;
@@ -18,6 +17,7 @@ use Illuminate\Http\Request;
 class ControladorInstanciaFinal extends Controller
 {
     use SeleccionarCategoriaTrait;
+
     protected $partidoService;
 
     public function __construct(PartidoService $partidoService)
@@ -60,11 +60,11 @@ class ControladorInstanciaFinal extends Controller
         if ($fechaFiltro) {
             $query->whereRaw('DATE(horario) = ?', [$fechaFiltro]);
         }
-        
+
         // Filtro por hora (HH:mm)
         $horaFiltro = $request->horario;
         if ($horaFiltro) {
-             $query->whereRaw('TIME(horario) = ?', [$horaFiltro . ':00']);
+            $query->whereRaw('TIME(horario) = ?', [$horaFiltro.':00']);
         }
 
         // Filtro por estado (pendiente/jugado)
@@ -76,22 +76,22 @@ class ControladorInstanciaFinal extends Controller
 
         // Búsqueda por nombre de equipo
         if ($busquedaEquipo) {
-            $query->where(function($q) use ($busquedaEquipo) {
-                $q->whereHas('equipoLocal', function($q) use ($busquedaEquipo) {
-                    $q->where('nombre', 'like', '%' . $busquedaEquipo . '%');
-                })->orWhereHas('equipoVisitante', function($q) use ($busquedaEquipo) {
-                    $q->where('nombre', 'like', '%' . $busquedaEquipo . '%');
+            $query->where(function ($q) use ($busquedaEquipo) {
+                $q->whereHas('equipoLocal', function ($q) use ($busquedaEquipo) {
+                    $q->where('nombre', 'like', '%'.$busquedaEquipo.'%');
+                })->orWhereHas('equipoVisitante', function ($q) use ($busquedaEquipo) {
+                    $q->where('nombre', 'like', '%'.$busquedaEquipo.'%');
                 });
             });
         }
 
         $partidos = $query
             ->with([
-            'equipoLocal:id,nombre,foto',
-            'equipoVisitante:id,nombre,foto',
-            'fase:id,nombre',
-            'categoria:id,nombreCategoria',
-            'copa:id,nombre'
+                'equipoLocal:id,nombre,foto',
+                'equipoVisitante:id,nombre,foto',
+                'fase:id,nombre',
+                'categoria:id,nombreCategoria',
+                'copa:id,nombre',
             ])
             ->select('instancias_finales.*')
             // Ordenar: pendientes primero (sin goles), luego por fecha
@@ -100,24 +100,24 @@ class ControladorInstanciaFinal extends Controller
             ->orderBy('instancias_finales.horario', 'asc')
             ->get();
 
-        $categorias = Categoria::whereIn('id', function($query) use ($idEdicion) {
-                $query->select('idCategoria')->from('instancias_finales')->where('idEdicion', $idEdicion)->distinct();
-            })
+        $categorias = Categoria::whereIn('id', function ($query) use ($idEdicion) {
+            $query->select('idCategoria')->from('instancias_finales')->where('idEdicion', $idEdicion)->distinct();
+        })
             ->select('id', 'nombreCategoria')
             ->orderBy('nombreCategoria', 'desc')
             ->get();
 
-        $fases = Fase::whereIn('id', function($query) use ($idEdicion) {
-                $query->select('idFase')->from('instancias_finales')->where('idEdicion', $idEdicion)->distinct();
-            })
+        $fases = Fase::whereIn('id', function ($query) use ($idEdicion) {
+            $query->select('idFase')->from('instancias_finales')->where('idEdicion', $idEdicion)->distinct();
+        })
             ->select('id', 'nombre')
             ->orderBy('nombre', 'desc')
             ->get();
 
         // Obtener las copas que tienen partidos en esta edición
-        $copas = Copa::whereIn('id', function($query) use ($idEdicion) {
-                $query->select('idCopa')->from('instancias_finales')->where('idEdicion', $idEdicion)->whereNotNull('idCopa')->distinct();
-            })
+        $copas = Copa::whereIn('id', function ($query) use ($idEdicion) {
+            $query->select('idCopa')->from('instancias_finales')->where('idEdicion', $idEdicion)->whereNotNull('idCopa')->distinct();
+        })
             ->orderBy('nombre', 'asc')
             ->get();
 
@@ -155,31 +155,55 @@ class ControladorInstanciaFinal extends Controller
 
         $copas = Copa::orderByDesc('nombre')->get();
         $partido = new InstanciaFinal();
-        return view('Panel.instancia_final.create', compact('ediciones', 'partido', 'EdicionSeleccionada', 'fases', 'equipos', 'idCategoria', 'CategoriaSeleccionada', 'copas'));
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+        ]);
+
+        return view('Panel.instancia_final.create', compact('ediciones', 'partido', 'EdicionSeleccionada', 'fases', 'equipos', 'idCategoria', 'CategoriaSeleccionada', 'copas', 'parametrosRegreso'));
     }
 
+    /**
+     * Guarda una instancia final y vuelve al listado con filtros activos.
+     */
     public function store(StoreRequest $request)
     {
         $data = $request->validated();
         InstanciaFinal::create($data);
-        $idEdicion = $data['idEdicion'];
-        $fecha = $request->input('fecha');
-        return to_route('instancia_final.index', ['idEdicion' => $idEdicion, 'fecha' => $fecha])->with('status', 'Partido creado con éxito.');
+
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $data['idEdicion'],
+            'idCategoria' => $data['idCategoria'] ?? $request->input('idCategoria'),
+            'fecha' => $request->input('fecha') ?: $request->input('retorno_fecha'),
+            'horario' => $request->input('horario') ?: $request->input('retorno_horario'),
+        ]);
+
+        return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Partido creado con éxito.');
     }
 
+    /**
+     * Carga el resultado de una instancia final y conserva filtros de navegación.
+     */
     public function cargarResultadoInstancia(Request $request)
     {
         $ediciones = Edicion::all();
         $idEdicion = $request->idEdicion;
         $idPartido = $request->idPartido;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        
+
         // Buscar manualmente para evitar problemas de Route Model Binding si los nombres de parámetros no coinciden
         $partido = InstanciaFinal::find($idPartido);
-        
-        if (!$partido) {
+
+        if (! $partido) {
             return redirect()->back()->with('error', 'Partido no encontrado.');
         }
+
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $request->input('idCategoria') ?: $partido->idCategoria,
+            'idFase' => $request->input('idFase') ?: $partido->idFase,
+            'idCopa' => $request->input('idCopa') ?: $partido->idCopa,
+        ]);
 
         $golesEquipoLocal = $request->input('golesEquipoLocal');
         $golesEquipoVisitante = $request->input('golesEquipoVisitante');
@@ -187,7 +211,7 @@ class ControladorInstanciaFinal extends Controller
         $penalesEquipoVisitante = $request->input('penalesEquipoVisitante');
         $resultadoGlobal = $request->input('resultadoGlobal');
 
-        if (!is_null($golesEquipoLocal) && !is_null($golesEquipoVisitante)) {
+        if (! is_null($golesEquipoLocal) && ! is_null($golesEquipoVisitante)) {
             $partido->golesEquipoLocal = $golesEquipoLocal;
             $partido->golesEquipoVisitante = $golesEquipoVisitante;
             $partido->penalesEquipoLocal = $penalesEquipoLocal;
@@ -198,32 +222,35 @@ class ControladorInstanciaFinal extends Controller
             $this->partidoService->actualizarHistorialInstanciasFinales($partido, $golesEquipoLocal, $golesEquipoVisitante);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoLocal, $partido->idEdicion, $idGrupo);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoVisitante, $partido->idEdicion, $idGrupo);
-            
+
             // Las notificaciones se envían desde el frontend via AJAX por lotes
             // Si es AJAX, devolvemos el partido_id para que el frontend envíe notificaciones
             if ($request->wantsJson()) {
                 return response()->json([
-                    'success' => true, 
+                    'success' => true,
                     'message' => 'Resultado guardado.',
-                    'partido_id' => $partido->id
                 ]);
             }
-            
-            return to_route('instancia_final.index', ['idEdicion' => $idEdicion, 'fecha' => $request->input('fecha')])->with('status', 'Resultado cargado con éxito.');
+
+            return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Resultado cargado con éxito.');
         }
 
         $tipo = 'instancia_final';
-        return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada', 'tipo'));
+
+        return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada', 'tipo', 'parametrosRegreso'));
     }
 
-    public function edit(InstanciaFinal $instancia_final)
+    /**
+     * Muestra la edición de instancia final manteniendo el contexto actual.
+     */
+    public function edit(Request $request, InstanciaFinal $instancia_final)
     {
         $ediciones = Edicion::all();
         $idEdicion = $instancia_final->idEdicion;
         $EdicionSeleccionada = Edicion::find($idEdicion);
         $idCategoria = $instancia_final->idCategoria;
         $CategoriaSeleccionada = Categoria::find($idCategoria);
-        
+
         $fases = Fase::query()
             ->select('id', 'nombre')
             ->orderBy('nombre', 'desc')
@@ -237,22 +264,68 @@ class ControladorInstanciaFinal extends Controller
 
         $copas = Copa::orderByDesc('nombre')->get();
         $partido = $instancia_final;
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+        ]);
 
-        return view('Panel.instancia_final.edit', compact('ediciones', 'partido', 'EdicionSeleccionada', 'fases', 'equipos', 'idCategoria', 'CategoriaSeleccionada', 'copas'));
+        return view('Panel.instancia_final.edit', compact('ediciones', 'partido', 'EdicionSeleccionada', 'fases', 'equipos', 'idCategoria', 'CategoriaSeleccionada', 'copas', 'parametrosRegreso'));
     }
 
+    /**
+     * Actualiza una instancia final y regresa al índice con filtros persistidos.
+     */
     public function update(StoreRequest $request, InstanciaFinal $instancia_final)
     {
         $data = $request->validated();
         $instancia_final->update($data);
-        $idEdicion = $data['idEdicion'];
-        $fecha = $request->input('fecha');
-        return to_route('instancia_final.index', ['idEdicion' => $idEdicion, 'fecha' => $fecha])->with('status', 'Partido actualizado con éxito.');
+
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $data['idEdicion'],
+            'idCategoria' => $data['idCategoria'] ?? $instancia_final->idCategoria,
+            'fecha' => $request->input('fecha') ?: $request->input('retorno_fecha'),
+            'horario' => $request->input('horario') ?: $request->input('retorno_horario'),
+        ]);
+
+        return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Partido actualizado con éxito.');
     }
 
+    /**
+     * Elimina la instancia final y vuelve al listado en el mismo contexto.
+     */
     public function destroy(InstanciaFinal $instancia_final, Request $request)
     {
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $request->idEdicion ?: $instancia_final->idEdicion,
+            'idCategoria' => $request->input('idCategoria') ?: $instancia_final->idCategoria,
+            'fecha' => $request->input('fecha') ?: $request->input('retorno_fecha'),
+            'horario' => $request->input('horario') ?: $request->input('retorno_horario'),
+        ]);
+
         $instancia_final->delete();
-        return to_route('instancia_final.index', ['idEdicion' => $request->idEdicion, 'fecha' => $request->fecha])->with('status', 'Partido eliminado con éxito.');
+
+        return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Partido eliminado con éxito.');
+    }
+
+    /**
+     * Construye parámetros de retorno para no perder filtros al navegar.
+     *
+     * @param  array<string, mixed>  $sobrescrituras
+     * @return array<string, mixed>
+     */
+    private function construirParametrosRegreso(Request $request, array $sobrescrituras = []): array
+    {
+        $parametros = [
+            'idEdicion' => $sobrescrituras['idEdicion'] ?? $request->input('idEdicion'),
+            'idCategoria' => $sobrescrituras['idCategoria'] ?? $request->input('idCategoria') ?? $request->input('retorno_idCategoria'),
+            'idFase' => $sobrescrituras['idFase'] ?? $request->input('idFase') ?? $request->input('retorno_idFase'),
+            'idCopa' => $sobrescrituras['idCopa'] ?? $request->input('idCopa') ?? $request->input('retorno_idCopa'),
+            'estado' => $sobrescrituras['estado'] ?? $request->input('estado') ?? $request->input('retorno_estado'),
+            'busqueda' => $sobrescrituras['busqueda'] ?? $request->input('busqueda') ?? $request->input('retorno_busqueda'),
+            'fecha' => $sobrescrituras['fecha'] ?? $request->input('fecha') ?? $request->input('retorno_fecha'),
+            'horario' => $sobrescrituras['horario'] ?? $request->input('horario') ?? $request->input('retorno_horario'),
+        ];
+
+        return array_filter($parametros, static fn ($valor) => $valor !== null && $valor !== '');
     }
 }

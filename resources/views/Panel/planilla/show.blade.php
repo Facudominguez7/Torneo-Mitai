@@ -3,9 +3,48 @@
 @section('detalle')
     @include('components.loader')
 
+    @php
+        $contextoNavegacion = $contextoNavegacion ?? [];
+        $origen = $contextoNavegacion['origen'] ?? request('origen');
+
+        $parametrosPartido = array_filter([
+            'idEdicion' => $EdicionSeleccionada->id,
+            'idCategoria' => $contextoNavegacion['idCategoria'] ?? request('idCategoria'),
+            'idGrupo' => $contextoNavegacion['idGrupo'] ?? request('idGrupo'),
+            'idFecha' => $contextoNavegacion['idFecha'] ?? request('idFecha'),
+            'horario' => $contextoNavegacion['horario_filtro'] ?? request('horario_filtro'),
+            'busqueda' => $contextoNavegacion['busqueda'] ?? request('busqueda'),
+        ], static fn ($valor) => $valor !== null && $valor !== '');
+
+        $parametrosInstancia = array_filter([
+            'idEdicion' => $EdicionSeleccionada->id,
+            'idCategoria' => $contextoNavegacion['idCategoria'] ?? request('idCategoria'),
+            'idFase' => $contextoNavegacion['idFase'] ?? request('idFase'),
+            'idCopa' => $contextoNavegacion['idCopa'] ?? request('idCopa'),
+            'estado' => $contextoNavegacion['estado'] ?? request('estado'),
+            'busqueda' => $contextoNavegacion['busqueda'] ?? request('busqueda'),
+            'fecha' => $contextoNavegacion['fecha'] ?? request('fecha'),
+            'horario' => $contextoNavegacion['horario_filtro'] ?? request('horario_filtro'),
+        ], static fn ($valor) => $valor !== null && $valor !== '');
+
+        $parametrosAdmin = [
+            'idEdicion' => $EdicionSeleccionada->id,
+        ];
+
+        $volverAInstancias = $tipoPartido === 'instanciaFinal' || $origen === 'instancia-final-index';
+        $rutaVolver = $volverAInstancias ? route('instancia_final.index', $parametrosInstancia) : route('admin', $parametrosAdmin);
+
+        $rutaCargarResultado = route($tipoPartido === 'instanciaFinal' ? 'cargar-resultado-instancia' : 'cargar-resultado',
+            array_merge([
+                'idEdicion' => $EdicionSeleccionada->id,
+                'idPartido' => $partido->id,
+            ], $volverAInstancias ? $parametrosInstancia : $parametrosPartido)
+        );
+    @endphp
+
     <div class="w-full p-6 bg-white rounded-lg shadow-md">
         <!-- Botón de Volver -->
-        <a href="{{ $tipoPartido === 'instanciaFinal' ? route('instancia_final', ['idEdicion' => $EdicionSeleccionada->id, 'horario' => $horarioSeleccionado, 'fecha' => request('fecha')]) : route('admin', ['idEdicion' => $EdicionSeleccionada->id, 'horario' => $horarioSeleccionado]) }}"
+        <a href="{{ $rutaVolver }}"
             class="inline-block mb-4 text-blue-500 hover:text-blue-700">
             <svg class="w-6 h-6 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg">
@@ -25,10 +64,7 @@
 
         @if (is_null($partido->golesEquipoLocal) && is_null($partido->golesEquipoVisitante))
             <div class="mb-4">
-                <a href="{{ route($tipoPartido === 'instanciaFinal' ? 'cargar-resultado-instancia' : 'cargar-resultado', [
-                    'idEdicion' => $EdicionSeleccionada->id,
-                    'idPartido' => $partido->id,
-                ]) }}"
+                <a href="{{ $rutaCargarResultado }}"
                     class="px-4 py-2 bg-blue-600 text-white rounded-md">
                     Cargar resultado
                 </a>
@@ -44,22 +80,67 @@
         <!-- Botón para generar el PDF -->
         <!-- Botón para generar el PDF -->
         <div class="flex justify-end space-x-2">
-            <button onclick="printExternal('{{ route('lista-buena-fe.imprimir-planilla', ['idEquipo' => $partido->idEquipoLocal, 'idEdicion' => $EdicionSeleccionada->id]) }}')"
+            <button data-print-url="{{ route('lista-buena-fe.imprimir-planilla', ['idEquipo' => $partido->idEquipoLocal, 'idEdicion' => $EdicionSeleccionada->id]) }}"
+                onclick="printExternal(this.dataset.printUrl)"
                 class="inline-block mb-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-300 cursor-pointer">
                 Imprimir Planilla
             </button>
         </div>
 
         <!-- Formulario para actualizar jugadores Locales -->
-        <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between" data-player-search-panel="local">
             <h3 class="text-lg font-semibold text-center sm:text-left">Lista de Buena Fe</h3>
-            <label class="w-full sm:w-72">
+            <div class="w-full lg:w-[46rem] xl:w-[52rem]">
                 <span class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Buscar jugador</span>
-                <input type="search" data-player-search="local"
-                    placeholder="Nombre, apellido o DNI"
-                    class="mt-1 block w-full h-9 border border-gray-300 rounded-md shadow-sm text-sm px-3"
-                >
-            </label>
+                <div class="relative mt-1 flex items-center gap-2">
+                    <input type="search" data-player-search-input="local" placeholder="Buscar por DNI"
+                        class="block w-full h-9 border border-gray-300 rounded-md shadow-sm text-sm px-3">
+                    <div class="relative shrink-0">
+                        <button type="button" data-player-filter-toggle="local"
+                            class="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-100">
+                            Filtros
+                        </button>
+                        <div data-player-filter-menu="local"
+                            class="hidden absolute right-0 z-20 mt-2 w-56 rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+                            <label class="flex items-center gap-2 text-sm text-gray-700">
+                                <input type="checkbox" data-player-filter-dni="local"
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                DNI (predefinido)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                    <span data-player-chip-dni="local"
+                        class="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                        <span>Filtro: DNI</span>
+                        <button type="button" data-player-clear-dni="local" class="text-blue-700 hover:text-blue-900">x</button>
+                    </span>
+                    <span data-player-chip-field="local"
+                        class="hidden inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+                        <span data-player-chip-field-text="local"></span>
+                        <button type="button" data-player-clear-field="local" class="text-emerald-700 hover:text-emerald-900">x</button>
+                    </span>
+                    <button type="button" data-player-reset-search="local"
+                        class="hidden rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100">
+                        Restablecer
+                    </button>
+                </div>
+                <div data-player-search-suggestions="local"
+                    class="hidden mt-2 rounded-md border border-gray-200 bg-white p-2 shadow-sm">
+                    <p class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">Elegí por cuál buscar</p>
+                    <div class="grid gap-1">
+                        <button type="button" data-player-select-field="name" data-player-field-scope="local"
+                            class="rounded-md px-2 py-1 text-left text-sm text-gray-700 hover:bg-gray-100"></button>
+                        <button type="button" data-player-select-field="lastname" data-player-field-scope="local"
+                            class="rounded-md px-2 py-1 text-left text-sm text-gray-700 hover:bg-gray-100"></button>
+                        <button type="button" data-player-select-field="dni" data-player-field-scope="local"
+                            class="rounded-md px-2 py-1 text-left text-sm text-gray-700 hover:bg-gray-100"></button>
+                        <button type="button" data-player-select-field="number" data-player-field-scope="local"
+                            class="rounded-md px-2 py-1 text-left text-sm text-gray-700 hover:bg-gray-100"></button>
+                    </div>
+                </div>
+            </div>
         </div>
     <form action="{{ route('planilla.actualizarJugadores') }}" method="POST" data-player-scope="local">
             @csrf
@@ -67,6 +148,16 @@
             <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
             <input type="hidden" name="horario" value="{{ $horarioSeleccionado }}">
             <input type="hidden" name="tipoPartido" value="{{ $tipoPartido }}">
+            <input type="hidden" name="origen" value="{{ $contextoNavegacion['origen'] ?? request('origen') }}">
+            <input type="hidden" name="idCategoria" value="{{ $contextoNavegacion['idCategoria'] ?? request('idCategoria') }}">
+            <input type="hidden" name="idGrupo" value="{{ $contextoNavegacion['idGrupo'] ?? request('idGrupo') }}">
+            <input type="hidden" name="idFase" value="{{ $contextoNavegacion['idFase'] ?? request('idFase') }}">
+            <input type="hidden" name="idCopa" value="{{ $contextoNavegacion['idCopa'] ?? request('idCopa') }}">
+            <input type="hidden" name="estado" value="{{ $contextoNavegacion['estado'] ?? request('estado') }}">
+            <input type="hidden" name="busqueda" value="{{ $contextoNavegacion['busqueda'] ?? request('busqueda') }}">
+            <input type="hidden" name="idFecha" value="{{ $contextoNavegacion['idFecha'] ?? request('idFecha') }}">
+            <input type="hidden" name="fecha" value="{{ $contextoNavegacion['fecha'] ?? request('fecha') }}">
+            <input type="hidden" name="horario_filtro" value="{{ $contextoNavegacion['horario_filtro'] ?? request('horario_filtro') }}">
 
             @if ($jugadoresLocalPlanilla->isEmpty())
                 <p class="text-center">No hay jugadores en el equipo local.</p>
@@ -78,7 +169,8 @@
                             data-player-key="{{ $jugador->dni_jugador }}"
                             data-player-name="{{ $jugador->nombre }}"
                             data-player-lastname="{{ $jugador->apellido }}"
-                            data-player-dni="{{ $jugador->dni_jugador }}">
+                            data-player-dni="{{ $jugador->dni_jugador }}"
+                            data-player-number="{{ $jugador->numero_camiseta }}">
                             <div class="grid grid-cols-1 gap-3">
                                 <div class="grid grid-cols-1 gap-2">
                                     <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Nombre</label>
@@ -159,7 +251,8 @@
                                     data-player-key="{{ $jugador->dni_jugador }}"
                                     data-player-name="{{ $jugador->nombre }}"
                                     data-player-lastname="{{ $jugador->apellido }}"
-                                    data-player-dni="{{ $jugador->dni_jugador }}">
+                                    data-player-dni="{{ $jugador->dni_jugador }}"
+                                    data-player-number="{{ $jugador->numero_camiseta }}">
                                     <td class="px-2 py-1 md:px-3 md:py-2 border-b text-left align-top md:align-middle text-[11px] md:text-sm break-words">
                                         <div class="flex w-full gap-1 md:gap-2 flex-col md:flex-row">
                                             <input name="jugadores[{{ $jugador->dni_jugador }}][nombre]"
@@ -221,22 +314,67 @@
         <!-- Botón para generar el PDF -->
         <!-- Botón para generar el PDF -->
         <div class="flex justify-end space-x-2">
-            <button onclick="printExternal('{{ route('lista-buena-fe.imprimir-planilla', ['idEquipo' => $partido->idEquipoVisitante, 'idEdicion' => $EdicionSeleccionada->id]) }}')"
+            <button data-print-url="{{ route('lista-buena-fe.imprimir-planilla', ['idEquipo' => $partido->idEquipoVisitante, 'idEdicion' => $EdicionSeleccionada->id]) }}"
+                onclick="printExternal(this.dataset.printUrl)"
                 class="inline-block mb-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-300 cursor-pointer">
                 Imprimir Planilla
             </button>
         </div>
 
         <!-- Formulario para actualizar jugadores Visitantes -->
-        <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between" data-player-search-panel="visitante">
             <h3 class="text-lg font-semibold text-center sm:text-left">Lista de Buena Fe</h3>
-            <label class="w-full sm:w-72">
+            <div class="w-full lg:w-[46rem] xl:w-[52rem]">
                 <span class="block text-xs font-semibold uppercase tracking-wide text-gray-500">Buscar jugador</span>
-                <input type="search" data-player-search="visitante"
-                    placeholder="Nombre, apellido o DNI"
-                    class="mt-1 block w-full h-9 border border-gray-300 rounded-md shadow-sm text-sm px-3"
-                >
-            </label>
+                <div class="relative mt-1 flex items-center gap-2">
+                    <input type="search" data-player-search-input="visitante" placeholder="Buscar por DNI"
+                        class="block w-full h-9 border border-gray-300 rounded-md shadow-sm text-sm px-3">
+                    <div class="relative shrink-0">
+                        <button type="button" data-player-filter-toggle="visitante"
+                            class="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-100">
+                            Filtros
+                        </button>
+                        <div data-player-filter-menu="visitante"
+                            class="hidden absolute right-0 z-20 mt-2 w-56 rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+                            <label class="flex items-center gap-2 text-sm text-gray-700">
+                                <input type="checkbox" data-player-filter-dni="visitante"
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                DNI (predefinido)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                    <span data-player-chip-dni="visitante"
+                        class="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                        <span>Filtro: DNI</span>
+                        <button type="button" data-player-clear-dni="visitante" class="text-blue-700 hover:text-blue-900">x</button>
+                    </span>
+                    <span data-player-chip-field="visitante"
+                        class="hidden inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+                        <span data-player-chip-field-text="visitante"></span>
+                        <button type="button" data-player-clear-field="visitante" class="text-emerald-700 hover:text-emerald-900">x</button>
+                    </span>
+                    <button type="button" data-player-reset-search="visitante"
+                        class="hidden rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100">
+                        Restablecer
+                    </button>
+                </div>
+                <div data-player-search-suggestions="visitante"
+                    class="hidden mt-2 rounded-md border border-gray-200 bg-white p-2 shadow-sm">
+                    <p class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">Elegí por cuál buscar</p>
+                    <div class="grid gap-1">
+                        <button type="button" data-player-select-field="name" data-player-field-scope="visitante"
+                            class="rounded-md px-2 py-1 text-left text-sm text-gray-700 hover:bg-gray-100"></button>
+                        <button type="button" data-player-select-field="lastname" data-player-field-scope="visitante"
+                            class="rounded-md px-2 py-1 text-left text-sm text-gray-700 hover:bg-gray-100"></button>
+                        <button type="button" data-player-select-field="dni" data-player-field-scope="visitante"
+                            class="rounded-md px-2 py-1 text-left text-sm text-gray-700 hover:bg-gray-100"></button>
+                        <button type="button" data-player-select-field="number" data-player-field-scope="visitante"
+                            class="rounded-md px-2 py-1 text-left text-sm text-gray-700 hover:bg-gray-100"></button>
+                    </div>
+                </div>
+            </div>
         </div>
     <form action="{{ route('planilla.actualizarJugadores') }}" method="POST" data-player-scope="visitante">
             @csrf
@@ -244,6 +382,16 @@
             <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
             <input type="hidden" name="horario" value="{{ $horarioSeleccionado }}">
             <input type="hidden" name="tipoPartido" value="{{ $tipoPartido }}">
+            <input type="hidden" name="origen" value="{{ $contextoNavegacion['origen'] ?? request('origen') }}">
+            <input type="hidden" name="idCategoria" value="{{ $contextoNavegacion['idCategoria'] ?? request('idCategoria') }}">
+            <input type="hidden" name="idGrupo" value="{{ $contextoNavegacion['idGrupo'] ?? request('idGrupo') }}">
+            <input type="hidden" name="idFase" value="{{ $contextoNavegacion['idFase'] ?? request('idFase') }}">
+            <input type="hidden" name="idCopa" value="{{ $contextoNavegacion['idCopa'] ?? request('idCopa') }}">
+            <input type="hidden" name="estado" value="{{ $contextoNavegacion['estado'] ?? request('estado') }}">
+            <input type="hidden" name="busqueda" value="{{ $contextoNavegacion['busqueda'] ?? request('busqueda') }}">
+            <input type="hidden" name="idFecha" value="{{ $contextoNavegacion['idFecha'] ?? request('idFecha') }}">
+            <input type="hidden" name="fecha" value="{{ $contextoNavegacion['fecha'] ?? request('fecha') }}">
+            <input type="hidden" name="horario_filtro" value="{{ $contextoNavegacion['horario_filtro'] ?? request('horario_filtro') }}">
 
             @if ($jugadoresVisitantePlanilla->isEmpty())
                 <p class="text-center">No hay jugadores en el equipo visitante.</p>
@@ -255,7 +403,8 @@
                             data-player-key="{{ $jugador->dni_jugador }}"
                             data-player-name="{{ $jugador->nombre }}"
                             data-player-lastname="{{ $jugador->apellido }}"
-                            data-player-dni="{{ $jugador->dni_jugador }}">
+                            data-player-dni="{{ $jugador->dni_jugador }}"
+                            data-player-number="{{ $jugador->numero_camiseta }}">
                             <div class="grid grid-cols-1 gap-3">
                                 <div class="grid grid-cols-1 gap-2">
                                     <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Nombre</label>
@@ -336,7 +485,8 @@
                                     data-player-key="{{ $jugador->dni_jugador }}"
                                     data-player-name="{{ $jugador->nombre }}"
                                     data-player-lastname="{{ $jugador->apellido }}"
-                                    data-player-dni="{{ $jugador->dni_jugador }}">
+                                    data-player-dni="{{ $jugador->dni_jugador }}"
+                                    data-player-number="{{ $jugador->numero_camiseta }}">
                                     <td class="px-2 py-1 md:px-3 md:py-2 border-b text-left align-top md:align-middle text-[11px] md:text-sm break-words">
                                         <div class="flex w-full gap-1 md:gap-2 flex-col md:flex-row">
                                             <input name="jugadores[{{ $jugador->dni_jugador }}][nombre]"
@@ -390,7 +540,16 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const searchInputs = document.querySelectorAll('[data-player-search]');
+            const searchPanels = document.querySelectorAll('[data-player-search-panel]');
+            const searchStateByScope = new Map();
+            const searchFieldLabels = {
+                name: 'Nombre',
+                lastname: 'Apellido',
+                dni: 'DNI',
+                number: 'Numero'
+            };
+
+            const isValidField = (field) => Object.prototype.hasOwnProperty.call(searchFieldLabels, field);
 
             const normalizeText = (value) => {
                 if (!value) {
@@ -409,10 +568,12 @@
                 const nameInput = item.querySelector('input[name$="[nombre]"]');
                 const lastnameInput = item.querySelector('input[name$="[apellido]"]');
                 const dniInput = item.querySelector('input[name$="[dni]"]');
+                const numberInput = item.querySelector('input[name$="[numero_camiseta]"]');
 
                 if (nameInput) item.dataset.playerName = nameInput.value ?? '';
                 if (lastnameInput) item.dataset.playerLastname = lastnameInput.value ?? '';
                 if (dniInput) item.dataset.playerDni = dniInput.value ?? '';
+                if (numberInput) item.dataset.playerNumber = numberInput.value ?? '';
             };
 
             const collectItemValues = (item) => {
@@ -421,35 +582,91 @@
                 return [
                     item.dataset.playerName,
                     item.dataset.playerLastname,
-                    item.dataset.playerDni
+                    item.dataset.playerDni,
+                    item.dataset.playerNumber
                 ].filter(Boolean).join(' ');
             };
 
-            const filterItems = (scope, query) => {
-                const items = document.querySelectorAll(`[data-player-item="${scope}"]`);
-                const normalizedQuery = normalizeText(query);
+            const defaultState = () => ({
+                query: '',
+                dniPredefined: true,
+                selectedField: null
+            });
 
-                const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+            const getScopeMode = (state) => {
+                if (state.dniPredefined) {
+                    return 'dni';
+                }
+
+                if (state.selectedField && isValidField(state.selectedField)) {
+                    return state.selectedField;
+                }
+
+                return 'general';
+            };
+
+            const matchesTokens = (value, tokens) => tokens.every((token) => value.includes(token));
+
+            const matchesByMode = (item, mode, tokens) => {
+                if (!tokens.length) {
+                    return true;
+                }
+
+                refreshItemDataset(item);
+
+                const fieldValue = {
+                    name: normalizeText(item.dataset.playerName ?? ''),
+                    lastname: normalizeText(item.dataset.playerLastname ?? ''),
+                    dni: normalizeText(item.dataset.playerDni ?? ''),
+                    number: normalizeText(item.dataset.playerNumber ?? ''),
+                    general: normalizeText(collectItemValues(item))
+                };
+
+                if (mode === 'name' || mode === 'lastname' || mode === 'dni' || mode === 'number') {
+                    return matchesTokens(fieldValue[mode], tokens);
+                }
+
+                return matchesTokens(fieldValue.general, tokens);
+            };
+
+            const setItemVisibility = (item, isVisible) => {
+                if (isVisible) {
+                    item.style.removeProperty('visibility');
+                    item.style.removeProperty('position');
+                    item.style.removeProperty('height');
+                    return;
+                }
+
+                item.style.visibility = 'collapse';
+                item.style.position = 'absolute';
+                item.style.height = '0';
+            };
+
+            const filterItems = (scope) => {
+                const state = searchStateByScope.get(scope);
+                if (!state) {
+                    return;
+                }
+
+                const mode = getScopeMode(state);
+                const tokens = normalizeText(state.query).split(/\s+/).filter(Boolean);
+                const items = document.querySelectorAll(`[data-player-item="${scope}"]`);
 
                 items.forEach((item) => {
-                    const searchable = normalizeText(collectItemValues(item));
-
-                    const matches = queryTokens.length === 0
-                        ? true
-                        : queryTokens.every((token) => searchable.includes(token));
-
-                    // Usar una clase personalizada que solo oculte visualmente pero mantenga en el DOM
-                    if (matches) {
-                        item.style.removeProperty('visibility');
-                        item.style.removeProperty('position');
-                        item.style.removeProperty('height');
-                    } else {
-                        // Ocultar visualmente pero mantener en el flujo del formulario
-                        item.style.visibility = 'collapse';
-                        item.style.position = 'absolute';
-                        item.style.height = '0';
-                    }
+                    setItemVisibility(item, matchesByMode(item, mode, tokens));
                 });
+            };
+
+            const getPlaceholder = (state) => {
+                if (state.dniPredefined) {
+                    return 'Buscar por DNI';
+                }
+
+                if (state.selectedField && isValidField(state.selectedField)) {
+                    return `Buscar por ${searchFieldLabels[state.selectedField].toLowerCase()}`;
+                }
+
+                return 'Buscar por nombre, apellido, DNI o numero';
             };
 
             const syncGroupValues = (scope) => {
@@ -505,30 +722,204 @@
                 });
             };
 
-            searchInputs.forEach((input) => {
-                const scope = input.dataset.playerSearch;
+            const renderScope = (scope) => {
+                const panel = document.querySelector(`[data-player-search-panel="${scope}"]`);
+                const state = searchStateByScope.get(scope);
 
+                if (!panel || !state) {
+                    return;
+                }
+
+                const input = panel.querySelector(`[data-player-search-input="${scope}"]`);
+                const dniCheckbox = panel.querySelector(`[data-player-filter-dni="${scope}"]`);
+                const dniChip = panel.querySelector(`[data-player-chip-dni="${scope}"]`);
+                const fieldChip = panel.querySelector(`[data-player-chip-field="${scope}"]`);
+                const fieldChipText = panel.querySelector(`[data-player-chip-field-text="${scope}"]`);
+                const suggestions = panel.querySelector(`[data-player-search-suggestions="${scope}"]`);
+                const suggestionButtons = panel.querySelectorAll(`[data-player-field-scope="${scope}"]`);
+                const resetButton = panel.querySelector(`[data-player-reset-search="${scope}"]`);
+                const showSuggestions = !state.dniPredefined && !state.selectedField && normalizeText(state.query).length > 0;
+                const showReset = normalizeText(state.query).length > 0 || !state.dniPredefined || !!state.selectedField;
+
+                if (input) {
+                    if (input.value !== state.query) {
+                        input.value = state.query;
+                    }
+
+                    input.placeholder = getPlaceholder(state);
+                }
+
+                if (dniCheckbox) {
+                    dniCheckbox.checked = state.dniPredefined;
+                }
+
+                if (dniChip) {
+                    dniChip.classList.toggle('hidden', !state.dniPredefined);
+                }
+
+                if (fieldChip && fieldChipText) {
+                    const showFieldChip = !state.dniPredefined && !!state.selectedField && isValidField(state.selectedField);
+                    fieldChip.classList.toggle('hidden', !showFieldChip);
+                    if (showFieldChip) {
+                        fieldChipText.textContent = `Campo: ${searchFieldLabels[state.selectedField]}`;
+                    }
+                }
+
+                if (suggestions) {
+                    suggestions.classList.toggle('hidden', !showSuggestions);
+                }
+
+                suggestionButtons.forEach((button) => {
+                    const field = button.dataset.playerSelectField;
+                    if (!isValidField(field)) {
+                        return;
+                    }
+
+                    button.textContent = `Buscar ${searchFieldLabels[field]}: "${state.query}"`;
+                });
+
+                if (resetButton) {
+                    resetButton.classList.toggle('hidden', !showReset);
+                }
+
+                filterItems(scope);
+            };
+
+            const updateScopeState = (scope, partialState) => {
+                const currentState = searchStateByScope.get(scope);
+                if (!currentState) {
+                    return;
+                }
+
+                Object.assign(currentState, partialState);
+
+                if (currentState.dniPredefined) {
+                    currentState.selectedField = null;
+                }
+
+                if (currentState.selectedField && !isValidField(currentState.selectedField)) {
+                    currentState.selectedField = null;
+                }
+
+                renderScope(scope);
+            };
+
+            const closeAllFilterMenus = () => {
+                searchPanels.forEach((panel) => {
+                    const menu = panel.querySelector('[data-player-filter-menu]');
+                    if (menu) {
+                        menu.classList.add('hidden');
+                    }
+                });
+            };
+
+            searchPanels.forEach((panel) => {
+                const scope = panel.dataset.playerSearchPanel;
                 if (!scope) {
                     return;
                 }
 
-                const handleInput = () => filterItems(scope, input.value);
+                searchStateByScope.set(scope, defaultState());
 
-                handleInput();
-                input.addEventListener('input', handleInput);
+                const input = panel.querySelector(`[data-player-search-input="${scope}"]`);
+                const toggleButton = panel.querySelector(`[data-player-filter-toggle="${scope}"]`);
+                const filterMenu = panel.querySelector(`[data-player-filter-menu="${scope}"]`);
+                const dniCheckbox = panel.querySelector(`[data-player-filter-dni="${scope}"]`);
+                const clearDniButton = panel.querySelector(`[data-player-clear-dni="${scope}"]`);
+                const clearFieldButton = panel.querySelector(`[data-player-clear-field="${scope}"]`);
+                const resetButton = panel.querySelector(`[data-player-reset-search="${scope}"]`);
+                const suggestionButtons = panel.querySelectorAll(`[data-player-field-scope="${scope}"]`);
+
+                renderScope(scope);
+
+                if (toggleButton && filterMenu) {
+                    toggleButton.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        const isClosed = filterMenu.classList.contains('hidden');
+                        closeAllFilterMenus();
+                        if (isClosed) {
+                            filterMenu.classList.remove('hidden');
+                        }
+                    });
+
+                    filterMenu.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                    });
+                }
+
+                if (input) {
+                    input.addEventListener('input', () => {
+                        updateScopeState(scope, { query: input.value });
+                    });
+                }
+
+                if (dniCheckbox) {
+                    dniCheckbox.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                    });
+
+                    dniCheckbox.addEventListener('change', () => {
+                        updateScopeState(scope, {
+                            dniPredefined: dniCheckbox.checked,
+                            selectedField: null
+                        });
+                    });
+                }
+
+                if (clearDniButton) {
+                    clearDniButton.addEventListener('click', () => {
+                        updateScopeState(scope, {
+                            dniPredefined: false,
+                            selectedField: null
+                        });
+                    });
+                }
+
+                if (clearFieldButton) {
+                    clearFieldButton.addEventListener('click', () => {
+                        updateScopeState(scope, { selectedField: null });
+                    });
+                }
+
+                if (resetButton) {
+                    resetButton.addEventListener('click', () => {
+                        updateScopeState(scope, {
+                            query: '',
+                            dniPredefined: true,
+                            selectedField: null
+                        });
+                    });
+                }
+
+                suggestionButtons.forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const field = button.dataset.playerSelectField;
+                        if (!isValidField(field)) {
+                            return;
+                        }
+
+                        updateScopeState(scope, {
+                            dniPredefined: false,
+                            selectedField: field
+                        });
+                    });
+                });
+            });
+
+            document.addEventListener('click', () => {
+                closeAllFilterMenus();
             });
 
             const updateForms = document.querySelectorAll('form[data-player-scope]');
 
             updateForms.forEach((form) => {
-                form.addEventListener('submit', (e) => {
+                form.addEventListener('submit', () => {
                     const scope = form.dataset.playerScope;
 
                     if (!scope) {
                         return;
                     }
 
-                    // Restaurar visibilidad de TODOS los elementos antes del submit
                     const items = form.querySelectorAll(`[data-player-item="${scope}"]`);
                     items.forEach((item) => {
                         item.style.removeProperty('visibility');
@@ -536,10 +927,8 @@
                         item.style.removeProperty('height');
                     });
 
-                    // Sincronizar todos los valores entre cards y tabla
                     syncGroupValues(scope);
 
-                    // Actualizar dataset de todos los items
                     items.forEach((item) => {
                         refreshItemDataset(item);
                     });

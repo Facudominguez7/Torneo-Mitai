@@ -1,6 +1,21 @@
 @extends('Panel.admin')
 
 @section('contenido')
+    @php
+        $esInstanciaFinal = isset($tipo) && $tipo === 'instancia_final';
+        $contextoRegreso = $parametrosRegreso ?? [];
+        $rutaRegreso = $esInstanciaFinal ? route('instancia_final.index', $contextoRegreso) : route('partido.index', $contextoRegreso);
+    @endphp
+
+    <div class="mb-4">
+        <a href="{{ $rutaRegreso }}" class="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Volver al listado
+        </a>
+    </div>
+
     @if (isset($tipo) && $tipo === 'instancia_final')
         <span class="bg-yellow-100 text-yellow-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">Modo Instancia Final</span>
     @endif
@@ -22,11 +37,11 @@
             <div class="bg-white rounded-lg shadow-lg overflow-x-auto md:overflow-x-visible">
                 <div class="flex flex-col md:flex-row items-center justify-between md:px-6 py-4 border-b">
                     <div class="flex items-center gap-4">
-                        <img src="{{ asset('fotos/equipos/' . $partido->equipoLocal->foto) }}" width="40" height="40" alt=""
+                        <img src="{{ asset('fotos/equipos/' . $partido->equipoLocal->foto) }}" width="40" height="40" alt="Escudo {{ $partido->equipoLocal->nombre }}"
                             class="rounded-full object-cover" />
                         <div class="font-medium text-lg">{{ $partido->equipoLocal->nombre }}</div>
                         <div class="text-gray-500">vs</div>
-                        <img src="{{ asset('fotos/equipos/' . $partido->equipoVisitante->foto) }}" width="40" height="40" alt=""
+                        <img src="{{ asset('fotos/equipos/' . $partido->equipoVisitante->foto) }}" width="40" height="40" alt="Escudo {{ $partido->equipoVisitante->nombre }}"
                             class="rounded-full object-cover" />
                         <div class="font-medium text-lg">{{ $partido->equipoVisitante->nombre }}</div>
                     </div>
@@ -163,6 +178,15 @@
             </script>
         @endif
         <input class="hidden" type="number" name="idEdicion" id="idEdicion" value="{{ $EdicionSeleccionada->id }}">
+        <input type="hidden" name="retorno_idCategoria" value="{{ $contextoRegreso['idCategoria'] ?? request('idCategoria') }}">
+        <input type="hidden" name="retorno_idGrupo" value="{{ $contextoRegreso['idGrupo'] ?? request('idGrupo') }}">
+        <input type="hidden" name="retorno_idFecha" value="{{ $contextoRegreso['idFecha'] ?? request('idFecha') }}">
+        <input type="hidden" name="retorno_idFase" value="{{ $contextoRegreso['idFase'] ?? request('idFase') }}">
+        <input type="hidden" name="retorno_idCopa" value="{{ $contextoRegreso['idCopa'] ?? request('idCopa') }}">
+        <input type="hidden" name="retorno_estado" value="{{ $contextoRegreso['estado'] ?? request('estado') }}">
+        <input type="hidden" name="retorno_busqueda" value="{{ $contextoRegreso['busqueda'] ?? request('busqueda') }}">
+        <input type="hidden" name="retorno_fecha" value="{{ $contextoRegreso['fecha'] ?? request('fecha') }}">
+        <input type="hidden" name="retorno_horario" value="{{ $contextoRegreso['horario'] ?? request('horario') }}">
         <div class="px-6 py-4 flex justify-center">
             <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
                 Cargar Resultado
@@ -170,11 +194,9 @@
         </div>
     </form>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.querySelector('form[action*="cargar-resultado"]');
-            const esInstanciaFinal = {{ (isset($tipo) && $tipo === 'instancia_final') ? 'true' : 'false' }};
             
             if (form) {
                 form.addEventListener('submit', async function(e) {
@@ -202,16 +224,7 @@
                         
                         const result = await response.json();
                         
-                        // 2. Guardar partido pendiente para enviar notificaciones desde la página destino
-                        if (result.partido_id) {
-                            localStorage.setItem('pendingNotification', JSON.stringify({
-                                partido_id: result.partido_id,
-                                es_instancia_final: esInstanciaFinal,
-                                timestamp: Date.now()
-                            }));
-                        }
-
-                        // 3. Mostrar éxito breve y redirigir
+                        // 2. Mostrar éxito breve y redirigir
                         Swal.fire({
                             title: '¡Listo!',
                             text: 'Resultado guardado.',
@@ -220,13 +233,9 @@
                             showConfirmButton: false
                         });
 
-                        // 4. Redirigir inmediatamente (las notificaciones se enviarán en la otra página)
+                        // 3. Redirigir inmediatamente
                         setTimeout(() => {
-                            @if(isset($tipo) && $tipo === 'instancia_final')
-                                window.location.href = "{{ route('instancia_final.index', ['idEdicion' => $EdicionSeleccionada->id, 'fecha' => request('fecha')]) }}";
-                            @else
-                                window.location.href = "{{ route('partido.index', ['idEdicion' => $EdicionSeleccionada->id]) }}";
-                            @endif
+                            window.location.href = "{{ $rutaRegreso }}";
                         }, 500);
                         
                     } catch (error) {

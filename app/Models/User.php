@@ -65,21 +65,25 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Verificar si el usuario desea recibir notificaciones por email.
      * 
-     * Un usuario recibe emails si:
-     * - Tiene el campo email_subscribed en true
-     * - Tiene su email verificado
+     * Regla de negocio actual:
+     * - Si el usuario está suscripto (`email_subscribed = true`), se envía email.
+     * - La verificación de correo no bloquea el envío inicial.
+     *
+     * El usuario conserva siempre la opción de baja desde el enlace incluido
+     * en cada correo notificado.
      *
      * @return bool
      */
     public function quiereRecibirEmails(): bool
     {
-        return $this->email_subscribed && $this->hasVerifiedEmail();
+        return (bool) $this->email_subscribed && !empty($this->email);
     }
 
     /**
      * Scope para filtrar usuarios suscritos a notificaciones por email.
      * 
-     * Uso: User::suscritosAEmail()->get()
+     * Incluye todos los suscriptos con email válido, aun cuando no hayan
+     * verificado su cuenta, para priorizar alcance de comunicación.
      *
      * @param Builder $query
      * @return Builder
@@ -87,7 +91,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function scopeSuscritosAEmail(Builder $query): Builder
     {
         return $query->where('email_subscribed', true)
-                     ->whereNotNull('email_verified_at');
+                     ->whereNotNull('email');
     }
 
     /**
