@@ -8,13 +8,14 @@
             <h1 class="text-3xl font-bold text-white">
                 <i class="fas fa-search mr-2"></i>Consulta de Jugador
             </h1>
-            <p class="text-gray-300 mt-2">Busca información detallada de un jugador por su DNI - Edición: <span class="font-semibold">{{ $edicionActual->nombre }}</span></p>
+            <p class="text-gray-300 mt-2">Busca información detallada de un jugador por su DNI - Edición: <span class="font-semibold">{{ $edicionActual?->nombre ?? 'Sin edición seleccionada' }}</span></p>
         </div>
 
         <!-- Formulario de Búsqueda -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
             <form action="{{ route('jugador.buscar') }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @csrf
+                <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada?->id }}">
                 
                 <div>
                     <label for="dni" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -118,6 +119,7 @@
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tipo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fecha/Fase</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Partido</th>
                                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Resultado</th>
@@ -132,6 +134,9 @@
                                                 {{ $partido['tipo'] == 'Instancia Final' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' }}">
                                                 {{ $partido['tipo'] }}
                                             </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                            {{ ($partido['origen'] ?? 'partido') === 'instancia_final' ? 'IF-' : 'P-' }}{{ $partido['idReferencia'] ?? '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                             {{ $partido['fecha'] }}
@@ -168,6 +173,7 @@
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tipo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fecha/Fase</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Partido</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Resultado</th>
@@ -184,6 +190,9 @@
                                             {{ $partido['tipo'] == 'Instancia Final' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' }}">
                                             {{ $partido['tipo'] }}
                                         </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                        {{ ($partido['origen'] ?? 'partido') === 'instancia_final' ? 'IF-' : 'P-' }}{{ $partido['idReferencia'] ?? '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                         {{ $partido['fecha'] }}

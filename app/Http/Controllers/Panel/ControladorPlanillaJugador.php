@@ -41,7 +41,7 @@ class ControladorPlanillaJugador extends Controller
         $contextoNavegacion = $this->obtenerContextoNavegacion($request);
 
         // Obtener el partido o instancia final
-        if ($tipoPartido === 'instanciaFinal') {
+        if (PartidoConstants::isInstanciaFinal($tipoPartido)) {
             $partido = InstanciaFinal::findOrFail($partidoId);
         } else {
             $partido = Partido::findOrFail($partidoId);
@@ -336,7 +336,7 @@ class ControladorPlanillaJugador extends Controller
             $mensajeStatus .= ' (Marcado como CONFLICTIVO en Lista de Buena Fe).';
         }
 
-        if ($tipoPartido === 'instanciaFinal') {
+        if (PartidoConstants::isInstanciaFinal($tipoPartido)) {
             return redirect()->route('planilla.show', array_merge([
                 'partidoId' => $partidoId,
                 'idEdicion' => $idEdicion,
@@ -356,15 +356,17 @@ class ControladorPlanillaJugador extends Controller
     public function actualizarJugadores(Request $request)
     {
         $tipoPartido = $request->tipoPartido;
+        $partidoType = PartidoConstants::getModelClass($tipoPartido);
         $horarioSeleccionado = $request->horario;
         $idEdicion = $request->idEdicion;
 
         // Iniciar transacción para asegurar integridad de datos
-        DB::transaction(function () use ($request, $idEdicion) {
+        DB::transaction(function () use ($request, $idEdicion, $partidoType) {
             // Recorrer todos los jugadores enviados en el formulario
             foreach ($request->jugadores as $dni => $datos) {
                 // Buscar la planilla y el jugador
                 $planilla = PlanillaJugador::where('partido_id', $request->partido_id)
+                    ->where('partido_type', $partidoType)
                     ->where('dni_jugador', $dni)
                     ->first();
 
@@ -429,7 +431,7 @@ class ControladorPlanillaJugador extends Controller
         // Redirigir de vuelta a la vista con un mensaje de éxito
         $mensaje = 'Jugadores actualizados correctamente.';
 
-        if ($tipoPartido === 'instanciaFinal') {
+        if (PartidoConstants::isInstanciaFinal($tipoPartido)) {
             return redirect()->route('planilla.show', array_merge([
                 'partidoId' => $request->partido_id,
                 'idEdicion' => $idEdicion,
@@ -558,7 +560,7 @@ class ControladorPlanillaJugador extends Controller
             Log::error('Error sincronizando Lista de Buena Fe al eliminar de planilla: '.$e->getMessage());
         }
 
-        if ($tipoPartido === 'instanciaFinal') {
+        if (PartidoConstants::isInstanciaFinal($tipoPartido)) {
             return redirect()->route('planilla.show', array_merge([
                 'partidoId' => $partidoId,
                 'idEdicion' => $idEdicion,
