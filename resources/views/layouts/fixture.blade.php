@@ -115,7 +115,7 @@
                     </div>
                 </div>
 
-                @if (!is_null($grupos) && $partidos->isNotEmpty())
+                @if (!is_null($grupos) && $grupos->isNotEmpty())
                     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
                         @foreach ($grupos as $g)
                             @php $partidosGrupo = $partidos->where('idGrupo', $g->id); @endphp
@@ -343,6 +343,8 @@
                         <div class="rounded-3xl border border-white/10 bg-white/5 px-6 py-12 text-center text-lg font-semibold text-white/70">
                             @if (is_null($grupos))
                                 Elegí una categoría en los filtros para ver los partidos disponibles.
+                            @elseif ($grupos->isEmpty())
+                                No hay grupos cargados para la selección actual.
                             @else
                                 No hay partidos cargados para la selección actual.
                             @endif

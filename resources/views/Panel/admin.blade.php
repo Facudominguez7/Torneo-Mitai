@@ -12,7 +12,7 @@
     <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
         aria-controls="sidebar-multi-level-sidebar" type="button"
         aria-expanded="false"
-        class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200">
+        class="fixed left-3 top-3 z-50 inline-flex items-center rounded-lg bg-white/95 p-2 text-sm text-gray-600 shadow-md backdrop-blur lg:hidden hover:bg-white focus:outline-none focus:ring-2 focus:ring-gray-200">
         <span class="sr-only">Open sidebar</span>
         <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
             xmlns="http://www.w3.org/2000/svg">
@@ -21,10 +21,11 @@
             </path>
         </svg>
     </button>
+    <div id="sidebar-backdrop" class="pointer-events-none fixed inset-0 z-30 bg-slate-900/50 opacity-0 transition-opacity duration-200 lg:hidden"></div>
     <aside id="sidebar-multi-level-sidebar"
-        class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full lg:translate-x-0"
+        class="fixed top-0 left-0 z-40 h-screen w-64 -translate-x-full overflow-y-auto shadow-xl transition-transform lg:translate-x-0 lg:shadow-none"
         aria-label="Sidebar">
-        <div class="h-full px-3 py-4 overflow-y-auto bg-gray-50">
+        <div class="h-full overflow-y-auto bg-gray-50 px-3 py-4 pb-24">
             <ul class="space-y-2 font-medium">
                 <li>
                     <a href="{{ route('home') }}"
@@ -370,43 +371,338 @@
             @endif
         </div>
     </aside>
-    <div class="flex min-h-screen flex-col lg:pl-64">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pt-14 pb-6 lg:pl-64 lg:pt-0">
+        @php
+            $nombreRutaActual = request()->route()?->getName() ?? '';
+            $rutaActualPath = request()->path();
+
+            $idEdicionContexto = $idEdicionActual ?? ($EdicionSeleccionada->id ?? request('idEdicion'));
+            $modulosContexto = [
+                'admin' => [
+                    'label' => 'Panel admin',
+                    'route' => route('admin', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'panel',
+                ],
+                'partido' => [
+                    'label' => 'Partidos',
+                    'route' => route('partido.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'competencia',
+                ],
+                'grupos' => [
+                    'label' => 'Grupos',
+                    'route' => route('grupos.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'competencia',
+                ],
+                'instancia_final' => [
+                    'label' => 'Instancias finales',
+                    'route' => route('instancia_final.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'competencia',
+                ],
+                'fecha' => [
+                    'label' => 'Fechas',
+                    'route' => route('fecha.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'competencia',
+                ],
+                'edicion' => [
+                    'label' => 'Ediciones',
+                    'route' => route('edicion.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'gestion',
+                ],
+                'categoria' => [
+                    'label' => 'Categorias',
+                    'route' => route('categoria.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'gestion',
+                ],
+                'equipo' => [
+                    'label' => 'Equipos',
+                    'route' => route('equipo.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'gestion',
+                ],
+                'equipoedicion' => [
+                    'label' => 'Equipos por edicion',
+                    'route' => route('equipoedicion.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'gestion',
+                ],
+                'lista_buena_fe' => [
+                    'label' => 'Lista de Buena Fe',
+                    'route' => route('lista-buena-fe.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'gestion',
+                ],
+                'jugador_consulta' => [
+                    'label' => 'Consulta de Jugador',
+                    'route' => route('jugador.consulta'),
+                    'grupo' => 'gestion',
+                ],
+                'institucion' => [
+                    'label' => 'Instituciones',
+                    'route' => route('institucion.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'gestion',
+                ],
+                'copa' => [
+                    'label' => 'Copas',
+                    'route' => route('copa.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'gestion',
+                ],
+                'fase' => [
+                    'label' => 'Fases',
+                    'route' => route('fase.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'gestion',
+                ],
+                'campeon' => [
+                    'label' => 'Campeones',
+                    'route' => route('campeon.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'estadisticas',
+                ],
+                'subcampeon' => [
+                    'label' => 'Subcampeones',
+                    'route' => route('subcampeon.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'estadisticas',
+                ],
+                'goleador' => [
+                    'label' => 'Goleadores',
+                    'route' => route('goleador.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'estadisticas',
+                ],
+                'valla' => [
+                    'label' => 'Vallas',
+                    'route' => route('valla.index', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'estadisticas',
+                ],
+            ];
+
+            $tipoSolicitado = request('tipo');
+            $aliasTipo = [
+                'equipogrupo' => 'grupos',
+                'lista-buena-fe' => 'lista_buena_fe',
+                'jugador.consulta' => 'jugador_consulta',
+            ];
+            $tipoSolicitado = $aliasTipo[$tipoSolicitado] ?? $tipoSolicitado;
+
+            $tipoContextoActual = null;
+            $deteccionesRuta = [
+                ['patterns' => ['admin', 'admin.*'], 'modulo' => 'admin'],
+                ['patterns' => ['partido.*', 'planilla.*', 'cargar-resultado'], 'modulo' => 'partido'],
+                ['patterns' => ['instancia_final', 'instancia_final.*', 'cargar-resultado-instancia'], 'modulo' => 'instancia_final'],
+                ['patterns' => ['grupos.*', 'equipogrupo.*'], 'modulo' => 'grupos'],
+                ['patterns' => ['fecha.*'], 'modulo' => 'fecha'],
+                ['patterns' => ['edicion.*'], 'modulo' => 'edicion'],
+                ['patterns' => ['categoria.*'], 'modulo' => 'categoria'],
+                ['patterns' => ['equipo.*'], 'modulo' => 'equipo'],
+                ['patterns' => ['equipoedicion.*'], 'modulo' => 'equipoedicion'],
+                ['patterns' => ['lista-buena-fe.*'], 'modulo' => 'lista_buena_fe'],
+                ['patterns' => ['jugador.*'], 'modulo' => 'jugador_consulta'],
+                ['patterns' => ['institucion.*'], 'modulo' => 'institucion'],
+                ['patterns' => ['copa.*'], 'modulo' => 'copa'],
+                ['patterns' => ['fase.*'], 'modulo' => 'fase'],
+                ['patterns' => ['campeon.*'], 'modulo' => 'campeon'],
+                ['patterns' => ['subcampeon.*'], 'modulo' => 'subcampeon'],
+                ['patterns' => ['goleador.*'], 'modulo' => 'goleador'],
+                ['patterns' => ['valla.*'], 'modulo' => 'valla'],
+            ];
+
+            foreach ($deteccionesRuta as $deteccion) {
+                foreach ($deteccion['patterns'] as $pattern) {
+                    if (request()->routeIs($pattern)) {
+                        $tipoContextoActual = $deteccion['modulo'];
+                        break 2;
+                    }
+                }
+            }
+
+            if (! $tipoContextoActual && Str::startsWith($rutaActualPath, 'Panel/planilla/')) {
+                $tipoContextoActual = 'partido';
+            }
+
+            if (! $tipoContextoActual && isset($modulosContexto[$tipoSolicitado])) {
+                $tipoContextoActual = $tipoSolicitado;
+            }
+
+            if (! $tipoContextoActual || ! isset($modulosContexto[$tipoContextoActual])) {
+                $tipoContextoActual = 'admin';
+            }
+
+            $opcionesPorGrupo = [
+                'panel' => ['admin', 'partido', 'grupos', 'instancia_final', 'categoria', 'campeon', 'jugador_consulta'],
+                'competencia' => ['admin', 'partido', 'grupos', 'instancia_final', 'fecha', 'jugador_consulta'],
+                'gestion' => ['admin', 'edicion', 'categoria', 'equipo', 'equipoedicion', 'institucion', 'lista_buena_fe', 'jugador_consulta', 'copa', 'fase'],
+                'estadisticas' => ['admin', 'campeon', 'subcampeon', 'goleador', 'valla', 'jugador_consulta'],
+            ];
+
+            $grupoContextoActual = $modulosContexto[$tipoContextoActual]['grupo'] ?? 'panel';
+            $tiposContextoDisponibles = $opcionesPorGrupo[$grupoContextoActual] ?? $opcionesPorGrupo['panel'];
+
+            if (! in_array($tipoContextoActual, $tiposContextoDisponibles, true)) {
+                array_unshift($tiposContextoDisponibles, $tipoContextoActual);
+            }
+
+            $opcionesContextoSelector = collect($tiposContextoDisponibles)
+                ->filter(fn ($modulo) => isset($modulosContexto[$modulo]))
+                ->map(fn ($modulo) => array_merge(['tipo' => $modulo], $modulosContexto[$modulo]))
+                ->values();
+
+            $labelContextoActual = $modulosContexto[$tipoContextoActual]['label'] ?? 'Panel admin';
+            $mostrarSelectorGlobal = ! request()->routeIs('seleccionar-categoria');
+
+            $idCategoriaContexto = request('idCategoria');
+            $idGrupoContexto = request('idGrupo');
+            $idFechaContexto = request('idFecha');
+            $idFaseContexto = request('idFase');
+            $idCopaContexto = request('idCopa');
+
+            $nombreCategoriaContexto = null;
+            if ($idCategoriaContexto) {
+                $nombreCategoriaContexto = $nombreCategoria ?? null;
+
+                if (! $nombreCategoriaContexto && isset($CategoriaSeleccionada)) {
+                    $nombreCategoriaContexto = $CategoriaSeleccionada->nombreCategoria ?? null;
+                }
+
+                if (! $nombreCategoriaContexto && isset($categorias)) {
+                    $categoriaEncontrada = collect($categorias)->firstWhere('id', (int) $idCategoriaContexto);
+                    $nombreCategoriaContexto = $categoriaEncontrada->nombreCategoria ?? $categoriaEncontrada->nombre ?? null;
+                }
+
+                if (! $nombreCategoriaContexto) {
+                    $nombreCategoriaContexto = \App\Models\Categoria::query()
+                        ->whereKey((int) $idCategoriaContexto)
+                        ->value('nombreCategoria');
+                }
+            }
+
+            $nombreGrupoContexto = null;
+            if ($idGrupoContexto) {
+                $nombreGrupoContexto = $nombreGrupo ?? null;
+
+                if (! $nombreGrupoContexto && isset($GrupoSeleccionado)) {
+                    $nombreGrupoContexto = $GrupoSeleccionado->nombre ?? null;
+                }
+
+                if (! $nombreGrupoContexto && isset($grupos)) {
+                    $grupoEncontrado = collect($grupos)->firstWhere('id', (int) $idGrupoContexto);
+                    $nombreGrupoContexto = $grupoEncontrado->nombre ?? null;
+                }
+
+                if (! $nombreGrupoContexto) {
+                    $nombreGrupoContexto = \App\Models\Grupo::query()
+                        ->whereKey((int) $idGrupoContexto)
+                        ->value('nombre');
+                }
+            }
+
+            $nombreFechaContexto = null;
+            if ($idFechaContexto) {
+                $nombreFechaContexto = $nombreFecha ?? null;
+
+                if (! $nombreFechaContexto && isset($fechas)) {
+                    $fechaEncontrada = collect($fechas)->firstWhere('id', (int) $idFechaContexto);
+                    $nombreFechaContexto = $fechaEncontrada->nombre ?? null;
+                }
+
+                if (! $nombreFechaContexto) {
+                    $nombreFechaContexto = \App\Models\Fecha::query()
+                        ->whereKey((int) $idFechaContexto)
+                        ->value('nombre');
+                }
+            }
+
+            $nombreFaseContexto = $idFaseContexto
+                ? (\App\Models\Fase::query()->whereKey((int) $idFaseContexto)->value('nombre') ?: null)
+                : null;
+
+            $nombreCopaContexto = $idCopaContexto
+                ? (\App\Models\Copa::query()->whereKey((int) $idCopaContexto)->value('nombre') ?: null)
+                : null;
+
+            $resumenContexto = array_filter([
+                'Categoria' => $nombreCategoriaContexto ?: ($idCategoriaContexto ? 'ID '.$idCategoriaContexto : null),
+                'Grupo' => $nombreGrupoContexto ?: ($idGrupoContexto ? 'ID '.$idGrupoContexto : null),
+                'Fecha' => $nombreFechaContexto ?: ($idFechaContexto ? 'ID '.$idFechaContexto : null),
+                'Fase' => $nombreFaseContexto ?: ($idFaseContexto ? 'ID '.$idFaseContexto : null),
+                'Copa' => $nombreCopaContexto ?: ($idCopaContexto ? 'ID '.$idCopaContexto : null),
+            ], static fn ($valor) => $valor !== null && $valor !== '');
+        @endphp
         @if (isset($EdicionSeleccionada))
-            <div class="flex justify-end">
+            <div class="mb-2 flex justify-center px-3 sm:px-4 lg:justify-end">
                 <div
-                    class="flex max-w-xs items-center rounded-lg border-l-4 border-[--color-secondary] bg-white p-4 shadow-md">
+                    class="flex w-full max-w-xs items-center rounded-lg border-l-4 border-[--color-secondary] bg-white p-3 shadow-md sm:p-4">
                     <div class="min-w-0">
-                        <h2 class="overflow-hidden text-ellipsis whitespace-nowrap text-lg font-semibold text-gray-800">
+                        <h2 class="overflow-hidden text-ellipsis whitespace-nowrap text-base font-semibold text-gray-800 sm:text-lg">
                             {{ $EdicionSeleccionada->nombre }}
                         </h2>
                     </div>
                 </div>
             </div>
         @endif
+
+        @if ($mostrarSelectorGlobal)
+            <div class="mb-3 px-3 sm:px-4">
+                <div class="rounded-xl border border-white/20 bg-white/10 p-3 shadow-sm backdrop-blur-sm sm:p-4">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100">Seleccionar contexto</p>
+                            <p class="text-sm font-semibold text-white sm:text-base">Módulo actual: {{ $labelContextoActual }}</p>
+                            <p class="mt-1 text-xs text-cyan-100">Opciones disponibles según este módulo</p>
+                            @if (! empty($resumenContexto))
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    @foreach ($resumenContexto as $clave => $valor)
+                                        <span class="rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-cyan-50">
+                                            {{ $clave }}: {{ $valor }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+
+                        <form action="{{ route('admin', ['idEdicion' => $idEdicionContexto]) }}" method="GET" id="selector-contexto-form"
+                            class="grid w-full grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-[480px]">
+                            <select name="tipo" id="selector-contexto-tipo"
+                                class="h-10 w-full rounded-lg border border-white/30 bg-white/95 px-3 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
+                                @foreach ($opcionesContextoSelector as $opcionContexto)
+                                    <option value="{{ $opcionContexto['tipo'] }}" data-destino="{{ $opcionContexto['route'] }}" {{ $tipoContextoActual === $opcionContexto['tipo'] ? 'selected' : '' }}>
+                                        {{ $opcionContexto['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="submit"
+                                class="inline-flex h-10 items-center justify-center rounded-lg bg-cyan-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700">
+                                Cambiar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         @if (Route::is('admin'))
-            <div class="flex flex-row flex-wrap justify-center mb-2 gap-2">
-                <div>
+            <div class="mb-3 grid grid-cols-1 gap-3 px-3 sm:grid-cols-2 sm:px-4 xl:grid-cols-4">
+                <div class="min-w-0">
                     <a
-                        href="{{ route('seleccionar-categoria', ['idEdicion' => $idEdicionActual, 'tipo' => 'equipogrupo']) }}">
-                        <button
-                            class="bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg">
-                            Agregar Equipo a Grupo
+                        href="{{ route('push.suscriptores', ['idEdicion' => $idEdicionContexto]) }}">
+                        <button type="button"
+                            class="group flex h-full min-h-[54px] w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-slate-900/75 px-4 py-2 text-sm font-semibold text-white shadow transition duration-200 hover:-translate-y-0.5 hover:bg-slate-900">
+                            <svg class="h-4 w-4 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            Notificaciones
                         </button>
                     </a>
                 </div>
-                <div>
-                    <a href="{{ route('partido.index', ['idEdicion' => $idEdicionActual]) }}">
-                        <button
-                            class="bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg">
+                <div class="min-w-0">
+                    <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto]) }}">
+                        <button type="button"
+                            class="group flex h-full min-h-[54px] w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-slate-900/75 px-4 py-2 text-sm font-semibold text-white shadow transition duration-200 hover:-translate-y-0.5 hover:bg-slate-900">
+                            <svg class="h-4 w-4 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
                             Partidos
                         </button>
                     </a>
                 </div>
 
                 {{-- Botón Imprimir Tabla de Posiciones (todas las categorías y grupos) --}}
-                <div>
-                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-tabla-posiciones', ['idEdicion' => $idEdicionActual ?? '']) }}')"
-                        class="bg-green-600 hover:bg-green-700 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg flex items-center gap-2">
+                <div class="min-w-0">
+                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-tabla-posiciones', ['idEdicion' => $idEdicionContexto ?? '']) }}')"
+                        class="flex h-full min-h-[54px] w-full items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-700">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
@@ -415,9 +711,9 @@
                 </div>
 
                 {{-- Botón Imprimir Fixture (todos los partidos) --}}
-                <div>
-                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-fixture', ['idEdicion' => $idEdicionActual ?? '']) }}')"
-                        class="bg-blue-600 hover:bg-blue-700 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg flex items-center gap-2">
+                <div class="min-w-0">
+                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-fixture', ['idEdicion' => $idEdicionContexto ?? '']) }}')"
+                        class="flex h-full min-h-[54px] w-full items-center justify-center gap-2 rounded-xl border border-blue-400/30 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition duration-200 hover:-translate-y-0.5 hover:bg-blue-700">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
@@ -427,13 +723,13 @@
 
             </div>
             <!-- Filtro de horario -->
-            <div class="flex justify-center w-auto">
-                <div class="relative inline-block text-left w-full md:w-64 filtro-fecha">
+            <div class="flex justify-center px-3 sm:px-4">
+                <div class="relative inline-block w-full text-left md:w-80 filtro-fecha">
                     <p class="text-center text-gray-800 font-semibold bg-gray-200 py-2 rounded-lg shadow-md mb-2">
                         Filtro por Horario
                     </p>
                     <form action="{{ route('admin', $parametrosEdicionActual) }}" method="GET"
-                        class="flex items-center gap-4">
+                        class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-4">
                         <div class="relative w-full">
                             <select id="horario" name="horario"
                                 class="appearance-none bg-white text-gray-800 font-medium border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none hover:border-gray-400 px-4 py-2 rounded-lg shadow-md w-full transition ease-in-out duration-200">
@@ -450,7 +746,7 @@
                             <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                         @endforeach
                         <button type="submit"
-                            class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-200">
+                            class="w-full rounded-lg bg-blue-600 px-4 py-2 font-bold text-white transition ease-in-out duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto">
                             Filtrar
                         </button>
                     </form>
@@ -464,47 +760,47 @@
                 @endif
             </div>
             @foreach ($partidos as $categoria => $partidosPorCategoria)
-                <div class="mr-5">
-                    <h1 class="text-4xl text-white font-bold text-center">{{ $categoria }}</h1>
+                <div class="px-3 sm:px-4">
+                    <h1 class="text-center text-2xl font-bold text-white sm:text-3xl lg:text-4xl">{{ $categoria }}</h1>
                 </div>
                 @php
                     $partidosPorFecha = $partidosPorCategoria->groupBy('nombre_fecha');
                 @endphp
                 @foreach ($partidosPorFecha as $fecha => $partidos)
-                    <h3 class="text-3xl text-white font-semibold my-2 text-center">{{ $fecha }}
+                    <h3 class="my-2 text-center text-xl font-semibold text-white sm:text-2xl lg:text-3xl">{{ $fecha }}
                     </h3>
                     @foreach ($partidos as $p)
-                        <div class="flex justify-center mb-5">
-                            <div class="grid gap-6 p-1 bg-gray-50 w-full md:w-1/2">
-                                <div class="rounded-lg shadow-lg overflow-x-auto md:overflow-x-visible">
-                                    <div class="flex flex-col md:flex-row items-center justify-between md:px-6 py-4 border-b">
-                                        <div class="flex items-center gap-4">
+                        <div class="mb-5 flex justify-center px-3 sm:px-4">
+                            <div class="grid w-full gap-4 bg-gray-50 p-2 sm:p-3 lg:w-11/12 xl:w-3/4 2xl:w-1/2">
+                                <div class="overflow-x-auto rounded-lg shadow-lg md:overflow-x-visible">
+                                    <div class="flex flex-col items-center justify-between gap-3 border-b px-3 py-4 sm:px-4 md:flex-row md:px-6">
+                                        <div class="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-4 sm:text-left">
                                             <img src="{{ asset('fotos/equipos/' . $p->foto_local) }}" width="40" height="40" alt="Escudo {{ $p->nombre_local }}"
                                                 class="object-cover" />
-                                            <div class="font-medium text-lg">{{ $p->nombre_local }}</div>
+                                            <div class="text-base font-medium sm:text-lg">{{ $p->nombre_local }}</div>
                                             <div class="text-gray-500">vs</div>
-                                            <div class="font-medium text-lg">{{ $p->nombre_visitante }}</div>
+                                            <div class="text-base font-medium sm:text-lg">{{ $p->nombre_visitante }}</div>
                                             <img src="{{ asset('fotos/equipos/' . $p->foto_visitante) }}" width="40" height="40" alt="Escudo {{ $p->nombre_visitante }}"
                                                 class="object-cover" />
                                         </div>
-                                        <div class="text-2xl font-bold mt-4 md:mt-0 text-center text-[--color-primary]">
+                                        <div class="mt-1 text-center text-xl font-bold text-[--color-primary] sm:text-2xl md:mt-0">
                                             {{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}
                                         </div>
                                     </div>
-                                    <div class="flex flex-col md:flex-row items-center justify-between px-6 py-2 text-muted-foreground">
-                                        <div class="flex items-center gap-2 mb-2 md:mb-0">
+                                    <div class="flex flex-col items-center justify-between gap-2 px-3 py-3 text-muted-foreground sm:px-4 md:flex-row md:px-6">
+                                        <div class="mb-1 flex items-center gap-2 md:mb-0">
                                             <span
-                                                class="text-xl">{{ \Carbon\Carbon::parse($p->horario_datetime)->format('d-m-Y H:i') }}</span>
+                                                class="text-base sm:text-lg">{{ \Carbon\Carbon::parse($p->horario_datetime)->format('d-m-Y H:i') }}</span>
                                         </div>
                                         <div class="flex flex-col items-center gap-2">
-                                            <span>Cancha {{ $p->cancha }}</span>
+                                            <span class="text-sm sm:text-base">Cancha {{ $p->cancha }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="flex justify-center my-2">
                                     <a
-                                        href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $idEdicionActual, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0]) }}">
-                                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                        href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $idEdicionContexto, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0]) }}">
+                                        <button class="w-full rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 sm:w-auto">
                                             Planillas
                                         </button>
                                     </a>
@@ -515,11 +811,22 @@
                 @endforeach
             @endforeach
         @endif
-        <div class="mt-0 flex flex-grow items-center justify-center lg:pl-0">
-            <section class="w-full md:w-3/4 px-4 md:px-0">
+        @php
+            $nombreRutaActual = request()->route()?->getName() ?? '';
+            $esVistaShow = Str::endsWith($nombreRutaActual, '.show');
+            $esVistaAdmin = request()->routeIs('admin');
+            $clasesContenedorPrincipal = $esVistaAdmin
+                ? 'mt-0 flex flex-grow items-center justify-center lg:pl-0'
+                : 'mt-0 flex flex-grow justify-center lg:pl-0';
+            $clasesSeccionPrincipal = $esVistaAdmin
+                ? 'w-full min-w-0 px-3 sm:px-4 lg:w-3/4 lg:px-0'
+                : 'w-full min-w-0 px-3 sm:px-4 lg:px-6';
+        @endphp
+        <div class="{{ $clasesContenedorPrincipal }}">
+            <section class="{{ $clasesSeccionPrincipal }} panel-admin-content">
                 @if (session('status'))
                     <div class="flex justify-center">
-                        <div id="status-message" class="flex items-center rounded-xl bg-white p-4 shadow-lg w-1/2">
+                        <div id="status-message" class="flex w-full items-center rounded-xl bg-white p-4 shadow-lg sm:w-11/12 lg:w-1/2">
                             <div class="flex h-10 w-10 items-center justify-center bg-blue-300 rounded-xl">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                     viewBox="0 0 512 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
@@ -540,7 +847,7 @@
                         }, 8000);
                     </script>
                 @endif
-                @if (Str::endsWith(request()->route()->getName(), '.show'))
+                @if ($esVistaShow)
                     @yield('detalle')
                 @else
                     @yield('contenido')

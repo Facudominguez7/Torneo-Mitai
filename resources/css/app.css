@@ -26,3 +26,32 @@
 .card {
     @apply p-6 rounded shadow-sm
 }
+
+.panel-admin-content {
+    width: 100%;
+    max-width: 100%;
+}
+
+.panel-admin-content .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+    .panel-admin-content > .flex.items-center.justify-center.p-12 {
+        padding: 0.75rem;
+    }
+
+    .panel-admin-content [class*="max-w-[550px]"] {
+        max-width: 100%;
+    }
+
+    .panel-admin-content [class*="max-w-2xl"] {
+        max-width: 100%;
+    }
+
+    .panel-admin-content h1,
+    .panel-admin-content h2,
+    .panel-admin-content h3 {
+        overflow-wrap: anywhere;
+    }
+}

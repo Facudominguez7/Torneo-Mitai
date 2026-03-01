@@ -7,22 +7,17 @@ use App\Http\Requests\Partido\StoreRequest;
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
-use App\Models\EquipoGrupo;
 use App\Models\Fecha;
 use App\Models\Grupo;
-use App\Models\Jugador;
 use App\Models\Partido;
-use App\Models\PlanillaJugador;
-use App\Models\User;
-use App\Notifications\ResultadoCargado;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class ControladorPartidos extends Controller
 {
     protected $partidoService;
+
     use SeleccionarCategoriaTrait;
 
     public function __construct(PartidoService $partidoService)
@@ -30,6 +25,13 @@ class ControladorPartidos extends Controller
         $this->partidoService = $partidoService;
     }
 
+    /**
+     * Lista partidos aplicando filtros de edición, categoría, grupo y fecha.
+     *
+     * Regla UX: cuando se selecciona una categoría que tiene un único grupo
+     * disponible, se aplica automáticamente ese grupo para evitar un paso extra
+     * y mantener coherencia en enlaces/acciones del contexto.
+     */
     public function index(Request $request)
     {
         $ediciones = Edicion::all();
@@ -38,6 +40,24 @@ class ControladorPartidos extends Controller
         $idGrupo = $request->idGrupo;
         $idCategoria = $request->idCategoria;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
+        if ($idEdicion && $idCategoria && ! $idGrupo) {
+            $gruposCategoria = Grupo::where('idEdicion', $idEdicion)
+                ->where('idCategoria', $idCategoria)
+                ->orderBy('id')
+                ->get(['id']);
+
+            if ($gruposCategoria->count() === 1) {
+                return to_route('partido.index', array_filter([
+                    'idEdicion' => $idEdicion,
+                    'idCategoria' => $idCategoria,
+                    'idGrupo' => $gruposCategoria->first()->id,
+                    'idFecha' => $idFecha,
+                    'horario' => $request->query('horario'),
+                    'busqueda' => $request->query('busqueda'),
+                ], static fn ($valor) => $valor !== null && $valor !== ''));
+            }
+        }
 
         $query = Partido::where('partidos.idEdicion', $idEdicion);
 
@@ -97,12 +117,27 @@ class ControladorPartidos extends Controller
         return view('Panel.partido.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fechas', 'categorias', 'grupos', 'idCategoria', 'idGrupo'));
     }
 
+    /**
+     * Mostrar formulario de partido regular con validación de contexto.
+     *
+     * El alta regular requiere edición, categoría y grupo. Si falta alguno,
+     * se redirige al selector para mantener un flujo guiado y consistente.
+     */
     public function create(Request $request)
     {
         $ediciones = Edicion::all();
         $idEdicion = $request->idEdicion;
         $idCategoria = $request->idCategoria;
         $idGrupo = $request->idGrupo;
+
+        if (! $idGrupo || ! $idCategoria || ! $idEdicion) {
+            return to_route('seleccionar-categoria', [
+                'idEdicion' => $idEdicion,
+                'idCategoria' => $idCategoria,
+                'tipo' => 'partido',
+            ])->with('error', 'Primero selecciona categoría y grupo para cargar un partido regular.');
+        }
+
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $GrupoSeleccionado = $idGrupo ? Grupo::find($idGrupo) : null;
         $CategoriaSeleccionada = $idCategoria ? Categoria::find($idCategoria) : null;
@@ -128,15 +163,31 @@ class ControladorPartidos extends Controller
         }
         $grupo = Grupo::where('id', $idGrupo)->select('id', 'nombre')->get();
         $partido = new Partido();
-        return view('Panel.partido.create', compact('ediciones', 'partido', 'EdicionSeleccionada', 'GrupoSeleccionado', 'fechas', 'equipos',  'grupo', 'idGrupo', 'idCategoria', 'CategoriaSeleccionada'));
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'idGrupo' => $idGrupo,
+        ]);
+
+        return view('Panel.partido.create', compact('ediciones', 'partido', 'EdicionSeleccionada', 'GrupoSeleccionado', 'fechas', 'equipos', 'grupo', 'idGrupo', 'idCategoria', 'CategoriaSeleccionada', 'parametrosRegreso'));
     }
 
+    /**
+     * Guarda un partido regular y regresa al listado preservando filtros activos.
+     */
     public function store(StoreRequest $request)
     {
         $data = $request->validated();
         Partido::create($data);
-        $idEdicion = $data['idEdicion'];
-        return to_route('partido.index', ['idEdicion' => $idEdicion])->with('status', 'Partido creado con éxito.');
+
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $data['idEdicion'],
+            'idCategoria' => $data['idCategoria'] ?? $request->input('idCategoria'),
+            'idGrupo' => $data['idGrupo'] ?? $request->input('idGrupo'),
+            'idFecha' => $request->input('idFechas') ?: $request->input('idFecha'),
+        ]);
+
+        return to_route('partido.index', $parametrosRegreso)->with('status', 'Partido creado con éxito.');
     }
 
     /**
@@ -149,17 +200,17 @@ class ControladorPartidos extends Controller
         $idCategoria = $request->idCategoria;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $CategoriaSeleccionada = $idCategoria ? Categoria::find($idCategoria) : null;
-        
+
         $fechas = Fecha::where('idEdicion', $idEdicion)
             ->select('id', 'nombre')
             ->orderBy('id')
             ->get();
-        
+
         // Obtener todos los grupos de esta categoría
         $grupos = Grupo::where('idCategoria', $idCategoria)
             ->where('idEdicion', $idEdicion)
             ->get();
-        
+
         // Obtener equipos de todos los grupos de la categoría con su grupo
         $equipos = collect();
         foreach ($grupos as $grupo) {
@@ -170,22 +221,28 @@ class ControladorPartidos extends Controller
                 ->map(function ($equipo) use ($grupo) {
                     $equipo->grupo_nombre = $grupo->nombre;
                     $equipo->grupo_id = $grupo->id;
+
                     return $equipo;
                 });
             $equipos = $equipos->merge($equiposGrupo);
         }
-        
+
         $partido = new Partido();
-        
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+        ]);
+
         return view('Panel.partido.create-interzonal', compact(
-            'ediciones', 
-            'partido', 
-            'EdicionSeleccionada', 
+            'ediciones',
+            'partido',
+            'EdicionSeleccionada',
             'CategoriaSeleccionada',
-            'fechas', 
+            'fechas',
             'equipos',
             'grupos',
-            'idCategoria'
+            'idCategoria',
+            'parametrosRegreso'
         ));
     }
 
@@ -207,10 +264,16 @@ class ControladorPartidos extends Controller
         // Para interzonales, idGrupo será null ya que no pertenece a un grupo específico
         $data['idGrupo'] = null;
         $data['es_interzonal'] = true;
-        
+
         Partido::create($data);
-        
-        return to_route('partido.index', ['idEdicion' => $data['idEdicion']])
+
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $data['idEdicion'],
+            'idCategoria' => $data['idCategoria'],
+            'idFecha' => $data['idFechas'] ?? null,
+        ]);
+
+        return to_route('partido.index', $parametrosRegreso)
             ->with('status', 'Partido interzonal creado con éxito.');
     }
 
@@ -219,7 +282,10 @@ class ControladorPartidos extends Controller
         return view('partidos.show', compact('partido'));
     }
 
-    public function edit(Partido $partido)
+    /**
+     * Muestra la edición del partido manteniendo parámetros de regreso.
+     */
+    public function edit(Request $request, Partido $partido)
     {
         // Cargar datos auxiliares similares a create(), basados en el partido
         $ediciones = Edicion::all();
@@ -262,6 +328,13 @@ class ControladorPartidos extends Controller
         }
         $grupo = Grupo::where('id', $idGrupo)->select('id', 'nombre')->get();
 
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'idGrupo' => $idGrupo,
+            'idFecha' => $partido->idFechas,
+        ]);
+
         return view('Panel.partido.edit', compact(
             'partido',
             'ediciones',
@@ -272,10 +345,14 @@ class ControladorPartidos extends Controller
             'equipos',
             'grupo',
             'idGrupo',
-            'idCategoria'
+            'idCategoria',
+            'parametrosRegreso'
         ));
     }
 
+    /**
+     * Actualiza un partido y regresa al listado con el mismo contexto de filtros.
+     */
     public function update(StoreRequest $request, Partido $partido)
     {
         $data = $request->validated();
@@ -284,16 +361,38 @@ class ControladorPartidos extends Controller
         // No permitir cambiar Edición, Grupo y Categoría desde editar
         unset($data['idEdicion'], $data['idGrupo'], $data['idCategoria']);
         $partido->update($data);
-        return to_route('partido.index', ['idEdicion' => $partido->idEdicion])
+
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $partido->idEdicion,
+            'idCategoria' => $partido->idCategoria,
+            'idGrupo' => $partido->idGrupo,
+            'idFecha' => $partido->idFechas,
+        ]);
+
+        return to_route('partido.index', $parametrosRegreso)
             ->with('status', 'Partido actualizado con éxito.');
     }
 
-    public function destroy(Partido $partido)
+    /**
+     * Elimina un partido y vuelve al listado contextual del módulo.
+     */
+    public function destroy(Request $request, Partido $partido)
     {
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $partido->idEdicion,
+            'idCategoria' => $partido->idCategoria,
+            'idGrupo' => $partido->idGrupo,
+            'idFecha' => $partido->idFechas,
+        ]);
+
         $partido->delete();
-        return redirect()->route('partidos.index')->with('status', 'Partido eliminado con éxito.');
+
+        return to_route('partido.index', $parametrosRegreso)->with('status', 'Partido eliminado con éxito.');
     }
 
+    /**
+     * Carga el resultado del partido y preserva filtros al regresar.
+     */
     public function cargarResultado(Request $request, Partido $partido)
     {
         $ediciones = Edicion::all();
@@ -301,6 +400,12 @@ class ControladorPartidos extends Controller
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $idPartido = $request->idPartido;
         $partido = Partido::with(['equipoLocal', 'equipoVisitante', 'grupo', 'categoria'])->findOrFail($idPartido);
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $request->input('idCategoria') ?: $partido->idCategoria,
+            'idGrupo' => $request->input('idGrupo') ?: $partido->idGrupo,
+            'idFecha' => $request->input('idFecha') ?: $partido->idFechas,
+        ]);
 
         if ($request->isMethod('post')) {
             $datosValidados = $request->validate([
@@ -315,61 +420,41 @@ class ControladorPartidos extends Controller
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoLocal, $partido->idEdicion, $partido->idGrupo);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoVisitante, $partido->idEdicion, $partido->idGrupo);
 
-            // Las notificaciones se envían desde el frontend via AJAX por lotes
-            // para evitar bloquear la respuesta al usuario
-
-            // Si es AJAX, devolvemos el partido_id para que el frontend envíe notificaciones por lotes
+            // Si es AJAX, devolvemos confirmación simple de guardado.
             if ($request->wantsJson()) {
                 return response()->json([
-                    'success' => true, 
+                    'success' => true,
                     'message' => 'Resultado guardado.',
-                    'partido_id' => $partido->id
                 ]);
             }
 
-            return to_route('partido.index', ['idEdicion' => $idEdicion])->with('status', 'Resultado guardado. Notificaciones enviándose en segundo plano.');
+            return to_route('partido.index', $parametrosRegreso)->with('status', 'Resultado guardado con éxito.');
         }
 
-        return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada'));
+        return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada', 'parametrosRegreso'));
     }
 
     /**
-     * Enviar notificación push a todos los usuarios suscritos cuando se carga un resultado.
+     * Construye parámetros de navegación para conservar filtros y reducir clicks.
+     *
+     * @param  array<string, mixed>  $sobrescrituras
+     * @return array<string, mixed>
      */
-    private function enviarNotificacionResultado(Partido $partido, int $golesLocal, int $golesVisitante): void
+    private function construirParametrosRegreso(Request $request, array $sobrescrituras = []): array
     {
-        try {
-            $datosPartido = (object) [
-                'id' => $partido->id,
-                'idEdicion' => $partido->idEdicion,
-                'nombre_local' => $partido->equipoLocal->nombre ?? 'Equipo Local',
-                'nombre_visitante' => $partido->equipoVisitante->nombre ?? 'Equipo Visitante',
-                'golesEquipoLocal' => $golesLocal,
-                'golesEquipoVisitante' => $golesVisitante,
-                'nombre_categoria' => $partido->categoria->nombreCategoria ?? '',
-            ];
+        $parametros = [
+            'idEdicion' => $sobrescrituras['idEdicion'] ?? $request->input('idEdicion'),
+            'idCategoria' => $sobrescrituras['idCategoria'] ?? $request->input('idCategoria') ?? $request->input('retorno_idCategoria'),
+            'idGrupo' => $sobrescrituras['idGrupo'] ?? $request->input('idGrupo') ?? $request->input('retorno_idGrupo'),
+            'idFecha' => $sobrescrituras['idFecha'] ?? $request->input('idFecha') ?? $request->input('retorno_idFecha'),
+            'horario' => $sobrescrituras['horario'] ?? $request->input('horario') ?? $request->input('retorno_horario'),
+            'busqueda' => $sobrescrituras['busqueda'] ?? $request->input('busqueda') ?? $request->input('retorno_busqueda'),
+        ];
 
-            $usuariosSuscritos = User::where(function ($q) {
-                $q->where(function($q2) {
-                    $q2->where('email_subscribed', true)
-                       ->whereNotNull('email_verified_at');
-                })
-                ->orWhereHas('pushSubscriptions');
-            })->get();
-
-            foreach ($usuariosSuscritos as $usuario) {
-                $usuario->notify(new ResultadoCargado($datosPartido));
-            }
-
-            Log::info('Notificaciones push enviadas', [
-                'partido_id' => $partido->id,
-                'usuarios_notificados' => $usuariosSuscritos->count(),
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error enviando notificaciones push', [
-                'partido_id' => $partido->id,
-                'error' => $e->getMessage(),
-            ]);
+        if (! isset($sobrescrituras['idFecha']) && $request->filled('idFechas')) {
+            $parametros['idFecha'] = $request->input('idFechas');
         }
+
+        return array_filter($parametros, static fn ($valor) => $valor !== null && $valor !== '');
     }
 }

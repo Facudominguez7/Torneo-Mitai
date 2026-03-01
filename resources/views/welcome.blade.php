@@ -2,7 +2,7 @@
 <html lang="es">
 @include('head')
 
-<body class="bg-[--color-primary]">
+<body class="bg-black">
     @include('layouts.navigation')
     <main>
         {{-- Alertas del sistema --}}
@@ -409,7 +409,7 @@
     </main>
     <footer class="bg-black text-white text-center py-6 mt-10">
         <p class="text-sm md:text-base">&copy; Mita'í {{ date('Y') }}. Todos los derechos reservados.</p>
-        <p class="text-sm md:text-base mt-2">Sitio desarrollado por <span class="font-semibold">Facundo Díaz
+        <p class="text-sm md:text-base mt-2">Sitio desarrollado por <span class="font-semibold">Ing. Facundo Díaz
                 Domínguez</span>.</p>
         <p class="mt-4">
             <a href="https://www.linkedin.com/in/facundo-diaz-dominguez-0a826b230"

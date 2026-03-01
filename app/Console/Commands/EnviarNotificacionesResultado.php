@@ -55,12 +55,13 @@ class EnviarNotificacionesResultado extends Command
 
             $notificacion = new ResultadoCargado($datosPartido);
 
-            // Obtener usuarios (Email verificado O Push)
-            // Usamos chunk para memoria eficiente, aunque en background no es tan critico como en web
+            // Obtener usuarios notificables (Email habilitado o Push)
+            // Se incluyen correos no verificados para priorizar alcance,
+            // manteniendo la baja en cada email enviado.
             User::where(function ($q) {
                 $q->where(function($q2) {
                     $q2->where('email_subscribed', true)
-                       ->whereNotNull('email_verified_at');
+                       ->whereNotNull('email');
                 })
                 ->orWhereHas('pushSubscriptions');
             })->chunk(50, function ($users) use ($notificacion) {

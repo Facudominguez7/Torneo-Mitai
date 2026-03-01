@@ -1,23 +1,23 @@
 @extends('Panel.admin')
 
 @section('contenido')
-    <div class="container mx-auto px-4 py-6">
-        <h1 class="text-3xl font-bold mb-6 text-white">📋 Revisión de Jugadores</h1>
+    <div class="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
+        <h1 class="mb-6 text-2xl font-bold text-white sm:text-3xl">📋 Revisión de Jugadores</h1>
 
         <!-- Filtros y Búsqueda -->
         <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
             <div class="p-6">
                 <form method="GET" action="{{ route('lista-buena-fe.conflictivos') }}" class="space-y-4">
                     <!-- Tabs de Estado -->
-                    <div class="flex border-b border-gray-200 mb-4">
+                    <div class="mb-4 flex flex-wrap gap-2 border-b border-gray-200 pb-2 sm:gap-0 sm:pb-0">
                         <button type="submit" name="estado" value="pendientes"
-                            class="px-6 py-3 font-medium {{ ($estado ?? 'pendientes') === 'pendientes' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
+                            class="flex-1 rounded-md px-4 py-2 text-sm font-medium sm:flex-none sm:rounded-none sm:px-6 sm:py-3 sm:text-base {{ ($estado ?? 'pendientes') === 'pendientes' ? 'bg-indigo-50 text-indigo-600 sm:border-b-2 sm:border-indigo-600 sm:bg-transparent' : 'text-gray-500 hover:text-gray-700' }}">
                             <span class="flex items-center">
                                 🔴 Pendientes
                             </span>
                         </button>
                         <button type="submit" name="estado" value="resueltos"
-                            class="px-6 py-3 font-medium {{ ($estado ?? 'pendientes') === 'resueltos' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700' }}">
+                            class="flex-1 rounded-md px-4 py-2 text-sm font-medium sm:flex-none sm:rounded-none sm:px-6 sm:py-3 sm:text-base {{ ($estado ?? 'pendientes') === 'resueltos' ? 'bg-green-50 text-green-600 sm:border-b-2 sm:border-green-600 sm:bg-transparent' : 'text-gray-500 hover:text-gray-700' }}">
                             <span class="flex items-center">
                                 ✅ Resueltos
                             </span>
@@ -25,7 +25,7 @@
                     </div>
 
                     <!-- Filtros -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                         <!-- Búsqueda por Jugador -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -72,13 +72,13 @@
                     </div>
 
                     <!-- Botones -->
-                    <div class="flex justify-end space-x-3">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
                         <a href="{{ route('lista-buena-fe.conflictivos') }}" 
-                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                            class="w-full rounded-md bg-gray-300 px-4 py-2 text-center text-gray-700 hover:bg-gray-400 sm:w-auto">
                             Limpiar Filtros
                         </a>
                         <button type="submit" 
-                            class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                            class="w-full rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 sm:w-auto">
                             Aplicar Filtros
                         </button>
                     </div>
@@ -138,9 +138,9 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ($jugadores as $item)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-4 py-4 sm:px-6">
                                         <div class="flex items-center">
-                                            <div class="ml-4">
+                                            <div class="min-w-0 sm:ml-4">
                                                 <div class="text-sm font-medium text-gray-900">
                                                     {{ $item->jugador->nombre }} {{ $item->jugador->apellido }}
                                                 </div>
@@ -150,17 +150,17 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-4 py-4 sm:px-6">
                                         <div class="text-sm text-gray-900">{{ $item->equipo->nombre }}</div>
                                         <div class="text-sm text-gray-500">{{ $item->categoria->nombreCategoria }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="px-4 py-4 sm:px-6">
                                         <span
                                             class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                             {{ $item->edicion->nombre }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td class="px-4 py-4 sm:px-6">
                                         <div class="text-sm text-red-600 font-medium">
                                             {{ $item->motivo_conflicto ?? 'No especificado' }}
                                         </div>
@@ -171,21 +171,26 @@
                                         @endif
                                     </td>
                                     @if (($estado ?? 'pendientes') === 'resueltos')
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-4 py-4 text-sm text-gray-500 sm:px-6">
                                             {{ $item->resuelto_por ?? '-' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-4 py-4 text-sm text-gray-500 sm:px-6">
                                             {{ $item->fecha_resolucion ? $item->fecha_resolucion->format('d/m/Y H:i') : '-' }}
                                         </td>
                                     @else
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-4 py-4 text-sm text-gray-500 sm:px-6">
                                             {{ $item->created_at ? $item->created_at->format('d/m/Y H:i') : '-' }}
                                         </td>
                                     @endif
-                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    <td class="px-4 py-4 text-center text-sm font-medium sm:px-6">
                                         @if (($estado ?? 'pendientes') === 'pendientes')
-                                            <button onclick="openResolveModal({{ $item->id }}, '{{ $item->jugador->nombre }} {{ $item->jugador->apellido }}', '{{ $item->motivo_conflicto }}')"
-                                                class="text-green-600 hover:text-green-900 mr-3">
+                                            <button
+                                                type="button"
+                                                data-resolve-id="{{ $item->id }}"
+                                                data-jugador-nombre="{{ $item->jugador->nombre }} {{ $item->jugador->apellido }}"
+                                                data-motivo-conflicto="{{ $item->motivo_conflicto }}"
+                                                onclick="openResolveModalFromButton(this)"
+                                                class="mb-2 inline-block text-green-600 hover:text-green-900 sm:mb-0 sm:mr-3">
                                                 Resolver
                                             </button>
                                         @endif
@@ -236,17 +241,17 @@
                         ></textarea>
                     </div>
 
-                    <div class="flex justify-end space-x-3">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
                         <button 
                             type="button" 
                             onclick="closeResolveModal()" 
-                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                            class="w-full rounded-md bg-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-400 sm:w-auto"
                         >
                             Cancelar
                         </button>
                         <button 
                             type="submit" 
-                            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                            class="w-full rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700 sm:w-auto"
                         >
                             Marcar como Resuelto
                         </button>
@@ -262,6 +267,18 @@
             document.getElementById('modalMotivoConflicto').textContent = motivoConflicto || 'No especificado';
             document.getElementById('resolveForm').action = `/Panel/lista-buena-fe/resolver-conflicto/${id}`;
             document.getElementById('resolveModal').classList.remove('hidden');
+        }
+
+        function openResolveModalFromButton(button) {
+            if (!button) {
+                return;
+            }
+
+            const id = button.dataset.resolveId;
+            const jugadorNombre = button.dataset.jugadorNombre;
+            const motivoConflicto = button.dataset.motivoConflicto;
+
+            openResolveModal(id, jugadorNombre, motivoConflicto);
         }
 
         function closeResolveModal() {

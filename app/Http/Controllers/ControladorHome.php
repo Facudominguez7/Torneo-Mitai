@@ -44,10 +44,50 @@ class ControladorHome extends Controller
 
         return view('welcome', compact('ediciones', 'ultimaEdicion', 'EdicionSeleccionada', 'categorias', 'idEdicion', 'idCategoria', 'roles'));
     }
+    /**
+     * Renderiza el panel admin y redirige módulos desde el selector global.
+     *
+     * Regla de navegación:
+     * - Si llega `tipo`, se interpreta como cambio de módulo y se envía
+     *   al índice correspondiente preservando la edición activa.
+     * - Si no llega `tipo`, mantiene el comportamiento normal del dashboard.
+     */
     public function admin(Request $request)
     {
         $ediciones = Edicion::all();
         $idEdicion = $request->query('idEdicion');
+        $tipoModulo = $request->query('tipo');
+
+        $rutasPorTipo = [
+            'admin' => 'admin',
+            'partido' => 'partido.index',
+            'grupos' => 'grupos.index',
+            'instancia_final' => 'instancia_final.index',
+            'fecha' => 'fecha.index',
+            'edicion' => 'edicion.index',
+            'categoria' => 'categoria.index',
+            'equipo' => 'equipo.index',
+            'equipoedicion' => 'equipoedicion.index',
+            'lista_buena_fe' => 'lista-buena-fe.index',
+            'jugador_consulta' => 'jugador.consulta',
+            'institucion' => 'institucion.index',
+            'copa' => 'copa.index',
+            'fase' => 'fase.index',
+            'campeon' => 'campeon.index',
+            'subcampeon' => 'subcampeon.index',
+            'goleador' => 'goleador.index',
+            'valla' => 'valla.index',
+            // Compatibilidad por enlaces viejos cacheados en navegador.
+            'equipogrupo' => 'grupos.index',
+            'lista-buena-fe' => 'lista-buena-fe.index',
+        ];
+
+        if ($tipoModulo && isset($rutasPorTipo[$tipoModulo])) {
+            return to_route($rutasPorTipo[$tipoModulo], array_filter([
+                'idEdicion' => $idEdicion,
+            ], static fn ($valor) => $valor !== null && $valor !== ''));
+        }
+
         $horarioString = $request->query('horario');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $busquedaFecha = $request->query('busqueda');
@@ -438,6 +478,12 @@ class ControladorHome extends Controller
         return view('layouts.fixture', compact('nombreFecha', 'nombreCategoria', 'grupos', 'ediciones', 'EdicionSeleccionada', 'categorias', 'idCategoria', 'CategoriaSeleccionada', 'fechas', 'partidos'));
     }
 
+    /**
+     * Mostrar tabla de posiciones con orden de desempate consistente.
+     *
+     * Regla de negocio: a igual puntaje, los equipos que ya disputaron
+     * al menos un partido deben ubicarse por encima de los que aun no jugaron.
+     */
     public function tablaPosiciones(Request $request)
     {
         $ediciones = Edicion::all();
@@ -459,7 +505,10 @@ class ControladorHome extends Controller
                     ->orWhere('tabla_posiciones.idEdicion', 0);
             })
             ->orderBy('tabla_posiciones.puntos', 'DESC')
+            ->orderByRaw('CASE WHEN tabla_posiciones.jugado > 0 THEN 1 ELSE 0 END DESC')
             ->orderBy('tabla_posiciones.diferenciaGoles', 'DESC')
+            ->orderBy('tabla_posiciones.golesFavor', 'DESC')
+            ->orderBy('equipos.nombre', 'ASC')
             ->get();
 
         return view('layouts.tabla-posiciones', compact('tablaPosiciones', 'EdicionSeleccionada', 'nombreCategoria', 'ediciones'));
@@ -650,7 +699,10 @@ class ControladorHome extends Controller
                             ->orWhere('tabla_posiciones.idEdicion', 0);
                     })
                     ->orderBy('tabla_posiciones.puntos', 'DESC')
+                    ->orderByRaw('CASE WHEN tabla_posiciones.jugado > 0 THEN 1 ELSE 0 END DESC')
                     ->orderBy('tabla_posiciones.diferenciaGoles', 'DESC')
+                    ->orderBy('tabla_posiciones.golesFavor', 'DESC')
+                    ->orderBy('equipos.nombre', 'ASC')
                     ->get();
 
                 if ($tablaPosiciones->isNotEmpty()) {
