@@ -1373,6 +1373,11 @@ class ControladorNotificacionesPush extends Controller
                 ->bcc($emails)
                 ->send($crearMailable());
 
+            // Registrar cada email enviado en el log para trazabilidad
+            foreach ($emails as $email) {
+                Log::channel('single')->info('Email enviado por BCC', ['email' => $email]);
+            }
+
             // Throttle server-side tras envío exitoso para no saturar SMTP
             sleep(self::SMTP_THROTTLE_SECONDS);
 
