@@ -69,6 +69,9 @@ class ControladorEdicion extends Controller
      * La edición se crea sin copiar equipos/categorías desde otras ediciones.
      * La asociación de equipos históricos se realiza exclusivamente desde
      * "Agregar Equipo de una Edición Anterior" en el módulo de equipos.
+     *
+     * Además, guarda la cantidad configurable de jugadores por planilla,
+     * que se usa como límite operativo de Lista de Buena Fe en la edición.
      */
     public function store(StoreRequest $request)
     {
@@ -76,6 +79,7 @@ class ControladorEdicion extends Controller
 
         Edicion::create([
             'nombre' => $data['nombre'],
+            'jugadores_por_planilla' => $data['jugadores_por_planilla'],
         ]);
 
         return to_route('edicion.index')->with('status', 'Edición creada con éxito.');

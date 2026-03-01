@@ -10,12 +10,11 @@ use App\Models\EquipoEdicion;
 use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
 use App\Models\PlanillaJugador;
+use App\Services\EstadisticasService;
+use App\Services\ValidadorReglasJugador;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
-use App\Services\EstadisticasService;
-use App\Services\ValidadorReglasJugador;
 
 class ControladorListaBuenaFe extends Controller
 {
@@ -25,6 +24,7 @@ class ControladorListaBuenaFe extends Controller
     {
         $this->validadorReglas = $validadorReglas;
     }
+
     /**
      * Construye el listado base de gestión para que filtros de edición, categoría
      * y búsqueda se reutilicen también en la impresión masiva.
@@ -36,6 +36,7 @@ class ControladorListaBuenaFe extends Controller
         $search = $request->get('search');
 
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : Edicion::latest()->first();
+        $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada);
         $ediciones = Edicion::all();
 
         if ($EdicionSeleccionada) {
@@ -59,14 +60,14 @@ class ControladorListaBuenaFe extends Controller
             $jugadoresPorCategoria = $estadisticasService->obtenerJugadoresPorCategoriaDosUltimasFechas($EdicionSeleccionada->id);
         }
 
-        // Obtener equipos con más de 18 jugadores en la lista de buena fe
+        // Obtener equipos que superan el límite configurado en la edición.
         $equiposExcedidos = [];
         if ($EdicionSeleccionada) {
             $equiposExcedidos = ListaBuenaFe::select('idEquipo', 'idCategoria', DB::raw('count(*) as total'))
                 ->where('idEdicion', $EdicionSeleccionada->id)
                 ->where('activo', true)
                 ->groupBy('idEquipo', 'idCategoria')
-                ->having('total', '>', 18)
+                ->having('total', '>', $limiteJugadoresPorPlanilla)
                 ->with(['equipo', 'categoria']) // Cargar relaciones
                 ->get();
         }
@@ -79,7 +80,8 @@ class ControladorListaBuenaFe extends Controller
             'idCategoria',
             'estadisticasJugadores',
             'jugadoresPorCategoria',
-            'equiposExcedidos'
+            'equiposExcedidos',
+            'limiteJugadoresPorPlanilla'
         ));
     }
 
@@ -94,6 +96,7 @@ class ControladorListaBuenaFe extends Controller
             ->firstOrFail();
 
         $EdicionSeleccionada = Edicion::findOrFail($idEdicion);
+        $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada);
 
         // Obtener jugadores de la lista de buena fe (activos e inactivos)
         $jugadoresActivos = ListaBuenaFe::with('jugador', 'categoria')
@@ -121,7 +124,8 @@ class ControladorListaBuenaFe extends Controller
             'jugadoresInactivos',
             'estadisticasJugadores',
             'jugadoresPorCategoria',
-            'ediciones'
+            'ediciones',
+            'limiteJugadoresPorPlanilla'
         ));
     }
 
@@ -137,6 +141,7 @@ class ControladorListaBuenaFe extends Controller
             ->firstOrFail();
 
         $EdicionSeleccionada = Edicion::findOrFail($idEdicion);
+        $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada);
 
         $jugadoresActivos = ListaBuenaFe::with('jugador', 'categoria')
             ->deEquipo($idEquipo, $idEdicion)
@@ -146,7 +151,8 @@ class ControladorListaBuenaFe extends Controller
         return view('Panel.lista-buena-fe.imprimir', compact(
             'EdicionSeleccionada',
             'equipoSeleccionado',
-            'jugadoresActivos'
+            'jugadoresActivos',
+            'limiteJugadoresPorPlanilla'
         ));
     }
 
@@ -161,6 +167,7 @@ class ControladorListaBuenaFe extends Controller
         $search = $request->get('search');
 
         $EdicionSeleccionada = Edicion::findOrFail($idEdicion);
+        $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada);
         $equipos = $this->obtenerEquiposFiltrados($idEdicion, $idCategoria, $search);
 
         $jugadoresActivos = ListaBuenaFe::with(['jugador', 'categoria'])
@@ -178,7 +185,8 @@ class ControladorListaBuenaFe extends Controller
         return view('Panel.lista-buena-fe.imprimir-todas', compact(
             'EdicionSeleccionada',
             'equipos',
-            'jugadoresActivos'
+            'jugadoresActivos',
+            'limiteJugadoresPorPlanilla'
         ));
     }
 
@@ -205,7 +213,7 @@ class ControladorListaBuenaFe extends Controller
             'jugadoresActivos'
         ));
 
-        return $pdf->download('Lista_Buena_Fe_' . $equipoSeleccionado->equipo->nombre . '.pdf');
+        return $pdf->download('Lista_Buena_Fe_'.$equipoSeleccionado->equipo->nombre.'.pdf');
     }
 
     /**
@@ -249,13 +257,13 @@ class ControladorListaBuenaFe extends Controller
             $request->fecha_nacimiento
         );
 
-        Log::info("Resultado validación:", $resultadoValidacion ?? ['null']);
+        Log::info('Resultado validación:', $resultadoValidacion ?? ['null']);
 
         if ($resultadoValidacion && $resultadoValidacion['type'] === 'error') {
             return redirect()->back()->with('error', $resultadoValidacion['message']);
         }
 
-        if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning' && !$request->boolean('force')) {
+        if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning' && ! $request->boolean('force')) {
             return redirect()->back()
                 ->withInput()
                 ->with('warning', $resultadoValidacion['message'])
@@ -308,8 +316,9 @@ class ControladorListaBuenaFe extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al agregar jugador: " . $e->getMessage());
-            return redirect()->back()->with('error', 'Ocurrió un error al agregar el jugador: ' . $e->getMessage())->withInput();
+            Log::error('Error al agregar jugador: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Ocurrió un error al agregar el jugador: '.$e->getMessage())->withInput();
         }
     }
 
@@ -319,49 +328,49 @@ class ControladorListaBuenaFe extends Controller
     public function conflictivos(Request $request)
     {
         $ediciones = Edicion::all();
-        $EdicionSeleccionada = $request->get('idEdicion') 
+        $EdicionSeleccionada = $request->get('idEdicion')
             ? Edicion::find($request->get('idEdicion'))
             : Edicion::orderBy('id', 'desc')->first();
-        
+
         // Filtro de estado (pendientes o resueltos)
         $estado = $request->get('estado', 'pendientes'); // default: pendientes
-        
+
         // Query base
         $query = ListaBuenaFe::with(['jugador', 'equipo', 'edicion', 'categoria'])
             ->where('conflictivo', true)
             ->where('activo', true);
-        
+
         // Filtrar por estado de resolución
         if ($estado === 'resueltos') {
             $query->where('resuelto', true);
         } else {
             $query->where('resuelto', false);
         }
-        
+
         // Filtrar por edición si se especifica
         if ($request->has('idEdicion') && $request->get('idEdicion')) {
             $query->where('idEdicion', $request->get('idEdicion'));
         }
-        
+
         // Búsqueda por jugador (DNI, nombre, apellido)
-        if ($request->has('search') && !empty($request->get('search'))) {
+        if ($request->has('search') && ! empty($request->get('search'))) {
             $search = $request->get('search');
-            $query->where(function($q) use ($search) {
-                $q->where('dni_jugador', 'LIKE', '%' . $search . '%')
-                  ->orWhereHas('jugador', function($subQ) use ($search) {
-                      $subQ->where('nombre', 'LIKE', '%' . $search . '%')
-                           ->orWhere('apellido', 'LIKE', '%' . $search . '%');
-                  });
+            $query->where(function ($q) use ($search) {
+                $q->where('dni_jugador', 'LIKE', '%'.$search.'%')
+                    ->orWhereHas('jugador', function ($subQ) use ($search) {
+                        $subQ->where('nombre', 'LIKE', '%'.$search.'%')
+                            ->orWhere('apellido', 'LIKE', '%'.$search.'%');
+                    });
             });
         }
-        
+
         // Filtrar por equipo si se especifica
         if ($request->has('idEquipo') && $request->get('idEquipo')) {
             $query->where('idEquipo', $request->get('idEquipo'));
         }
-        
+
         $jugadores = $query->orderBy('created_at', 'desc')->get();
-        
+
         // Obtener equipos para filtro
         $equipos = [];
         if ($EdicionSeleccionada) {
@@ -373,8 +382,8 @@ class ControladorListaBuenaFe extends Controller
         }
 
         return view('Panel.lista-buena-fe.conflictivos', compact(
-            'jugadores', 
-            'ediciones', 
+            'jugadores',
+            'ediciones',
             'EdicionSeleccionada',
             'estado',
             'equipos'
@@ -392,23 +401,24 @@ class ControladorListaBuenaFe extends Controller
 
         try {
             $listaBuenaFe = ListaBuenaFe::findOrFail($id);
-            
+
             // Si el jugador es conflictivo y no está resuelto, resolver automáticamente
-            if ($listaBuenaFe->conflictivo && !$listaBuenaFe->resuelto) {
+            if ($listaBuenaFe->conflictivo && ! $listaBuenaFe->resuelto) {
                 $usuario = auth()->user()->name ?? auth()->user()->email ?? 'Sistema';
-                $notas = "Conflicto resuelto automáticamente al dar de baja al jugador. Motivo de baja: " . ($request->motivo_baja ?? 'No especificado');
+                $notas = 'Conflicto resuelto automáticamente al dar de baja al jugador. Motivo de baja: '.($request->motivo_baja ?? 'No especificado');
                 $listaBuenaFe->resolverConflicto($usuario, $notas);
                 Log::info("Conflicto auto-resuelto para jugador {$listaBuenaFe->dni_jugador} al dar de baja");
             }
-            
+
             $listaBuenaFe->darDeBaja($request->motivo_baja);
 
-            Log::info("Jugador {$listaBuenaFe->dni_jugador} dado de baja de Lista de Buena Fe. Motivo: " . ($request->motivo_baja ?? 'Sin especificar'));
+            Log::info("Jugador {$listaBuenaFe->dni_jugador} dado de baja de Lista de Buena Fe. Motivo: ".($request->motivo_baja ?? 'Sin especificar'));
 
             return redirect()->back()->with('success', 'Jugador dado de baja correctamente.');
 
         } catch (\Exception $e) {
-            Log::error("Error al dar de baja jugador: " . $e->getMessage());
+            Log::error('Error al dar de baja jugador: '.$e->getMessage());
+
             return redirect()->back()->with('error', 'Error al dar de baja el jugador.');
         }
     }
@@ -420,7 +430,7 @@ class ControladorListaBuenaFe extends Controller
     {
         try {
             $listaBuenaFe = ListaBuenaFe::findOrFail($id);
-            
+
             // Si era conflictivo y estaba resuelto, vamos a limpiar la resolución antes de reactivar
             // porque al reactivar podría volver a ser conflictivo
             $eraConflictivoResuelto = $listaBuenaFe->conflictivo && $listaBuenaFe->resuelto;
@@ -439,7 +449,7 @@ class ControladorListaBuenaFe extends Controller
                 return redirect()->back()->with('error', $resultadoValidacion['message']);
             }
 
-            if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning' && !$request->boolean('force')) {
+            if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning' && ! $request->boolean('force')) {
                 return redirect()->back()
                     ->with('warning_reactivar', $resultadoValidacion['message'])
                     ->with('warning_reactivar_id', $id);
@@ -460,10 +470,10 @@ class ControladorListaBuenaFe extends Controller
                 $listaBuenaFe->resuelto_por = null;
                 $listaBuenaFe->notas_resolucion = null;
                 $listaBuenaFe->save();
-            } elseif ($eraConflictivoResuelto && !$resultadoValidacion) {
+            } elseif ($eraConflictivoResuelto && ! $resultadoValidacion) {
                 // Si era conflictivo resuelto y ahora no hay warnings, limpiar el conflicto
                 $usuario = auth()->user()->name ?? auth()->user()->email ?? 'Sistema';
-                $notas = "Conflicto resuelto automáticamente al reactivar jugador sin advertencias administrativas.";
+                $notas = 'Conflicto resuelto automáticamente al reactivar jugador sin advertencias administrativas.';
                 $listaBuenaFe->conflictivo = false;
                 $listaBuenaFe->motivo_conflicto = null;
                 $listaBuenaFe->resolverConflicto($usuario, $notas);
@@ -479,7 +489,8 @@ class ControladorListaBuenaFe extends Controller
             return redirect()->back()->with('success', $mensaje);
 
         } catch (\Exception $e) {
-            Log::error("Error al reactivar jugador: " . $e->getMessage());
+            Log::error('Error al reactivar jugador: '.$e->getMessage());
+
             return redirect()->back()->with('error', 'Error al reactivar el jugador.');
         }
     }
@@ -497,7 +508,7 @@ class ControladorListaBuenaFe extends Controller
             $listaBuenaFe = ListaBuenaFe::findOrFail($id);
 
             // Verificar que sea efectivamente un conflicto
-            if (!$listaBuenaFe->conflictivo) {
+            if (! $listaBuenaFe->conflictivo) {
                 return redirect()->back()->with('error', 'Este jugador no está marcado como conflictivo.');
             }
 
@@ -515,7 +526,8 @@ class ControladorListaBuenaFe extends Controller
             return redirect()->back()->with('success', 'Conflicto resuelto correctamente.');
 
         } catch (\Exception $e) {
-            Log::error("Error al resolver conflicto: " . $e->getMessage());
+            Log::error('Error al resolver conflicto: '.$e->getMessage());
+
             return redirect()->back()->with('error', 'Error al resolver el conflicto.');
         }
     }
@@ -567,19 +579,19 @@ class ControladorListaBuenaFe extends Controller
             return redirect()->back()->with('success', 'Datos actualizados correctamente.');
 
         } catch (\Exception $e) {
-            Log::error("Error al actualizar jugador: " . $e->getMessage());
+            Log::error('Error al actualizar jugador: '.$e->getMessage());
+
             return redirect()->back()->with('error', 'Error al actualizar los datos.');
         }
     }
 
     /**
      * Buscar jugador por DNI para autocompletado
-     * 
+     *
      * Busca si un DNI ya está registrado en el sistema y retorna
      * los datos del jugador (nombre, apellido, fecha de nacimiento, numero_camiseta)
      * para autocompletar el formulario de alta en Lista de Buena Fe.
-     * 
-     * @param Request $request
+     *
      * @return \Illuminate\Http\JsonResponse
      */
     public function buscarPorDni(Request $request)
@@ -587,28 +599,28 @@ class ControladorListaBuenaFe extends Controller
         $request->validate([
             'dni' => 'required|digits_between:7,8',
         ]);
-        
+
         $dni = $request->dni;
-        
+
         // Buscar jugador en la tabla principal
         $jugador = Jugador::find($dni);
-        
-        if (!$jugador) {
+
+        if (! $jugador) {
             return response()->json([
                 'encontrado' => false,
-                'mensaje' => 'DNI no registrado en el sistema'
+                'mensaje' => 'DNI no registrado en el sistema',
             ]);
         }
-        
+
         // Buscar fecha de nacimiento y número de camiseta más reciente
         $fechaNacimiento = null;
         $numeroCamiseta = null;
-        
+
         // Primero buscar en lista_buena_fe (más confiable y reciente)
         $registroLBF = ListaBuenaFe::where('dni_jugador', $dni)
             ->orderBy('id', 'desc')
             ->first();
-        
+
         if ($registroLBF) {
             if ($registroLBF->fecha_nacimiento) {
                 $fechaNacimiento = $registroLBF->fecha_nacimiento->format('Y-m-d');
@@ -617,32 +629,32 @@ class ControladorListaBuenaFe extends Controller
                 $numeroCamiseta = $registroLBF->numero_camiseta;
             }
         }
-        
+
         // Si no hay fecha en lista_buena_fe, buscar en planilla_jugadores
-        if (!$fechaNacimiento || !$numeroCamiseta) {
+        if (! $fechaNacimiento || ! $numeroCamiseta) {
             $registroPlanilla = PlanillaJugador::where('dni_jugador', $dni)
                 ->orderBy('id', 'desc')
                 ->first();
-            
+
             if ($registroPlanilla) {
-                if (!$fechaNacimiento && $registroPlanilla->fecha_nacimiento) {
-                    $fechaNacimiento = $registroPlanilla->fecha_nacimiento instanceof \Carbon\Carbon 
+                if (! $fechaNacimiento && $registroPlanilla->fecha_nacimiento) {
+                    $fechaNacimiento = $registroPlanilla->fecha_nacimiento instanceof \Carbon\Carbon
                         ? $registroPlanilla->fecha_nacimiento->format('Y-m-d')
                         : $registroPlanilla->fecha_nacimiento;
                 }
-                if (!$numeroCamiseta && $registroPlanilla->numero_camiseta) {
+                if (! $numeroCamiseta && $registroPlanilla->numero_camiseta) {
                     $numeroCamiseta = $registroPlanilla->numero_camiseta;
                 }
             }
         }
-        
+
         return response()->json([
             'encontrado' => true,
             'nombre' => $jugador->nombre,
             'apellido' => $jugador->apellido,
             'fecha_nacimiento' => $fechaNacimiento,
             'numero_camiseta' => $numeroCamiseta,
-            'mensaje' => 'Jugador encontrado - Datos cargados automáticamente'
+            'mensaje' => 'Jugador encontrado - Datos cargados automáticamente',
         ]);
     }
 
@@ -665,8 +677,9 @@ class ControladorListaBuenaFe extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error en migración: " . $e->getMessage());
-            return redirect()->back()->with('error', 'Error al migrar jugadores: ' . $e->getMessage());
+            Log::error('Error en migración: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Error al migrar jugadores: '.$e->getMessage());
         }
     }
 
@@ -676,15 +689,15 @@ class ControladorListaBuenaFe extends Controller
     public function migrarTodos(Request $request)
     {
         $idEdicion = $request->idEdicion;
-        
-        if (!$idEdicion) {
+
+        if (! $idEdicion) {
             return redirect()->back()->with('error', 'Debe seleccionar una edición para migrar.');
         }
 
         try {
             // Obtener todos los equipos de la edición
             $equiposEdicion = EquipoEdicion::where('idEdicion', $idEdicion)->get();
-            
+
             $totalMigrados = 0;
             $totalOmitidos = 0;
             $equiposProcesados = 0;
@@ -699,35 +712,36 @@ class ControladorListaBuenaFe extends Controller
                     $totalOmitidos += $resultado['omitidos'];
                     $equiposProcesados++;
                 } catch (\Exception $e) {
-                    $errores[] = "Error en equipo ID {$equipoEdicion->idEquipo}: " . $e->getMessage();
+                    $errores[] = "Error en equipo ID {$equipoEdicion->idEquipo}: ".$e->getMessage();
                 }
             }
 
             DB::commit();
 
             $mensaje = "Migración masiva completada. Equipos procesados: {$equiposProcesados}. Jugadores migrados: {$totalMigrados}. Omitidos: {$totalOmitidos}.";
-            
+
             if (count($errores) > 0) {
                 // Si hubo errores parciales, los mostramos en el modal
                 return redirect()->back()
                     ->with('migration_result', [
                         'status' => 'warning',
                         'message' => $mensaje,
-                        'errors' => $errores
+                        'errors' => $errores,
                     ]);
             }
 
             return redirect()->back()->with('migration_result', [
                 'status' => 'success',
-                'message' => $mensaje
+                'message' => $mensaje,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error en migración masiva: " . $e->getMessage());
+            Log::error('Error en migración masiva: '.$e->getMessage());
+
             return redirect()->back()->with('migration_result', [
                 'status' => 'error',
-                'message' => 'Error crítico al migrar: ' . $e->getMessage()
+                'message' => 'Error crítico al migrar: '.$e->getMessage(),
             ]);
         }
     }
@@ -739,14 +753,14 @@ class ControladorListaBuenaFe extends Controller
     {
         // Obtener jugadores únicos que han jugado para este equipo en esta edición
         $jugadores = PlanillaJugador::select(
-                'dni_jugador',
-                'idEquipo',
-                'idEdicion',
-                'idCategoria',
-                'fecha_nacimiento',
-                DB::raw('MAX(numero_camiseta) as numero_camiseta'),
-                DB::raw('MIN(created_at) as fecha_alta')
-            )
+            'dni_jugador',
+            'idEquipo',
+            'idEdicion',
+            'idCategoria',
+            'fecha_nacimiento',
+            DB::raw('MAX(numero_camiseta) as numero_camiseta'),
+            DB::raw('MIN(created_at) as fecha_alta')
+        )
             ->where('idEquipo', $idEquipo)
             ->where('idEdicion', $idEdicion)
             ->groupBy('dni_jugador', 'idEquipo', 'idEdicion', 'idCategoria', 'fecha_nacimiento')
@@ -772,10 +786,10 @@ class ControladorListaBuenaFe extends Controller
                     'activo' => true,
                 ]
             );
-            
+
             if ($created->wasRecentlyCreated) {
                 $migrados++;
-                
+
                 // Validar jugador recién migrado contra reglas administrativas
                 $resultadoValidacion = $this->validadorReglas->validarJugador(
                     $jugador->dni_jugador,
@@ -784,7 +798,7 @@ class ControladorListaBuenaFe extends Controller
                     $jugador->idCategoria,
                     $jugador->fecha_nacimiento
                 );
-                
+
                 // Si tiene advertencias, marcarlo como conflictivo
                 if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning') {
                     $created->conflictivo = true;
@@ -792,12 +806,12 @@ class ControladorListaBuenaFe extends Controller
                     $created->resuelto = false;
                     $created->save();
                     $omitidosConflictivos++;
-                    
+
                     Log::info("Jugador migrado marcado como conflictivo: DNI {$jugador->dni_jugador}, Motivo: {$resultadoValidacion['message']}");
                 }
             } else {
                 $omitidos++;
-                
+
                 // Validar jugador omitido contra reglas administrativas
                 $resultadoValidacion = $this->validadorReglas->validarJugador(
                     $jugador->dni_jugador,
@@ -806,7 +820,7 @@ class ControladorListaBuenaFe extends Controller
                     $jugador->idCategoria,
                     $jugador->fecha_nacimiento
                 );
-                
+
                 // Si tiene advertencias, marcarlo como conflictivo
                 if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning') {
                     $created->conflictivo = true;
@@ -814,16 +828,16 @@ class ControladorListaBuenaFe extends Controller
                     $created->resuelto = false;
                     $created->save();
                     $omitidosConflictivos++;
-                    
+
                     Log::info("Jugador omitido marcado como conflictivo: DNI {$jugador->dni_jugador}, Motivo: {$resultadoValidacion['message']}");
                 }
             }
         }
 
         return [
-            'migrados' => $migrados, 
+            'migrados' => $migrados,
             'omitidos' => $omitidos,
-            'omitidos_conflictivos' => $omitidosConflictivos
+            'omitidos_conflictivos' => $omitidosConflictivos,
         ];
     }
 
@@ -835,7 +849,7 @@ class ControladorListaBuenaFe extends Controller
      */
     private function obtenerEquiposFiltrados($idEdicion, $idCategoria = null, $search = null)
     {
-        if (!$idEdicion) {
+        if (! $idEdicion) {
             return collect();
         }
 
@@ -846,12 +860,27 @@ class ControladorListaBuenaFe extends Controller
             $query->where('idCategoria', $idCategoria);
         }
 
-        if (!empty($search)) {
+        if (! empty($search)) {
             $query->whereHas('equipo', function ($subQuery) use ($search) {
                 $subQuery->where('nombre', 'LIKE', '%'.$search.'%');
             });
         }
 
         return $query->get();
+    }
+
+    /**
+     * Define el límite de jugadores de la edición para unificar reglas de alta
+     * y cantidad de filas que se muestran en las planillas de impresión.
+     */
+    private function obtenerLimiteJugadoresPorPlanilla($edicion)
+    {
+        if (! $edicion) {
+            return 18;
+        }
+
+        $limite = (int) ($edicion->jugadores_por_planilla ?? 18);
+
+        return $limite > 0 ? $limite : 18;
     }
 }

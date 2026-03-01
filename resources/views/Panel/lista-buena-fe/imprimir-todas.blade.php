@@ -163,7 +163,8 @@
         @php
             $claveEquipo = $equipoSeleccionado->idEquipo.'-'.$equipoSeleccionado->idCategoria;
             $jugadoresEquipo = $jugadoresActivos->get($claveEquipo, collect())->values();
-            $cantidadFilas = max(16, $jugadoresEquipo->count());
+            $filasConfiguradas = max(1, (int) $limiteJugadoresPorPlanilla);
+            $cantidadFilas = max($filasConfiguradas, $jugadoresEquipo->count());
         @endphp
 
         <section class="planilla">
