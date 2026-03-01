@@ -461,6 +461,23 @@
         let abortController = null;
         let currentTask = 'recordatorios'; // 'recordatorios' | 'manual' | 'resumen_fecha'
         let currentPayload = {};
+        let rateLimitRetries = 0;
+        let totalSesionEnviados = 0;
+
+        /**
+         * Delay base entre lotes (ms). Se usa 8s para mantener un ritmo
+         * seguro en Hostinger (~7-8 envíos SMTP/minuto como máximo).
+         */
+        const DELAY_BASE_MS = 8000;
+
+        /**
+         * Delays escalonados cuando se detecta rate limiting (ms).
+         * 1er intento: 60s, 2do: 120s, 3ro: 180s.
+         */
+        const RATE_LIMIT_DELAYS = [60000, 120000, 180000];
+
+        /** Tras este número de rate limits consecutivos se auto-pausa el proceso. */
+        const MAX_RATE_LIMIT_RETRIES = 3;
 
         const ENDPOINTS = {
             recordatorios: {
@@ -475,14 +492,14 @@
                 count_route: '{{ route("push.manual.contar") }}',
                 send_route: '{{ route("push.manual.enviar-lote") }}',
                 log_route: '{{ route("push.log-completo") }}',
-                batch_size: 40,
+                batch_size: 20,
             },
             resumen_fecha: {
                 start_msg: 'Enviando resumen de fecha...',
                 count_route: '{{ route("push.resumen-fecha.contar") }}',
                 send_route: '{{ route("push.resumen-fecha.enviar-lote") }}',
                 log_route: '{{ route("push.log-completo") }}',
-                batch_size: 40,
+                batch_size: 20,
             }
         };
 
@@ -860,6 +877,7 @@
             totalEnviados = 0;
             totalErrores = 0;
             currentOffset = 0;
+            rateLimitRetries = 0;
             
             enviando = true;
             abortController = new AbortController();
@@ -904,9 +922,56 @@
                         throw new Error(data.message || 'No se pudo procesar el lote.');
                     }
 
+                    // --- Rate limit detectado por el backend ---
+                    if (data.rate_limited) {
+                        rateLimitRetries++;
+
+                        // Mostrar error técnico
+                        const errDiv = document.getElementById('error-debug-msg');
+                        if (errDiv) {
+                            errDiv.textContent = 'Rate limit: ' + (data.last_error || 'Hostinger limitó envíos temporalmente');
+                            errDiv.classList.remove('hidden');
+                        }
+
+                        // Auto-pausa si se superó el máximo de reintentos
+                        if (rateLimitRetries > MAX_RATE_LIMIT_RETRIES) {
+                            actualizarTextoProgreso(
+                                `Rate limit persistente de Hostinger. Proceso pausado. ` +
+                                `Enviados: ${totalEnviados}. Reintentá en 15-30 minutos.`
+                            );
+                            finalizarEnvio(true);
+                            // Sobreescribir mensaje genérico de "detenido"
+                            actualizarTextoProgreso(
+                                `Rate limit persistente de Hostinger. Proceso pausado. ` +
+                                `Enviados hasta ahora: ${totalEnviados}. Reintentá en 15-30 minutos.`
+                            );
+                            return;
+                        }
+
+                        // Countdown visible con delay escalonado
+                        const waitMs = RATE_LIMIT_DELAYS[Math.min(rateLimitRetries - 1, RATE_LIMIT_DELAYS.length - 1)];
+                        const waitSec = Math.round(waitMs / 1000);
+
+                        for (let restante = waitSec; restante > 0 && enviando; restante--) {
+                            actualizarTextoProgreso(
+                                `Rate limit detectado (intento ${rateLimitRetries}/${MAX_RATE_LIMIT_RETRIES}). ` +
+                                `Esperando ${restante}s antes de reintentar... ` +
+                                `Enviados: ${totalEnviados}`
+                            );
+                            await new Promise(r => setTimeout(r, 1000));
+                        }
+
+                        // NO avanzar offset — reintentar el mismo lote
+                        continue;
+                    }
+
+                    // --- Éxito: resetear contador de rate limit ---
+                    rateLimitRetries = 0;
+
                     // Actualizar métricas
                     totalEnviados += Number(data.sent || 0);
                     totalErrores += Number(data.errors || 0);
+                    totalSesionEnviados += Number(data.sent || 0);
                     
                     // Actualizar Offset para siguiente lote
                     currentOffset += batchSize; 
@@ -914,16 +979,21 @@
                     // Actualizar UI
                     let msg = '';
                     if (currentTask === 'manual') {
-                        msg = `Enviando notificación... Emails enviados: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.remaining ?? 0}`;
+                        msg = `Enviando notificación... Emails: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.remaining ?? 0}`;
                     } else if (currentTask === 'resumen_fecha') {
-                        msg = `Enviando resumen... Emails enviados: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.remaining ?? 0}`;
+                        msg = `Enviando resumen... Emails: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.remaining ?? 0}`;
                     } else {
                         msg = `Enviando... Enviados: ${totalEnviados} | Errores: ${totalErrores} | Restantes aprox: ${data.remaining}`;
+                    }
+
+                    // Advertencia de cuota de sesión
+                    if (totalSesionEnviados >= 400) {
+                        msg += ` | Sesion: ${totalSesionEnviados} enviados (limite sugerido: 500)`;
                     }
                     
                     actualizarTextoProgreso(msg);
                     
-                    // Mostrar error si hubo
+                    // Mostrar error si hubo (parcial, no rate limit)
                     if (data.last_error) {
                         const errDiv = document.getElementById('error-debug-msg');
                         if (errDiv) {
@@ -936,15 +1006,16 @@
 
                     done = data.done;
                     
-                    if (!done) await new Promise(r => setTimeout(r, 500)); // Delay para no saturar
+                    // Delay conservador entre lotes para respetar límites Hostinger
+                    if (!done) await new Promise(r => setTimeout(r, DELAY_BASE_MS));
 
                 } catch (e) {
                     if (e.name === 'AbortError') {
                         console.log('Cancelado por usuario');
                     } else {
                         console.error(e);
-                        actualizarTextoProgreso('Error de conexión. Reintentando en 5s...');
-                        await new Promise(r => setTimeout(r, 5000));
+                        actualizarTextoProgreso('Error de conexión. Reintentando en 10s...');
+                        await new Promise(r => setTimeout(r, 10000));
                     }
                 }
             }

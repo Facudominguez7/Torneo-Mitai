@@ -50,10 +50,20 @@ class ControladorNotificacionesPush extends Controller
     /**
      * Máximo de destinatarios por correo usando BCC según proveedor SMTP.
      *
-     * Se deja en 40 para contemplar límites estrictos por servidor
-     * (algunos cuentan también el destinatario en TO).
+     * Se redujo a 20 tras detectar que Hostinger aplica rate limiting
+     * agresivo (error 451) con lotes más grandes, incluso por debajo
+     * de su límite documentado de 100 destinatarios.
      */
-    private const MAX_DESTINATARIOS_BCC = 40;
+    private const MAX_DESTINATARIOS_BCC = 20;
+
+    /**
+     * Segundos de pausa entre envíos SMTP consecutivos.
+     *
+     * Hostinger suspende cuentas por "actividad sospechosa" cuando detecta
+     * ráfagas de correo. Este throttle server-side complementa el delay
+     * del frontend para mantener un ritmo seguro (~3 emails/minuto).
+     */
+    private const SMTP_THROTTLE_SECONDS = 3;
 
     /**
      * Suscribir al usuario autenticado a notificaciones push.
@@ -754,6 +764,7 @@ class ControladorNotificacionesPush extends Controller
         $errores = [];
         $lastError = null;
         $contadorEmail = 0;
+        $esRateLimit = false;
 
         $emails = $usuarios->pluck('email')
             ->filter(static fn ($email) => ! empty($email))
@@ -787,19 +798,24 @@ class ControladorNotificacionesPush extends Controller
                     ->whereIn('id', $usuarios->pluck('id'))
                     ->update(['last_notification_at' => now()]);
             } catch (\Exception $e) {
+                $esRateLimit = $this->esErrorRateLimit($e);
                 $errores = $emails;
                 $lastError = $e->getMessage();
-                Log::channel('single')->error('Error notif manual por BCC', ['error' => $e->getMessage()]);
+                Log::channel('single')->error(
+                    $esRateLimit ? 'Rate limit SMTP en notif manual — se señaliza pausa al frontend' : 'Error notif manual por BCC',
+                    ['error' => $e->getMessage(), 'rate_limited' => $esRateLimit]
+                );
             }
         }
 
         $remaining = max(0, $idsDestinatarios->count() - ($offset + $usuarios->count()));
 
         return response()->json([
-            'done' => $remaining === 0,
+            'done' => $esRateLimit ? false : ($remaining === 0),
             'sent' => $enviados,
             'errors' => count($errores),
             'last_error' => $lastError,
+            'rate_limited' => $esRateLimit,
             'push_count' => 0,
             'email_count' => $contadorEmail,
             'remaining' => $remaining,
@@ -958,6 +974,7 @@ class ControladorNotificacionesPush extends Controller
         $errores = [];
         $lastError = null;
         $contadorEmail = 0;
+        $esRateLimit = false;
 
         $emails = $usuarios->pluck('email')
             ->filter(static fn ($email) => ! empty($email))
@@ -977,24 +994,30 @@ class ControladorNotificacionesPush extends Controller
                     ->whereIn('id', $usuarios->pluck('id'))
                     ->update(['last_notification_at' => now()]);
             } catch (\Exception $e) {
+                $esRateLimit = $this->esErrorRateLimit($e);
                 $errores = $emails;
                 $lastError = $e->getMessage();
-                Log::channel('single')->error('Error enviando resumen fecha por BCC', [
-                    'error' => $e->getMessage(),
-                    'idEdicion' => $idEdicion,
-                    'idFecha' => $validated['idFecha'],
-                    'idCategoria' => $validated['idCategoria'] ?? null,
-                ]);
+                Log::channel('single')->error(
+                    $esRateLimit ? 'Rate limit SMTP en resumen fecha — se señaliza pausa al frontend' : 'Error enviando resumen fecha por BCC',
+                    [
+                        'error' => $e->getMessage(),
+                        'rate_limited' => $esRateLimit,
+                        'idEdicion' => $idEdicion,
+                        'idFecha' => $validated['idFecha'],
+                        'idCategoria' => $validated['idCategoria'] ?? null,
+                    ]
+                );
             }
         }
 
         $remaining = max(0, $totalDestinatarios - ($offset + $usuarios->count()));
 
         return response()->json([
-            'done' => $remaining === 0,
+            'done' => $esRateLimit ? false : ($remaining === 0),
             'sent' => $enviados,
             'errors' => count($errores),
             'last_error' => $lastError,
+            'rate_limited' => $esRateLimit,
             'remaining' => $remaining,
             'push_count' => 0,
             'email_count' => $contadorEmail,
@@ -1329,9 +1352,10 @@ class ControladorNotificacionesPush extends Controller
     /**
      * Envía un correo masivo por BCC con fallback automático ante error 452.
      *
-     * Algunos proveedores SMTP rechazan lotes grandes con "too many
-     * recipients". Si eso ocurre, se divide el lote y se reintenta en
-     * sublotes hasta encontrar un tamaño aceptado.
+     * Incluye throttle server-side entre envíos para respetar los límites
+     * de Hostinger. Si detecta rate limiting (451), propaga la excepción
+     * para que el caller pueda señalizar al frontend y pausar el proceso.
+     * Si detecta exceso de destinatarios (452), divide el lote y reintenta.
      *
      * @param array<int, string> $emails
      * @param callable():\Illuminate\Mail\Mailable $crearMailable
@@ -1349,8 +1373,21 @@ class ControladorNotificacionesPush extends Controller
                 ->bcc($emails)
                 ->send($crearMailable());
 
+            // Throttle server-side tras envío exitoso para no saturar SMTP
+            sleep(self::SMTP_THROTTLE_SECONDS);
+
             return count($emails);
         } catch (\Throwable $exception) {
+            // Rate limit de Hostinger: no dividir, propagar para que el frontend pause
+            if ($this->esErrorRateLimit($exception)) {
+                Log::channel('single')->warning('SMTP rate limit detectado, se requiere pausa prolongada', [
+                    'destinatarios' => count($emails),
+                    'error' => $exception->getMessage(),
+                ]);
+
+                throw $exception;
+            }
+
             if (! $this->esErrorDemasiadosDestinatarios($exception) || count($emails) <= 1) {
                 throw $exception;
             }
@@ -1371,7 +1408,9 @@ class ControladorNotificacionesPush extends Controller
                 $enviados += $this->enviarCorreoBccConFallback($primerLote, $crearMailable);
             }
 
+            // Pausa extra entre sub-lotes para evitar disparar rate limit
             if ($segundoLote !== []) {
+                sleep(self::SMTP_THROTTLE_SECONDS);
                 $enviados += $this->enviarCorreoBccConFallback($segundoLote, $crearMailable);
             }
 
@@ -1390,6 +1429,27 @@ class ControladorNotificacionesPush extends Controller
             || str_contains($mensaje, 'demasiados destinatarios')
             || str_contains($mensaje, '452 4.5.3')
             || str_contains($mensaje, 'error: 452');
+    }
+
+    /**
+     * Detecta si la excepción SMTP corresponde a rate limiting del proveedor.
+     *
+     * Hostinger responde con "451 4.7.1 Ratelimit … exceeded" y luego
+     * suspende la cuenta temporalmente por "actividad sospechosa".
+     * Este método identifica esas respuestas para que el sistema pueda
+     * pausar automáticamente en vez de seguir enviando y empeorar el bloqueo.
+     */
+    private function esErrorRateLimit(\Throwable $exception): bool
+    {
+        $mensaje = mb_strtolower($exception->getMessage());
+
+        return str_contains($mensaje, 'ratelimit')
+            || str_contains($mensaje, 'rate limit')
+            || str_contains($mensaje, '451 4.7.1')
+            || str_contains($mensaje, 'too many connections')
+            || str_contains($mensaje, 'temporarily suspended')
+            || str_contains($mensaje, 'suspicious activity')
+            || (str_contains($mensaje, '451') && str_contains($mensaje, 'exceeded'));
     }
 
     /**
