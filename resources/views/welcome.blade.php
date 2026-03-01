@@ -2,7 +2,7 @@
 <html lang="es">
 @include('head')
 
-<body class="bg-black">
+<body class="bg-slate-950 text-white antialiased">
     @include('layouts.navigation')
     <main>
         {{-- Alertas del sistema --}}
@@ -94,43 +94,59 @@
             <div class="absolute inset-0">
                 <img src="{{ asset('fotos/fondo_en_cancha.webp') }}" alt="Cancha de fútbol"
                     class="h-full w-full object-cover object-center" fetchpriority="high" decoding="async">
-                <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/90"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-slate-950/85 via-black/75 to-slate-950"></div>
+                <div class="absolute -left-24 top-16 h-72 w-72 rounded-full bg-yellow-300/20 blur-3xl"></div>
+                <div class="absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl"></div>
             </div>
             <div
-                class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 flex flex-col lg:flex-row gap-12">
+                class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 flex flex-col lg:flex-row gap-10 lg:gap-12">
                 <div class="w-full lg:w-7/12 space-y-6 text-white text-center lg:text-left">
                     <div
-                        class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur">
+                        class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] backdrop-blur">
                         <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
                         fútbol formativo
                     </div>
                     <h1 class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black leading-tight">
                         Viví la pasión de Mita'í en cada categoría
                     </h1>
-                    <p class="text-base sm:text-lg text-white/80 max-w-xl">
+                    <p class="text-base sm:text-lg text-white/80 max-w-xl mx-auto lg:mx-0">
                         Descubrí fixtures actualizados, instancias decisivas y a los protagonistas de la
                         {{ optional($edicionActual)->nombre ?? 'vigente' }}. Elegí tu categoría favorita y seguí el
                         torneo desde cualquier dispositivo.
                     </p>
+                    <div class="flex flex-wrap justify-center gap-2 lg:justify-start">
+                        <span class="inline-flex items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+                            <i class="fa-solid fa-signal"></i>
+                            Actualización en vivo
+                        </span>
+                        <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
+                            <i class="fa-solid fa-users"></i>
+                            Comunidad Mita'í
+                        </span>
+                        <span class="inline-flex items-center gap-2 rounded-full border border-yellow-300/40 bg-yellow-300/10 px-3 py-1 text-xs font-semibold text-yellow-100">
+                            <i class="fa-solid fa-shield-heart"></i>
+                            Formación y valores
+                        </span>
+                    </div>
                     <div class="flex flex-wrap justify-center gap-3 lg:justify-start">
                         @if ($edicionActual)
                             <a href="{{ route('fixture', ['idEdicion' => $edicionActual->id]) }}"
-                                class="group flex items-center gap-2 rounded-full bg-yellow-300 px-5 py-2.5 text-sm font-semibold text-black shadow-lg shadow-yellow-500/30 transition-transform hover:-translate-y-1 hover:bg-yellow-200">
+                                class="group flex items-center gap-2 rounded-full bg-yellow-300 px-5 py-2.5 text-sm font-semibold text-black shadow-lg shadow-yellow-500/35 ring-1 ring-yellow-200/80 transition-transform hover:-translate-y-1 hover:bg-yellow-200">
                                 <i class="fa-solid fa-calendar-days text-base"></i>
                                 Fase de Grupos
                             </a>
                             <a href="{{ route('instancias-finales', ['idEdicion' => $edicionActual->id]) }}"
-                                class="group flex items-center gap-2 rounded-full bg-red-500/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-500/40 transition-transform hover:-translate-y-1 hover:bg-red-500">
+                                class="group flex items-center gap-2 rounded-full bg-rose-500/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-500/40 ring-1 ring-rose-300/40 transition-transform hover:-translate-y-1 hover:bg-rose-500">
                                 <i class="fa-solid fa-trophy text-base"></i>
                                 Instancias Finales
                             </a>
                             <a href="{{ route('tabla-goleadores', ['idEdicion' => $edicionActual->id]) }}"
-                                class="group flex items-center gap-2 rounded-full border border-white/40 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-1 hover:border-white hover:bg-white/10">
+                                class="group flex items-center gap-2 rounded-full border border-white/40 bg-black/20 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-1 hover:border-white hover:bg-white/10">
                                 <i class="fa-solid fa-futbol text-base"></i>
                                 Goleadores al día
                             </a>
                             <a href="{{ route('tabla-vallas', ['idEdicion' => $edicionActual->id]) }}"
-                                class="group flex items-center gap-2 rounded-full border border-emerald-400/60 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-emerald-500/20">
+                                class="group flex items-center gap-2 rounded-full border border-emerald-400/60 bg-black/20 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-1 hover:border-emerald-300 hover:bg-emerald-500/20">
                                 <i class="fa-solid fa-shield text-base text-emerald-300"></i>
                                 Vallas al día
                             </a>
@@ -138,10 +154,10 @@
                     </div>
                 </div>
                 <div class="w-full lg:w-5/12 max-w-xl mx-auto lg:mx-0">
-                    <div class="rounded-3xl bg-white/10 p-6 sm:p-8 shadow-xl backdrop-blur">
+                    <div class="rounded-3xl border border-white/15 bg-gradient-to-br from-white/15 to-white/5 p-6 sm:p-8 shadow-2xl backdrop-blur">
                         <div class="flex items-center gap-3">
                             <span
-                                class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-yellow-300/90 text-black text-xl font-bold">
+                                class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-yellow-300/90 text-black text-xl font-bold shadow-lg shadow-yellow-500/40">
                                 <i class="fa-solid fa-layer-group"></i>
                             </span>
                             <div>
@@ -154,7 +170,7 @@
                                 <label for="idEdicion" class="text-sm font-semibold text-white/80">Edición</label>
                                 <div class="relative mt-2">
                                     <select id="idEdicion" name="idEdicion" onchange="this.form.submit()"
-                                        class="w-full appearance-none rounded-2xl border border-white/20 bg-black/60 px-4 py-3 text-sm font-medium text-white focus:border-yellow-300 focus:outline-none focus:ring focus:ring-yellow-300/30">
+                                        class="w-full appearance-none rounded-2xl border border-white/20 bg-slate-950/70 px-4 py-3 text-sm font-medium text-white shadow-inner shadow-black/40 focus:border-yellow-300 focus:outline-none focus:ring focus:ring-yellow-300/30">
                                         <option value="">Seleccione una edición</option>
                                         @foreach ($ediciones as $edicion)
                                             <option value="{{ $edicion->id }}" {{ optional($edicionActual)->id === $edicion->id ? 'selected' : '' }}>
@@ -174,7 +190,7 @@
                             </p>
                         </form>
                         <div class="mt-6 grid gap-3 text-sm">
-                            <div class="flex items-center gap-3 rounded-2xl bg-black/50 px-4 py-3">
+                            <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/45 px-4 py-3">
                                 <span
                                     class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/90 text-white">
                                     <i class="fa-solid fa-ranking-star"></i>
@@ -185,7 +201,7 @@
                                     </p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3 rounded-2xl bg-black/50 px-4 py-3">
+                            <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/45 px-4 py-3">
                                 <span
                                     class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sky-400/90 text-white">
                                     <i class="fa-solid fa-share-nodes"></i>
@@ -201,10 +217,15 @@
             </div>
         </section>
         @if ($categorias->count() && $edicionActual)
-            <section class="bg-gradient-to-b from-black/95 via-black/92 to-black/88 py-14 sm:py-16">
+            <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-black to-slate-900 py-14 sm:py-16">
+                <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"></div>
                 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                         <div class="space-y-2">
+                            <p class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+                                <i class="fa-solid fa-bolt text-yellow-300"></i>
+                                accesos rápidos
+                            </p>
                             <h2 class="text-2xl sm:text-3xl font-bold text-white">Accesos directos</h2>
                             <p class="text-sm sm:text-base text-white/60 max-w-2xl">Ingresá en segundos a los apartados más
                                 consultados del torneo y reviví cada momento decisivo.</p>
@@ -219,7 +240,7 @@
                         style="scrollbar-width: none;">
                         @foreach ($categorias as $categoria)
                             <a href="{{ route('fixture', ['idEdicion' => $edicionActual->id, 'idCategoria' => $categoria->id]) }}"
-                                class="group flex min-w-[200px] flex-col justify-between rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white transition hover:border-yellow-300/70 hover:bg-yellow-300/10">
+                                class="group flex min-w-[200px] flex-col justify-between rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 px-5 py-4 text-white transition hover:-translate-y-1 hover:border-yellow-300/70 hover:bg-yellow-300/10">
                                 <div class="flex items-center gap-3">
                                     <span
                                         class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-yellow-300/80 text-black">
@@ -241,12 +262,16 @@
             </section>
         @endif
 
-        <section class="bg-gradient-to-t from-black/95 via-black/92 to-black/88 py-14 sm:py-16">
+        <section class="bg-gradient-to-t from-slate-950 via-black to-slate-900 py-14 sm:py-16">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
                     <div class="space-y-3">
+                        <p class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+                            <i class="fa-solid fa-medal text-yellow-300"></i>
+                            legado del torneo
+                        </p>
                         <h2 class="text-2xl sm:text-3xl font-bold text-white">Historial</h2>
-                        <p class="text-sm sm:text-base text-white/60 max-w-2xl"></p>
+                        <p class="text-sm sm:text-base text-white/60 max-w-2xl">Recorré a los protagonistas que hicieron historia en cada edición y reviví el camino de los equipos más destacados.</p>
                     </div>
                 </div>
                 <div
@@ -340,10 +365,15 @@
 
 
 
-        <section class="bg-black py-14 sm:py-16">
+        <section class="relative overflow-hidden bg-slate-950 py-14 sm:py-16">
+            <div class="absolute left-1/2 top-0 h-px w-[90%] -translate-x-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid gap-8 lg:grid-cols-2">
                     <div class="space-y-4 text-white/90">
+                        <p class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+                            <i class="fa-solid fa-heart text-rose-300"></i>
+                            comunidad
+                        </p>
                         <h2 class="text-2xl sm:text-3xl font-bold text-white">Sumate a la comunidad Mita'í</h2>
                         <p class="text-sm sm:text-base text-white/60">Seguinos en redes y recibí las novedades de
                             fixture, resultados, tablas y transmisiones en vivo. Compartimos historias, fotos y momentos
@@ -367,7 +397,7 @@
                             </a>
                         </div>
                     </div>
-                    <div class="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-7 text-white">
+                    <div class="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-7 text-white shadow-2xl shadow-black/35">
                         <div
                             class="absolute -right-16 top-1/2 h-44 w-44 -translate-y-1/2 rounded-full bg-yellow-400/20 blur-3xl">
                         </div>
@@ -407,17 +437,20 @@
             </div>
         </section>
     </main>
-    <footer class="bg-black text-white text-center py-6 mt-10">
-        <p class="text-sm md:text-base">&copy; Mita'í {{ date('Y') }}. Todos los derechos reservados.</p>
-        <p class="text-sm md:text-base mt-2">Sitio desarrollado por <span class="font-semibold">Ing. Facundo Díaz
-                Domínguez</span>.</p>
-        <p class="mt-4">
-            <a href="https://www.linkedin.com/in/facundo-diaz-dominguez-0a826b230"
-                class="text-blue-400 hover:underline focus:ring focus:ring-blue-500 rounded" target="_blank"
-                rel="noopener noreferrer" lang="es">
-                Conéctate conmigo en LinkedIn
-            </a>
-        </p>
+    <footer class="mt-10 border-t border-white/10 bg-black/80">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-white/80">
+            <p class="text-sm md:text-base">&copy; Mita'í {{ date('Y') }}. Todos los derechos reservados.</p>
+            <p class="mt-2 text-sm md:text-base">Sitio desarrollado por <span class="font-semibold text-white">Ing. Facundo Díaz
+                    Domínguez</span>.</p>
+            <p class="mt-4">
+                <a href="https://www.linkedin.com/in/facundo-diaz-dominguez-0a826b230"
+                    class="inline-flex items-center gap-2 rounded-full border border-blue-400/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-300 transition hover:-translate-y-0.5 hover:bg-blue-500/20"
+                    target="_blank" rel="noopener noreferrer" lang="es">
+                    <i class="fa-brands fa-linkedin"></i>
+                    Conéctate conmigo en LinkedIn
+                </a>
+            </p>
+        </div>
     </footer>
 </body>
 
