@@ -49,8 +49,11 @@ class ControladorNotificacionesPush extends Controller
 
     /**
      * Máximo de destinatarios por correo usando BCC según proveedor SMTP.
+     *
+     * Se deja en 40 para contemplar límites estrictos por servidor
+     * (algunos cuentan también el destinatario en TO).
      */
-    private const MAX_DESTINATARIOS_BCC = 100;
+    private const MAX_DESTINATARIOS_BCC = 40;
 
     /**
      * Suscribir al usuario autenticado a notificaciones push.
@@ -774,12 +777,10 @@ class ControladorNotificacionesPush extends Controller
                     'mensaje_personalizado' => $validated['mensaje'],
                 ];
 
-                $mailFrom = config('mail.from.address') ?: 'info@torneosmitai.com';
-                Mail::to($mailFrom)
-                    ->bcc($emails)
-                    ->send(new \App\Mail\ResumenResultadosFechaMail($resumenManual, route('email.baja-general.form')));
-
-                $enviados = count($emails);
+                $enviados = $this->enviarCorreoBccConFallback(
+                    $emails,
+                    fn () => new \App\Mail\ResumenResultadosFechaMail($resumenManual, route('email.baja-general.form'))
+                );
                 $contadorEmail = $enviados;
 
                 \App\Models\User::query()
@@ -966,13 +967,10 @@ class ControladorNotificacionesPush extends Controller
 
         if ($emails !== []) {
             try {
-                $mailFrom = config('mail.from.address') ?: 'info@torneosmitai.com';
-
-                Mail::to($mailFrom)
-                    ->bcc($emails)
-                    ->send(new \App\Mail\ResumenResultadosFechaMail($resumen, route('email.baja-general.form')));
-
-                $enviados = count($emails);
+                $enviados = $this->enviarCorreoBccConFallback(
+                    $emails,
+                    fn () => new \App\Mail\ResumenResultadosFechaMail($resumen, route('email.baja-general.form'))
+                );
                 $contadorEmail = $enviados;
 
                 \App\Models\User::query()
@@ -1326,6 +1324,72 @@ class ControladorNotificacionesPush extends Controller
         }
 
         return $iconoNormalizado . ' ' . $tituloNormalizado;
+    }
+
+    /**
+     * Envía un correo masivo por BCC con fallback automático ante error 452.
+     *
+     * Algunos proveedores SMTP rechazan lotes grandes con "too many
+     * recipients". Si eso ocurre, se divide el lote y se reintenta en
+     * sublotes hasta encontrar un tamaño aceptado.
+     *
+     * @param array<int, string> $emails
+     * @param callable():\Illuminate\Mail\Mailable $crearMailable
+     */
+    private function enviarCorreoBccConFallback(array $emails, callable $crearMailable): int
+    {
+        if ($emails === []) {
+            return 0;
+        }
+
+        $mailFrom = config('mail.from.address') ?: 'info@torneosmitai.com';
+
+        try {
+            Mail::to($mailFrom)
+                ->bcc($emails)
+                ->send($crearMailable());
+
+            return count($emails);
+        } catch (\Throwable $exception) {
+            if (! $this->esErrorDemasiadosDestinatarios($exception) || count($emails) <= 1) {
+                throw $exception;
+            }
+
+            $mitad = (int) ceil(count($emails) / 2);
+            $primerLote = array_values(array_slice($emails, 0, $mitad));
+            $segundoLote = array_values(array_slice($emails, $mitad));
+
+            Log::channel('single')->warning('SMTP rechazó lote por demasiados destinatarios, se divide y reintenta', [
+                'total_lote' => count($emails),
+                'lote_1' => count($primerLote),
+                'lote_2' => count($segundoLote),
+                'error' => $exception->getMessage(),
+            ]);
+
+            $enviados = 0;
+            if ($primerLote !== []) {
+                $enviados += $this->enviarCorreoBccConFallback($primerLote, $crearMailable);
+            }
+
+            if ($segundoLote !== []) {
+                $enviados += $this->enviarCorreoBccConFallback($segundoLote, $crearMailable);
+            }
+
+            return $enviados;
+        }
+    }
+
+    /**
+     * Detecta si la excepción SMTP corresponde a exceso de destinatarios.
+     */
+    private function esErrorDemasiadosDestinatarios(\Throwable $exception): bool
+    {
+        $mensaje = mb_strtolower($exception->getMessage());
+
+        return str_contains($mensaje, 'too many recipients')
+            || str_contains($mensaje, 'demasiados destinatarios')
+            || str_contains($mensaje, '452 4.5.3')
+            || str_contains($mensaje, 'error: 452');
     }
 
     /**
