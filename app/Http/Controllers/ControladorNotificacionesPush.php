@@ -666,6 +666,7 @@ class ControladorNotificacionesPush extends Controller
         $enviados = 0;
         $errores = [];
         $lastError = null;
+        $proveedorBloqueado = false;
 
         foreach ($usuarios as $usuario) {
             try {
@@ -681,11 +682,21 @@ class ControladorNotificacionesPush extends Controller
             } catch (\Exception $e) {
                 $errores[] = $usuario->email;
                 $lastError = $e->getMessage(); // Capturar último error
+                $proveedorBloqueado = $this->esErrorProveedorBloqueado($e);
 
                 Log::channel('single')->error('Error enviando recordatorio', [
                     'email' => $usuario->email,
                     'error' => $e->getMessage(),
                 ]);
+
+                if ($proveedorBloqueado) {
+                    Log::channel('single')->warning('Proveedor SMTP bloqueado durante recordatorios masivos', [
+                        'email' => $usuario->email,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    break;
+                }
             }
         }
 
@@ -701,12 +712,17 @@ class ControladorNotificacionesPush extends Controller
             ->count();
 
         return response()->json([
-            'done' => $remaining === 0,
+            'done' => $proveedorBloqueado ? false : ($remaining === 0),
             'sent' => $enviados,
             'remaining' => $remaining,
             'errors' => count($errores),
             'last_error' => $lastError, // Enviar error al front
-            'message' => "Enviados: {$enviados}. Restantes: {$remaining}",
+            'provider_blocked' => $proveedorBloqueado,
+            'paused' => $proveedorBloqueado,
+            'rate_limited' => false,
+            'message' => $proveedorBloqueado
+                ? 'Hostinger bloqueó temporalmente el envío (554). Rehabilitá el correo en hPanel y continuá desde el panel.'
+                : "Enviados: {$enviados}. Restantes: {$remaining}",
         ]);
     }
 
@@ -781,6 +797,7 @@ class ControladorNotificacionesPush extends Controller
         $lastError = null;
         $contadorEmail = 0;
         $esRateLimit = false;
+        $proveedorBloqueado = false;
 
         $emails = $usuarios->pluck('email')
             ->filter(static fn ($email) => ! empty($email))
@@ -814,27 +831,42 @@ class ControladorNotificacionesPush extends Controller
                     ->whereIn('id', $usuarios->pluck('id'))
                     ->update(['last_notification_at' => now()]);
             } catch (\Exception $e) {
-                $esRateLimit = $this->esErrorRateLimit($e);
+                $proveedorBloqueado = $this->esErrorProveedorBloqueado($e);
+                $esRateLimit = ! $proveedorBloqueado && $this->esErrorRateLimit($e);
                 $errores = $emails;
                 $lastError = $e->getMessage();
                 Log::channel('single')->error(
-                    $esRateLimit ? 'Rate limit SMTP en notif manual — se señaliza pausa al frontend' : 'Error notif manual por BCC',
-                    ['error' => $e->getMessage(), 'rate_limited' => $esRateLimit]
+                    $proveedorBloqueado
+                        ? 'Hostinger bloqueó envío SMTP en notif manual (554) — se pausa para reanudación manual'
+                        : ($esRateLimit
+                            ? 'Rate limit SMTP en notif manual — se señaliza pausa al frontend'
+                            : 'Error notif manual por BCC'),
+                    [
+                        'error' => $e->getMessage(),
+                        'rate_limited' => $esRateLimit,
+                        'provider_blocked' => $proveedorBloqueado,
+                    ]
                 );
             }
         }
 
-        $remaining = max(0, $idsDestinatarios->count() - ($offset + $usuarios->count()));
+        $avanceLote = ($esRateLimit || $proveedorBloqueado) ? 0 : $usuarios->count();
+        $remaining = max(0, $idsDestinatarios->count() - ($offset + $avanceLote));
 
         return response()->json([
-            'done' => $esRateLimit ? false : ($remaining === 0),
+            'done' => ($esRateLimit || $proveedorBloqueado) ? false : ($remaining === 0),
             'sent' => $enviados,
             'errors' => count($errores),
             'last_error' => $lastError,
             'rate_limited' => $esRateLimit,
+            'provider_blocked' => $proveedorBloqueado,
+            'paused' => $proveedorBloqueado,
             'push_count' => 0,
             'email_count' => $contadorEmail,
             'remaining' => $remaining,
+            'message' => $proveedorBloqueado
+                ? 'Hostinger bloqueó temporalmente el envío (554). Rehabilitá el correo en hPanel y continuá desde el panel.'
+                : 'Lote procesado.',
         ]);
     }
 
@@ -991,6 +1023,7 @@ class ControladorNotificacionesPush extends Controller
         $lastError = null;
         $contadorEmail = 0;
         $esRateLimit = false;
+        $proveedorBloqueado = false;
 
         $emails = $usuarios->pluck('email')
             ->filter(static fn ($email) => ! empty($email))
@@ -1010,14 +1043,20 @@ class ControladorNotificacionesPush extends Controller
                     ->whereIn('id', $usuarios->pluck('id'))
                     ->update(['last_notification_at' => now()]);
             } catch (\Exception $e) {
-                $esRateLimit = $this->esErrorRateLimit($e);
+                $proveedorBloqueado = $this->esErrorProveedorBloqueado($e);
+                $esRateLimit = ! $proveedorBloqueado && $this->esErrorRateLimit($e);
                 $errores = $emails;
                 $lastError = $e->getMessage();
                 Log::channel('single')->error(
-                    $esRateLimit ? 'Rate limit SMTP en resumen fecha — se señaliza pausa al frontend' : 'Error enviando resumen fecha por BCC',
+                    $proveedorBloqueado
+                        ? 'Hostinger bloqueó envío SMTP en resumen fecha (554) — se pausa para reanudación manual'
+                        : ($esRateLimit
+                            ? 'Rate limit SMTP en resumen fecha — se señaliza pausa al frontend'
+                            : 'Error enviando resumen fecha por BCC'),
                     [
                         'error' => $e->getMessage(),
                         'rate_limited' => $esRateLimit,
+                        'provider_blocked' => $proveedorBloqueado,
                         'idEdicion' => $idEdicion,
                         'idFecha' => $validated['idFecha'],
                         'idCategoria' => $validated['idCategoria'] ?? null,
@@ -1026,19 +1065,24 @@ class ControladorNotificacionesPush extends Controller
             }
         }
 
-        $remaining = max(0, $totalDestinatarios - ($offset + $usuarios->count()));
+        $avanceLote = ($esRateLimit || $proveedorBloqueado) ? 0 : $usuarios->count();
+        $remaining = max(0, $totalDestinatarios - ($offset + $avanceLote));
 
         return response()->json([
-            'done' => $esRateLimit ? false : ($remaining === 0),
+            'done' => ($esRateLimit || $proveedorBloqueado) ? false : ($remaining === 0),
             'sent' => $enviados,
             'errors' => count($errores),
             'last_error' => $lastError,
             'rate_limited' => $esRateLimit,
+            'provider_blocked' => $proveedorBloqueado,
+            'paused' => $proveedorBloqueado,
             'remaining' => $remaining,
             'push_count' => 0,
             'email_count' => $contadorEmail,
             'partidos_count' => $resumen['partidos_count'],
-            'message' => "Lote procesado ({$contadorEmail} emails enviados por BCC).",
+            'message' => $proveedorBloqueado
+                ? 'Hostinger bloqueó temporalmente el envío (554). Rehabilitá el correo en hPanel y continuá desde el panel.'
+                : "Lote procesado ({$contadorEmail} emails enviados por BCC).",
         ]);
     }
 
@@ -1407,6 +1451,16 @@ class ControladorNotificacionesPush extends Controller
 
             return count($emails);
         } catch (\Throwable $exception) {
+            // Bloqueo manual desde hPanel: pausar y esperar reanudación del admin
+            if ($this->esErrorProveedorBloqueado($exception)) {
+                Log::channel('single')->warning('SMTP deshabilitado en Hostinger (hPanel), se pausa el proceso', [
+                    'destinatarios' => count($emails),
+                    'error' => $exception->getMessage(),
+                ]);
+
+                throw $exception;
+            }
+
             // Rate limit de Hostinger: no dividir, propagar para que el frontend pause
             if ($this->esErrorRateLimit($exception)) {
                 Log::channel('single')->warning('SMTP rate limit detectado, se requiere pausa prolongada', [
@@ -1479,6 +1533,24 @@ class ControladorNotificacionesPush extends Controller
             || str_contains($mensaje, 'temporarily suspended')
             || str_contains($mensaje, 'suspicious activity')
             || (str_contains($mensaje, '451') && str_contains($mensaje, 'exceeded'));
+    }
+
+    /**
+     * Detecta bloqueos SMTP aplicados por el proveedor (Hostinger/hPanel).
+     *
+     * Cuando Hostinger deshabilita el envío, devuelve errores 554 5.7.1 con
+     * textos como "Disabled by user from hPanel". Este método identifica ese
+     * estado para pausar la corrida y permitir reanudación manual.
+     */
+    private function esErrorProveedorBloqueado(\Throwable $exception): bool
+    {
+        $mensaje = mb_strtolower($exception->getMessage());
+
+        return str_contains($mensaje, '554 5.7.1')
+            || str_contains($mensaje, 'disabled by user from hpanel')
+            || str_contains($mensaje, 'mail service is disabled')
+            || (str_contains($mensaje, '554') && str_contains($mensaje, 'disabled by user'))
+            || (str_contains($mensaje, '554') && str_contains($mensaje, 'hpanel'));
     }
 
     /**
