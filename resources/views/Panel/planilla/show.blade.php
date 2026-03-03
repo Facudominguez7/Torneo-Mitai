@@ -301,7 +301,15 @@
                 </div>
             @endif
 
-            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md mt-4">Actualizar Todos</button>
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+                <button type="button" data-mark-attendance-all="local"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
+                    Marcar asistencia a todos
+                </button>
+                <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200">
+                    Actualizar Todos
+                </button>
+            </div>
         </form>
         <hr class="my-4 border-t-2 border-gray-500">
 
@@ -535,7 +543,15 @@
                 </div>
             @endif
 
-            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md mt-4">Actualizar Todos</button>
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+                <button type="button" data-mark-attendance-all="visitante"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
+                    Marcar asistencia a todos
+                </button>
+                <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200">
+                    Actualizar Todos
+                </button>
+            </div>
         </form>
     </div>
     <script>
@@ -911,6 +927,29 @@
             });
 
             const updateForms = document.querySelectorAll('form[data-player-scope]');
+            const markAttendanceButtons = document.querySelectorAll('[data-mark-attendance-all]');
+
+            markAttendanceButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const scope = button.dataset.markAttendanceAll;
+                    if (!scope) {
+                        return;
+                    }
+
+                    const form = document.querySelector(`form[data-player-scope="${scope}"]`);
+                    if (!form) {
+                        return;
+                    }
+
+                    const attendanceCheckboxes = form.querySelectorAll('input[type="checkbox"][name$="[asistencia]"]');
+                    attendanceCheckboxes.forEach((checkbox) => {
+                        checkbox.checked = true;
+                    });
+
+                    syncGroupValues(scope);
+                    filterItems(scope);
+                });
+            });
 
             updateForms.forEach((form) => {
                 form.addEventListener('submit', () => {
