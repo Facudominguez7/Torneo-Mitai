@@ -423,6 +423,11 @@
                     'route' => route('equipoedicion.index', ['idEdicion' => $idEdicionContexto]),
                     'grupo' => 'gestion',
                 ],
+                'notificaciones' => [
+                    'label' => 'Notificaciones',
+                    'route' => route('push.suscriptores', ['idEdicion' => $idEdicionContexto]),
+                    'grupo' => 'gestion',
+                ],
                 'lista_buena_fe' => [
                     'label' => 'Lista de Buena Fe',
                     'route' => route('lista-buena-fe.index', ['idEdicion' => $idEdicionContexto]),
@@ -473,6 +478,7 @@
             $tipoSolicitado = request('tipo');
             $aliasTipo = [
                 'equipogrupo' => 'grupos',
+                'push.suscriptores' => 'notificaciones',
                 'lista-buena-fe' => 'lista_buena_fe',
                 'jugador.consulta' => 'jugador_consulta',
             ];
@@ -489,6 +495,7 @@
                 ['patterns' => ['categoria.*'], 'modulo' => 'categoria'],
                 ['patterns' => ['equipo.*'], 'modulo' => 'equipo'],
                 ['patterns' => ['equipoedicion.*'], 'modulo' => 'equipoedicion'],
+                ['patterns' => ['push.*'], 'modulo' => 'notificaciones'],
                 ['patterns' => ['lista-buena-fe.*'], 'modulo' => 'lista_buena_fe'],
                 ['patterns' => ['jugador.*'], 'modulo' => 'jugador_consulta'],
                 ['patterns' => ['institucion.*'], 'modulo' => 'institucion'],
@@ -522,10 +529,10 @@
             }
 
             $opcionesPorGrupo = [
-                'panel' => ['admin', 'partido', 'grupos', 'instancia_final', 'categoria', 'campeon', 'jugador_consulta'],
-                'competencia' => ['admin', 'partido', 'grupos', 'instancia_final', 'fecha', 'jugador_consulta'],
-                'gestion' => ['admin', 'edicion', 'categoria', 'equipo', 'equipoedicion', 'institucion', 'lista_buena_fe', 'jugador_consulta', 'copa', 'fase'],
-                'estadisticas' => ['admin', 'campeon', 'subcampeon', 'goleador', 'valla', 'jugador_consulta'],
+                'panel' => ['admin', 'partido', 'grupos', 'instancia_final', 'notificaciones', 'lista_buena_fe', 'categoria', 'campeon', 'jugador_consulta'],
+                'competencia' => ['admin', 'partido', 'grupos', 'instancia_final', 'fecha', 'notificaciones', 'lista_buena_fe', 'jugador_consulta'],
+                'gestion' => ['admin', 'edicion', 'categoria', 'equipo', 'equipoedicion', 'notificaciones', 'institucion', 'lista_buena_fe', 'jugador_consulta', 'copa', 'fase'],
+                'estadisticas' => ['admin', 'campeon', 'subcampeon', 'goleador', 'valla', 'notificaciones', 'lista_buena_fe', 'jugador_consulta'],
             ];
 
             $grupoContextoActual = $modulosContexto[$tipoContextoActual]['grupo'] ?? 'panel';
@@ -669,6 +676,7 @@
                             </button>
                         </form>
                     </div>
+
                 </div>
             </div>
         @endif

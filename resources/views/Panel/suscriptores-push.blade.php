@@ -76,10 +76,19 @@
                             </svg>
                             Detener
                         </button>
+
+                        <button type="button" id="btn-continuar" onclick="continuarEnvioPausado()"
+                            class="panel-action-button panel-action-button--primary hidden">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.868v4.264a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Continuar
+                        </button>
                     </div>
                     <div id="progreso-recordatorios" class="mt-2 hidden text-sm text-gray-600">
                         <div class="flex items-center gap-2">
-                            <svg class="animate-spin w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24">
+                            <svg id="progreso-spinner" class="animate-spin w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                             </svg>
@@ -463,6 +472,7 @@
         let currentPayload = {};
         let rateLimitRetries = 0;
         let totalSesionEnviados = 0;
+        let pausadoPorProveedor = false;
 
         /**
          * Delay base entre lotes (ms). Se usa 8s para mantener un ritmo
@@ -512,18 +522,25 @@
         // Recuperar estado al cargar
         document.addEventListener('DOMContentLoaded', () => {
             const estado = JSON.parse(localStorage.getItem('mitai_sending_state'));
-            if (estado && estado.active) {
-                currentTask = estado.task;
+            if (estado) {
+                currentTask = estado.task || currentTask;
                 currentPayload = estado.payload || {};
-                totalEnviados = estado.enviados;
-                totalErrores = estado.errores;
+                totalEnviados = Number(estado.enviados || 0);
+                totalErrores = Number(estado.errores || 0);
                 currentOffset = estado.offset || 0;
-                
-                mostrarProgreso(true);
-                actualizarTextoProgreso(`Recuperando sesión... Enviados: ${totalEnviados}`);
-                
-                // Retomar envío
-                reanudarEnvio();
+                pausadoPorProveedor = Boolean(estado.paused_by_provider);
+
+                if (estado.active) {
+                    mostrarProgreso(true);
+                    actualizarTextoProgreso(`Recuperando sesión... Enviados: ${totalEnviados}`);
+
+                    // Retomar envío
+                    reanudarEnvio();
+                } else if (pausadoPorProveedor) {
+                    mostrarProgreso(true);
+                    actualizarTextoProgreso('Envío pausado por bloqueo SMTP en Hostinger. Rehabilitá el correo en hPanel y presioná "Continuar".');
+                    actualizarEstadoLocal(false);
+                }
             }
 
             filtrarFechasResumen();
@@ -881,19 +898,68 @@
             totalErrores = 0;
             currentOffset = 0;
             rateLimitRetries = 0;
+            pausadoPorProveedor = false;
             
             enviando = true;
             abortController = new AbortController();
             
             mostrarProgreso(true);
+            actualizarIndicadorCarga(true);
             actualizarEstadoLocal(true);
             procesarLotes();
         }
 
         function reanudarEnvio() {
             enviando = true;
+            pausadoPorProveedor = false;
             abortController = new AbortController();
+            actualizarIndicadorCarga(true);
+            actualizarEstadoLocal(true);
             procesarLotes();
+        }
+
+        /**
+         * Pausa el envío cuando Hostinger deshabilita SMTP (error 554).
+         *
+         * Mantiene estado y offset para que el administrador reactive el
+         * servicio en hPanel y reanude manualmente desde el botón Continuar.
+         */
+        function pausarPorProveedor(mensaje, detalleTecnico = '') {
+            enviando = false;
+            pausadoPorProveedor = true;
+
+            mostrarProgreso(true);
+            actualizarIndicadorCarga(false);
+            actualizarTextoProgreso(mensaje || 'Envío pausado por bloqueo SMTP del proveedor.');
+
+            const errDiv = document.getElementById('error-debug-msg');
+            if (errDiv) {
+                if (detalleTecnico) {
+                    errDiv.textContent = 'Último error: ' + detalleTecnico;
+                    errDiv.classList.remove('hidden');
+                } else {
+                    errDiv.classList.add('hidden');
+                }
+            }
+
+            actualizarEstadoLocal(false);
+        }
+
+        /**
+         * Reanuda manualmente un envío pausado por bloqueo de proveedor.
+         */
+        function continuarEnvioPausado() {
+            if (enviando || !pausadoPorProveedor) {
+                return;
+            }
+
+            const errDiv = document.getElementById('error-debug-msg');
+            if (errDiv) {
+                errDiv.classList.add('hidden');
+            }
+
+            actualizarTextoProgreso('Reanudando envío...');
+            reanudarEnvio();
         }
 
         async function procesarLotes() {
@@ -923,6 +989,15 @@
 
                     if (!response.ok) {
                         throw new Error(data.message || 'No se pudo procesar el lote.');
+                    }
+
+                    // --- Bloqueo 554 en Hostinger: pausar y esperar reanudación manual ---
+                    if (data.provider_blocked) {
+                        pausarPorProveedor(
+                            data.message || 'Hostinger bloqueó temporalmente el envío SMTP. Rehabilitá el correo en hPanel y presioná "Continuar".',
+                            data.last_error || ''
+                        );
+                        break;
                     }
 
                     // --- Rate limit detectado por el backend ---
@@ -1056,6 +1131,7 @@
                 }
 
                 enviando = false;
+                pausadoPorProveedor = false;
                 if (abortController) abortController.abort();
                 actualizarEstadoLocal(false);
                 finalizarEnvio(true);
@@ -1064,6 +1140,7 @@
 
         function finalizarEnvio(detenido) {
             enviando = false;
+            actualizarIndicadorCarga(false);
             actualizarEstadoLocal(false);
             
             // Log final al servidor
@@ -1085,6 +1162,7 @@
                 localStorage.removeItem('mitai_sending_state');
                 actualizarTextoProgreso('Completado.');
             } else {
+                 localStorage.removeItem('mitai_sending_state');
                  actualizarTextoProgreso('Detenido por el usuario.');
             }
 
@@ -1099,6 +1177,7 @@
             const btnMan = document.getElementById('btn-manual');
             const btnResumen = document.getElementById('btn-enviar-resumen-fecha');
             const btnStop = document.getElementById('btn-detener');
+            const btnContinuar = document.getElementById('btn-continuar');
 
             if (mostrar) {
                 container.classList.remove('hidden');
@@ -1119,6 +1198,14 @@
                 }
                 
                 btnStop.classList.remove('hidden');
+
+                if (btnContinuar) {
+                    if (pausadoPorProveedor) {
+                        btnContinuar.classList.remove('hidden');
+                    } else {
+                        btnContinuar.classList.add('hidden');
+                    }
+                }
             } else {
                 if (!detenido) container.classList.add('hidden');
                 
@@ -1136,7 +1223,27 @@
                 }
                 
                 btnStop.classList.add('hidden');
+
+                if (btnContinuar) {
+                    btnContinuar.classList.add('hidden');
+                }
             }
+
+            actualizarIndicadorCarga(mostrar && enviando && !pausadoPorProveedor);
+        }
+
+        function actualizarIndicadorCarga(activo) {
+            const spinner = document.getElementById('progreso-spinner');
+            if (!spinner) {
+                return;
+            }
+
+            if (activo) {
+                spinner.classList.remove('hidden');
+                return;
+            }
+
+            spinner.classList.add('hidden');
         }
 
         function actualizarTextoProgreso(txt) {
@@ -1152,6 +1259,7 @@
                 enviados: totalEnviados,
                 errores: totalErrores,
                 offset: currentOffset,
+                paused_by_provider: pausadoPorProveedor,
                 timestamp: Date.now()
             };
             localStorage.setItem('mitai_sending_state', JSON.stringify(estado));

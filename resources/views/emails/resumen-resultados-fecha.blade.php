@@ -114,7 +114,7 @@
 
                                                 @if($metadatos !== [])
                                                     <div style="margin-top:5px;font-size:12px;color:#94a3b8;{{ $font }}">
-                                                        {{ implode(' &middot; ', $metadatos) }}
+                                                        {{ implode(' | ', $metadatos) }}
                                                     </div>
                                                 @endif
                                             </td>
