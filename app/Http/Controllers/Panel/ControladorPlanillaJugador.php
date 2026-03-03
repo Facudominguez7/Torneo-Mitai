@@ -123,12 +123,10 @@ class ControladorPlanillaJugador extends Controller
             $jugadoresSuspendidos = 0;
 
             foreach ($jugadoresBuenaFe as $listaBuenaFe) {
-                // Verificar si el jugador está suspendido (tarjeta roja en último partido)
-                if ($listaBuenaFe->estaSuspendido()) {
-                    Log::info("Jugador {$listaBuenaFe->dni_jugador} está suspendido, no se agrega a la planilla");
+                $jugadorSuspendido = $listaBuenaFe->estaSuspendido();
+                if ($jugadorSuspendido) {
+                    Log::info("Jugador {$listaBuenaFe->dni_jugador} está suspendido, se agrega a la planilla con roja marcada");
                     $jugadoresSuspendidos++;
-
-                    continue;
                 }
 
                 // Validar que el jugador y sus datos existan
@@ -151,7 +149,7 @@ class ControladorPlanillaJugador extends Controller
                         'numero_camiseta' => $listaBuenaFe->numero_camiseta ?? 0,
                         'goles' => 0,
                         'asistio' => false,
-                        'tarjeta_roja' => false,
+                        'tarjeta_roja' => $jugadorSuspendido,
                     ]);
                     $jugadoresInsertados++;
                 } catch (\Exception $e) {
@@ -159,7 +157,7 @@ class ControladorPlanillaJugador extends Controller
                 }
             }
 
-            Log::info("Planilla partido {$partidoId}: {$jugadoresInsertados} jugadores insertados, {$jugadoresSuspendidos} suspendidos excluidos");
+            Log::info("Planilla partido {$partidoId}: {$jugadoresInsertados} jugadores insertados, {$jugadoresSuspendidos} suspendidos marcados con roja");
 
         } catch (\Exception $e) {
             // Log del error pero no interrumpir la ejecución
@@ -607,6 +605,8 @@ class ControladorPlanillaJugador extends Controller
      *
      * Reglas del flujo simplificado:
      * - Agrega solo jugadores activos de la categoría real del equipo en la edición.
+     * - Si el jugador viene suspendido por roja previa, se agrega igual pero con
+     *   `tarjeta_roja` marcada para visibilidad y control administrativo.
      * - Elimina de planilla a quienes no estén activos/categorizados correctamente.
      */
     private function sincronizarPlanilla($partidoId, $equipoId, $idEdicion, $tipoPartido)
@@ -651,10 +651,7 @@ class ControladorPlanillaJugador extends Controller
                     continue;
                 }
 
-                // Verificar suspensión
-                if ($jugadorBF->estaSuspendido()) {
-                    continue;
-                }
+                $jugadorSuspendido = $jugadorBF->estaSuspendido();
 
                 // Crear registro en planilla
                 PlanillaJugador::create([
@@ -668,7 +665,7 @@ class ControladorPlanillaJugador extends Controller
                     'numero_camiseta' => $jugadorBF->numero_camiseta ?? 0,
                     'goles' => 0,
                     'asistio' => false,
-                    'tarjeta_roja' => false,
+                    'tarjeta_roja' => $jugadorSuspendido,
                 ]);
             }
 

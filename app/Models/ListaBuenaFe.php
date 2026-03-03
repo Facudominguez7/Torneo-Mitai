@@ -209,9 +209,14 @@ class ListaBuenaFe extends Model
 
     /**
      * Verificar si el jugador está suspendido por tarjeta roja
-     * 
-     * Busca si el jugador tiene tarjeta roja en su última participación
-     * considerando tanto partidos normales como instancias finales
+     *
+     * Regla operativa vigente:
+     * - La suspensión es de un solo partido.
+     * - Solo se considera expulsión real cuando en la última planilla
+     *   `tarjeta_roja = true` y `asistio = true`.
+     * - Si la última planilla tiene roja marcada pero sin asistencia,
+     *   se interpreta como "partido de suspensión" y no vuelve a bloquear
+     *   automáticamente la siguiente planilla.
      */
     public function estaSuspendido()
     {
@@ -221,6 +226,10 @@ class ListaBuenaFe extends Model
             ->orderBy('id', 'desc')  // Usar ID en vez de updated_at (que no existe)
             ->first();
 
-        return $ultimaPlanilla && $ultimaPlanilla->tarjeta_roja;
+        if (! $ultimaPlanilla || ! $ultimaPlanilla->tarjeta_roja) {
+            return false;
+        }
+
+        return (bool) $ultimaPlanilla->asistio;
     }
 }
