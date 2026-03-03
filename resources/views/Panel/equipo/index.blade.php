@@ -27,8 +27,12 @@
         @endif
     </div>
     <div class="flex justify-center mb-4">
-        <form action="{{ route('equipo.index') }}" method="GET" class="flex space-x-4">
+        <form action="{{ route('equipo.index') }}" method="GET" class="flex flex-wrap justify-center gap-3">
             <input type="hidden" name="idEdicion" value="{{ $idEdicion }}">
+            <input type="text" name="nombreEquipo" value="{{ $nombreEquipo ?? '' }}"
+                placeholder="Buscar equipo por nombre"
+                class="border border-gray-300 rounded-lg px-4 py-2 w-64"
+                autocomplete="off">
             <select name="idCategoria" class="border border-gray-300 rounded-lg px-4 py-2">
                 <option value="">Todas las Categorías</option>
                 @foreach ($categorias as $categoria)
@@ -40,6 +44,12 @@
             <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
                 Filtrar
             </button>
+            @if (!empty($nombreEquipo) || !empty($idCategoria))
+                <a href="{{ route('equipo.index', ['idEdicion' => $idEdicion]) }}"
+                    class="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+                    Limpiar
+                </a>
+            @endif
         </form>
     </div>
     <div class="mx-auto w-full max-w-2xl flex justify-center items-stretch pb-2 px-2 sm:px-6 lg:px-8">
