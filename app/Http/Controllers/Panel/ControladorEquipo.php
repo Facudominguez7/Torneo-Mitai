@@ -14,13 +14,17 @@ use Illuminate\Support\Facades\Storage;
 class ControladorEquipo extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Lista equipos filtrando por edición, categoría y nombre.
+     *
+     * Se mantiene el contexto de filtros en paginación para que el usuario no
+     * pierda la búsqueda al navegar entre páginas del módulo.
      */
     public function index(Request $request)
     {
         $ediciones = Edicion::all();
         $idEdicion = (int) $request->idEdicion;
         $idCategoria = $request->idCategoria; // Capturar el filtro de categoría
+        $nombreEquipo = trim((string) $request->input('nombreEquipo', ''));
 
         $query = Equipo::join('equipo_ediciones', 'equipos.id', '=', 'equipo_ediciones.idEquipo')
             ->join('categorias', 'equipos.idCategoria', '=', 'categorias.id')
@@ -33,13 +37,21 @@ class ControladorEquipo extends Controller
             $query->where('equipo_ediciones.idCategoria', $idCategoria); // Filtrar por categoría si está presente
         }
 
+        if ($nombreEquipo !== '') {
+            $query->where('equipos.nombre', 'like', '%'.$nombreEquipo.'%');
+        }
+
         $equipos = $query->paginate(20);
-        $equipos->appends(['idEdicion' => $idEdicion, 'idCategoria' => $idCategoria]);
+        $equipos->appends([
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'nombreEquipo' => $nombreEquipo,
+        ]);
 
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $categorias = Categoria::where('idEdicion', $idEdicion)->orderBy('nombreCategoria', 'desc')->get(); // Obtener categorías de la edición seleccionada
 
-        return view('Panel.equipo.index', compact('EdicionSeleccionada', 'ediciones', 'equipos', 'idEdicion', 'categorias', 'idCategoria'));
+        return view('Panel.equipo.index', compact('EdicionSeleccionada', 'ediciones', 'equipos', 'idEdicion', 'categorias', 'idCategoria', 'nombreEquipo'));
     }
 
     /**
