@@ -913,6 +913,7 @@
             enviando = true;
             pausadoPorProveedor = false;
             abortController = new AbortController();
+            mostrarProgreso(true);
             actualizarIndicadorCarga(true);
             actualizarEstadoLocal(true);
             procesarLotes();
@@ -951,6 +952,15 @@
         function continuarEnvioPausado() {
             if (enviando || !pausadoPorProveedor) {
                 return;
+            }
+
+            // Ocultar inmediatamente el botón para evitar doble click visual.
+            pausadoPorProveedor = false;
+            mostrarProgreso(true);
+
+            const btnContinuar = document.getElementById('btn-continuar');
+            if (btnContinuar) {
+                btnContinuar.classList.add('hidden');
             }
 
             const errDiv = document.getElementById('error-debug-msg');
