@@ -1,4 +1,13 @@
 @csrf
+@php
+    $fechaPorDefecto = old('idFechas', $partido->idFechas ?? optional($fechas->last())->id);
+    $horarioPorDefecto = old(
+        'horario_datetime',
+        $partido->horario_datetime
+            ? \Carbon\Carbon::parse($partido->horario_datetime)->format('Y-m-d\TH:i')
+            : \Carbon\Carbon::now()->next(\Carbon\Carbon::SUNDAY)->startOfDay()->format('Y-m-d\TH:i')
+    );
+@endphp
 <div class="mb-6">
     <div class="flex flex-wrap items-center gap-3 md:gap-4 bg-white/10 border border-white/10 rounded-lg p-3 md:p-4">
         @if (isset($GrupoSeleccionado))
@@ -84,7 +93,7 @@
         class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
         @foreach ($fechas as $f)
             <option value="{{ $f->id }}"
-                {{ (string) old('idFechas', $partido->idFechas ?? '') === (string) $f->id ? 'selected' : '' }}>
+                {{ (string) $fechaPorDefecto === (string) $f->id ? 'selected' : '' }}>
                 {{ $f->nombre }}
             </option>
         @endforeach
@@ -99,7 +108,7 @@
     </label>
     <input type="datetime-local" name="horario_datetime" id="horario_datetime"
         class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
-        value="{{ old('horario_datetime', optional($partido->horario_datetime ? \Carbon\Carbon::parse($partido->horario_datetime) : null)->format('Y-m-d\TH:i')) }}">
+        value="{{ $horarioPorDefecto }}">
     @error('horario_datetime')
         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
     @enderror
@@ -168,4 +177,3 @@
         }
     });
     </script>
-
