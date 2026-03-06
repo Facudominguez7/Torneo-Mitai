@@ -100,28 +100,21 @@
                     </x-slot>
                 </x-dropdown>
             </div>
-            <div x-data="{ open: false }" class="relative inline-block text-left filtro-categoria w-full md:w-auto">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button
-                            class="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 w-full md:w-auto">
-                            Seleccionar Categoria
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
-                        @foreach ($categorias as $c)
-                            <div class="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                data-id="{{ $c->id }}" data-nombre="{{ $c->nombreCategoria }}">
-                                {{ $c->nombreCategoria }}
-                            </div>
-                        @endforeach
-                    </x-slot>
-                </x-dropdown>
+            <div class="relative filtro-categoria mt-2 w-full md:mt-0 md:w-[18rem]">
+                <select id="filtro-categoria-select"
+                    class="w-full appearance-none rounded-full bg-gray-800 py-2 pl-4 pr-10 text-sm text-white transition-all duration-300 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 sm:text-base">
+                    <option value="">Seleccionar Categoria</option>
+                    @foreach ($categorias as $c)
+                        <option value="{{ $c->id }}" {{ (string) request('idCategoria') === (string) $c->id ? 'selected' : '' }}>
+                            {{ $c->nombreCategoria }}
+                        </option>
+                    @endforeach
+                </select>
+                <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
             </div>
             <div class="mt-2 inline-block w-full items-center md:ml-2 md:mt-0 md:w-auto">
                 <button id="reset-filters" class="btn btn-eliminar w-full md:w-auto">
@@ -303,15 +296,13 @@
             }
 
             // Añadir eventos a cada filtro de "Categoria"
-            document.querySelectorAll('.filtro-categoria [data-id]').forEach(function(item) {
-                item.addEventListener('click', function() {
-                    idCategoria = this.getAttribute('data-id');
+            const categoriaSelect = document.getElementById('filtro-categoria-select');
+
+            if (categoriaSelect) {
+                categoriaSelect.addEventListener('change', function() {
+                    idCategoria = this.value;
                     idGrupo = '';
                     idFecha = '';
-                    document.querySelectorAll('.filtro-categoria [data-id]').forEach(function(i) {
-                        i.classList.remove('active');
-                    });
-                    this.classList.add('active');
                     toggleFiltersVisibility();
                     updateUrl({
                         idCategoria,
@@ -320,7 +311,7 @@
                         idGrupo
                     });
                 });
-            });
+            }
 
             // Añadir eventos a cada filtro de "Fecha"
             document.querySelectorAll('.filtro-fecha [data-id]').forEach(function(item) {
