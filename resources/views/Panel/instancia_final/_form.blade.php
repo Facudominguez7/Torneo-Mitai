@@ -1,4 +1,14 @@
 @csrf
+@php
+    $horarioPorDefecto = old(
+        'horario',
+        isset($horario) && $horario
+            ? $horario
+            : ($partido->horario
+                ? \Carbon\Carbon::parse($partido->horario)->format('Y-m-d\TH:i')
+                : \Carbon\Carbon::now()->next(\Carbon\Carbon::SUNDAY)->startOfDay()->format('Y-m-d\TH:i'))
+    );
+@endphp
 @if (isset($CategoriaSeleccionada))
     <div class="mb-5">
         <label for="categoría" class="mb-3 block text-base font-medium text-white">
@@ -77,7 +87,7 @@
     </label>
     <input type="datetime-local" name="horario" id="horario"
         class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
-        value="{{ old('horario', isset($horario) ? $horario : '') }}">
+        value="{{ $horarioPorDefecto }}">
 </div>
 <div class="mb-5">
     <label for="cancha" class="mb-3 block text-base font-medium text-white">
@@ -88,4 +98,3 @@
          />
 </div>
 <input class="hidden" type="number" name="idEdicion" id="idEdicion" value="{{ $EdicionSeleccionada->id }}">
-
