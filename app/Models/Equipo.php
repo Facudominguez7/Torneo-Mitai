@@ -54,11 +54,16 @@ class Equipo extends Model
         $lower = mb_strtolower($nombre, 'UTF-8');
         $parts = preg_split('/(\s+)/u', $lower, -1, PREG_SPLIT_DELIM_CAPTURE);
         foreach ($parts as $i => $p) {
-            if (preg_match('/^\s+$/u', $p)) continue; // mantener separadores
-            // Capitalizar primera letra de cada palabra
-            $first = mb_substr($p, 0, 1, 'UTF-8');
-            $rest  = mb_substr($p, 1, null, 'UTF-8');
-            $parts[$i] = mb_strtoupper($first, 'UTF-8') . $rest;
+            if (preg_match('/^\s+$/u', $p)) {
+                continue;
+            }
+
+            $parts[$i] = preg_replace_callback(
+                '/\p{L}/u',
+                fn ($matches) => mb_strtoupper($matches[0], 'UTF-8'),
+                $p,
+                1
+            );
         }
         $title = implode('', $parts);
 
