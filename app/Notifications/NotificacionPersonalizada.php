@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\EmailDeliverabilityHeaders;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -135,18 +136,16 @@ class NotificacionPersonalizada extends Notification
 
         return (new MailMessage)
             ->subject("{$this->titulo} - Torneos Mita'i")
-            ->replyTo('info@torneosmitai.com')
+            ->from(EmailDeliverabilityHeaders::fromAddress(), EmailDeliverabilityHeaders::fromName())
+            ->replyTo(EmailDeliverabilityHeaders::replyToAddress(), EmailDeliverabilityHeaders::replyToName())
             ->greeting("Hola {$notifiable->name},")
             ->line($this->mensaje)
             ->action('Ver más información', $urlCompleta)
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
             ->salutation("Saludos, Torneos Mita'i")
-            // Headers para deliverability y one-click unsubscribe (RFC 8058)
             ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
-                $headers = $message->getHeaders();
-                $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
-                $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+                EmailDeliverabilityHeaders::applyBulk($message, 'notificacion_personalizada', $urlDarseDeBaja);
             });
     }
 

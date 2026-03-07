@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\EmailDomainGuard;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,19 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => [
+                'required',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                'unique:'.User::class,
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (EmailDomainGuard::isBlocked((string) $value)) {
+                        $fail(EmailDomainGuard::validationMessage());
+                    }
+                },
+            ],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -39,6 +52,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'requires_email_verification_for_notifications' => true,
             'restablecer_password' => 'innecesario', // Usuario recién creado por sí mismo, no requiere reset
         ]);
 
@@ -46,6 +60,8 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('home', absolute: false));
+        return redirect()->route('verification.notice')
+            ->with('status', 'verification-code-sent')
+            ->with('email-success', 'Te enviamos un codigo de 6 digitos para verificar tu correo y activar las notificaciones por email.');
     }
 }

@@ -12,6 +12,8 @@
         }
         body {
             font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.3;
             padding: 15px;
             background: white;
         }
@@ -33,12 +35,12 @@
         }
         .header-text h1 {
             color: #0e4b5e;
-            font-size: 22px;
+            font-size: 26px;
             margin-bottom: 3px;
         }
         .header-text p {
             color: #666;
-            font-size: 12px;
+            font-size: 14px;
         }
         .categoria-section {
             margin-bottom: 20px;
@@ -48,7 +50,7 @@
             background: linear-gradient(135deg, #0e4b5e, #2a6d81);
             color: white;
             padding: 10px 15px;
-            font-size: 18px;
+            font-size: 21px;
             font-weight: bold;
             margin-bottom: 10px;
             border-radius: 5px;
@@ -63,15 +65,15 @@
         .partido-header {
             background: #0e4b5e;
             color: white;
-            padding: 6px 12px;
-            font-size: 11px;
+            padding: 8px 12px;
+            font-size: 13px;
             display: flex;
             justify-content: space-between;
             gap: 8px;
         }
         .partido-meta {
             font-weight: 700;
-            color: #111827;
+            color: inherit;
         }
         .partido-body {
             display: flex;
@@ -79,28 +81,28 @@
         }
         .equipo-section {
             flex: 1;
-            padding: 10px 12px;
+            padding: 12px 14px;
             text-align: center;
         }
         .equipo-nombre {
-            font-size: 14px;
+            font-size: 17px;
             font-weight: bold;
             color: #0e4b5e;
-            margin-bottom: 8px;
-            min-height: 20px;
+            margin-bottom: 10px;
+            min-height: 24px;
         }
         .goles-label {
-            font-size: 10px;
+            font-size: 12px;
             color: #666;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .goles-lineas {
             border-top: 1px solid #999;
-            margin: 5px 0;
-            min-height: 20px;
+            margin: 6px 0;
+            min-height: 24px;
         }
         .resultado-section {
-            width: 80px;
+            width: 96px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -108,12 +110,12 @@
             background: #f0f7f9;
             border-left: 1px solid #ddd;
             border-right: 1px solid #ddd;
-            padding: 10px 5px;
+            padding: 12px 6px;
         }
         .resultado-label {
-            font-size: 9px;
+            font-size: 11px;
             color: #666;
-            margin-bottom: 5px;
+            margin-bottom: 7px;
         }
         .resultado-boxes {
             display: flex;
@@ -121,19 +123,19 @@
             gap: 3px;
         }
         .resultado-box {
-            width: 28px;
-            height: 28px;
+            width: 34px;
+            height: 34px;
             border: 2px solid #0e4b5e;
             border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             background: white;
         }
         .resultado-separator {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             color: #0e4b5e;
         }
@@ -145,7 +147,7 @@
             color: white;
             border: none;
             padding: 10px 20px;
-            font-size: 14px;
+            font-size: 15px;
             cursor: pointer;
             border-radius: 5px;
             z-index: 1000;
@@ -205,11 +207,24 @@
                 <div class="categoria-title">Horario: {{ $horario }} hs</div>
 
                 @foreach($partidosHorario as $p)
+                    @php
+                        $nombreFecha = $p->nombre_fecha ?? 'Fecha sin nombre';
+                        $nombreGrupo = trim((string) ($p->nombre_grupo ?? ''));
+                        $fechaNormalizada = mb_strtolower($nombreFecha);
+                        $grupoNormalizado = mb_strtolower($nombreGrupo);
+                        $etiquetaGrupo = str_starts_with($grupoNormalizado, 'grupo ')
+                            ? $nombreGrupo
+                            : 'Grupo '.$nombreGrupo;
+                        $mostrarGrupo = $nombreGrupo !== ''
+                            && ! $p->es_interzonal
+                            && ! str_contains($fechaNormalizada, 'grupo '.$grupoNormalizado)
+                            && ! str_contains($fechaNormalizada, $grupoNormalizado.' grupo');
+                    @endphp
                     <div class="partido-card">
                         <div class="partido-header">
                             <span class="partido-meta">
-                                <strong>{{ $p->nombre_categoria ?? 'Sin categoría' }}</strong> - {{ $p->nombre_fecha ?? 'Fecha sin nombre' }}
-                                @if($p->nombre_grupo && ! $p->es_interzonal) | Grupo {{ $p->nombre_grupo }} @endif
+                                <strong>{{ $p->nombre_categoria ?? 'Sin categoría' }}</strong> - {{ $nombreFecha }}
+                                @if($mostrarGrupo) | {{ $etiquetaGrupo }} @endif
                                 @if($p->es_interzonal) | Interzonal @endif
                                 | Cancha {{ $p->cancha ?? '-' }}
                             </span>

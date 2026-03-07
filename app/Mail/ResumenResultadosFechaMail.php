@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Services\EmailDeliverabilityHeaders;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
@@ -56,17 +57,17 @@ class ResumenResultadosFechaMail extends Mailable
         }
 
         return $this
+            ->from(EmailDeliverabilityHeaders::fromAddress(), EmailDeliverabilityHeaders::fromName())
             ->subject($subject)
-            ->replyTo('info@torneosmitai.com')
+            ->replyTo(EmailDeliverabilityHeaders::replyToAddress(), EmailDeliverabilityHeaders::replyToName())
             ->view('emails.resumen-resultados-fecha')
+            ->text('emails.resumen-resultados-fecha-text')
             ->with([
                 'resumen' => $this->resumen,
                 'urlBajaGeneral' => $this->urlBajaGeneral,
             ])
             ->withSymfonyMessage(function ($message) {
-                $headers = $message->getHeaders();
-                $headers->addTextHeader('List-Unsubscribe', "<{$this->urlBajaGeneral}>");
-                $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+                EmailDeliverabilityHeaders::applyBulk($message, 'resumen_resultados_fecha', $this->urlBajaGeneral);
             });
     }
 }

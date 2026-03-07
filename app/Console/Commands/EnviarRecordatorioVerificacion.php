@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Services\EmailDomainGuard;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -79,8 +80,8 @@ class EnviarRecordatorioVerificacion extends Command
 
         foreach ($usuarios as $index => $usuario) {
             try {
-                // Enviar notificación de recordatorio
-                $usuario->notify(new \App\Notifications\RecordatorioVerificacionEmail());
+                // Enviar un nuevo código de verificación
+                $usuario->sendEmailVerificationNotification();
 
                 // Actualizar fecha del último recordatorio
                 $usuario->last_verification_reminder_at = now();
@@ -138,6 +139,8 @@ class EnviarRecordatorioVerificacion extends Command
             ->whereNull('email_verified_at')  // Sin verificar
             ->whereNotNull('email')           // Con email
             ->where('created_at', '<', now()->subHours(self::HORAS_MINIMAS_DESDE_REGISTRO));  // Hace más de 24h
+
+        EmailDomainGuard::applyBlockedDomainsFilter($query);
 
         // Aplicar límite de recordatorios solo si no se fuerza
         if (!$this->option('force')) {

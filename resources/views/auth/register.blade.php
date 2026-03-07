@@ -2,7 +2,7 @@
     <div class="space-y-6">
         <div class="space-y-1 text-center">
             <h2 class="text-2xl font-bold text-white">Creá tu cuenta en Mita'í</h2>
-            <p class="text-sm text-white/60">Accedé a todos los apartados del torneo y seguí tus equipos favoritos.</p>
+            <p class="text-sm text-white/60">Accedé a todos los apartados del torneo, seguí tus equipos favoritos y activá las notificaciones por email con un código de verificación.</p>
         </div>
 
         <form method="POST" action="{{ route('register') }}" class="space-y-5" id="register-form">

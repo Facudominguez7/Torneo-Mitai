@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Google;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\EmailDomainGuard;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
-use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Cache;
+use Laravel\Socialite\Facades\Socialite;
 
 
 class LoginController extends Controller
@@ -17,10 +18,11 @@ class LoginController extends Controller
     public function callback()
     {
         try {
-            // Limpiar el caché
-            Cache::flush();
-
             $user_google = Socialite::driver('google')->stateless()->user();
+
+            if (EmailDomainGuard::isBlocked((string) $user_google->email)) {
+                return redirect('login')->withErrors(['email' => EmailDomainGuard::validationMessage()]);
+            }
 
             // Verifica si el correo electrónico ya está en uso por un usuario registrado
             $existingUser = User::where('email', $user_google->email)->first();
@@ -38,8 +40,8 @@ class LoginController extends Controller
                 $user->google_id = $user_google->id;
                 $user->name = $user_google->name;
                 $user->email = $user_google->email;
+                $user->email_verified_at = Carbon::now();
                 $user->google_avatar = $user_google->avatar;
-                $user->google_token = $user_google->token;
                 $user->password = Hash::make($password); // Opcional
 
                 $user->save();
@@ -54,9 +56,6 @@ class LoginController extends Controller
 
     public function redirect()
     {
-        // Limpiar el caché
-        Cache::flush();
-
         return Socialite::driver('google')->redirect();
     }
     
