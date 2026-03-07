@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\EmailDomainGuard;
 use Illuminate\Console\Command;
 use App\Models\Partido;
 use App\Models\User;
@@ -56,12 +57,18 @@ class EnviarNotificacionesResultado extends Command
             $notificacion = new ResultadoCargado($datosPartido);
 
             // Obtener usuarios notificables (Email habilitado o Push)
-            // Se incluyen correos no verificados para priorizar alcance,
-            // manteniendo la baja en cada email enviado.
+            // Las cuentas nuevas con política reforzada solo reciben emails
+            // si ya verificaron su direccion.
             User::where(function ($q) {
                 $q->where(function($q2) {
                     $q2->where('email_subscribed', true)
-                       ->whereNotNull('email');
+                       ->whereNotNull('email')
+                       ->where('email', '!=', '')
+                       ->where(function ($emailPolicyQuery) {
+                           $emailPolicyQuery->where('requires_email_verification_for_notifications', false)
+                               ->orWhereNotNull('email_verified_at');
+                       });
+                    EmailDomainGuard::applyBlockedDomainsFilter($q2);
                 })
                 ->orWhereHas('pushSubscriptions');
             })->chunk(50, function ($users) use ($notificacion) {

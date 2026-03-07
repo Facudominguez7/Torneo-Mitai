@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\EmailDeliverabilityHeaders;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -148,7 +149,8 @@ class ResultadoCargado extends Notification
 
         $mail = (new MailMessage)
             ->subject("Resultado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'i")
-            ->replyTo('info@torneosmitai.com')
+            ->from(EmailDeliverabilityHeaders::fromAddress(), EmailDeliverabilityHeaders::fromName())
+            ->replyTo(EmailDeliverabilityHeaders::replyToAddress(), EmailDeliverabilityHeaders::replyToName())
             ->greeting("Hola {$notifiable->name},")
             ->line('Se ha cargado un nuevo resultado:')
             ->line('')
@@ -164,11 +166,8 @@ class ResultadoCargado extends Notification
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
             ->salutation("Saludos, Torneos Mita'i")
-            // Headers para deliverability y one-click unsubscribe (RFC 8058)
             ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
-                $headers = $message->getHeaders();
-                $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
-                $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+                EmailDeliverabilityHeaders::applyBulk($message, 'resultado_cargado', $urlDarseDeBaja);
             });
     }
 

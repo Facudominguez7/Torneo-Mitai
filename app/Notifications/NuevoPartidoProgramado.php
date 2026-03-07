@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Services\EmailDeliverabilityHeaders;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -147,7 +148,8 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
 
         $mail = (new MailMessage)
             ->subject("Partido Programado: {$equipoLocal} vs {$equipoVisitante} - Torneos Mita'i")
-            ->replyTo('info@torneosmitai.com')
+            ->from(EmailDeliverabilityHeaders::fromAddress(), EmailDeliverabilityHeaders::fromName())
+            ->replyTo(EmailDeliverabilityHeaders::replyToAddress(), EmailDeliverabilityHeaders::replyToName())
             ->greeting("Hola {$notifiable->name},")
             ->line($this->mensaje ?? 'Se ha programado un nuevo partido:')
             ->line('')
@@ -170,11 +172,8 @@ class NuevoPartidoProgramado extends Notification implements ShouldQueue
             ->line('---')
             ->line("Si preferís no recibir más emails, podés [darte de baja aquí]({$urlDarseDeBaja}).")
             ->salutation("Saludos, Torneos Mita'i")
-            // Headers para deliverability y one-click unsubscribe (RFC 8058)
             ->withSymfonyMessage(function ($message) use ($urlDarseDeBaja) {
-                $headers = $message->getHeaders();
-                $headers->addTextHeader('List-Unsubscribe', "<{$urlDarseDeBaja}>");
-                $headers->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+                EmailDeliverabilityHeaders::applyBulk($message, 'partido_programado', $urlDarseDeBaja);
             });
     }
 

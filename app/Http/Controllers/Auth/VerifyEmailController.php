@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\EmailVerificationCodeService;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class VerifyEmailController extends Controller
 {
     /**
      * Mark the authenticated user's email address as verified.
      */
-    public function __invoke(\Illuminate\Http\Request $request): RedirectResponse
+    public function __invoke(Request $request, EmailVerificationCodeService $verificationCodeService): RedirectResponse
     {
         $user = $request->user();
         
@@ -35,10 +37,13 @@ class VerifyEmailController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
+            $verificationCodeService->clear($user);
+
             return redirect()->intended(route('home', absolute: false).'?verified=1');
         }
 
         if ($user->markEmailAsVerified()) {
+            $verificationCodeService->clear($user);
             event(new Verified($user));
         }
 

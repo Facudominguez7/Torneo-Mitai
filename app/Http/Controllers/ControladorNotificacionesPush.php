@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\EmailDomainGuard;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -61,6 +63,11 @@ class ControladorNotificacionesPush extends Controller
      * del frontend para mantener un ritmo seguro (~3 emails/minuto).
      */
     private const SMTP_THROTTLE_SECONDS = 3;
+
+    /**
+     * Tiempo de retención de métricas en cache para auditoría operativa.
+     */
+    private const METRICAS_ENVIO_TTL_HOURS = 12;
 
     /**
      * Suscribir al usuario autenticado a notificaciones push.
@@ -414,6 +421,10 @@ class ControladorNotificacionesPush extends Controller
             return back()->with('info', "El usuario {$user->name} ya tiene el email verificado.");
         }
 
+        if (EmailDomainGuard::isBlocked((string) $user->email)) {
+            return back()->with('error', 'El dominio del correo del usuario está bloqueado para envíos automáticos.');
+        }
+
         $user->sendEmailVerificationNotification();
 
         Log::channel('single')->info('Email de verificación reenviado manualmente por admin', [
@@ -616,17 +627,29 @@ class ControladorNotificacionesPush extends Controller
      */
     public function contarUsuariosPendientes(Request $request)
     {
-        $count = \App\Models\User::query()
+        $query = \App\Models\User::query()
             ->whereNull('email_verified_at')
             ->whereNotNull('email')
-            ->where('created_at', '<', now()->subHours(24))
+            ->where('created_at', '<', now()->subHours(24));
+
+        EmailDomainGuard::applyBlockedDomainsFilter($query);
+
+        $totalElegibles = (clone $query)->count();
+        $count = (clone $query)
+            ->where(function ($q) {
+                $q->whereNull('last_verification_reminder_at')
+                    ->orWhere('last_verification_reminder_at', '<', now()->subDays(7));
+            })
             ->count();
 
         return response()->json([
             'count' => $count,
+            'eligible_total' => $totalElegibles,
             'message' => $count > 0
                 ? "Hay {$count} usuarios pendientes de recordatorio."
-                : 'No hay usuarios pendientes de recordatorio.',
+                : ($totalElegibles > 0
+                    ? 'No hay pendientes por ventana de 7 días, pero podés reenviar manualmente si hace falta.'
+                    : 'No hay usuarios pendientes de recordatorio.'),
         ]);
     }
 
@@ -636,17 +659,39 @@ class ControladorNotificacionesPush extends Controller
      */
     public function enviarLoteRecordatorios(Request $request)
     {
-        $batchSize = 10; // Emails por request
+        $validated = $request->validate([
+            'force' => ['nullable', 'boolean'],
+        ]);
 
-        // Obtener siguiente lote de usuarios
-        $usuarios = \App\Models\User::query()
+        $batchSize = 10; // Emails por request
+        $forzar = (bool) ($validated['force'] ?? false);
+
+        $queryPendientes = \App\Models\User::query()
             ->whereNull('email_verified_at')
             ->whereNotNull('email')
-            ->where('created_at', '<', now()->subHours(24))
-            ->where(function ($q) {
+            ->where('created_at', '<', now()->subHours(24));
+
+        if (! $forzar) {
+            $queryPendientes->where(function ($q) {
                 $q->whereNull('last_verification_reminder_at')
                     ->orWhere('last_verification_reminder_at', '<', now()->subDays(7));
-            })
+            });
+        }
+
+        EmailDomainGuard::applyBlockedDomainsFilter($queryPendientes);
+
+        $totalPendientes = (clone $queryPendientes)->count();
+        $metricasExistentes = $this->obtenerMetricasEnvio($request, 'recordatorios');
+        $metricas = $this->iniciarMetricasEnvio(
+            $request,
+            'recordatorios',
+            $totalPendientes,
+            ['tipo_correo' => 'verificacion', 'force' => $forzar],
+            ! $this->hayMetricasEnvio($request, 'recordatorios') || ! empty($metricasExistentes['completed_at'])
+        );
+
+        // Obtener siguiente lote de usuarios
+        $usuarios = (clone $queryPendientes)
             ->take($batchSize)
             ->get();
 
@@ -659,6 +704,9 @@ class ControladorNotificacionesPush extends Controller
             return response()->json([
                 'done' => true,
                 'sent' => 0,
+                'errors' => 0,
+                'remaining' => 0,
+                'metrics' => $this->formatearMetricasEnvio($metricas),
                 'message' => 'Todos los recordatorios fueron enviados.',
             ]);
         }
@@ -670,7 +718,7 @@ class ControladorNotificacionesPush extends Controller
 
         foreach ($usuarios as $usuario) {
             try {
-                $usuario->notify(new \App\Notifications\RecordatorioVerificacionEmail());
+                $usuario->sendEmailVerificationNotification();
                 $usuario->last_verification_reminder_at = now();
                 $usuario->save();
                 $enviados++;
@@ -701,15 +749,18 @@ class ControladorNotificacionesPush extends Controller
         }
 
         // Ver cuántos quedan
-        $remaining = \App\Models\User::query()
-            ->whereNull('email_verified_at')
-            ->whereNotNull('email')
-            ->where('created_at', '<', now()->subHours(24))
-            ->where(function ($q) {
-                $q->whereNull('last_verification_reminder_at')
-                    ->orWhere('last_verification_reminder_at', '<', now()->subDays(7));
-            })
-            ->count();
+        $remaining = (clone $queryPendientes)->count();
+
+        $metricas = $this->actualizarMetricasEnvio($request, 'recordatorios', [
+            'attempted_delta' => $usuarios->count(),
+            'accepted_delta' => $enviados,
+            'failed_delta' => count($errores),
+            'processed_batches_delta' => 1,
+            'remaining' => $remaining,
+            'provider_blocked' => $proveedorBloqueado,
+            'rate_limited' => false,
+            'last_error' => $lastError,
+        ]);
 
         return response()->json([
             'done' => $proveedorBloqueado ? false : ($remaining === 0),
@@ -720,6 +771,7 @@ class ControladorNotificacionesPush extends Controller
             'provider_blocked' => $proveedorBloqueado,
             'paused' => $proveedorBloqueado,
             'rate_limited' => false,
+            'metrics' => $this->formatearMetricasEnvio($metricas),
             'message' => $proveedorBloqueado
                 ? 'Hostinger bloqueó temporalmente el envío (554). Rehabilitá el correo en hPanel y continuá desde el panel.'
                 : "Enviados: {$enviados}. Restantes: {$remaining}",
@@ -776,6 +828,18 @@ class ControladorNotificacionesPush extends Controller
             ->pluck('id')
             ->values();
 
+        $totalDestinatarios = $idsDestinatarios->count();
+        $metricas = $this->iniciarMetricasEnvio(
+            $request,
+            'manual',
+            $totalDestinatarios,
+            [
+                'titulo' => $validated['titulo'],
+                'url' => $validated['url'] ?? '/',
+            ],
+            $offset === 0
+        );
+
         $idsLote = $idsDestinatarios->slice($offset, $limit)->values();
 
         $usuarios = \App\Models\User::query()
@@ -788,6 +852,7 @@ class ControladorNotificacionesPush extends Controller
                 'done' => true,
                 'sent' => 0,
                 'errors' => 0,
+                'metrics' => $this->formatearMetricasEnvio($metricas),
                 'message' => 'Fin del proceso.',
             ]);
         }
@@ -851,7 +916,18 @@ class ControladorNotificacionesPush extends Controller
         }
 
         $avanceLote = ($esRateLimit || $proveedorBloqueado) ? 0 : $usuarios->count();
-        $remaining = max(0, $idsDestinatarios->count() - ($offset + $avanceLote));
+        $remaining = max(0, $totalDestinatarios - ($offset + $avanceLote));
+
+        $metricas = $this->actualizarMetricasEnvio($request, 'manual', [
+            'attempted_delta' => count($emails),
+            'accepted_delta' => $enviados,
+            'failed_delta' => count($errores),
+            'processed_batches_delta' => 1,
+            'remaining' => $remaining,
+            'provider_blocked' => $proveedorBloqueado,
+            'rate_limited' => $esRateLimit,
+            'last_error' => $lastError,
+        ]);
 
         return response()->json([
             'done' => ($esRateLimit || $proveedorBloqueado) ? false : ($remaining === 0),
@@ -864,6 +940,7 @@ class ControladorNotificacionesPush extends Controller
             'push_count' => 0,
             'email_count' => $contadorEmail,
             'remaining' => $remaining,
+            'metrics' => $this->formatearMetricasEnvio($metricas),
             'message' => $proveedorBloqueado
                 ? 'Hostinger bloqueó temporalmente el envío (554). Rehabilitá el correo en hPanel y continuá desde el panel.'
                 : 'Lote procesado.',
@@ -992,12 +1069,26 @@ class ControladorNotificacionesPush extends Controller
             ->values();
 
         $totalDestinatarios = $idsDestinatarios->count();
+        $metricas = $this->iniciarMetricasEnvio(
+            $request,
+            'resumen_fecha',
+            $totalDestinatarios,
+            [
+                'idEdicion' => $idEdicion,
+                'idFecha' => (int) $validated['idFecha'],
+                'idCategoria' => isset($validated['idCategoria']) ? (int) $validated['idCategoria'] : null,
+                'partidos_count' => $resumen['partidos_count'],
+            ],
+            $offset === 0
+        );
+
         if ($totalDestinatarios === 0) {
             return response()->json([
                 'done' => true,
                 'sent' => 0,
                 'errors' => 0,
                 'remaining' => 0,
+                'metrics' => $this->formatearMetricasEnvio($metricas),
                 'message' => 'No hay destinatarios activos para notificar.',
             ]);
         }
@@ -1009,6 +1100,7 @@ class ControladorNotificacionesPush extends Controller
                 'sent' => 0,
                 'errors' => 0,
                 'remaining' => 0,
+                'metrics' => $this->formatearMetricasEnvio($metricas),
                 'message' => 'Fin del proceso.',
             ]);
         }
@@ -1068,6 +1160,17 @@ class ControladorNotificacionesPush extends Controller
         $avanceLote = ($esRateLimit || $proveedorBloqueado) ? 0 : $usuarios->count();
         $remaining = max(0, $totalDestinatarios - ($offset + $avanceLote));
 
+        $metricas = $this->actualizarMetricasEnvio($request, 'resumen_fecha', [
+            'attempted_delta' => count($emails),
+            'accepted_delta' => $enviados,
+            'failed_delta' => count($errores),
+            'processed_batches_delta' => 1,
+            'remaining' => $remaining,
+            'provider_blocked' => $proveedorBloqueado,
+            'rate_limited' => $esRateLimit,
+            'last_error' => $lastError,
+        ]);
+
         return response()->json([
             'done' => ($esRateLimit || $proveedorBloqueado) ? false : ($remaining === 0),
             'sent' => $enviados,
@@ -1080,6 +1183,7 @@ class ControladorNotificacionesPush extends Controller
             'push_count' => 0,
             'email_count' => $contadorEmail,
             'partidos_count' => $resumen['partidos_count'],
+            'metrics' => $this->formatearMetricasEnvio($metricas),
             'message' => $proveedorBloqueado
                 ? 'Hostinger bloqueó temporalmente el envío (554). Rehabilitá el correo en hPanel y continuá desde el panel.'
                 : "Lote procesado ({$contadorEmail} emails enviados por BCC).",
@@ -1107,18 +1211,173 @@ class ControladorNotificacionesPush extends Controller
      */
     public function logEnvioCompleto(Request $request)
     {
-        $enviados = $request->input('enviados', 0);
-        $errores = $request->input('errores', 0);
         $tipo = $request->input('tipo', 'Gerenal');
+        $metricas = $this->obtenerMetricasEnvio($request, $tipo);
+
+        if ($metricas !== null) {
+            $metricas = $this->actualizarMetricasEnvio($request, $tipo, [
+                'completed_at' => now()->toDateTimeString(),
+            ]);
+        }
+
+        $enviados = $metricas['accepted'] ?? (int) $request->input('enviados', 0);
+        $errores = $metricas['failed'] ?? (int) $request->input('errores', 0);
 
         Log::channel('single')->info('==========================================');
         Log::channel('single')->info("PROCESO DE ENVÍO MASIVO COMPLETADO ($tipo)");
-        Log::channel('single')->info("Total Enviados: {$enviados}");
-        Log::channel('single')->info("Total Errores: {$errores}");
+        Log::channel('single')->info('Métricas backend envío masivo', [
+            'tipo' => $tipo,
+            'total_objetivo' => $metricas['total_target'] ?? null,
+            'destinatarios_intentados' => $metricas['attempted'] ?? null,
+            'total_enviados' => $enviados,
+            'total_errores' => $errores,
+            'lotes_procesados' => $metricas['processed_batches'] ?? null,
+            'restantes' => $metricas['remaining'] ?? null,
+            'provider_blocked' => $metricas['provider_blocked'] ?? false,
+            'rate_limited' => $metricas['rate_limited'] ?? false,
+            'ultimo_error' => $metricas['last_error'] ?? null,
+            'inicio' => $metricas['started_at'] ?? null,
+            'fin' => $metricas['completed_at'] ?? null,
+            'frontend_enviados' => $request->input('enviados'),
+            'frontend_errores' => $request->input('errores'),
+            'contexto' => $metricas['context'] ?? [],
+        ]);
         Log::channel('single')->info('Admin Responsable: '.$request->user()->name.' (ID: '.$request->user()->id.')');
         Log::channel('single')->info('==========================================');
 
-        return response()->json(['status' => 'ok']);
+        return response()->json([
+            'status' => 'ok',
+            'metrics' => $this->formatearMetricasEnvio($metricas),
+        ]);
+    }
+
+    private function hayMetricasEnvio(Request $request, string $tipo): bool
+    {
+        return is_array(Cache::get($this->claveMetricasEnvio($request, $tipo)));
+    }
+
+    private function iniciarMetricasEnvio(Request $request, string $tipo, int $totalObjetivo, array $contexto = [], bool $forzarReinicio = false): array
+    {
+        if (! $forzarReinicio) {
+            $existentes = $this->obtenerMetricasEnvio($request, $tipo);
+            if ($existentes !== null) {
+                return $existentes;
+            }
+        }
+
+        $metricas = [
+            'tipo' => $tipo,
+            'total_target' => $totalObjetivo,
+            'attempted' => 0,
+            'accepted' => 0,
+            'failed' => 0,
+            'processed_batches' => 0,
+            'remaining' => $totalObjetivo,
+            'provider_blocked' => false,
+            'rate_limited' => false,
+            'last_error' => null,
+            'started_at' => now()->toDateTimeString(),
+            'updated_at' => now()->toDateTimeString(),
+            'completed_at' => null,
+            'context' => $contexto,
+        ];
+
+        Cache::put(
+            $this->claveMetricasEnvio($request, $tipo),
+            $metricas,
+            now()->addHours(self::METRICAS_ENVIO_TTL_HOURS)
+        );
+
+        return $metricas;
+    }
+
+    private function obtenerMetricasEnvio(Request $request, string $tipo): ?array
+    {
+        $metricas = Cache::get($this->claveMetricasEnvio($request, $tipo));
+
+        return is_array($metricas) ? $metricas : null;
+    }
+
+    private function actualizarMetricasEnvio(Request $request, string $tipo, array $cambios): array
+    {
+        $metricas = $this->obtenerMetricasEnvio($request, $tipo)
+            ?? $this->iniciarMetricasEnvio(
+                $request,
+                $tipo,
+                (int) ($cambios['total_target'] ?? 0),
+                $cambios['context'] ?? [],
+                true
+            );
+
+        $metricas['total_target'] = (int) ($cambios['total_target'] ?? $metricas['total_target']);
+        $metricas['attempted'] += (int) ($cambios['attempted_delta'] ?? 0);
+        $metricas['accepted'] += (int) ($cambios['accepted_delta'] ?? 0);
+        $metricas['failed'] += (int) ($cambios['failed_delta'] ?? 0);
+        $metricas['processed_batches'] += (int) ($cambios['processed_batches_delta'] ?? 0);
+
+        if (array_key_exists('remaining', $cambios)) {
+            $metricas['remaining'] = max(0, (int) $cambios['remaining']);
+        }
+
+        if (array_key_exists('provider_blocked', $cambios)) {
+            $metricas['provider_blocked'] = (bool) $cambios['provider_blocked'];
+        }
+
+        if (array_key_exists('rate_limited', $cambios)) {
+            $metricas['rate_limited'] = (bool) $cambios['rate_limited'];
+        }
+
+        if (array_key_exists('last_error', $cambios)) {
+            $metricas['last_error'] = $cambios['last_error'];
+        }
+
+        if (array_key_exists('completed_at', $cambios)) {
+            $metricas['completed_at'] = $cambios['completed_at'];
+        }
+
+        if (array_key_exists('context', $cambios)) {
+            $metricas['context'] = array_merge($metricas['context'] ?? [], $cambios['context']);
+        }
+
+        $metricas['updated_at'] = now()->toDateTimeString();
+
+        Cache::put(
+            $this->claveMetricasEnvio($request, $tipo),
+            $metricas,
+            now()->addHours(self::METRICAS_ENVIO_TTL_HOURS)
+        );
+
+        return $metricas;
+    }
+
+    private function formatearMetricasEnvio(?array $metricas): ?array
+    {
+        if ($metricas === null) {
+            return null;
+        }
+
+        return [
+            'total_target' => $metricas['total_target'] ?? 0,
+            'attempted' => $metricas['attempted'] ?? 0,
+            'accepted' => $metricas['accepted'] ?? 0,
+            'failed' => $metricas['failed'] ?? 0,
+            'processed_batches' => $metricas['processed_batches'] ?? 0,
+            'remaining' => $metricas['remaining'] ?? 0,
+            'provider_blocked' => $metricas['provider_blocked'] ?? false,
+            'rate_limited' => $metricas['rate_limited'] ?? false,
+            'last_error' => $metricas['last_error'] ?? null,
+            'started_at' => $metricas['started_at'] ?? null,
+            'updated_at' => $metricas['updated_at'] ?? null,
+            'completed_at' => $metricas['completed_at'] ?? null,
+            'context' => $metricas['context'] ?? [],
+        ];
+    }
+
+    private function claveMetricasEnvio(Request $request, string $tipo): string
+    {
+        $adminId = $request->user()?->id ?? 'guest';
+
+        return "notificaciones_push.metricas.{$adminId}.{$tipo}";
     }
 
     /**
@@ -1556,15 +1815,12 @@ class ControladorNotificacionesPush extends Controller
     /**
      * Base de usuarios destinatarios para resúmenes por email.
      *
-     * Solo considera usuarios con email cargado y suscripción activa,
-     * ya que el resumen se envía por BCC para optimizar cupos SMTP.
+     * Solo considera usuarios con email cargado y suscripción activa.
+     * Las cuentas nuevas con política reforzada deben estar verificadas.
      */
     private function usuariosEmailResumenQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return \App\Models\User::query()
-            ->where('email_subscribed', true)
-            ->whereNotNull('email')
-            ->where('email', '!=', '');
+        return \App\Models\User::query()->suscritosAEmail();
     }
 
     /**
@@ -1580,7 +1836,13 @@ class ControladorNotificacionesPush extends Controller
             ->where(function ($q) {
                 $q->where(function ($q2) {
                     $q2->where('email_subscribed', true)
-                        ->whereNotNull('email');
+                        ->whereNotNull('email')
+                        ->where('email', '!=', '')
+                        ->where(function ($emailPolicyQuery) {
+                            $emailPolicyQuery->where('requires_email_verification_for_notifications', false)
+                                ->orWhereNotNull('email_verified_at');
+                        });
+                    EmailDomainGuard::applyBlockedDomainsFilter($q2);
                 })
                     ->orWhereHas('pushSubscriptions');
             });

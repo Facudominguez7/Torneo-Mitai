@@ -2,29 +2,35 @@
     <div class="space-y-6">
         <div class="space-y-1 text-center">
             <h2 class="text-2xl font-bold text-white">Verificá tu email</h2>
-            <p class="text-sm text-white/60">Para recibir notificaciones del torneo necesitás verificar tu correo.</p>
+            <p class="text-sm text-white/60">Para activar las notificaciones por email, ingresá el código que te enviamos.</p>
         </div>
 
         <div class="text-sm text-white/80 space-y-3">
             <p>
-                ¡Gracias por registrarte! Antes de continuar, verificá tu email haciendo clic en el enlace que te enviamos.
+                Te enviamos un código de 6 dígitos a <strong>{{ auth()->user()->email }}</strong>. Ingresalo abajo para verificar tu cuenta.
             </p>
             <p class="text-white/60">
-                📧 Si no recibiste el email, revisá tu carpeta de <strong>spam</strong> o solicitá uno nuevo.
+                📧 Si no recibiste el email, revisá tu carpeta de <strong>spam</strong> o pedí un nuevo código.
             </p>
         </div>
 
-        @if (session('status') == 'verification-link-sent')
+        @if (session('status') === 'verification-code-sent')
             <div class="rounded-lg bg-green-500/20 border border-green-500/30 p-4">
                 <p class="text-sm text-green-300 flex items-center gap-2">
                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                     </svg>
-                    ¡Listo! Te enviamos un nuevo enlace de verificación.
+                    {{ session('email-success', 'Te enviamos un nuevo código de verificación.') }}
                 </p>
                 <p class="text-xs text-green-200/70 mt-2 ml-7">
                     📬 Revisá tu bandeja de entrada y también la <strong>carpeta de spam</strong> si no lo encontrás.
                 </p>
+            </div>
+        @endif
+
+        @if (session('warning'))
+            <div class="rounded-lg bg-amber-500/20 border border-amber-500/30 p-4 text-sm text-amber-100">
+                {{ session('warning') }}
             </div>
         @endif
 
@@ -40,16 +46,41 @@
         @endif
 
         <div class="space-y-4">
+            <form method="POST" action="{{ route('verification.code') }}" class="space-y-3">
+                @csrf
+
+                <div class="space-y-2">
+                    <x-input-label for="code" :value="__('Código de verificación')" />
+                    <x-text-input
+                        id="code"
+                        name="code"
+                        type="text"
+                        :value="old('code')"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        maxlength="6"
+                        autocomplete="one-time-code"
+                        placeholder="123456"
+                        required
+                    />
+                    <x-input-error :messages="$errors->get('code')" class="text-sm text-red-400" />
+                </div>
+
+                <button type="submit"
+                    class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-yellow-300 via-amber-300 to-yellow-400 px-6 py-3 text-sm font-semibold text-black shadow-lg shadow-yellow-500/40 transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-yellow-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-300 active:scale-95">
+                    Confirmar código
+                </button>
+            </form>
+
             <form method="POST" action="{{ route('verification.send') }}" id="verify-form">
                 @csrf
                 <button type="submit" id="verify-btn"
-                    class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-yellow-300 via-amber-300 to-yellow-400 px-6 py-3 text-sm font-semibold text-black shadow-lg shadow-yellow-500/40 transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-yellow-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-300 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed">
-                    {{-- Spinner --}}
+                    class="group inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 disabled:opacity-70 disabled:cursor-not-allowed">
                     <svg id="verify-spinner" class="hidden animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span id="verify-text">Reenviar email de verificación</span>
+                    <span id="verify-text">Reenviar código</span>
                 </button>
             </form>
 
@@ -59,7 +90,6 @@
             </a>
         </div>
 
-        {{-- Información adicional --}}
         <div class="mt-6 p-4 rounded-lg bg-white/5 border border-white/10">
             <h4 class="text-sm font-semibold text-white mb-2">¿Por qué verificar?</h4>
             <ul class="text-xs text-white/60 space-y-1">
@@ -73,13 +103,12 @@
         </div>
     </div>
 
-    {{-- Script para loader --}}
     <script>
         document.getElementById('verify-form').addEventListener('submit', function() {
             const btn = document.getElementById('verify-btn');
             const spinner = document.getElementById('verify-spinner');
             const text = document.getElementById('verify-text');
-            
+
             btn.disabled = true;
             spinner.classList.remove('hidden');
             text.textContent = 'Enviando...';

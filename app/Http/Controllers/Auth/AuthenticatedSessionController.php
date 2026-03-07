@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\EmailDomainGuard;
+use App\Services\EmailVerificationCodeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,30 +27,43 @@ class AuthenticatedSessionController extends Controller
      * Valida credenciales, verifica si necesita restablecer contraseña,
      * y advierte si el email no está verificado para recibir notificaciones.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request, EmailVerificationCodeService $verificationCodeService): RedirectResponse
     {
-        $credentials = $request->only(['email', 'password']);
-    
-        if (!Auth::attempt($credentials)) {
-            return back()->withErrors(['email' => 'Invalid credentials']);
-        }
-    
+        $request->authenticate();
+
         // Verificar si el usuario necesita restablecer su contraseña
-        $user = Auth::user();
-        
+        $user = $request->user();
+
         if ($user->restablecer_password === 'necesario') {
             Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
             return redirect()->route('password.request.auth', ['restablecer' => 'Si']);
         }
-    
+
         $request->session()->regenerate();
 
-        // Advertir al usuario si no tiene email verificado y reenviar correo
-        if (!$user->hasVerifiedEmail()) {
-            $user->sendEmailVerificationNotification();
+        // Advertir al usuario si no tiene email verificado y reenviar codigo
+        if (! $user->hasVerifiedEmail()) {
+            if (EmailDomainGuard::isBlocked((string) $user->email)) {
+                return redirect()->route('verification.notice')
+                    ->with('email-error', 'Tu correo no es elegible para recibir emails automáticos. Actualizalo desde tu perfil para continuar.');
+            }
 
-            return redirect()->intended(route('home', absolute: false))
-                ->with('warning', '⚠️ Tu email no está verificado. Te hemos enviado un nuevo enlace de verificación. Revisá tu bandeja de entrada o spam para recibir notificaciones.');
+            $secondsUntilResend = $verificationCodeService->secondsUntilResend($user);
+
+            if ($secondsUntilResend === 0) {
+                $user->sendEmailVerificationNotification();
+
+                return redirect()->route('verification.notice')
+                    ->with('status', 'verification-code-sent')
+                    ->with('warning', 'Tu email todavia no esta verificado. Te enviamos un codigo para activarlo.');
+            }
+
+            return redirect()->route('verification.notice')
+                ->with('warning', 'Tu email todavia no esta verificado. Usa el ultimo codigo enviado o pedi uno nuevo en unos segundos.');
         }
     
         return redirect()->intended(route('home', absolute: false));

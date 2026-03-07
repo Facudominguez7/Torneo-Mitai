@@ -29,7 +29,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/auth/redirect', [LoginController::class, 'redirect']);
 Route::get('/auth/google/callback', [LoginController::class, 'callback']);
-Route::get('Testloginfo', [LogController::class, 'Testloginfo'])->name('testloginfo');
+
+if (app()->environment('local')) {
+    Route::get('Testloginfo', [LogController::class, 'Testloginfo'])->name('testloginfo');
+}
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

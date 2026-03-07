@@ -109,8 +109,18 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        'address' => env('MAIL_FROM_ADDRESS', 'info@torneosmitai.com'),
+        'name' => env('MAIL_FROM_NAME', 'Torneos Mitai'),
+    ],
+
+    'reply_to' => [
+        'address' => env('MAIL_REPLY_TO_ADDRESS', env('MAIL_FROM_ADDRESS', 'info@torneosmitai.com')),
+        'name' => env('MAIL_REPLY_TO_NAME', env('MAIL_FROM_NAME', 'Torneos Mitai')),
+    ],
+
+    'bulk' => [
+        'list_id' => env('MAIL_BULK_LIST_ID', 'notificaciones.torneosmitai.com'),
+        'feedback_identifier' => env('MAIL_FEEDBACK_IDENTIFIER', 'torneosmitai'),
     ],
 
 ];

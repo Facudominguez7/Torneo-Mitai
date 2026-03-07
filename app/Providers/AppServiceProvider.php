@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Edicion;
+use App\Services\EmailDeliverabilityHeaders;
 use Illuminate\Console\Scheduling\Event;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Event as FacadesEvent;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\View;
@@ -42,6 +44,22 @@ class AppServiceProvider extends ServiceProvider
                     'hash' => sha1($notifiable->getEmailForVerification()),
                 ]
             );
+        });
+
+        \Illuminate\Auth\Notifications\VerifyEmail::toMailUsing(function (object $notifiable, string $verificationUrl) {
+            return (new MailMessage)
+                ->from(EmailDeliverabilityHeaders::fromAddress(), EmailDeliverabilityHeaders::fromName())
+                ->replyTo(EmailDeliverabilityHeaders::replyToAddress(), EmailDeliverabilityHeaders::replyToName())
+                ->subject('Verificá tu email - Torneos Mita\'i')
+                ->greeting('Hola '.$notifiable->name.',')
+                ->line('Gracias por registrarte en Torneos Mita\'i.')
+                ->line('Para activar tu cuenta y recibir avisos del torneo, verificá tu dirección de correo.')
+                ->action('Verificar email', $verificationUrl)
+                ->line('Si no creaste esta cuenta, podés ignorar este mensaje.')
+                ->salutation('Saludos, Torneos Mita\'i')
+                ->withSymfonyMessage(function ($message) {
+                    EmailDeliverabilityHeaders::applyTransactional($message, 'verificacion_email');
+                });
         });
 
         if($this->app->environment('production')) {

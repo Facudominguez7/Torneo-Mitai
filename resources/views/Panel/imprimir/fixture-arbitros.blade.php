@@ -12,6 +12,8 @@
         }
         body {
             font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.3;
             padding: 15px;
             background: white;
         }
@@ -33,12 +35,12 @@
         }
         .header-text h1 {
             color: #0e4b5e;
-            font-size: 22px;
+            font-size: 26px;
             margin-bottom: 3px;
         }
         .header-text p {
             color: #666;
-            font-size: 12px;
+            font-size: 14px;
         }
         .categoria-section {
             margin-bottom: 20px;
@@ -48,7 +50,7 @@
             background: linear-gradient(135deg, #0e4b5e, #2a6d81);
             color: white;
             padding: 10px 15px;
-            font-size: 18px;
+            font-size: 21px;
             font-weight: bold;
             margin-bottom: 10px;
             border-radius: 5px;
@@ -57,7 +59,7 @@
             background: #f7f280;
             color: #0e4b5e;
             padding: 4px 10px;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: bold;
             border-radius: 3px;
             display: inline-block;
@@ -65,10 +67,10 @@
         }
         .fase-title {
             background: #f0f7f9;
-            padding: 6px 12px;
+            padding: 7px 12px;
             margin: 8px 0 6px 0;
             border-left: 4px solid #0e4b5e;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             color: #0e4b5e;
         }
@@ -82,8 +84,8 @@
         .partido-header {
             background: #0e4b5e;
             color: white;
-            padding: 6px 12px;
-            font-size: 11px;
+            padding: 8px 12px;
+            font-size: 13px;
             display: flex;
             justify-content: space-between;
         }
@@ -93,28 +95,28 @@
         }
         .equipo-section {
             flex: 1;
-            padding: 10px 12px;
+            padding: 12px 14px;
             text-align: center;
         }
         .equipo-nombre {
-            font-size: 14px;
+            font-size: 17px;
             font-weight: bold;
             color: #0e4b5e;
-            margin-bottom: 8px;
-            min-height: 20px;
+            margin-bottom: 10px;
+            min-height: 24px;
         }
         .goles-label {
-            font-size: 10px;
+            font-size: 12px;
             color: #666;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .goles-lineas {
             border-top: 1px solid #999;
-            margin: 5px 0;
-            min-height: 20px;
+            margin: 6px 0;
+            min-height: 24px;
         }
         .resultado-section {
-            width: 80px;
+            width: 96px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -122,12 +124,12 @@
             background: #f0f7f9;
             border-left: 1px solid #ddd;
             border-right: 1px solid #ddd;
-            padding: 10px 5px;
+            padding: 12px 6px;
         }
         .resultado-label {
-            font-size: 9px;
+            font-size: 11px;
             color: #666;
-            margin-bottom: 5px;
+            margin-bottom: 7px;
         }
         .resultado-boxes {
             display: flex;
@@ -135,25 +137,25 @@
             gap: 3px;
         }
         .resultado-box {
-            width: 28px;
-            height: 28px;
+            width: 34px;
+            height: 34px;
             border: 2px solid #0e4b5e;
             border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             background: white;
         }
         .resultado-separator {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             color: #0e4b5e;
         }
         .penales-section {
             margin-top: 8px;
-            font-size: 9px;
+            font-size: 11px;
             color: #666;
         }
         .penales-boxes {
@@ -163,11 +165,11 @@
             margin-top: 3px;
         }
         .penales-box {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border: 1px solid #999;
             border-radius: 3px;
-            font-size: 12px;
+            font-size: 14px;
             background: white;
         }
         .print-button {
@@ -178,7 +180,7 @@
             color: white;
             border: none;
             padding: 10px 20px;
-            font-size: 14px;
+            font-size: 15px;
             cursor: pointer;
             border-radius: 5px;
             z-index: 1000;

@@ -649,8 +649,32 @@
                 }
 
                 const pendientes = Number(data.count || 0);
+                const elegibles = Number(data.eligible_total || 0);
                 if (pendientes === 0) {
-                    await Swal.fire('Sin pendientes', data.message || 'No hay usuarios para recordar.', 'info');
+                    if (elegibles === 0) {
+                        await Swal.fire('Sin pendientes', data.message || 'No hay usuarios para recordar.', 'info');
+                        return;
+                    }
+
+                    const reenvio = await Swal.fire({
+                        title: 'Sin pendientes por cooldown',
+                        html: `<div style="text-align:left">` +
+                            `<p>${data.message || 'Todos recibieron recordatorio recientemente.'}</p>` +
+                            `<p><strong>Usuarios elegibles para reenvío manual:</strong> ${elegibles}</p>` +
+                            `<p>Si continuás, se reenviará aunque hayan recibido recordatorio en los últimos 7 días.</p>` +
+                            `</div>`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Reenviar igual',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#d97706',
+                        cancelButtonColor: '#6b7280',
+                    });
+
+                    if (reenvio.isConfirmed) {
+                        iniciarProceso('recordatorios', { force: true });
+                    }
+
                     return;
                 }
 
@@ -672,7 +696,7 @@
                     return;
                 }
 
-                iniciarProceso('recordatorios');
+                iniciarProceso('recordatorios', { force: false });
             } catch (error) {
                 await Swal.fire('No se pudo iniciar', error.message || 'Error al preparar el envío.', 'error');
             }
@@ -1070,9 +1094,12 @@
                     // --- Éxito: resetear contador de rate limit ---
                     rateLimitRetries = 0;
 
+                    if (data.metrics) {
+                        totalEnviados = Number(data.metrics.accepted || 0);
+                        totalErrores = Number(data.metrics.failed || 0);
+                    }
+
                     // Actualizar métricas
-                    totalEnviados += Number(data.sent || 0);
-                    totalErrores += Number(data.errors || 0);
                     totalSesionEnviados += Number(data.sent || 0);
                     
                     // Actualizar Offset para siguiente lote
@@ -1081,11 +1108,11 @@
                     // Actualizar UI
                     let msg = '';
                     if (currentTask === 'manual') {
-                        msg = `Enviando notificación... Emails: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.remaining ?? 0}`;
+                        msg = `Enviando notificación... Emails: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.metrics?.remaining ?? data.remaining ?? 0}`;
                     } else if (currentTask === 'resumen_fecha') {
-                        msg = `Enviando resumen... Emails: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.remaining ?? 0}`;
+                        msg = `Enviando resumen... Emails: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.metrics?.remaining ?? data.remaining ?? 0}`;
                     } else {
-                        msg = `Enviando... Enviados: ${totalEnviados} | Errores: ${totalErrores} | Restantes aprox: ${data.remaining}`;
+                        msg = `Enviando... Enviados: ${totalEnviados} | Errores: ${totalErrores} | Restantes aprox: ${data.metrics?.remaining ?? data.remaining}`;
                     }
 
                     // Advertencia de cuota de sesión
