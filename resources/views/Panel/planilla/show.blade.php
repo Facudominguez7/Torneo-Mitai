@@ -27,9 +27,16 @@
             'horario' => $contextoNavegacion['horario_filtro'] ?? request('horario_filtro'),
         ], static fn ($valor) => $valor !== null && $valor !== '');
 
-        $parametrosAdmin = [
+        $horarioAdminRegreso = $contextoNavegacion['horario_filtro'] ?? request('horario_filtro');
+
+        if (($horarioAdminRegreso === null || $horarioAdminRegreso === '') && !empty($horarioSeleccionado) && $horarioSeleccionado !== '0') {
+            $horarioAdminRegreso = $horarioSeleccionado;
+        }
+
+        $parametrosAdmin = array_filter([
             'idEdicion' => $EdicionSeleccionada->id,
-        ];
+            'horario' => $horarioAdminRegreso,
+        ], static fn ($valor) => $valor !== null && $valor !== '');
 
         $volverAInstancias = $tipoPartido === 'instanciaFinal' || $origen === 'instancia-final-index';
         $rutaVolver = $volverAInstancias ? route('instancia_final.index', $parametrosInstancia) : route('admin', $parametrosAdmin);
