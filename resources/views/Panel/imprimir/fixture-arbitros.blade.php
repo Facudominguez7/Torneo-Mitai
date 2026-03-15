@@ -83,7 +83,7 @@
         }
 
         .header-text h1 {
-            font-size: 15px;
+            font-size: 18px;
             color: #0e4b5e;
             margin-bottom: 1px;
             text-transform: uppercase;
@@ -91,7 +91,7 @@
         }
 
         .header-text p {
-            font-size: 10px;
+            font-size: 13px;
             color: #4f6470;
         }
 
@@ -108,12 +108,12 @@
         }
 
         .horario-label {
-            font-size: 14px;
+            font-size: 17px;
             font-weight: 700;
         }
 
         .horario-meta {
-            font-size: 9px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -168,7 +168,7 @@
             padding: 5px 8px;
             background: #edf5f8;
             border-bottom: 1px solid #c8d8de;
-            font-size: 10px;
+            font-size: 13px;
         }
 
         .partido-meta {
@@ -203,7 +203,7 @@
         }
 
         .equipo-nombre {
-            font-size: 13px;
+            font-size: 16px;
             font-weight: 700;
             color: #153744;
             min-height: 0;
@@ -219,7 +219,7 @@
         }
 
         .goles-label {
-            font-size: 9px;
+            font-size: 12px;
             color: #647985;
             margin-bottom: 2px;
         }
@@ -246,7 +246,7 @@
 
         .resultado-label,
         .penales-label {
-            font-size: 9px;
+            font-size: 12px;
             color: #60757f;
             text-transform: uppercase;
             letter-spacing: 0.04em;
