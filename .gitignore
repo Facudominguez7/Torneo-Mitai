@@ -34,6 +34,7 @@ docker-compose.override.yml
 # Documentación local (opcional, si quieres ignorarla)
 COMANDOS_UTILES.md
 MIGRATION-GUIDE.md
+docs/
 
 # Archivos temporales de Vite
 *.timestamp-*.mjs
@@ -56,4 +57,3 @@ phpunit.xml
 coverage/
 *.coverage
 EMAIL_CONFIG.md
-

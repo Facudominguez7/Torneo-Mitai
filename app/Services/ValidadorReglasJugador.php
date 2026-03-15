@@ -79,6 +79,32 @@ class ValidadorReglasJugador
     }
 
     /**
+     * Validar reglas de negocio al editar un registro ya existente en Lista de Buena Fe.
+     *
+     * Excluye el registro actual para permitir correcciones del mismo jugador,
+     * incluso cuando se modifica el DNI.
+     */
+    public function validarActualizacionJugador($idListaBuenaFe, $dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento)
+    {
+        $resultado = $this->validarEquipoUnicoPorCategoria($dni_jugador, $idEquipo, $idEdicion, $idCategoria);
+        if ($resultado) {
+            return $resultado;
+        }
+
+        $resultado = $this->validarListaBuenaFeOtroEquipo($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $idListaBuenaFe);
+        if ($resultado) {
+            return $resultado;
+        }
+
+        $resultado = $this->validarRegistroExistenteEnLista($dni_jugador, $idEquipo, $idEdicion, $idListaBuenaFe);
+        if ($resultado) {
+            return $resultado;
+        }
+
+        return $this->validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento);
+    }
+
+    /**
      * Validar exclusivamente reglas de categoría y edad.
      *
      * Este método se usa en flujos de edición de datos donde no corresponde
@@ -123,14 +149,19 @@ class ValidadorReglasJugador
     /**
      * Validar si está activo en la Lista de Buena Fe de otro equipo
      */
-    private function validarListaBuenaFeOtroEquipo($dni_jugador, $idEquipo, $idEdicion, $idCategoria)
+    private function validarListaBuenaFeOtroEquipo($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $idRegistroExcluir = null)
     {
-        $enOtraLista = ListaBuenaFe::where('dni_jugador', $dni_jugador)
+        $query = ListaBuenaFe::where('dni_jugador', $dni_jugador)
             ->where('idEquipo', '!=', $idEquipo)
             ->where('idEdicion', $idEdicion)
             ->where('idCategoria', $idCategoria)
-            ->where('activo', true)
-            ->first();
+            ->where('activo', true);
+
+        if ($idRegistroExcluir) {
+            $query->where('id', '!=', $idRegistroExcluir);
+        }
+
+        $enOtraLista = $query->first();
 
         if ($enOtraLista) {
             $equipoOtro = Equipo::find($enOtraLista->idEquipo);
@@ -148,13 +179,18 @@ class ValidadorReglasJugador
      * Validar si el jugador existe como inactivo en el mismo equipo
      * (Advertencia administrativa para registrar observación)
      */
-    private function validarJugadorInactivo($dni_jugador, $idEquipo, $idEdicion)
+    private function validarJugadorInactivo($dni_jugador, $idEquipo, $idEdicion, $idRegistroExcluir = null)
     {
-        $jugadorInactivo = ListaBuenaFe::where('dni_jugador', $dni_jugador)
+        $query = ListaBuenaFe::where('dni_jugador', $dni_jugador)
             ->where('idEquipo', $idEquipo)
             ->where('idEdicion', $idEdicion)
-            ->where('activo', false)
-            ->first();
+            ->where('activo', false);
+
+        if ($idRegistroExcluir) {
+            $query->where('id', '!=', $idRegistroExcluir);
+        }
+
+        $jugadorInactivo = $query->first();
 
         if ($jugadorInactivo) {
             return [
@@ -304,18 +340,45 @@ class ValidadorReglasJugador
     /**
      * Verificar si ya está en la lista de buena fe (activo)
      */
-    private function validarDuplicadoEnLista($dni_jugador, $idEquipo, $idEdicion)
+    private function validarDuplicadoEnLista($dni_jugador, $idEquipo, $idEdicion, $idRegistroExcluir = null)
     {
-        $existe = ListaBuenaFe::where('dni_jugador', $dni_jugador)
+        $query = ListaBuenaFe::where('dni_jugador', $dni_jugador)
             ->where('idEquipo', $idEquipo)
             ->where('idEdicion', $idEdicion)
-            ->where('activo', true)
-            ->exists();
+            ->where('activo', true);
+
+        if ($idRegistroExcluir) {
+            $query->where('id', '!=', $idRegistroExcluir);
+        }
+
+        $existe = $query->exists();
 
         if ($existe) {
             return [
                 'type' => 'error',
                 'message' => 'El jugador ya está en la Lista de Buena Fe de este equipo.',
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Verifica si ya existe cualquier otro registro del mismo DNI en la misma
+     * inscripción de Lista de Buena Fe, incluyendo activos e inactivos.
+     */
+    private function validarRegistroExistenteEnLista($dni_jugador, $idEquipo, $idEdicion, $idRegistroExcluir)
+    {
+        $existeOtroRegistro = ListaBuenaFe::where('dni_jugador', $dni_jugador)
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->where('id', '!=', $idRegistroExcluir)
+            ->exists();
+
+        if ($existeOtroRegistro) {
+            return [
+                'type' => 'error',
+                'message' => 'Ya existe otro registro en Lista de Buena Fe para ese DNI dentro del mismo equipo y edición.',
             ];
         }
 
