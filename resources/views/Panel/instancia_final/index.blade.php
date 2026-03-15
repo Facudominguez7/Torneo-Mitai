@@ -2,6 +2,13 @@
 
 @section('contenido')
     @if (isset($EdicionSeleccionada))
+        @php
+            $urlImprimirFixture = route('admin.imprimir-fixture-instancias-finales', ['idEdicion' => $EdicionSeleccionada->id ?? '']);
+            $urlImprimirArbitros = route('admin.imprimir-fixture-arbitros', [
+                'idEdicion' => $EdicionSeleccionada->id ?? '',
+                'horario' => request('horario'),
+            ]);
+        @endphp
         <div class="flex flex-col items-center gap-3 mb-4">
             {{-- Fila de botones principales --}}
             <div class="flex flex-row flex-wrap justify-center gap-2">
@@ -17,14 +24,14 @@
                         </button>
                     </a>
                 @endif
-                <button onclick="imprimirEnIframe('{{ route('admin.imprimir-fixture-instancias-finales', ['idEdicion' => $EdicionSeleccionada->id ?? '']) }}')"
+                <button onclick="imprimirEnIframe('{{ $urlImprimirFixture }}')"
                     class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-all duration-300 md:py-3 md:px-6 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                     </svg>
                     Imprimir Fixture
                 </button>
-                <button onclick="imprimirEnIframe('{{ route('admin.imprimir-fixture-arbitros', ['idEdicion' => $EdicionSeleccionada->id ?? '']) }}')"
+                <button onclick="imprimirEnIframe('{{ $urlImprimirArbitros }}')"
                     class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all duration-300 md:py-3 md:px-6 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
