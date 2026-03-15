@@ -174,17 +174,11 @@ class ControladorListaBuenaFe extends Controller
         $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada);
         $equipos = $this->obtenerEquiposFiltrados($idEdicion, $idCategoria, $search);
 
-        $jugadoresActivos = ListaBuenaFe::with(['jugador', 'categoria'])
-            ->where('idEdicion', $idEdicion)
-            ->where('activo', true)
-            ->when($idCategoria, function ($query) use ($idCategoria) {
-                $query->where('idCategoria', $idCategoria);
-            })
-            ->whereIn('idEquipo', $equipos->pluck('idEquipo')->unique()->values())
-            ->get()
-            ->groupBy(function ($jugador) {
-                return $jugador->idEquipo.'-'.$jugador->idCategoria;
-            });
+        $jugadoresActivos = $this->obtenerJugadoresActivosParaImpresionMasiva(
+            $equipos,
+            $idEdicion,
+            $idCategoria
+        );
 
         return view('Panel.lista-buena-fe.imprimir-todas', compact(
             'EdicionSeleccionada',
@@ -953,6 +947,27 @@ class ControladorListaBuenaFe extends Controller
                 return strcasecmp($equipoA->equipo->nombre ?? '', $equipoB->equipo->nombre ?? '');
             })
             ->values();
+    }
+
+    private function obtenerJugadoresActivosParaImpresionMasiva($equipos, $idEdicion, $idCategoria = null)
+    {
+        $idsEquipos = $equipos->pluck('idEquipo')->unique()->values();
+
+        if ($idsEquipos->isEmpty()) {
+            return collect();
+        }
+
+        return ListaBuenaFe::with(['jugador', 'categoria'])
+            ->where('idEdicion', $idEdicion)
+            ->whereIn('idEquipo', $idsEquipos)
+            ->when($idCategoria, function ($query) use ($idCategoria) {
+                $query->where('idCategoria', $idCategoria);
+            })
+            ->activos()
+            ->get()
+            ->groupBy(function ($jugador) {
+                return $jugador->idEquipo.'-'.$jugador->idCategoria;
+            });
     }
 
     /**
