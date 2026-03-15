@@ -246,10 +246,10 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 text-center text-sm font-medium">
-                                        <div class="flex flex-col items-center gap-2 lg:flex-row lg:justify-center">
+                                    <td class="px-6 py-4 align-middle text-center text-sm font-medium">
+                                        <div class="flex items-center justify-center gap-2">
                                             <button type="button"
-                                                class="js-editar-jugador rounded bg-amber-500 px-3 py-1 text-xs text-white hover:bg-amber-600"
+                                                class="js-editar-jugador inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded bg-amber-500 px-3 text-xs leading-none text-white hover:bg-amber-600"
                                                 data-action="{{ route('lista-buena-fe.actualizar', $jugador->id) }}"
                                                 data-estado="activo"
                                                 data-dni="{{ $jugador->dni_jugador }}"
@@ -261,13 +261,13 @@
                                             </button>
 
                                             <form method="POST" action="{{ route('lista-buena-fe.dar-baja', $jugador->id) }}"
-                                                class="inline-flex flex-col items-center gap-2 lg:flex-row lg:justify-center">
+                                                class="contents">
                                                 @csrf
                                                 @method('PUT')
                                                 <input type="text" name="motivo_baja" placeholder="Motivo (opcional)"
-                                                    class="mb-1 w-36 rounded border-gray-300 px-2 py-1 text-xs lg:mb-0">
+                                                    class="h-8 w-36 rounded border-gray-300 px-2 text-xs leading-none">
                                                 <button type="submit"
-                                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+                                                    class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded bg-red-500 px-3 text-xs leading-none text-white hover:bg-red-600"
                                                     onclick="return confirm('¿Dar de baja a este jugador?')">
                                                     🗑️ Baja
                                                 </button>
@@ -326,10 +326,10 @@
                                         <td class="px-6 py-4 text-sm text-gray-500">
                                             {{ $jugador->motivo_baja ?? 'Sin especificar' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <div class="flex flex-col items-center gap-2 lg:flex-row lg:justify-center">
+                                        <td class="px-6 py-4 align-middle whitespace-nowrap text-center">
+                                            <div class="flex items-center justify-center gap-2">
                                                 <button type="button"
-                                                    class="js-editar-jugador rounded bg-amber-500 px-3 py-1 text-xs text-white hover:bg-amber-600"
+                                                    class="js-editar-jugador inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded bg-amber-500 px-3 text-xs leading-none text-white hover:bg-amber-600"
                                                     data-action="{{ route('lista-buena-fe.actualizar', $jugador->id) }}"
                                                     data-estado="inactivo"
                                                     data-dni="{{ $jugador->dni_jugador }}"
@@ -342,11 +342,11 @@
 
                                                 @if ($jugadoresActivos->count() < $limiteJugadoresPorPlanilla)
                                                     <form method="POST" action="{{ route('lista-buena-fe.reactivar', $jugador->id) }}"
-                                                        class="inline">
+                                                        class="contents">
                                                         @csrf
                                                         @method('PUT')
                                                         <button type="submit"
-                                                            class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs"
+                                                            class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded bg-green-500 px-3 text-xs leading-none text-white hover:bg-green-600"
                                                             onclick="return confirm('¿Reactivar a este jugador?')">
                                                             ♻️ Reactivar
                                                         </button>
