@@ -246,10 +246,12 @@
 
         .resultado-label,
         .penales-label {
-            font-size: 12px;
+            font-size: 9px;
             color: #60757f;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            text-align: center;
+            line-height: 1.1;
         }
 
         .resultado-boxes,
