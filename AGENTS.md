@@ -1,167 +1,51 @@
-# AGENTS.md
-Guia operativa para agentes de codigo en este repositorio (Torneo Mitai).
+LTI-AGENTE (SDD - FLUJO ESTRICTO)
+Todas las tareas deben seguir estrictamente este flujo secuencial. El código es solo un artefacto derivado de la especificación.
+1. **Branching & Explorer:** UTILIZA la skill `git-commit` para crear una nueva rama en español para la tarea. Luego, analiza el código y recupera el contexto en Engram.
+2. **Requirements (Spec):** Analiza el problema y crea un archivo `docs/spec.md` detallando únicamente el alcance, reglas de negocio y requerimientos funcionales.
+3. **Architecture (Design):** Basándote en el spec, crea un archivo `docs/design.md` detallando la solución técnica (modelos, base de datos, controladores, vistas).
+🛑 **HUMAN GATE (Punto de Aprobación):** Detente aquí. Pide mi aprobación explícita sobre `docs/spec.md` y `docs/design.md` antes de planificar tareas.
+4. **Task Planner:** Una vez aprobado el diseño, crea un archivo `docs/task.md` dividiendo el trabajo en un checklist de tareas atómicas y verificables.
+🛑 **HUMAN GATE (Punto de Aprobación):** Detente aquí. Pide mi aprobación del plan de tareas en `docs/task.md`.
+5. **Implementer:** Escribe el código (PHP/Blade/Vite) basándose ÚNICAMENTE en el checklist aprobado de `docs/task.md` (ya estás en la rama correcta).
+🛑 **HUMAN GATE (Punto de Aprobación):** Detente aquí. Pide mi aprobación para revisar el código.
+6. **Verifier:** Ejecuta linting (`./vendor/bin/pint --test`) y pruebas (`php artisan test` o `./vendor/bin/pest`) garantizando usar el contenedor de Docker correspondiente.
+7. **Commit, Archiver & Cleanup:** Utiliza la skill `git-commit` para generar el commit final del trabajo, guarda las decisiones en Engram para evitar amnesia. **Finalmente, ELIMINA los archivos temporales `docs/spec.md`, `docs/design.md` y `docs/task.md` (pero NUNCA borres la carpeta `docs/`), y finaliza la sesión.**
 
-## 1) Objetivo
-- Entregar cambios pequenos, seguros y consistentes con Laravel 11 + PHP 8.3.
-- Priorizar convenciones del modulo por encima de preferencias personales.
-- Evitar refactors globales si no fueron pedidos explicitamente.
+## 3. SKILLS REGISTRY Y ROUTER (CARGA DINÁMICA)
+Tienes instaladas múltiples skills y servidores MCP. Para evitar la sobrecarga de contexto, TIENES PROHIBIDO asumir reglas sin invocar la herramienta correspondiente ÚNICAMENTE cuando se cumpla la condición:
 
-## 2) Reglas externas (Cursor / Copilot)
-Revision actual del repositorio:
-- No existe `.cursorrules`.
-- No existe `.cursor/rules/`.
-- No existe `.github/copilot-instructions.md`.
-Si alguno aparece, esas reglas tienen prioridad sobre este archivo.
+- **[Condición]:** Tarea de planificación o redacción de especificaciones (archivos dentro de `docs/`).
+  👉 **[Ejecutar]:** Usa las skills `spec-driven-development` y `writing-plans`.
+- **[Condición]:** Lógica backend, PHP 8.3, controladores o Eloquent ORM.
+  👉 **[Ejecutar]:** Usa la skill `laravel-specialist`. (Apóyate en el servidor MCP `context7` para consultar documentación oficial si tienes dudas).
+- **[Condición]:** Tareas de frontend, vistas de usuario o UI.
+  👉 **[Ejecutar]:** Usa las skills `laravel-blade` y `frontend-design`.
+- **[Condición]:** Estilos, maquetación responsive o CSS.
+  👉 **[Ejecutar]:** Usa la skill `tailwindcss-advanced-layouts`.
+- **[Condición]:** Tareas relacionadas con generación o edición de video.
+  👉 **[Ejecutar]:** Usa la skill `remotion-best-practices`.
+- **[Condición]:** Tareas relacionadas con el diseño, creación o envío de correos electrónicos.
+  👉 **[Ejecutar]:** Usa la skill `resend`.
+- **[Condición]:** Control de versiones, creación de ramas al inicio o redacción de commits al final.
+  👉 **[Ejecutar]:** Usa la skill `git-commit`.
+- **[Condición]:** Necesitas una habilidad de desarrollo que no está en esta lista.
+  👉 **[Ejecutar]:** Usa la skill `find-skills` para buscar e instalar conocimiento nuevo.
 
-## 3) Stack del proyecto
-- Backend: Laravel 11, PHP 8.3, Eloquent ORM.
-- Frontend: Blade, Tailwind CSS, Alpine.js, JavaScript vanilla.
-- Bundler: Vite.
-- Testing: Pest sobre PHPUnit (`php artisan test` tambien disponible).
-- Docker opcional: `docker compose`.
+## 4. CONTEXTO TÉCNICO Y ENTORNO DOCKER LOCAL (Torneo Mitai)
+- **Stack Base:** Laravel 11, PHP 8.3, Tailwind CSS, Alpine.js, Vite.
+- **Infraestructura Local (Docker):** El entorno está 100% dockerizado. TIENES PROHIBIDO ejecutar comandos de PHP, Composer o Node directamente en la terminal del host. Usa siempre los contenedores correspondientes:
+  - 👉 **Backend (PHP/Artisan/Pest):** Ejecuta todo en el servicio `app` (Contenedor: `mitai-app`). 
+    *Ejemplo:* `docker compose exec app php artisan make:controller`
+  - 👉 **Frontend (NPM/Vite):** Ejecuta todo en el servicio `vite` (Contenedor: `mitai-vite`). 
+    *Ejemplo:* `docker compose exec vite npm run build`
+- **Servicios expuestos para testing:** Web (`localhost:8000`), phpMyAdmin (`localhost:8080`), Mailhog Web (`localhost:8025`).
+- **Base de Datos y Eloquent:** Respetar naming legacy (`idEdicion`, `idEquipo`). Evita N+1 usando `with()`. Usa `DB::transaction` en cambios multi-tabla sensibles.
+- **Arquitectura:** Mantén controladores finos (usa `FormRequest`). Mueve la lógica compleja reutilizable a `app/Services/**`.
+- **Seguridad:** Nunca loggees secretos ni credenciales.
 
-## 4) Reglas obligatorias para agentes
-- Para tareas Laravel/PHP, cargar y aplicar la skill `laravel-specialist`.
-- Mantener docstrings en espanol donde agreguen contexto de negocio real.
-- No agregar comentarios obvios; comentar solo reglas no evidentes.
-- No revertir cambios del usuario fuera del alcance pedido.
-- No crear commits salvo solicitud explicita del usuario.
+## 5. REGLAS ESTRICTAS DE IDIOMA Y GIT
+- **Idioma Base:** Nombres semánticos de negocio, docstrings y explicaciones estrictamente en **español**.
+- **Ramas y Commits OBLIGATORIOS:** Al iniciar CADA nueva tarea, feature o bugfix, estás **OBLIGADO** a crear una rama específica en la fase de Explorer (una sola vez por sesión). Al finalizar y aprobar el código, debes generar un commit.
+- **Idioma de Git:** El nombre de la rama (ej. `feature/modulo-pagos`, `bugfix/error-login`) y el mensaje del commit deben estar redactados **exclusivamente en español**. Utiliza obligatoriamente la skill `git-commit` para estructurarlos.
 
-## 5) Setup local rapido
-- `composer install`
-- `npm install`
-- `php artisan key:generate`
-- `php artisan migrate`
-Notas:
-- Puede no existir `.env.example`; usar `.env` del entorno.
-- Validar DB/SMTP antes de procesos masivos.
-
-## 6) Desarrollo local
-- Backend: `php artisan serve`
-- Frontend: `npm run dev`
-- Build prod frontend: `npm run build`
-- Si el usuario pide no ejecutar verificacion pesada, respetar esa instruccion.
-
-## 7) Docker
-Inicio rapido:
-- `./docker-start.sh`
-Flujo manual:
-- `docker compose up -d`
-- `docker compose exec app php artisan key:generate`
-- `docker compose exec app php artisan migrate`
-Utilidades:
-- `docker compose ps`
-- `docker compose logs -f app`
-- `docker compose exec app php artisan route:list`
-- `docker compose exec vite npm run dev`
-
-## 8) Build / lint / test
-PHP formato:
-- Verificar: `./vendor/bin/pint --test`
-- Formatear: `./vendor/bin/pint`
-Frontend:
-- Verificar bundle: `npm run build`
-- No hay ESLint/Prettier configurados por defecto.
-Test completo:
-- `php artisan test`
-- `./vendor/bin/pest`
-Test por suite:
-- `php artisan test --testsuite=Feature`
-- `php artisan test --testsuite=Unit`
-Single test (archivo):
-- `php artisan test tests/Feature/Auth/AuthenticationTest.php`
-- `./vendor/bin/pest tests/Feature/ProfileTest.php`
-Single test (por nombre):
-- `php artisan test --filter="users can logout"`
-- `./vendor/bin/pest --filter="profile page is displayed"`
-Single test en Docker:
-- `docker compose exec app php artisan test tests/Feature/Auth/AuthenticationTest.php`
-- `docker compose exec app php artisan test --filter="users can logout"`
-
-## 9) Convenciones de formato
-- Respetar `.editorconfig`.
-- Indentacion: 4 espacios en PHP y Blade.
-- EOL: LF y newline final obligatoria.
-- Evitar reformateos masivos fuera del alcance del pedido.
-
-## 10) Imports y estructura
-- Imports con `use` al inicio del archivo.
-- Un import por linea.
-- Evitar FQCN inline repetidos.
-- Seguir el orden de imports ya usado en cada modulo.
-- Una clase principal por archivo (PSR-4).
-
-## 11) Tipos y firmas
-- Tipar parametros y retornos en codigo nuevo cuando sea razonable.
-- Preferir propiedades tipadas y nullabilidad explicita.
-- No hacer refactor global de tipos en legacy sin pedido.
-- Mantener compatibilidad con PHP 8.3 y Laravel 11.
-
-## 12) Naming conventions
-- Clases: PascalCase.
-- Metodos/variables: camelCase.
-- Constantes: UPPER_SNAKE_CASE.
-- Rutas publicas: kebab-case.
-- Nombres de ruta (`->name`): dot notation.
-- Mantener terminos de dominio existentes (mucho negocio en espanol).
-
-## 13) Controladores y validacion
-- Controladores finos: orquestan request/response.
-- Usar FormRequest si el modulo ya sigue ese patron.
-- Evitar duplicar validacion entre Request y controlador.
-- Para AJAX/API, respuestas JSON consistentes (`success`, `message`, etc.).
-
-## 14) Eloquent y base de datos
-- Respetar naming legacy (`idEdicion`, `idEquipo`, etc.).
-- Declarar relaciones/claves explicitamente cuando no siga convencion Laravel.
-- Evitar N+1 con `with()` y `loadMissing()`.
-- Usar `DB::transaction` en cambios multi-tabla sensibles.
-- Actualizar `fillable` y `casts` al agregar atributos persistidos.
-
-## 15) Servicios y negocio
-- Mover logica compleja reutilizable a `app/Services/**`.
-- Mantener metodos pequenos y de responsabilidad unica.
-- Evitar logica pesada en Blade y controladores.
-- Reusar utilidades privadas antes de duplicar codigo.
-
-## 16) Errores y logging
-- Usar `try/catch` en flujos sensibles (SMTP, APIs externas, procesos batch).
-- Loggear con contexto util: ids, accion y causa tecnica.
-- Nunca loggear secretos, tokens o credenciales.
-- Para errores de proveedor externo, devolver estado accionable al frontend.
-
-## 17) Frontend
-- Mantener estructura por modulo en `resources/views/Panel/**`.
-- Reusar parciales (`_form.blade.php`) cuando existan.
-- JS nuevo preferentemente en `resources/js/**`.
-- No introducir frameworks nuevos sin aprobacion explicita.
-- Mantener UX basica: labels, estados de carga y mensajes claros.
-
-## 18) Seguridad y operacion
-- Nunca commitear `.env`, secretos o credenciales.
-- Respetar middlewares `auth`, `verified`, `throttle` y custom.
-- Evitar cambios destructivos sin migracion y rollback.
-- Asumir que ramas principales pueden terminar en despliegue.
-
-## 19) Alcance de cambios
-- Cambiar solo lo necesario para el pedido actual.
-- No incluir artefactos generados no relacionados.
-- Si hay dirty tree, no revertir trabajo ajeno.
-
-## 20) Checklist minimo antes de entregar
-1. Cambios acotados al objetivo funcional.
-2. Validacion en la capa correcta.
-3. `pint --test` ejecutado si esta disponible.
-4. Ejecutar al menos un single test o `--filter` cuando sea posible.
-5. Reportar explicitamente toda limitacion del entorno.
-6. Documentar siguiente paso recomendado si queda riesgo residual.
-
-## 21) Referencias rapidas
-- Rutas: `routes/web.php`
-- Controladores: `app/Http/Controllers/**`
-- Mailables: `app/Mail/**`
-- Notificaciones: `app/Notifications/**`
-- Vistas panel: `resources/views/Panel/**`
-- Tests: `tests/Feature/**`, `tests/Unit/**`
-
-Actualizar este archivo cuando cambien scripts, herramientas o reglas externas.
+*Actualizar este archivo cuando cambien scripts, herramientas o reglas externas.*
