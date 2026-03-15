@@ -866,7 +866,39 @@ class ControladorListaBuenaFe extends Controller
             });
         }
 
-        return $query->get();
+        $equipos = $query->get();
+
+        if ($equipos->isEmpty()) {
+            return $equipos;
+        }
+
+        $jugadoresActivosPorEquipo = ListaBuenaFe::select('idEquipo', 'idCategoria', DB::raw('count(*) as total_activos'))
+            ->where('idEdicion', $idEdicion)
+            ->where('activo', true)
+            ->groupBy('idEquipo', 'idCategoria')
+            ->get()
+            ->keyBy(function ($registro) {
+                return $registro->idEquipo.'-'.$registro->idCategoria;
+            });
+
+        return $equipos
+            ->map(function ($equipo) use ($jugadoresActivosPorEquipo) {
+                $clave = $equipo->idEquipo.'-'.$equipo->idCategoria;
+                $totalJugadoresActivos = (int) ($jugadoresActivosPorEquipo->get($clave)->total_activos ?? 0);
+
+                $equipo->total_jugadores_activos = $totalJugadoresActivos;
+                $equipo->sin_jugadores = $totalJugadoresActivos === 0;
+
+                return $equipo;
+            })
+            ->sort(function ($equipoA, $equipoB) {
+                if ($equipoA->sin_jugadores !== $equipoB->sin_jugadores) {
+                    return $equipoA->sin_jugadores ? -1 : 1;
+                }
+
+                return strcasecmp($equipoA->equipo->nombre ?? '', $equipoB->equipo->nombre ?? '');
+            })
+            ->values();
     }
 
     /**

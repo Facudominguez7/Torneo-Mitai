@@ -116,6 +116,24 @@
         @endif
 
         @if ($EdicionSeleccionada)
+            @php
+                $equiposSinJugadores = $equipos->where('sin_jugadores', true)->count();
+            @endphp
+
+            @if($equiposSinJugadores > 0)
+                <div class="mb-6 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-rose-50 px-5 py-4 shadow-sm">
+                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Prioridad administrativa</p>
+                            <h2 class="text-lg font-bold text-slate-800">{{ $equiposSinJugadores }} equipos sin jugadores cargados</h2>
+                        </div>
+                        <p class="text-sm text-slate-600">
+                            Se muestran primero para facilitar la carga inicial de la Lista de Buena Fe.
+                        </p>
+                    </div>
+                </div>
+            @endif
+
             {{-- Grid de Equipos --}}
             @if ($equipos->isEmpty())
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
@@ -126,10 +144,34 @@
             @else
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     @foreach ($equipos as $equipo)
+                        @php
+                            $sinJugadores = (bool) ($equipo->sin_jugadores ?? false);
+                            $totalJugadoresActivos = (int) ($equipo->total_jugadores_activos ?? 0);
+                        @endphp
                         <a href="{{ route('lista-buena-fe.show', ['idEquipo' => $equipo->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}" 
-                           class="block bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition transform hover:-translate-y-1">
+                           class="block overflow-hidden rounded-2xl border transition duration-200 transform hover:-translate-y-1 {{ $sinJugadores ? 'border-amber-300 bg-gradient-to-br from-amber-50 via-white to-rose-50 shadow-lg shadow-amber-100/70' : 'border-slate-200 bg-white shadow-md hover:shadow-lg' }}">
                             <div class="p-4 text-center">
-                                <div class="w-20 h-20 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+                                <div class="mb-4 flex items-start justify-between gap-3 text-left">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-semibold uppercase tracking-[0.2em] {{ $sinJugadores ? 'text-amber-700' : 'text-slate-400' }}">
+                                            {{ $equipo->categoria->nombreCategoria }}
+                                        </p>
+                                        @if($sinJugadores)
+                                            <span class="mt-2 inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                                                Sin jugadores cargados
+                                            </span>
+                                        @else
+                                            <span class="mt-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                                {{ $totalJugadoresActivos }} jugadores cargados
+                                            </span>
+                                        @endif
+                                    </div>
+                                    @if($sinJugadores)
+                                        <span class="rounded-full bg-white/80 px-2 py-1 text-lg shadow-sm">⚠️</span>
+                                    @endif
+                                </div>
+
+                                <div class="w-20 h-20 mx-auto mb-3 {{ $sinJugadores ? 'bg-amber-100' : 'bg-gray-100' }} rounded-full flex items-center justify-center overflow-hidden">
                                     @if($equipo->equipo->foto)
                                         <img src="{{ asset('fotos/equipos/' . $equipo->equipo->foto) }}" alt="{{ $equipo->equipo->nombre }}" class="w-full h-full object-cover">
                                     @else
@@ -137,10 +179,12 @@
                                     @endif
                                 </div>
                                 <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ $equipo->equipo->nombre }}</h3>
-                                <p class="text-sm text-blue-600 font-medium">{{ $equipo->categoria->nombreCategoria }}</p>
+                                <p class="text-sm {{ $sinJugadores ? 'text-amber-700' : 'text-blue-600' }} font-medium">
+                                    {{ $sinJugadores ? 'Requiere carga inicial de jugadores' : 'Lista disponible para gestionar' }}
+                                </p>
                             </div>
-                            <div class="bg-gray-50 px-4 py-2 border-t text-center">
-                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Ver Lista de Buena Fe</span>
+                            <div class="px-4 py-3 border-t text-center {{ $sinJugadores ? 'border-amber-200 bg-white/80' : 'bg-gray-50' }}">
+                                <span class="text-xs font-medium {{ $sinJugadores ? 'text-amber-700' : 'text-gray-500' }} uppercase tracking-wider">Ver Lista de Buena Fe</span>
                             </div>
                         </a>
                     @endforeach
