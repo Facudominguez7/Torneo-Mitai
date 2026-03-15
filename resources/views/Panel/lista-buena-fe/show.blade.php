@@ -48,6 +48,18 @@
             </script>
         @endif
 
+        @if ($errors->any())
+            <div id="validation-message" class="mb-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-red-700">
+                {{ $errors->first() }}
+            </div>
+            <script>
+                setTimeout(function() {
+                    const msg = document.getElementById('validation-message');
+                    if (msg) msg.remove();
+                }, 60000);
+            </script>
+        @endif
+
         {{-- Información del Equipo --}}
         <div class="mb-6 flex flex-col gap-4 rounded-lg border-l-4 border-blue-500 bg-white p-4 shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
@@ -199,6 +211,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DNI</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre Completo</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Nac.</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Camiseta</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Alta</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Suspendido</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
@@ -211,10 +224,13 @@
                                         {{ $jugador->dni_jugador }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $jugador->jugador->nombre }} {{ $jugador->jugador->apellido }}
+                                        {{ $jugador->jugador?->nombre ?? 'Sin nombre' }} {{ $jugador->jugador?->apellido ?? '' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('d/m/Y') }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ !is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $jugador->fecha_alta->format('d/m/Y') }}
@@ -230,19 +246,33 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 text-center text-sm font-medium">
-                                        <form method="POST" action="{{ route('lista-buena-fe.dar-baja', $jugador->id) }}"
-                                            class="inline-flex flex-col items-center gap-2 lg:flex-row lg:justify-center">
-                                            @csrf
-                                            @method('PUT')
-                                            <input type="text" name="motivo_baja" placeholder="Motivo (opcional)"
-                                                class="mb-1 w-36 rounded border-gray-300 px-2 py-1 text-xs lg:mb-0">
-                                            <button type="submit"
-                                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
-                                                onclick="return confirm('¿Dar de baja a este jugador?')">
-                                                🗑️ Baja
+                                    <td class="px-6 py-4 align-middle text-center text-sm font-medium">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <button type="button"
+                                                class="js-editar-jugador inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded bg-amber-500 px-3 text-xs leading-none text-white hover:bg-amber-600"
+                                                data-action="{{ route('lista-buena-fe.actualizar', $jugador->id) }}"
+                                                data-estado="activo"
+                                                data-dni="{{ $jugador->dni_jugador }}"
+                                                data-nombre="{{ $jugador->jugador?->nombre ?? '' }}"
+                                                data-apellido="{{ $jugador->jugador?->apellido ?? '' }}"
+                                                data-fecha="{{ $jugador->fecha_nacimiento ? $jugador->fecha_nacimiento->format('Y-m-d') : '' }}"
+                                                data-camiseta="{{ !is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '' }}">
+                                                ✏️ Editar
                                             </button>
-                                        </form>
+
+                                            <form method="POST" action="{{ route('lista-buena-fe.dar-baja', $jugador->id) }}"
+                                                class="contents">
+                                                @csrf
+                                                @method('PUT')
+                                                <input type="text" name="motivo_baja" placeholder="Motivo (opcional)"
+                                                    class="h-8 w-36 rounded border-gray-300 px-2 text-xs leading-none">
+                                                <button type="submit"
+                                                    class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded bg-red-500 px-3 text-xs leading-none text-white hover:bg-red-600"
+                                                    onclick="return confirm('¿Dar de baja a este jugador?')">
+                                                    🗑️ Baja
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -268,6 +298,7 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DNI</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Camiseta</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Alta</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Baja</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Motivo</th>
@@ -281,7 +312,10 @@
                                             {{ $jugador->dni_jugador }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $jugador->jugador->nombre }} {{ $jugador->jugador->apellido }}
+                                            {{ $jugador->jugador?->nombre ?? 'Sin nombre' }} {{ $jugador->jugador?->apellido ?? '' }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ !is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $jugador->fecha_alta->format('d/m/Y') }}
@@ -292,21 +326,35 @@
                                         <td class="px-6 py-4 text-sm text-gray-500">
                                             {{ $jugador->motivo_baja ?? 'Sin especificar' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            @if ($jugadoresActivos->count() < $limiteJugadoresPorPlanilla)
-                                                <form method="POST" action="{{ route('lista-buena-fe.reactivar', $jugador->id) }}"
-                                                    class="inline">
-                                                    @csrf
-                                                    @method('PUT')
-                                                    <button type="submit"
-                                                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs"
-                                                        onclick="return confirm('¿Reactivar a este jugador?')">
-                                                        ♻️ Reactivar
-                                                    </button>
-                                                </form>
-                                            @else
-                                                <span class="text-xs text-red-500 font-semibold">Límite alcanzado</span>
-                                            @endif
+                                        <td class="px-6 py-4 align-middle whitespace-nowrap text-center">
+                                            <div class="flex items-center justify-center gap-2">
+                                                <button type="button"
+                                                    class="js-editar-jugador inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded bg-amber-500 px-3 text-xs leading-none text-white hover:bg-amber-600"
+                                                    data-action="{{ route('lista-buena-fe.actualizar', $jugador->id) }}"
+                                                    data-estado="inactivo"
+                                                    data-dni="{{ $jugador->dni_jugador }}"
+                                                    data-nombre="{{ $jugador->jugador?->nombre ?? '' }}"
+                                                    data-apellido="{{ $jugador->jugador?->apellido ?? '' }}"
+                                                    data-fecha="{{ $jugador->fecha_nacimiento ? $jugador->fecha_nacimiento->format('Y-m-d') : '' }}"
+                                                    data-camiseta="{{ !is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '' }}">
+                                                    ✏️ Editar
+                                                </button>
+
+                                                @if ($jugadoresActivos->count() < $limiteJugadoresPorPlanilla)
+                                                    <form method="POST" action="{{ route('lista-buena-fe.reactivar', $jugador->id) }}"
+                                                        class="contents">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <button type="submit"
+                                                            class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded bg-green-500 px-3 text-xs leading-none text-white hover:bg-green-600"
+                                                            onclick="return confirm('¿Reactivar a este jugador?')">
+                                                            ♻️ Reactivar
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <span class="text-xs text-red-500 font-semibold">Límite alcanzado</span>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -316,6 +364,78 @@
                 </details>
             </div>
         @endif
+
+        <div id="modal-editar-jugador"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm">
+            <div class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-start justify-between border-b border-slate-200 px-5 py-4">
+                    <div>
+                        <h3 id="modal-editar-titulo" class="text-lg font-semibold text-slate-900">Editar jugador</h3>
+                        <p id="modal-editar-subtitulo" class="text-sm text-slate-500">
+                            Corrige identidad y datos operativos sin salir de la Lista de Buena Fe.
+                        </p>
+                    </div>
+
+                    <button type="button" id="cerrar-modal-editar"
+                        class="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                        aria-label="Cerrar modal de edición">
+                        ✕
+                    </button>
+                </div>
+
+                <form method="POST" id="formEditarJugador" class="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
+                    @csrf
+                    @method('PUT')
+
+                    <div>
+                        <label for="editar_dni_jugador" class="mb-1 block text-sm font-medium text-gray-700">DNI del Jugador:</label>
+                        <input type="text" name="dni_jugador" id="editar_dni_jugador" required pattern="\d{7,8}"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            placeholder="Ej: 12345678">
+                    </div>
+
+                    <div>
+                        <label for="editar_nombre_jugador" class="mb-1 block text-sm font-medium text-gray-700">Nombre:</label>
+                        <input type="text" name="nombre_jugador" id="editar_nombre_jugador" required
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            placeholder="Nombre del jugador">
+                    </div>
+
+                    <div>
+                        <label for="editar_apellido_jugador" class="mb-1 block text-sm font-medium text-gray-700">Apellido:</label>
+                        <input type="text" name="apellido_jugador" id="editar_apellido_jugador" required
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            placeholder="Apellido del jugador">
+                    </div>
+
+                    <div>
+                        <label for="editar_fecha_nacimiento" class="mb-1 block text-sm font-medium text-gray-700">Fecha de Nacimiento:</label>
+                        <input type="date" name="fecha_nacimiento" id="editar_fecha_nacimiento" required
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="editar_numero_camiseta" class="mb-1 block text-sm font-medium text-gray-700">
+                            Número de Camiseta: <span class="font-normal text-gray-400">(opcional)</span>
+                        </label>
+                        <input type="number" name="numero_camiseta" id="editar_numero_camiseta" min="0" max="999"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            placeholder="Ej: 10">
+                    </div>
+
+                    <div class="md:col-span-2 flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                        <button type="button" id="cancelar-edicion"
+                            class="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                            class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700">
+                            Guardar cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
     </div>
 
@@ -436,6 +556,131 @@
                     form.submit();
                 });
             }
+
+            const warningActualizarMessage = @json(session('warning_actualizar'));
+            const warningActualizarData = @json(session('warning_actualizar_data', []));
+            const warningActualizarAction = @json(session('warning_actualizar_action'));
+
+            if (warningActualizarMessage && warningActualizarAction) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Posible caso conflictivo',
+                    text: warningActualizarMessage,
+                    showCancelButton: true,
+                    confirmButtonText: 'Guardar y marcar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#d97706',
+                    cancelButtonColor: '#6b7280',
+                }).then(function(result) {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = warningActualizarAction;
+
+                    const csrf = document.createElement('input');
+                    csrf.type = 'hidden';
+                    csrf.name = '_token';
+                    csrf.value = @json(csrf_token());
+                    form.appendChild(csrf);
+
+                    const methodInput = document.createElement('input');
+                    methodInput.type = 'hidden';
+                    methodInput.name = '_method';
+                    methodInput.value = 'PUT';
+                    form.appendChild(methodInput);
+
+                    const forceInput = document.createElement('input');
+                    forceInput.type = 'hidden';
+                    forceInput.name = 'force';
+                    forceInput.value = '1';
+                    form.appendChild(forceInput);
+
+                    Object.entries(warningActualizarData).forEach(function([key, value]) {
+                        if (value === null || typeof value === 'undefined') {
+                            return;
+                        }
+
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = String(value);
+                        form.appendChild(input);
+                    });
+
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('modal-editar-jugador');
+            const form = document.getElementById('formEditarJugador');
+            const titulo = document.getElementById('modal-editar-titulo');
+            const subtitulo = document.getElementById('modal-editar-subtitulo');
+            const cerrar = document.getElementById('cerrar-modal-editar');
+            const cancelar = document.getElementById('cancelar-edicion');
+            const botonesEditar = document.querySelectorAll('.js-editar-jugador');
+
+            if (!modal || !form || botonesEditar.length === 0) {
+                return;
+            }
+
+            const dniInput = document.getElementById('editar_dni_jugador');
+            const nombreInput = document.getElementById('editar_nombre_jugador');
+            const apellidoInput = document.getElementById('editar_apellido_jugador');
+            const fechaInput = document.getElementById('editar_fecha_nacimiento');
+            const camisetaInput = document.getElementById('editar_numero_camiseta');
+
+            function abrirModal(button) {
+                form.action = button.dataset.action || '';
+                dniInput.value = button.dataset.dni || '';
+                nombreInput.value = button.dataset.nombre || '';
+                apellidoInput.value = button.dataset.apellido || '';
+                fechaInput.value = button.dataset.fecha || '';
+                camisetaInput.value = button.dataset.camiseta || '';
+
+                const estado = button.dataset.estado === 'inactivo' ? 'inactivo' : 'activo';
+                titulo.textContent = `Editar jugador ${estado}`;
+                subtitulo.textContent = estado === 'inactivo'
+                    ? 'Actualiza datos históricos antes de una posible reactivación.'
+                    : 'Corrige identidad y datos operativos del jugador activo.';
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('overflow-hidden');
+            }
+
+            function cerrarModal() {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            botonesEditar.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    abrirModal(button);
+                });
+            });
+
+            [cerrar, cancelar].filter(Boolean).forEach(function(button) {
+                button.addEventListener('click', cerrarModal);
+            });
+
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    cerrarModal();
+                }
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    cerrarModal();
+                }
+            });
         });
 
         /**
@@ -512,7 +757,7 @@
              * Función para aplicar estilo de campo autocompletado
              */
             function aplicarEstiloAutocompletado(input, valor) {
-                if (valor) {
+                if (valor !== null && typeof valor !== 'undefined' && valor !== '') {
                     input.value = valor;
                     input.classList.add('bg-green-50', 'border-green-300');
                     input.classList.remove('bg-white');
@@ -577,7 +822,7 @@
                         if (data.fecha_nacimiento) {
                             aplicarEstiloAutocompletado(fechaInput, data.fecha_nacimiento);
                         }
-                        if (data.numero_camiseta && camisetaInput) {
+                        if (data.numero_camiseta !== null && typeof data.numero_camiseta !== 'undefined' && camisetaInput) {
                             aplicarEstiloAutocompletado(camisetaInput, data.numero_camiseta);
                         }
                         mostrarEncontrado(data.mensaje || 'Jugador encontrado');

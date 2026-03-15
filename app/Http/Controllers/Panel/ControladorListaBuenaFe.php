@@ -10,6 +10,7 @@ use App\Models\EquipoEdicion;
 use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
 use App\Models\PlanillaJugador;
+use App\Services\ActualizadorIdentidadJugador;
 use App\Services\EstadisticasService;
 use App\Services\ValidadorReglasJugador;
 use Illuminate\Http\Request;
@@ -20,9 +21,12 @@ class ControladorListaBuenaFe extends Controller
 {
     protected $validadorReglas;
 
-    public function __construct(ValidadorReglasJugador $validadorReglas)
+    protected $actualizadorIdentidadJugador;
+
+    public function __construct(ValidadorReglasJugador $validadorReglas, ActualizadorIdentidadJugador $actualizadorIdentidadJugador)
     {
         $this->validadorReglas = $validadorReglas;
+        $this->actualizadorIdentidadJugador = $actualizadorIdentidadJugador;
     }
 
     /**
@@ -237,15 +241,6 @@ class ControladorListaBuenaFe extends Controller
             'force' => 'nullable|boolean',
         ]);
 
-        // Verificar o crear el jugador (sin transacción todavía)
-        $jugador = Jugador::firstOrCreate(
-            ['dni' => $request->dni_jugador],
-            [
-                'nombre' => $request->nombre_jugador,
-                'apellido' => $request->apellido_jugador,
-            ]
-        );
-
         // --- VALIDACIONES DE NEGOCIO ---
         Log::info("Validando jugador DNI: {$request->dni_jugador} para Equipo: {$request->idEquipo}");
 
@@ -286,9 +281,15 @@ class ControladorListaBuenaFe extends Controller
         try {
             DB::beginTransaction();
 
+            $jugador = $this->actualizadorIdentidadJugador->sincronizarJugador(
+                $request->dni_jugador,
+                $request->nombre_jugador,
+                $request->apellido_jugador
+            );
+
             // Agregar a la lista de buena fe
             $nuevoJugador = ListaBuenaFe::create([
-                'dni_jugador' => $request->dni_jugador,
+                'dni_jugador' => $jugador->dni,
                 'idEquipo' => $request->idEquipo,
                 'idEdicion' => $request->idEdicion,
                 'idCategoria' => $request->idCategoria,
@@ -315,7 +316,9 @@ class ControladorListaBuenaFe extends Controller
             return redirect()->back()->with('success', $mensaje);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
             Log::error('Error al agregar jugador: '.$e->getMessage());
 
             return redirect()->back()->with('error', 'Ocurrió un error al agregar el jugador: '.$e->getMessage())->withInput();
@@ -541,15 +544,20 @@ class ControladorListaBuenaFe extends Controller
     public function actualizar(Request $request, $id)
     {
         $request->validate([
+            'dni_jugador' => 'required|digits_between:7,8',
+            'nombre_jugador' => 'required|string|max:255',
+            'apellido_jugador' => 'required|string|max:255',
             'numero_camiseta' => 'nullable|integer|min:0|max:999',
             'fecha_nacimiento' => 'required|date',
+            'force' => 'nullable|boolean',
         ]);
 
         try {
             $listaBuenaFe = ListaBuenaFe::findOrFail($id);
 
-            $resultadoValidacion = $this->validadorReglas->validarSoloCategoriaYEdad(
-                $listaBuenaFe->dni_jugador,
+            $resultadoValidacion = $this->validadorReglas->validarActualizacionJugador(
+                $listaBuenaFe->id,
+                $request->dni_jugador,
                 $listaBuenaFe->idEquipo,
                 $listaBuenaFe->idEdicion,
                 $listaBuenaFe->idCategoria,
@@ -560,28 +568,53 @@ class ControladorListaBuenaFe extends Controller
                 return redirect()->back()->with('error', $resultadoValidacion['message']);
             }
 
+            if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning' && ! $request->boolean('force')) {
+                return redirect()->back()
+                    ->with('warning_actualizar', $resultadoValidacion['message'])
+                    ->with('warning_actualizar_action', route('lista-buena-fe.actualizar', $listaBuenaFe->id))
+                    ->with('warning_actualizar_data', [
+                        'dni_jugador' => $request->dni_jugador,
+                        'nombre_jugador' => $request->nombre_jugador,
+                        'apellido_jugador' => $request->apellido_jugador,
+                        'fecha_nacimiento' => $request->fecha_nacimiento,
+                        'numero_camiseta' => $request->numero_camiseta,
+                    ]);
+            }
+
+            DB::beginTransaction();
+
+            $jugador = $this->actualizadorIdentidadJugador->actualizarIdentidad(
+                $listaBuenaFe->dni_jugador,
+                $request->dni_jugador,
+                $request->nombre_jugador,
+                $request->apellido_jugador
+            );
+
+            $listaBuenaFe->dni_jugador = $jugador->dni;
             $listaBuenaFe->numero_camiseta = $request->numero_camiseta;
             $listaBuenaFe->fecha_nacimiento = $request->fecha_nacimiento;
-
-            if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning') {
-                $listaBuenaFe->conflictivo = true;
-                $listaBuenaFe->motivo_conflicto = $resultadoValidacion['message'];
-                $listaBuenaFe->resuelto = false;
-                $listaBuenaFe->fecha_resolucion = null;
-                $listaBuenaFe->resuelto_por = null;
-                $listaBuenaFe->notas_resolucion = null;
-            }
+            $this->aplicarEstadoConflicto($listaBuenaFe, $resultadoValidacion);
 
             $listaBuenaFe->save();
 
+            DB::commit();
+
             Log::info("Datos actualizados para jugador {$listaBuenaFe->dni_jugador} en Lista de Buena Fe");
 
-            return redirect()->back()->with('success', 'Datos actualizados correctamente.');
+            $mensaje = 'Datos actualizados correctamente.';
+            if ($listaBuenaFe->conflictivo) {
+                $mensaje .= ' (Marcado como CONFLICTIVO)';
+            }
+
+            return redirect()->back()->with('success', $mensaje);
 
         } catch (\Exception $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
             Log::error('Error al actualizar jugador: '.$e->getMessage());
 
-            return redirect()->back()->with('error', 'Error al actualizar los datos.');
+            return redirect()->back()->with('error', 'Error al actualizar los datos: '.$e->getMessage());
         }
     }
 
@@ -625,7 +658,7 @@ class ControladorListaBuenaFe extends Controller
             if ($registroLBF->fecha_nacimiento) {
                 $fechaNacimiento = $registroLBF->fecha_nacimiento->format('Y-m-d');
             }
-            if ($registroLBF->numero_camiseta) {
+            if (! is_null($registroLBF->numero_camiseta)) {
                 $numeroCamiseta = $registroLBF->numero_camiseta;
             }
         }
@@ -642,7 +675,7 @@ class ControladorListaBuenaFe extends Controller
                         ? $registroPlanilla->fecha_nacimiento->format('Y-m-d')
                         : $registroPlanilla->fecha_nacimiento;
                 }
-                if (! $numeroCamiseta && $registroPlanilla->numero_camiseta) {
+                if (is_null($numeroCamiseta) && ! is_null($registroPlanilla->numero_camiseta)) {
                     $numeroCamiseta = $registroPlanilla->numero_camiseta;
                 }
             }
@@ -839,6 +872,27 @@ class ControladorListaBuenaFe extends Controller
             'omitidos' => $omitidos,
             'omitidos_conflictivos' => $omitidosConflictivos,
         ];
+    }
+
+    private function aplicarEstadoConflicto(ListaBuenaFe $listaBuenaFe, $resultadoValidacion): void
+    {
+        if ($resultadoValidacion && $resultadoValidacion['type'] === 'warning') {
+            $listaBuenaFe->conflictivo = true;
+            $listaBuenaFe->motivo_conflicto = $resultadoValidacion['message'];
+            $listaBuenaFe->resuelto = false;
+            $listaBuenaFe->fecha_resolucion = null;
+            $listaBuenaFe->resuelto_por = null;
+            $listaBuenaFe->notas_resolucion = null;
+
+            return;
+        }
+
+        $listaBuenaFe->conflictivo = false;
+        $listaBuenaFe->motivo_conflicto = null;
+        $listaBuenaFe->resuelto = false;
+        $listaBuenaFe->fecha_resolucion = null;
+        $listaBuenaFe->resuelto_por = null;
+        $listaBuenaFe->notas_resolucion = null;
     }
 
     // NOTA: Método validarJugador() eliminado - ahora se usa ValidadorReglasJugador service
