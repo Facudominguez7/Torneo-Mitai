@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Campeon;
 use App\Models\Categoria;
 use App\Models\Edicion;
+use App\Models\EquipoEdicion;
 use App\Models\Fase;
 use App\Models\Fecha;
 use App\Models\Goleador;
@@ -16,7 +17,6 @@ use App\Models\TablaGoleador;
 use App\Models\TablaPosicion;
 use App\Models\User;
 use App\Models\VallaMenosVencida;
-use App\Models\EquipoEdicion;
 use App\Services\EstadisticasService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,8 +34,8 @@ class ControladorHome extends Controller
         }
         $idCategoria = $request->query('idCategoria');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-    $categorias = collect();
-    $roles = User::pluck('rol');
+        $categorias = collect();
+        $roles = User::pluck('rol');
         if ($EdicionSeleccionada) {
             $categorias = Categoria::where('idEdicion', $idEdicion)->orderBy('nombreCategoria', 'desc')->get();
         } elseif ($ultimaEdicion) {
@@ -44,6 +44,7 @@ class ControladorHome extends Controller
 
         return view('welcome', compact('ediciones', 'ultimaEdicion', 'EdicionSeleccionada', 'categorias', 'idEdicion', 'idCategoria', 'roles'));
     }
+
     /**
      * Renderiza el panel admin y redirige módulos desde el selector global.
      *
@@ -110,8 +111,6 @@ class ControladorHome extends Controller
                 ->values();
         }
 
-
-
         $ultimaFecha = Fecha::where('idEdicion', $idEdicion)->latest('id')->first();
         $partidosQuery = Partido::select('partidos.*', 'el.nombre as nombre_local', 'ev.nombre as nombre_visitante', 'el.foto as foto_local', 'ev.foto as foto_visitante', 'f.nombre as nombre_fecha', 'c.nombreCategoria as nombre_categoria')
             ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
@@ -125,7 +124,7 @@ class ControladorHome extends Controller
 
         // Filtrar por horario usando TIME() para comparar solo la hora
         if ($horarioString) {
-            $partidosQuery->whereRaw('TIME(partidos.horario_datetime) = ?', [$horarioString . ':00']);
+            $partidosQuery->whereRaw('TIME(partidos.horario_datetime) = ?', [$horarioString.':00']);
         }
 
         $partidos = $partidosQuery->orderByDesc('f.id')
@@ -141,13 +140,20 @@ class ControladorHome extends Controller
         // Obtener estadísticas de jugadores de las últimas dos fechas
         $estadisticasJugadores = null;
         $jugadoresPorCategoria = null;
+        $equiposSinAsistencia = [
+            'nombre_fecha' => null,
+            'horario_filtrado' => $horarioString,
+            'total_pendientes' => 0,
+            'equipos' => [],
+        ];
         if ($idEdicion) {
             $estadisticasService = new EstadisticasService();
             $estadisticasJugadores = $estadisticasService->obtenerJugadoresDosUltimasFechas($idEdicion);
             $jugadoresPorCategoria = $estadisticasService->obtenerJugadoresPorCategoriaDosUltimasFechas($idEdicion);
+            $equiposSinAsistencia = $estadisticasService->obtenerEquiposSinAsistenciaUltimaFecha((int) $idEdicion, $horarioString);
         }
 
-        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria'));
+        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia'));
     }
 
     public function campeones(Request $request)
@@ -236,6 +242,7 @@ class ControladorHome extends Controller
 
         return view('layouts.subcampeones', compact('ediciones', 'EdicionSeleccionada', 'categorias', 'subcampeonesOro', 'subcampeonesPlata', 'subcampeonesMitai', 'subcampeonesBronce'));
     }
+
     public function goleadores(Request $request)
     {
         $ediciones = Edicion::all();
@@ -251,6 +258,7 @@ class ControladorHome extends Controller
 
         return view('layouts.goleadores', compact('ediciones', 'EdicionSeleccionada', 'goleadores'));
     }
+
     public function vallas(Request $request)
     {
         $ediciones = Edicion::all();
@@ -280,13 +288,12 @@ class ControladorHome extends Controller
 
     /**
      * Mostrar la tabla de vallas menos vencidas en tiempo real.
-     * 
+     *
      * Muestra los equipos ordenados por menor cantidad de goles recibidos,
      * considerando tanto partidos de fase de grupos como instancias finales.
      * Los datos se obtienen de `equipo_ediciones.golesContra` que se actualiza
      * automáticamente al cargar resultados.
      *
-     * @param Request $request
      * @return \Illuminate\Contracts\View\View
      */
     public function tablaVallas(Request $request)
@@ -302,7 +309,7 @@ class ControladorHome extends Controller
 
         // Normalizar clave de orden
         $sortKey = in_array($sort, ['goles', 'equipo', 'categoria']) ? $sort : 'goles';
-        
+
         // Columna real en base de datos para cada clave
         $sortColumnMap = [
             'goles' => 'equipo_ediciones.golesContra',
@@ -311,7 +318,7 @@ class ControladorHome extends Controller
         ];
 
         // Dirección por defecto: goles asc (menos goles = mejor), resto asc
-        if (!$request->has('dir')) {
+        if (! $request->has('dir')) {
             $dir = 'asc';
         }
 
@@ -330,7 +337,7 @@ class ControladorHome extends Controller
             ->where('equipo_ediciones.idEdicion', $idEdicion);
 
         // Filtro por categoría
-        if (!is_null($idCategoria)) {
+        if (! is_null($idCategoria)) {
             $baseQuery->where('equipo_ediciones.idCategoria', $idCategoria);
         }
 
@@ -416,7 +423,7 @@ class ControladorHome extends Controller
                 ->select('grupos.id', 'grupos.nombre', 'grupos.idCategoria', 'c.nombreCategoria as categoria_nombre')
                 ->distinct('nombre')
                 ->get();
-        } else if (isset($EdicionSeleccionada)) {
+        } elseif (isset($EdicionSeleccionada)) {
             // Sin categoría: listar grupos de toda la edición
             $grupos = Grupo::where('grupos.idEdicion', $idEdicion)
                 ->leftJoin('categorias as c', 'grupos.idCategoria', '=', 'c.id')
@@ -434,7 +441,7 @@ class ControladorHome extends Controller
                     ->leftJoin('categorias as cat', 'partidos.idCategoria', '=', 'cat.id')
                     ->where('partidos.idFechas', $idFecha)
                     ->where('partidos.idEdicion', $idEdicion)
-                    ->when($idCategoria, fn($q) => $q->where('partidos.idCategoria', $idCategoria))
+                    ->when($idCategoria, fn ($q) => $q->where('partidos.idCategoria', $idCategoria))
                     ->when($estado === 'finalizados', function ($q) {
                         $q->where('partidos.jugado', 1);
                     })
@@ -455,7 +462,7 @@ class ControladorHome extends Controller
                     ->join('fechas as f', 'partidos.idFechas', '=', 'f.id')
                     ->leftJoin('categorias as cat', 'partidos.idCategoria', '=', 'cat.id')
                     ->where('partidos.idEdicion', $idEdicion)
-                    ->when($idCategoria, fn($q) => $q->where('partidos.idCategoria', $idCategoria))
+                    ->when($idCategoria, fn ($q) => $q->where('partidos.idCategoria', $idCategoria))
                     ->when($estado === 'finalizados', function ($q) {
                         $q->where('partidos.jugado', 1);
                     })
@@ -472,9 +479,10 @@ class ControladorHome extends Controller
         if (isset($idCategoria)) {
             $categoria = Categoria::find($idCategoria);
             $nombreCategoria = $categoria->nombreCategoria;
-        } else if (isset($EdicionSeleccionada)) {
+        } elseif (isset($EdicionSeleccionada)) {
             $nombreCategoria = 'Todas las categorías';
         }
+
         return view('layouts.fixture', compact('nombreFecha', 'nombreCategoria', 'grupos', 'ediciones', 'EdicionSeleccionada', 'categorias', 'idCategoria', 'CategoriaSeleccionada', 'fechas', 'partidos'));
     }
 
@@ -536,7 +544,7 @@ class ControladorHome extends Controller
             'categoria' => 'cat.nombreCategoria',
         ];
         // Dirección por defecto: goles desc, resto asc (más natural en listados)
-        if (!$request->has('dir')) {
+        if (! $request->has('dir')) {
             $dir = $sortKey === 'goles' ? 'desc' : 'asc';
         }
 
@@ -548,7 +556,7 @@ class ControladorHome extends Controller
             ->select('tabla_goleadores.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo', \Illuminate\Support\Facades\DB::raw("CONCAT(j.apellido, ' ', j.nombre) as nombreJugador"))
             ->where('tabla_goleadores.idEdicion', $idEdicion);
 
-        if (!is_null($idCategoria)) {
+        if (! is_null($idCategoria)) {
             $baseQuery->where('tabla_goleadores.idCategoria', $idCategoria);
         }
 
@@ -561,7 +569,7 @@ class ControladorHome extends Controller
         $goleadores_t = $baseQuery->paginate(30);
         // Mantener parámetros en la paginación
         $appendParams = ['idEdicion' => $idEdicion, 'search_value' => $search_value, 'sort' => $sortKey, 'dir' => $dir];
-        if (!is_null($idCategoria)) {
+        if (! is_null($idCategoria)) {
             $appendParams['idCategoria'] = $idCategoria;
         }
         $goleadores_t->appends($appendParams);
@@ -576,6 +584,7 @@ class ControladorHome extends Controller
 
         return view('layouts.tabla-goleadores', compact('ediciones', 'EdicionSeleccionada', 'goleadores_t', 'categorias'));
     }
+
     public function instanciasFinales(Request $request)
     {
         $ediciones = Edicion::all();
@@ -612,7 +621,7 @@ class ControladorHome extends Controller
             'ev.foto as foto_visitante',
             'categorias.nombreCategoria as nombre_categoria',
             DB::raw("COALESCE(copas.nombre, '') as nombre_copa"),
-            DB::raw("COALESCE(copas.secuencia, 99) as orden_copa")
+            DB::raw('COALESCE(copas.secuencia, 99) as orden_copa')
         )
             ->join('fases', 'instancias_finales.idFase', '=', 'fases.id')
             ->join('equipos as el', 'instancias_finales.idEquipoLocal', '=', 'el.id')
@@ -625,28 +634,28 @@ class ControladorHome extends Controller
             ->orderBy('fases.secuencia', 'asc');
 
         // Aplicar el filtro por categoría si se selecciona una
-        if (!empty($selectedCategoria)) {
+        if (! empty($selectedCategoria)) {
             $partidosQuery->where('categorias.id', (int) $selectedCategoria);
         }
 
         // Aplicar el filtro por copa si se selecciona una
-        if (!empty($selectedCopa)) {
+        if (! empty($selectedCopa)) {
             $partidosQuery->where('copas.id', (int) $selectedCopa);
         }
 
         // Aplicar el filtro por fase si se selecciona una
-        if (!empty($selectedFase)) {
+        if (! empty($selectedFase)) {
             $partidosQuery->where('fases.id', (int) $selectedFase);
         }
 
         $partidos = $partidosQuery->get();
 
         return view('layouts.instancias-finales', compact(
-            'ediciones', 
-            'ultimaEdicion', 
-            'EdicionSeleccionada', 
-            'partidos', 
-            'categorias', 
+            'ediciones',
+            'ultimaEdicion',
+            'EdicionSeleccionada',
+            'partidos',
+            'categorias',
             'selectedCategoria',
             'copas',
             'selectedCopa',
@@ -663,7 +672,7 @@ class ControladorHome extends Controller
         $idEdicion = $request->query('idEdicion');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
 
-        if (!$EdicionSeleccionada) {
+        if (! $EdicionSeleccionada) {
             return redirect()->back()->with('error', 'Debe seleccionar una edición');
         }
 
@@ -708,15 +717,15 @@ class ControladorHome extends Controller
                 if ($tablaPosiciones->isNotEmpty()) {
                     $gruposConTabla[] = [
                         'grupo' => $grupo,
-                        'tabla' => $tablaPosiciones
+                        'tabla' => $tablaPosiciones,
                     ];
                 }
             }
 
-            if (!empty($gruposConTabla)) {
+            if (! empty($gruposConTabla)) {
                 $tablasPorCategoria[] = [
                     'categoria' => $categoria,
-                    'grupos' => $gruposConTabla
+                    'grupos' => $gruposConTabla,
                 ];
             }
         }
@@ -732,7 +741,7 @@ class ControladorHome extends Controller
         $idEdicion = $request->query('idEdicion');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
 
-        if (!$EdicionSeleccionada) {
+        if (! $EdicionSeleccionada) {
             return redirect()->back()->with('error', 'Debe seleccionar una edición');
         }
 
@@ -780,7 +789,7 @@ class ControladorHome extends Controller
         $idEdicion = $request->query('idEdicion');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
 
-        if (!$EdicionSeleccionada) {
+        if (! $EdicionSeleccionada) {
             return redirect()->back()->with('error', 'Debe seleccionar una edición');
         }
 
@@ -795,7 +804,7 @@ class ControladorHome extends Controller
             'ev.foto as foto_visitante',
             'categorias.nombreCategoria as nombre_categoria',
             DB::raw("COALESCE(copas.nombre, '') as nombre_copa"),
-            DB::raw("COALESCE(copas.secuencia, 99) as orden_copa")
+            DB::raw('COALESCE(copas.secuencia, 99) as orden_copa')
         )
             ->join('fases', 'instancias_finales.idFase', '=', 'fases.id')
             ->join('equipos as el', 'instancias_finales.idEquipoLocal', '=', 'el.id')
@@ -823,7 +832,7 @@ class ControladorHome extends Controller
         $horarioFiltro = $request->query('horario'); // Formato: HH:mm
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
 
-        if (!$EdicionSeleccionada) {
+        if (! $EdicionSeleccionada) {
             return redirect()->back()->with('error', 'Debe seleccionar una edición');
         }
 
@@ -838,7 +847,7 @@ class ControladorHome extends Controller
             'ev.foto as foto_visitante',
             'categorias.nombreCategoria as nombre_categoria',
             DB::raw("COALESCE(copas.nombre, '') as nombre_copa"),
-            DB::raw("COALESCE(copas.secuencia, 99) as orden_copa")
+            DB::raw('COALESCE(copas.secuencia, 99) as orden_copa')
         )
             ->join('fases', 'instancias_finales.idFase', '=', 'fases.id')
             ->join('equipos as el', 'instancias_finales.idEquipoLocal', '=', 'el.id')
@@ -852,7 +861,7 @@ class ControladorHome extends Controller
 
         // Filtro por horario si se proporciona
         if ($horarioFiltro) {
-            $query->whereRaw('TIME(instancias_finales.horario) = ?', [$horarioFiltro . ':00']);
+            $query->whereRaw('TIME(instancias_finales.horario) = ?', [$horarioFiltro.':00']);
         }
 
         $partidos = $query
@@ -900,7 +909,7 @@ class ControladorHome extends Controller
             ->whereNull('partidos.golesEquipoVisitante');
 
         if ($horarioFiltro) {
-            $query->whereRaw('TIME(partidos.horario_datetime) = ?', [$horarioFiltro . ':00']);
+            $query->whereRaw('TIME(partidos.horario_datetime) = ?', [$horarioFiltro.':00']);
         }
 
         $partidos = $query
@@ -932,7 +941,7 @@ class ControladorHome extends Controller
     public function fechasPorCategoria($idCategoria)
     {
         $categoria = Categoria::find($idCategoria);
-        if (!$categoria) {
+        if (! $categoria) {
             return response()->json([]);
         }
 
