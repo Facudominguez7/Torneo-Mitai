@@ -767,6 +767,79 @@
                     </p>
                 @endif
             </div>
+            <div class="mb-5 px-3 sm:px-4">
+                <div class="mx-auto w-full rounded-3xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-xl lg:w-11/12 xl:w-3/4 2xl:w-1/2">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-md">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.65 18h16.7a1 1 0 00.86-1.5l-7.5-13a1 1 0 00-1.72 0z" />
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Control de asistencia</p>
+                                    <h2 class="text-xl font-black text-slate-900 sm:text-2xl">Equipos con asistencia pendiente</h2>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-700">
+                                @if(!empty($equiposSinAsistencia['nombre_fecha']))
+                                    <span class="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-amber-200">{{ $equiposSinAsistencia['nombre_fecha'] }}</span>
+                                @endif
+                                @if(!empty($equiposSinAsistencia['horario_filtrado']))
+                                    <span class="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-amber-200">Horario {{ $equiposSinAsistencia['horario_filtrado'] }} hs</span>
+                                @else
+                                    <span class="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-amber-200">Todos los horarios visibles</span>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="rounded-2xl bg-slate-950 px-5 py-4 text-center text-white shadow-lg lg:min-w-[180px]">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-200">Pendientes</p>
+                            <p class="mt-2 text-4xl font-black">{{ $equiposSinAsistencia['total_pendientes'] ?? 0 }}</p>
+                            <p class="mt-1 text-xs text-slate-300">equipos por revisar</p>
+                        </div>
+                    </div>
+
+                    @if(($equiposSinAsistencia['total_pendientes'] ?? 0) > 0)
+                        <div class="mt-5 grid gap-3">
+                            @foreach($equiposSinAsistencia['equipos'] as $pendiente)
+                                <div class="rounded-2xl border border-amber-200 bg-white/90 p-4 shadow-sm ring-1 ring-amber-100/70">
+                                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                        <div class="min-w-0">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <h3 class="text-lg font-bold text-slate-900">{{ $pendiente['equipo'] }}</h3>
+                                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">{{ $pendiente['condicion'] }}</span>
+                                                <span class="rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] {{ $pendiente['estado'] === 'sin_planilla' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700' }}">{{ $pendiente['estado_label'] }}</span>
+                                            </div>
+                                            <p class="mt-1 text-sm font-medium text-slate-600">vs {{ $pendiente['rival'] }}</p>
+                                            <div class="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+                                                <span class="rounded-full bg-slate-100 px-3 py-1">{{ $pendiente['categoria'] }}</span>
+                                                @if(!empty($pendiente['fecha']))
+                                                    <span class="rounded-full bg-slate-100 px-3 py-1">{{ $pendiente['fecha'] }}</span>
+                                                @endif
+                                                @if(!empty($pendiente['horario']))
+                                                    <span class="rounded-full bg-slate-100 px-3 py-1">{{ $pendiente['horario'] }} hs</span>
+                                                @endif
+                                                <span class="rounded-full bg-slate-100 px-3 py-1">Cancha {{ $pendiente['cancha'] }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex shrink-0 items-center">
+                                            <a href="{{ route('planilla.show', ['partidoId' => $pendiente['partido_id'], 'idEdicion' => $idEdicionContexto, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0, 'origen' => 'admin', 'horario_filtro' => $horarioString]) }}"
+                                                class="inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:bg-amber-600">
+                                                Ir a planilla
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm font-semibold text-emerald-800 shadow-sm">
+                            No hay equipos con asistencias pendientes en el contexto visible del panel admin.
+                        </div>
+                    @endif
+                </div>
+            </div>
             @foreach ($partidos as $categoria => $partidosPorCategoria)
                 <div class="px-3 sm:px-4">
                     <h1 class="text-center text-2xl font-bold text-white sm:text-3xl lg:text-4xl">{{ $categoria }}</h1>
