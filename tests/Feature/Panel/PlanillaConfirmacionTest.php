@@ -125,15 +125,48 @@ function postPlanillaConCsrf($testCase, string $ruta, array $parametros)
         ->post($ruta, array_merge($parametros, ['_token' => $token]));
 }
 
-it('confirma goles desde la accion admin explicita', function () {
+it('confirma goles sin warning cuando la suma individual coincide con el resultado oficial', function () {
     $contexto = crearContextoPlanillaConfirmacion();
+    $jugadorVisitante = Jugador::create([
+        'dni' => '40500002',
+        'nombre' => 'Pedro',
+        'apellido' => 'Visitante',
+        'goles_totales' => 0,
+        'partidos_totales' => 0,
+        'tarjetas_rojas_totales' => 0,
+    ]);
+
+    PlanillaJugador::create([
+        'partido_id' => $contexto['partido']->id,
+        'partido_type' => PartidoConstants::CLASS_PARTIDO,
+        'dni_jugador' => $jugadorVisitante->dni,
+        'idEquipo' => $contexto['equipoVisitante']->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'numero_camiseta' => 9,
+        'fecha_nacimiento' => '2010-03-01',
+        'goles' => 1,
+        'asistio' => false,
+        'tarjeta_roja' => false,
+    ]);
+
+    $contexto['planilla']->update([
+        'goles' => 2,
+    ]);
+
+    $contexto['partido']->update([
+        'golesEquipoLocal' => 2,
+        'golesEquipoVisitante' => 1,
+    ]);
 
     postPlanillaConCsrf(
         $this->actingAs($contexto['admin']),
         route('planilla.confirmarGoles'),
         parametrosBasePlanilla($contexto)
     )
-        ->assertRedirect();
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Goles confirmados correctamente.')
+        ->assertSessionMissing('warning');
 
     expect($contexto['partido']->fresh()->goles_confirmados_at)->not->toBeNull();
 });
