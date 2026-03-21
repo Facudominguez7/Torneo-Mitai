@@ -769,47 +769,7 @@
             </div>
             @php
                 $pendientesPorPartido = collect($equiposSinAsistencia['equipos'] ?? [])->groupBy('partido_id');
-                $hayResumenPendientes = request()->has('idEdicion') || !empty($equiposSinAsistencia['nombre_fecha']) || !empty($equiposSinAsistencia['equipos']);
             @endphp
-            @if ($hayResumenPendientes)
-                <div class="mb-6 flex justify-center px-3 sm:px-4">
-                    <section class="w-full rounded-2xl border border-amber-200 bg-amber-50/95 p-4 shadow-lg lg:w-11/12 xl:w-3/4 2xl:w-1/2">
-                        <div class="flex flex-col gap-2 text-center sm:text-left">
-                            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                                <h2 class="text-lg font-bold text-amber-900">Equipos con asistencia pendiente</h2>
-                                @if (!empty($equiposSinAsistencia['horario_filtrado']))
-                                    <span class="text-sm font-semibold text-amber-800">Horario {{ $equiposSinAsistencia['horario_filtrado'] }} hs</span>
-                                @endif
-                            </div>
-                            @if (!empty($equiposSinAsistencia['nombre_fecha']))
-                                <p class="text-sm text-amber-900">Fecha visible: {{ $equiposSinAsistencia['nombre_fecha'] }}</p>
-                            @endif
-                        </div>
-
-                        @if (($equiposSinAsistencia['total_pendientes'] ?? 0) > 0)
-                            <div class="mt-4 grid gap-3">
-                                @foreach ($equiposSinAsistencia['equipos'] as $pendiente)
-                                    <article class="rounded-xl border border-amber-200 bg-white px-4 py-3 shadow-sm">
-                                        <div class="flex flex-col gap-1 text-sm text-slate-700 sm:flex-row sm:items-center sm:justify-between">
-                                            <div>
-                                                <p class="font-semibold text-slate-900">{{ $pendiente['equipo'] }} - {{ $pendiente['estado_label'] }}</p>
-                                                <p>{{ $pendiente['condicion'] }} vs {{ $pendiente['rival'] }}</p>
-                                            </div>
-                                            <div class="text-xs font-medium uppercase tracking-wide text-amber-700">
-                                                {{ $pendiente['categoria'] }}
-                                            </div>
-                                        </div>
-                                    </article>
-                                @endforeach
-                            </div>
-                        @else
-                            <p class="mt-4 text-sm font-medium text-emerald-700">
-                                No hay equipos con asistencias pendientes en el contexto visible del panel admin.
-                            </p>
-                        @endif
-                    </section>
-                </div>
-            @endif
             @foreach ($partidos as $categoria => $partidosPorCategoria)
                 <div class="px-3 sm:px-4">
                     <h1 class="text-center text-2xl font-bold text-white sm:text-3xl lg:text-4xl">{{ $categoria }}</h1>
