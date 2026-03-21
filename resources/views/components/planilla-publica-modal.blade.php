@@ -77,7 +77,7 @@
                                     <span
                                         class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
                                         :class="planillaPayload.data.goles_confirmados ? 'border border-emerald-300/35 bg-emerald-400/10 text-emerald-200' : 'border border-amber-300/35 bg-amber-400/10 text-amber-100'"
-                                        x-text="planillaPayload.data.goles_confirmados ? 'Goles confirmados' : 'Goles pendientes de confirmacion'"
+                                        x-text="planillaPayload.data.goles_confirmados ? 'Goles confirmados' : 'Goles pendientes de carga'"
                                     ></span>
                                     <template x-if="planillaPayload.data.goles_confirmados_at">
                                         <span class="text-xs text-white/55">
