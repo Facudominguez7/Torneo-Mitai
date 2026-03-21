@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
 use App\Models\PlanillaJugador;
 
@@ -234,6 +235,14 @@ class ValidadorReglasJugador
             ];
         }
 
+        // Obtener datos del jugador y equipo para mensajes descriptivos
+        $jugador = Jugador::where('dni', $dni_jugador)->first();
+        $equipo = Equipo::find($idEquipo);
+        $infoJugador = $jugador
+            ? $jugador->nombre.' '.$jugador->apellido.' (DNI: '.$dni_jugador.')'
+            : 'DNI: '.$dni_jugador;
+        $infoEquipo = $equipo ? $equipo->nombre : 'Equipo ID: '.$idEquipo;
+
         $anioEquipoActual = $extraerAnioCategoria($categoriaEquipoActual->nombreCategoria);
 
         // Categorías por año (ej: 2015, 2016)
@@ -243,7 +252,7 @@ class ValidadorReglasJugador
             if ($anioNacimiento < $anioEquipoActual) {
                 return [
                     'type' => 'error',
-                    'message' => 'La fecha de nacimiento del jugador ('.$anioNacimiento.') no corresponde a "'.$categoriaEquipoActual->nombreCategoria.'". El jugador es mayor que la edad permitida.',
+                    'message' => $infoJugador.' (nacido en '.$anioNacimiento.') no puede jugar en '.$infoEquipo.' "'.$categoriaEquipoActual->nombreCategoria.'". El jugador es mayor que la edad permitida.',
                 ];
             }
         } else {
@@ -253,7 +262,7 @@ class ValidadorReglasJugador
                 if ($edadJugador > $limite) {
                     return [
                         'type' => 'error',
-                        'message' => 'El jugador excede la edad límite para '.$categoriaEquipoActual->nombreCategoria.'.',
+                        'message' => $infoJugador.' excede la edad límite para '.$infoEquipo.' '.$categoriaEquipoActual->nombreCategoria.'.',
                     ];
                 }
             }
