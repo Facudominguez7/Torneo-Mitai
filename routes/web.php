@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\ControladorHome;
+use App\Http\Controllers\ControladorPlanillaPublica;
 use App\Http\Controllers\Google\LoginController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\Panel\ControladorCampeon;
@@ -46,6 +47,8 @@ Route::get('/subcampeones', [ControladorHome::class, 'subcampeones'])->name('sub
 Route::get('/goleadores', [ControladorHome::class, 'goleadores'])->name('goleadores');
 Route::get('/vallas', [ControladorHome::class, 'vallas'])->name('vallas');
 Route::get('/fixture', [ControladorHome::class, 'fixture'])->name('fixture');
+Route::get('/planillas-publicas/{tipoPartido}/{publicToken}', [ControladorPlanillaPublica::class, 'show'])
+    ->name('planillas-publicas.show');
 Route::get('/tabla-de-posiciones', [ControladorHome::class, 'tablaPosiciones'])->name('tabla-posiciones');
 Route::get('/tabla-de-goleadores', [ControladorHome::class, 'tablaGoleadores'])->name('tabla-goleadores');
 Route::get('/tabla-de-vallas', [ControladorHome::class, 'tablaVallas'])->name('tabla-vallas');
@@ -100,6 +103,8 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
         Route::get('/{partidoId}/{idEdicion}/{tipoPartido}/{horario?}', [ControladorPlanillaJugador::class, 'mostrarPlanilla'])->name('planilla.show');
         Route::post('/agregar-jugador', [ControladorPlanillaJugador::class, 'agregarJugador'])->name('planilla.agregarJugador');
         Route::post('/actualizar-jugador', [ControladorPlanillaJugador::class, 'actualizarJugadores'])->name('planilla.actualizarJugadores');
+        Route::post('/confirmar-goles', [ControladorPlanillaJugador::class, 'confirmarGoles'])->name('planilla.confirmarGoles');
+        Route::post('/quitar-confirmacion-goles', [ControladorPlanillaJugador::class, 'quitarConfirmacionGoles'])->name('planilla.quitarConfirmacionGoles');
         Route::post('/eliminar-jugador', [ControladorPlanillaJugador::class, 'eliminarJugador'])->name('planilla.eliminarJugador');
     });
 
