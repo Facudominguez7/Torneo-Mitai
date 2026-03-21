@@ -252,7 +252,7 @@ class ValidadorReglasJugador
             if ($anioNacimiento < $anioEquipoActual) {
                 return [
                     'type' => 'error',
-                    'message' => $infoJugador.' (nacido en '.$anioNacimiento.') no puede jugar en '.$infoEquipo.' "'.$categoriaEquipoActual->nombreCategoria.'". El jugador es mayor que la edad permitida.',
+                    'message' => $infoJugador.' (nacido el '.\Carbon\Carbon::parse($fecha_nacimiento)->format('d/m/Y').') no puede jugar en '.$infoEquipo.' "'.$categoriaEquipoActual->nombreCategoria.'". El jugador es mayor que la edad permitida.',
                 ];
             }
         } else {
