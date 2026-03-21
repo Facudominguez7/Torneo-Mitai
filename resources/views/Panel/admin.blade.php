@@ -781,6 +781,19 @@
                     <h3 class="my-2 text-center text-xl font-semibold text-white sm:text-2xl lg:text-3xl">{{ $fecha }}
                     </h3>
                     @foreach ($partidos as $p)
+                        @php
+                            $resultadoCargado = $p->golesEquipoLocal !== null && $p->golesEquipoVisitante !== null;
+                            $estadoGolesLabel = null;
+                            $estadoGolesClase = '';
+
+                            if ($p->goles_confirmados_at !== null) {
+                                $estadoGolesLabel = 'Goles confirmados';
+                                $estadoGolesClase = 'bg-emerald-100 text-emerald-700';
+                            } elseif ($resultadoCargado) {
+                                $estadoGolesLabel = 'Goles pendientes de carga';
+                                $estadoGolesClase = 'bg-amber-100 text-amber-700';
+                            }
+                        @endphp
                         <div class="mb-5 flex justify-center px-3 sm:px-4">
                             <div class="grid w-full gap-4 bg-gray-50 p-2 sm:p-3 lg:w-11/12 xl:w-3/4 2xl:w-1/2">
                                 <div class="overflow-x-auto rounded-lg shadow-lg md:overflow-x-visible">
@@ -807,6 +820,13 @@
                                             <span class="text-sm sm:text-base">Cancha {{ $p->cancha }}</span>
                                         </div>
                                     </div>
+                                    @if ($estadoGolesLabel)
+                                        <div class="flex justify-center px-3 pb-4">
+                                            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $estadoGolesClase }}">
+                                                {{ $estadoGolesLabel }}
+                                            </span>
+                                        </div>
+                                    @endif
                                 </div>
                                 @if($pendientesPorPartido->has($p->id))
                                     <div class="flex flex-wrap items-center justify-center gap-2 px-3 py-2">

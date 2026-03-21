@@ -156,6 +156,19 @@
     </div>
     <div class="bg-white p-6">
         @foreach ($partidos as $p)
+            @php
+                $resultadoCargado = $p->golesEquipoLocal !== null && $p->golesEquipoVisitante !== null;
+                $estadoGolesLabel = null;
+                $estadoGolesClase = '';
+
+                if ($p->goles_confirmados_at !== null) {
+                    $estadoGolesLabel = 'Goles confirmados';
+                    $estadoGolesClase = 'bg-emerald-100 text-emerald-700';
+                } elseif ($resultadoCargado) {
+                    $estadoGolesLabel = 'Goles pendientes de carga';
+                    $estadoGolesClase = 'bg-amber-100 text-amber-700';
+                }
+            @endphp
             <div class="flex justify-center mb-5">
                 <div class="grid gap-6 p-1 bg-gray-50 w-full md:w-2/3">
                     <div class="rounded-lg shadow-lg overflow-x-auto md:overflow-x-visible">
@@ -220,6 +233,13 @@
                                 <span>Cancha {{ $p->cancha }}</span>
                             </div>
                         </div>
+                        @if ($estadoGolesLabel)
+                            <div class="flex justify-center px-6 pb-3">
+                                <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $estadoGolesClase }}">
+                                    {{ $estadoGolesLabel }}
+                                </span>
+                            </div>
+                        @endif
 
                         {{-- Botones de acción --}}
                         <div class="flex flex-wrap justify-center gap-2 px-6 py-4 bg-gray-50">

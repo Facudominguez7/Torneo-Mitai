@@ -182,3 +182,116 @@ it('invalida la confirmacion cuando se edita un campo persistido de la planilla'
     expect($planillaActualizada->goles)->toBe(2);
     expect((bool) $planillaActualizada->asistio)->toBeTrue();
 });
+
+it('no muestra la advertencia de goles al actualizar jugadores', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['partido']->update([
+        'golesEquipoLocal' => 1,
+        'golesEquipoVisitante' => 0,
+    ]);
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarJugadores'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'jugadores' => [
+                $contexto['jugador']->dni => [
+                    'goles' => 0,
+                    'asistencia' => 'on',
+                    'numero_camiseta' => 10,
+                ],
+            ],
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionMissing('warning');
+});
+
+it('confirma goles con warning cuando hay diferencia con el resultado oficial', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['partido']->update([
+        'golesEquipoLocal' => 1,
+        'golesEquipoVisitante' => 0,
+    ]);
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.confirmarGoles'),
+        parametrosBasePlanilla($contexto)
+    )
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Goles confirmados correctamente.')
+        ->assertSessionHas('warning', fn (string $warning): bool => str_contains($warning, 'Atención: la suma de goles individuales no coincide'));
+
+    expect($contexto['partido']->fresh()->goles_confirmados_at)->not->toBeNull();
+});
+
+it('muestra estado pendiente de carga cuando el resultado existe pero falta confirmar goles', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['partido']->update([
+        'golesEquipoLocal' => 2,
+        'golesEquipoVisitante' => 1,
+        'goles_confirmados_at' => null,
+    ]);
+
+    $this->actingAs($contexto['admin'])
+        ->get(route('planilla.show', [
+            'partidoId' => $contexto['partido']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+            'horario' => '09:00',
+        ]))
+        ->assertOk()
+        ->assertSee('Goles pendientes de carga', false);
+});
+
+it('muestra estado confirmado cuando los goles ya fueron confirmados', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['partido']->update([
+        'goles_confirmados_at' => now(),
+    ]);
+
+    $this->actingAs($contexto['admin'])
+        ->get(route('planilla.show', [
+            'partidoId' => $contexto['partido']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+            'horario' => '09:00',
+        ]))
+        ->assertOk()
+        ->assertSee('Goles confirmados', false);
+});
+
+it('muestra estado neutral cuando todavia no hay resultado oficial cargado', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['partido']->update([
+        'golesEquipoLocal' => null,
+        'golesEquipoVisitante' => null,
+        'goles_confirmados_at' => null,
+    ]);
+
+    $this->actingAs($contexto['admin'])
+        ->get(route('planilla.show', [
+            'partidoId' => $contexto['partido']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+            'horario' => '09:00',
+        ]))
+        ->assertOk()
+        ->assertSee('Resultado pendiente de carga', false)
+        ->assertDontSee('Goles pendientes de carga', false);
+});
+
+it('muestra la accion para desmarcar asistencia a todos en la planilla', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+
+    $this->actingAs($contexto['admin'])
+        ->get(route('planilla.show', [
+            'partidoId' => $contexto['partido']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+            'horario' => '09:00',
+        ]))
+        ->assertOk()
+        ->assertSee('Desmarcar asistencia a todos', false);
+});
