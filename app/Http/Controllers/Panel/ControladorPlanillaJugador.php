@@ -465,9 +465,6 @@ class ControladorPlanillaJugador extends Controller
             }
         });
 
-        // Validación cruzada: comparar suma de goles individuales vs resultado oficial
-        $advertenciaGoles = $this->validarGolesCruzados($request->partido_id, $partidoType);
-
         // Redirigir de vuelta a la vista con un mensaje de éxito
         $mensaje = 'Jugadores actualizados correctamente.';
 
@@ -482,10 +479,6 @@ class ControladorPlanillaJugador extends Controller
             ->route('planilla.show', array_merge($parametrosBase, $this->obtenerContextoNavegacion($request)))
             ->with('status', $mensaje);
 
-        if ($advertenciaGoles !== null) {
-            $redirect = $redirect->with('warning', $advertenciaGoles);
-        }
-
         if ($confirmacionInvalidada) {
             $redirect = $redirect->with('status', $mensaje.' La confirmacion de goles se removio porque la planilla fue modificada.');
         }
@@ -495,14 +488,25 @@ class ControladorPlanillaJugador extends Controller
 
     public function confirmarGoles(Request $request)
     {
+        $advertenciaGoles = $this->validarGolesCruzados(
+            (int) $request->partido_id,
+            PartidoConstants::getModelClass($request->tipoPartido),
+        );
+
         $this->planillaConfirmacionService->confirmarGoles(
             $request->tipoPartido,
             (int) $request->partido_id,
             (int) $request->idEdicion,
         );
 
-        return $this->redirigirAPlanilla($request)
+        $redirect = $this->redirigirAPlanilla($request)
             ->with('status', 'Goles confirmados correctamente.');
+
+        if ($advertenciaGoles !== null) {
+            $redirect = $redirect->with('warning', $advertenciaGoles);
+        }
+
+        return $redirect;
     }
 
     public function quitarConfirmacionGoles(Request $request)

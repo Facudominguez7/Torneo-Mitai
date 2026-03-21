@@ -183,6 +183,19 @@
     </div>
     <div class="mt-2 rounded-lg bg-white p-3 sm:p-4 md:p-6">
         @foreach ($partidos as $p)
+            @php
+                $resultadoCargado = $p->golesEquipoLocal !== null && $p->golesEquipoVisitante !== null;
+                $estadoGolesLabel = null;
+                $estadoGolesClase = '';
+
+                if ($p->goles_confirmados_at !== null) {
+                    $estadoGolesLabel = 'Goles confirmados';
+                    $estadoGolesClase = 'bg-emerald-100 text-emerald-700';
+                } elseif ($resultadoCargado) {
+                    $estadoGolesLabel = 'Goles pendientes de carga';
+                    $estadoGolesClase = 'bg-amber-100 text-amber-700';
+                }
+            @endphp
             <div class="partido-card grid gap-4 bg-gray-300 p-3 sm:p-4 md:p-6" data-local="{{ strtolower($p->equipoLocal->nombre) }}" data-visitante="{{ strtolower($p->equipoVisitante->nombre) }}">
                 <div class="bg-card rounded-lg shadow-xl bg-white">
                     <div class="px-4 md:px-6 py-3 text-muted-foreground grid grid-cols-1 gap-2">
@@ -230,6 +243,13 @@
                                 <span class="font-medium">Cancha {{ $p->cancha }}</span>
                             </div>
                         </div>
+                        @if ($estadoGolesLabel)
+                            <div class="flex justify-center">
+                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $estadoGolesClase }}">
+                                    {{ $estadoGolesLabel }}
+                                </span>
+                            </div>
+                        @endif
                     </div>
                     <div class="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 md:flex md:items-center md:justify-center md:px-6">
                         <a href="{{ route('cargar-resultado', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')]) }}"

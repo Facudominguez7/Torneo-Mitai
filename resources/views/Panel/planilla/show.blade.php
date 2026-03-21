@@ -49,6 +49,21 @@
         );
 
         $golesConfirmados = $partido->goles_confirmados_at !== null;
+        $resultadoCargado = $partido->golesEquipoLocal !== null && $partido->golesEquipoVisitante !== null;
+
+        if ($golesConfirmados) {
+            $estadoGolesClase = 'bg-emerald-100 text-emerald-700';
+            $estadoGolesLabel = 'Goles confirmados';
+            $estadoGolesDetalle = 'Confirmados el '.$partido->goles_confirmados_at->format('d/m/Y H:i');
+        } elseif ($resultadoCargado) {
+            $estadoGolesClase = 'bg-amber-100 text-amber-700';
+            $estadoGolesLabel = 'Goles pendientes de carga';
+            $estadoGolesDetalle = 'Resultado oficial cargado. Falta revisar y confirmar los goles individuales.';
+        } else {
+            $estadoGolesClase = 'bg-slate-100 text-slate-700';
+            $estadoGolesLabel = 'Resultado pendiente de carga';
+            $estadoGolesDetalle = 'Todavia no hay resultado oficial cargado para revisar goles.';
+        }
     @endphp
 
     <div class="w-full p-6 bg-white rounded-lg shadow-md">
@@ -75,11 +90,11 @@
             <div class="space-y-2">
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Estado de goles</p>
                 <div class="flex flex-wrap items-center gap-3">
-                    <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold {{ $golesConfirmados ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
-                        {{ $golesConfirmados ? 'Goles confirmados' : 'Pendiente de confirmacion' }}
+                    <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold {{ $estadoGolesClase }}">
+                        {{ $estadoGolesLabel }}
                     </span>
                     <span class="text-sm text-gray-600">
-                        {{ $golesConfirmados ? 'Confirmados el '.$partido->goles_confirmados_at->format('d/m/Y H:i') : 'Todavia sin confirmacion manual.' }}
+                        {{ $estadoGolesDetalle }}
                     </span>
                 </div>
             </div>
@@ -352,6 +367,10 @@
                     class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
                     Marcar asistencia a todos
                 </button>
+                <button type="button" data-toggle-attendance-all="local" data-attendance-value="0"
+                    class="px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 transition duration-200">
+                    Desmarcar asistencia a todos
+                </button>
                 <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200">
                     Actualizar Todos
                 </button>
@@ -593,6 +612,10 @@
                 <button type="button" data-mark-attendance-all="visitante"
                     class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
                     Marcar asistencia a todos
+                </button>
+                <button type="button" data-toggle-attendance-all="visitante" data-attendance-value="0"
+                    class="px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 transition duration-200">
+                    Desmarcar asistencia a todos
                 </button>
                 <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200">
                     Actualizar Todos
@@ -973,11 +996,11 @@
             });
 
             const updateForms = document.querySelectorAll('form[data-player-scope]');
-            const markAttendanceButtons = document.querySelectorAll('[data-mark-attendance-all]');
+            const attendanceToggleButtons = document.querySelectorAll('[data-mark-attendance-all], [data-toggle-attendance-all]');
 
-            markAttendanceButtons.forEach((button) => {
+            attendanceToggleButtons.forEach((button) => {
                 button.addEventListener('click', () => {
-                    const scope = button.dataset.markAttendanceAll;
+                    const scope = button.dataset.markAttendanceAll || button.dataset.toggleAttendanceAll;
                     if (!scope) {
                         return;
                     }
@@ -988,8 +1011,10 @@
                     }
 
                     const attendanceCheckboxes = form.querySelectorAll('input[type="checkbox"][name$="[asistencia]"]');
+                    const shouldCheck = button.dataset.attendanceValue !== '0';
+
                     attendanceCheckboxes.forEach((checkbox) => {
-                        checkbox.checked = true;
+                        checkbox.checked = shouldCheck;
                     });
 
                     syncGroupValues(scope);
