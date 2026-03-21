@@ -8,7 +8,7 @@
             <div class="absolute inset-0 bg-gradient-to-b from-black/85 via-black/80 to-black/90"></div>
         </div>
 
-        <div class="relative flex min-h-screen flex-col">
+        <div x-data="crearPlanillaPublica()" class="relative flex min-h-screen flex-col">
             @include('layouts.navigation')
 
             <main class="flex-1">
@@ -248,19 +248,48 @@
                                                             </div>
                                                         </div>
 
-                                                        <div class="mt-6 flex flex-col gap-3 text-sm text-white/70 md:flex-row md:items-center md:justify-between md:text-white/60">
-                                                            <div class="inline-flex items-center gap-2">
-                                                                <i class="fa-regular fa-clock text-yellow-300"></i>
-                                                                <span>{{ optional($fechaPartido)->format('d/m/Y · H:i') ?? 'Horario a confirmar' }}</span>
-                                                            </div>
-                                                            <div class="inline-flex items-center gap-2">
-                                                                <i class="fa-solid fa-location-dot text-emerald-300"></i>
-                                                                <span>{{ $p->cancha ? 'Cancha ' . $p->cancha : 'Cancha a confirmar' }}</span>
-                                                            </div>
-                                                        </div>
-                                                    </article>
-                                                @endforeach
-                                            </div>
+                                                         <div class="mt-6 flex flex-col gap-3 text-sm text-white/70 md:flex-row md:items-center md:justify-between md:text-white/60">
+                                                             <div class="inline-flex items-center gap-2">
+                                                                 <i class="fa-regular fa-clock text-yellow-300"></i>
+                                                                 <span>{{ optional($fechaPartido)->format('d/m/Y · H:i') ?? 'Horario a confirmar' }}</span>
+                                                             </div>
+                                                             <div class="inline-flex items-center gap-2">
+                                                                 <i class="fa-solid fa-location-dot text-emerald-300"></i>
+                                                                 <span>{{ $p->cancha ? 'Cancha ' . $p->cancha : 'Cancha a confirmar' }}</span>
+                                                             </div>
+                                                         </div>
+
+                                                         @php
+                                                             $publicToken = data_get($p, 'public_token');
+                                                             $planillaPublicaDisponible = filled($publicToken);
+                                                             $planillaPublicaUrl = $planillaPublicaDisponible
+                                                                 ? route('planillas-publicas.show', [
+                                                                     'tipoPartido' => 'instancia_final',
+                                                                     'publicToken' => $publicToken,
+                                                                 ])
+                                                                 : null;
+                                                         @endphp
+
+                                                          <div class="mt-5 flex justify-end">
+                                                              @if ($planillaPublicaDisponible)
+                                                                  <button
+                                                                      type="button"
+                                                                      class="inline-flex items-center gap-2 rounded-full border border-[#f7f280]/40 bg-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-[#f7f280] transition hover:bg-[#f7f280]/10 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40"
+                                                                      x-on:click='abrirPlanilla(@json($planillaPublicaUrl))'
+                                                                  >
+                                                                      <i class="fa-regular fa-rectangle-list"></i>
+                                                                      Ver planilla
+                                                                  </button>
+                                                              @else
+                                                                  <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white/45">
+                                                                      <i class="fa-regular fa-rectangle-list"></i>
+                                                                      Planilla no disponible
+                                                                  </span>
+                                                              @endif
+                                                          </div>
+                                                     </article>
+                                                 @endforeach
+                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
@@ -271,6 +300,8 @@
             </main>
 
             @include('layouts.footer')
+
+            <x-planilla-publica-modal />
         </div>
     </div>
 </body>

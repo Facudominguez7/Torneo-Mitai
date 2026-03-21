@@ -12,6 +12,7 @@ use App\Models\ListaBuenaFe;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Models\TablaGoleador;
+use App\Services\PlanillaConfirmacionService;
 use App\Services\ValidadorReglasJugador;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -22,8 +23,10 @@ class ControladorPlanillaJugador extends Controller
 {
     protected $validadorReglas;
 
-    public function __construct(ValidadorReglasJugador $validadorReglas)
-    {
+    public function __construct(
+        ValidadorReglasJugador $validadorReglas,
+        private readonly PlanillaConfirmacionService $planillaConfirmacionService,
+    ) {
         $this->validadorReglas = $validadorReglas;
     }
 
@@ -359,9 +362,11 @@ class ControladorPlanillaJugador extends Controller
         $partidoType = PartidoConstants::getModelClass($tipoPartido);
         $horarioSeleccionado = $request->horario;
         $idEdicion = $request->idEdicion;
+        $huboCambiosReales = false;
+        $confirmacionInvalidada = false;
 
         // Iniciar transacción para asegurar integridad de datos
-        DB::transaction(function () use ($request, $idEdicion, $partidoType) {
+        DB::transaction(function () use ($request, $idEdicion, $partidoType, $tipoPartido, &$huboCambiosReales, &$confirmacionInvalidada) {
             // Recorrer todos los jugadores enviados en el formulario
             foreach ($request->jugadores as $dni => $datos) {
                 // Buscar la planilla y el jugador
@@ -370,11 +375,30 @@ class ControladorPlanillaJugador extends Controller
                     ->where('dni_jugador', $dni)
                     ->first();
 
-                $jugador = Jugador::where('dni', $dni)->first();
+                $jugador = Jugador::where('dni', $dni)->lockForUpdate()->first();
 
                 if (! $planilla || ! $jugador) {
                     continue; // Si no se encuentra la planilla o el jugador, pasar al siguiente
                 }
+
+                // Prevenir goles negativos
+                $golesNuevos = max(0, (int) ($datos['goles'] ?? 0));
+                $asistenciaNueva = isset($datos['asistencia']);
+                $numeroCamisetaNuevo = isset($datos['numero_camiseta'])
+                    ? (int) $datos['numero_camiseta']
+                    : (int) $planilla->numero_camiseta;
+                $tarjetaRojaNueva = isset($datos['tarjeta_roja']);
+
+                if (! $this->planillaTieneCambiosReales($planilla, [
+                    'goles' => $golesNuevos,
+                    'asistencia' => $asistenciaNueva,
+                    'numero_camiseta' => $numeroCamisetaNuevo,
+                    'tarjeta_roja' => $tarjetaRojaNueva,
+                ])) {
+                    continue;
+                }
+
+                $huboCambiosReales = true;
 
                 // Guardar los valores actuales antes de actualizar
                 $golesAnteriores = $planilla->goles;
@@ -382,10 +406,10 @@ class ControladorPlanillaJugador extends Controller
                 $teniaRojaAntes = (bool) $planilla->tarjeta_roja;
 
                 // Actualizar los datos de la planilla (SOLO campos permitidos)
-                $planilla->goles = $datos['goles'] ?? $planilla->goles;
-                $planilla->asistio = isset($datos['asistencia']);
-                $planilla->numero_camiseta = $datos['numero_camiseta'] ?? $planilla->numero_camiseta;
-                $planilla->tarjeta_roja = isset($datos['tarjeta_roja']);
+                $planilla->goles = $golesNuevos;
+                $planilla->asistio = $asistenciaNueva;
+                $planilla->numero_camiseta = $numeroCamisetaNuevo;
+                $planilla->tarjeta_roja = $tarjetaRojaNueva;
                 $planilla->save();
 
                 // Si pasó de no tener roja a tenerla, incrementa el total histórico del jugador
@@ -394,13 +418,13 @@ class ControladorPlanillaJugador extends Controller
                 }
 
                 // Actualizar los datos del jugador (Estadísticas)
-                $jugador->goles_totales += ($planilla->goles - $golesAnteriores);
+                $jugador->goles_totales = max(0, ($jugador->goles_totales ?? 0) + ($planilla->goles - $golesAnteriores));
 
                 // Actualizar partidos_totales basándose SOLO en asistencia, no en goles
                 if ($planilla->asistio && ! $asistioAnteriormente) {
                     $jugador->partidos_totales += 1;
                 } elseif (! $planilla->asistio && $asistioAnteriormente) {
-                    $jugador->partidos_totales -= 1;
+                    $jugador->partidos_totales = max(0, ($jugador->partidos_totales ?? 0) - 1);
                 }
 
                 $jugador->save();
@@ -409,43 +433,156 @@ class ControladorPlanillaJugador extends Controller
                 $goleador = TablaGoleador::where('dni_jugador', $dni)
                     ->where('idEdicion', $idEdicion)
                     ->where('idCategoria', $planilla->idCategoria)
+                    ->lockForUpdate()
                     ->first();
 
+                $delta = $planilla->goles - $golesAnteriores;
+
                 if ($goleador) {
-                    $goleador->cantidadGoles += ($planilla->goles - $golesAnteriores);
-                    $goleador->save();
-                } else {
-                    if ($planilla->goles > 0) {
-                        TablaGoleador::create([
-                            'dni_jugador' => $dni,
-                            'cantidadGoles' => $planilla->goles,
-                            'idEquipo' => $planilla->idEquipo,
-                            'idEdicion' => $idEdicion,
-                            'idCategoria' => $planilla->idCategoria,
-                        ]);
+                    $goleador->cantidadGoles = max(0, $goleador->cantidadGoles + $delta);
+                    if ($goleador->cantidadGoles === 0) {
+                        $goleador->delete();
+                    } else {
+                        $goleador->save();
                     }
+                } elseif ($planilla->goles > 0) {
+                    TablaGoleador::create([
+                        'dni_jugador' => $dni,
+                        'cantidadGoles' => $planilla->goles,
+                        'idEquipo' => $planilla->idEquipo,
+                        'idEdicion' => $idEdicion,
+                        'idCategoria' => $planilla->idCategoria,
+                    ]);
                 }
             }
+
+            if ($huboCambiosReales) {
+                $confirmacionInvalidada = $this->planillaConfirmacionService->invalidarConfirmacionPorEdicion(
+                    $tipoPartido,
+                    (int) $request->partido_id,
+                    (int) $idEdicion,
+                );
+            }
         });
+
+        // Validación cruzada: comparar suma de goles individuales vs resultado oficial
+        $advertenciaGoles = $this->validarGolesCruzados($request->partido_id, $partidoType);
 
         // Redirigir de vuelta a la vista con un mensaje de éxito
         $mensaje = 'Jugadores actualizados correctamente.';
 
-        if (PartidoConstants::isInstanciaFinal($tipoPartido)) {
-            return redirect()->route('planilla.show', array_merge([
-                'partidoId' => $request->partido_id,
-                'idEdicion' => $idEdicion,
-                'tipoPartido' => $tipoPartido,
-                'horario' => 0,
-            ], $this->obtenerContextoNavegacion($request)))->with('status', $mensaje);
-        } else {
-            return redirect()->route('planilla.show', array_merge([
-                'partidoId' => $request->partido_id,
-                'idEdicion' => $idEdicion,
-                'tipoPartido' => $tipoPartido,
-                'horario' => $horarioSeleccionado,
-            ], $this->obtenerContextoNavegacion($request)))->with('status', $mensaje);
+        $parametrosBase = [
+            'partidoId' => $request->partido_id,
+            'idEdicion' => $idEdicion,
+            'tipoPartido' => $tipoPartido,
+            'horario' => PartidoConstants::isInstanciaFinal($tipoPartido) ? 0 : $horarioSeleccionado,
+        ];
+
+        $redirect = redirect()
+            ->route('planilla.show', array_merge($parametrosBase, $this->obtenerContextoNavegacion($request)))
+            ->with('status', $mensaje);
+
+        if ($advertenciaGoles !== null) {
+            $redirect = $redirect->with('warning', $advertenciaGoles);
         }
+
+        if ($confirmacionInvalidada) {
+            $redirect = $redirect->with('status', $mensaje.' La confirmacion de goles se removio porque la planilla fue modificada.');
+        }
+
+        return $redirect;
+    }
+
+    public function confirmarGoles(Request $request)
+    {
+        $this->planillaConfirmacionService->confirmarGoles(
+            $request->tipoPartido,
+            (int) $request->partido_id,
+            (int) $request->idEdicion,
+        );
+
+        return $this->redirigirAPlanilla($request)
+            ->with('status', 'Goles confirmados correctamente.');
+    }
+
+    public function quitarConfirmacionGoles(Request $request)
+    {
+        $this->planillaConfirmacionService->quitarConfirmacion(
+            $request->tipoPartido,
+            (int) $request->partido_id,
+            (int) $request->idEdicion,
+        );
+
+        return $this->redirigirAPlanilla($request)
+            ->with('status', 'Se quito la confirmacion de goles.');
+    }
+
+    /**
+     * Compara la suma de goles individuales de planilla con el resultado oficial del partido.
+     * Retorna un mensaje de advertencia si hay discrepancia, o null si todo coincide.
+     */
+    private function validarGolesCruzados(int $partidoId, string $partidoType): ?string
+    {
+        try {
+            $partido = $partidoType::find($partidoId);
+
+            if (! $partido || $partido->golesEquipoLocal === null || $partido->golesEquipoVisitante === null) {
+                return null;
+            }
+
+            $sumasPorEquipo = PlanillaJugador::where('partido_id', $partidoId)
+                ->where('partido_type', $partidoType)
+                ->selectRaw('idEquipo, SUM(goles) as total_goles')
+                ->groupBy('idEquipo')
+                ->pluck('total_goles', 'idEquipo');
+
+            $sumaLocal = (int) ($sumasPorEquipo[$partido->idEquipoLocal] ?? 0);
+            $sumaVisitante = (int) ($sumasPorEquipo[$partido->idEquipoVisitante] ?? 0);
+            $oficialLocal = (int) $partido->golesEquipoLocal;
+            $oficialVisitante = (int) $partido->golesEquipoVisitante;
+
+            if ($sumaLocal === $oficialLocal && $sumaVisitante === $oficialVisitante) {
+                return null;
+            }
+
+            $detalles = [];
+
+            if ($sumaLocal !== $oficialLocal) {
+                $detalles[] = "Local: resultado oficial {$oficialLocal}, suma individual {$sumaLocal}";
+            }
+
+            if ($sumaVisitante !== $oficialVisitante) {
+                $detalles[] = "Visitante: resultado oficial {$oficialVisitante}, suma individual {$sumaVisitante}";
+            }
+
+            return 'Atención: la suma de goles individuales no coincide con el resultado oficial del partido. '
+                .implode('. ', $detalles).'.';
+        } catch (\Throwable $e) {
+            Log::warning('Error en validación cruzada de goles: '.$e->getMessage(), [
+                'partido_id' => $partidoId,
+                'partido_type' => $partidoType,
+            ]);
+
+            return null;
+        }
+    }
+
+    private function planillaTieneCambiosReales(PlanillaJugador $planilla, array $datosActualizados): bool
+    {
+        return (int) $planilla->goles !== (int) ($datosActualizados['goles'] ?? $planilla->goles)
+            || (bool) $planilla->asistio !== (bool) ($datosActualizados['asistencia'] ?? $planilla->asistio)
+            || (int) $planilla->numero_camiseta !== (int) ($datosActualizados['numero_camiseta'] ?? $planilla->numero_camiseta)
+            || (bool) $planilla->tarjeta_roja !== (bool) ($datosActualizados['tarjeta_roja'] ?? $planilla->tarjeta_roja);
+    }
+
+    private function redirigirAPlanilla(Request $request)
+    {
+        return redirect()->route('planilla.show', array_merge([
+            'partidoId' => $request->partido_id,
+            'idEdicion' => $request->idEdicion,
+            'tipoPartido' => $request->tipoPartido,
+            'horario' => PartidoConstants::isInstanciaFinal($request->tipoPartido) ? 0 : $request->horario,
+        ], $this->obtenerContextoNavegacion($request)));
     }
 
     public function generarReportePDF($equipoId, $idEdicion, $partidoId)
@@ -601,6 +738,66 @@ class ControladorPlanillaJugador extends Controller
     }
 
     /**
+     * Limpia todas las estadísticas y planillas de un jugador dado de baja.
+     * Replica la lógica de eliminarJugador() para mantener consistencia.
+     */
+    private function limpiarEstadisticasJugadorBaja(
+        string $dniJugador,
+        int $idEquipo,
+        int $idEdicion,
+        int $idCategoria
+    ): void {
+        // 1. Obtener TODAS las planillas del jugador en este equipo y edición
+        $todasLasPlanillas = PlanillaJugador::where('dni_jugador', $dniJugador)
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->get();
+
+        if ($todasLasPlanillas->isEmpty()) {
+            return;
+        }
+
+        // 2. Calcular estadísticas totales a restar
+        $totalGoles = $todasLasPlanillas->sum('goles');
+        $totalPartidos = $todasLasPlanillas->where('asistio', 1)->count();
+        $totalTarjetasRojas = $todasLasPlanillas->where('tarjeta_roja', 1)->count();
+
+        // 3. Revertir estadísticas globales del jugador
+        $jugador = Jugador::where('dni', $dniJugador)->first();
+        if ($jugador) {
+            $jugador->goles_totales = max(0, ($jugador->goles_totales ?? 0) - $totalGoles);
+            $jugador->partidos_totales = max(0, ($jugador->partidos_totales ?? 0) - $totalPartidos);
+            $jugador->tarjetas_rojas_totales = max(0, ($jugador->tarjetas_rojas_totales ?? 0) - $totalTarjetasRojas);
+            $jugador->save();
+        } else {
+            Log::warning("Jugador con DNI {$dniJugador} no encontrado al limpiar estadísticas por baja");
+        }
+
+        // 4. Eliminar registro de tabla de goleadores
+        TablaGoleador::where('dni_jugador', $dniJugador)
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $idCategoria)
+            ->delete();
+
+        // 5. Eliminar TODAS las planillas del jugador en este equipo/edición
+        PlanillaJugador::where('dni_jugador', $dniJugador)
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->delete();
+
+        Log::info('Baja sincronización: eliminadas estadísticas y planillas', [
+            'dni_jugador' => $dniJugador,
+            'idEquipo' => $idEquipo,
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'goles_revertidos' => $totalGoles,
+            'partidos_revertidos' => $totalPartidos,
+            'tarjetas_revertidas' => $totalTarjetasRojas,
+            'planillas_eliminadas' => $todasLasPlanillas->count(),
+        ]);
+    }
+
+    /**
      * Sincroniza la planilla del partido con la Lista de Buena Fe.
      *
      * Reglas del flujo simplificado:
@@ -670,15 +867,27 @@ class ControladorPlanillaJugador extends Controller
             }
 
             // 4. IDENTIFICAR BAJAS (Están en Planilla pero NO activos en Buena Fe)
-            // Feedback usuario: "eliminar por completo, un jugador dado de baja quiere decir que no volvera a jugar en ese equipo"
-
+            // Regla de negocio: un jugador dado de baja desaparece de TODAS las planillas
+            // y se revierten TODAS sus estadísticas (goles, partidos, tarjetas).
+            $dnisParaBaja = collect();
             foreach ($planillaActual as $registroPlanilla) {
-                // Si el jugador NO está en la lista de activos de buena fe
                 if (! in_array($registroPlanilla->dni_jugador, $activosDni)) {
-                    // Eliminar incondicionalmente de la planilla actual
-                    // Nota: Si tiene goles, estos se perderán del partido. Es lo solicitado.
-                    $registroPlanilla->delete();
+                    $dnisParaBaja->push($registroPlanilla->dni_jugador);
                 }
+            }
+            $dnisParaBaja = $dnisParaBaja->unique();
+
+            if ($dnisParaBaja->isNotEmpty()) {
+                DB::transaction(function () use ($dnisParaBaja, $equipoId, $idEdicion, $equipoEdicion) {
+                    foreach ($dnisParaBaja as $dniBaja) {
+                        $this->limpiarEstadisticasJugadorBaja(
+                            $dniBaja,
+                            $equipoId,
+                            $idEdicion,
+                            $equipoEdicion->idCategoria
+                        );
+                    }
+                });
             }
 
         } catch (\Exception $e) {

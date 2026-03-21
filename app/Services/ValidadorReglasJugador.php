@@ -206,8 +206,8 @@ class ValidadorReglasJugador
      * Validar reglas de categorías y edad.
      *
      * Reglas clave:
-     * - Permite que un jugador más chico participe en una categoría más grande.
-     * - Bloquea que un jugador más grande participe en una categoría más chica.
+     * - Permite subir de una categoria menor a una de mayor edad (ej: 2014 -> 2013).
+     * - Bloquea bajar de una categoria de mayor edad a una menor (ej: 2013 -> 2014).
      * - Mantiene advertencias administrativas para casos especiales (institución).
      */
     private function validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento)
@@ -283,13 +283,14 @@ class ValidadorReglasJugador
                 continue;
             }
 
-            // Regla administrativa: Menor subiendo a Mayor, solo misma institución.
+            // Regla administrativa: subir de una categoria menor a una de mayor edad,
+            // solo dentro de la misma institucion.
             // Se informa como WARNING para registro conflictivo, sin bloquear por edad.
             $mismaInstitucion = $institucionDestinoId && $institucionDestinoId === $institucionOrigenId;
             if ($anioCategoriaJugador > $anioEquipoActual && ! $mismaInstitucion) {
                 return [
                     'type' => 'warning',
-                    'message' => 'El jugador ya pertenece al equipo "'.$categoriaJugador->nombreEquipo.'" en la "'.$categoriaJugador->nombreCategoria.'". Solo puede jugar en una categoría más grande dentro de la misma institución.',
+                    'message' => 'El jugador ya pertenece al equipo "'.$categoriaJugador->nombreEquipo.'" en la "'.$categoriaJugador->nombreCategoria.'". Solo puede subir a una categoria de mayor edad como "'.$categoriaEquipoActual->nombreCategoria.'" dentro de la misma institucion.',
                 ];
             }
         }

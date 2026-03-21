@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class InstanciaFinal extends Model
 {
@@ -22,11 +22,35 @@ class InstanciaFinal extends Model
         'golesEquipoVisitante',
         'penalesEquipoLocal',
         'penalesEquipoVisitante',
-        'resultadoGlobalLocal',      // Corregido: resoltado -> resultado
-        'resultadoGlobalVisitante',  // Corregido: resoltado -> resultado
+        'resultadoGlobalLocal',
+        'resultadoGlobalVisitante',
         'horario',
-        'cancha'
+        'cancha',
+        'goles_confirmados_at',
+        'public_token',
     ];
+
+    protected $casts = [
+        'goles_confirmados_at' => 'datetime',
+    ];
+
+    protected $appends = ['public_token'];
+
+    public function getPublicTokenAttribute(): ?string
+    {
+        return $this->attributes['public_token'] ?? null;
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (InstanciaFinal $instancia) {
+            if (empty($instancia->public_token)) {
+                $instancia->public_token = Str::uuid()->toString();
+            }
+        });
+    }
 
     // Relación con la tabla 'Categoria'
     public function categoria()
@@ -39,6 +63,7 @@ class InstanciaFinal extends Model
     {
         return $this->belongsTo(Copa::class, 'idCopa');
     }
+
     // Relación con la tabla 'Fase'
     public function fase()
     {
@@ -62,12 +87,14 @@ class InstanciaFinal extends Model
     {
         return $this->belongsTo(Equipo::class, 'idEquipoVisitante');
     }
-     // Relación con la tabla 'Dia'
-     public function dia()
-     {
-         return $this->belongsTo(Dia::class, 'idDia');
-     }
-     public function jugadoresPartido()
+
+    // Relación con la tabla 'Dia'
+    public function dia()
+    {
+        return $this->belongsTo(Dia::class, 'idDia');
+    }
+
+    public function jugadoresPartido()
     {
         return $this->morphMany(JugadorPartido::class, 'partido');
     }

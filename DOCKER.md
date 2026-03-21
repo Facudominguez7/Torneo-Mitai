@@ -146,6 +146,24 @@ docker-compose exec -T mysql mysql -u root -p${DB_PASSWORD} ${DB_DATABASE} < bac
 docker-compose logs -f mysql
 ```
 
+### Testing seguro en Docker
+
+```bash
+# Ejecutar tests dentro del contenedor app
+docker compose exec app php artisan test
+```
+
+- Durante tests, Laravel fuerza la base `mitai_testing` mediante `DB_TEST_DATABASE` en `phpunit.xml`.
+- MySQL crea y otorga permisos sobre `mitai_testing` al levantar un volumen nuevo mediante `docker/mysql/init/01-create-testing-database.sh`.
+- `tests/TestCase.php` reemplaza la base activa por `DB_TEST_DATABASE` antes de que `RefreshDatabase` ejecute `migrate:fresh`.
+- La base de desarrollo `mitai` sigue siendo la usada por la aplicacion fuera del entorno `testing`.
+
+Si tu volumen de MySQL ya existia antes de este cambio, ejecuta una sola vez:
+
+```bash
+docker compose exec mysql mysql -uroot -p${DB_PASSWORD} -e "CREATE DATABASE IF NOT EXISTS mitai_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON mitai_testing.* TO '${DB_USERNAME}'@'%'; FLUSH PRIVILEGES;"
+```
+
 ## 🔧 Configuración
 
 ### Variables de Entorno

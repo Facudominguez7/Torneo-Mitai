@@ -47,6 +47,8 @@
                 'idPartido' => $partido->id,
             ], $volverAInstancias ? $parametrosInstancia : $parametrosPartido)
         );
+
+        $golesConfirmados = $partido->goles_confirmados_at !== null;
     @endphp
 
     <div class="w-full p-6 bg-white rounded-lg shadow-md">
@@ -67,6 +69,42 @@
                 {{ $partido->horario ? $partido->horario : \Carbon\Carbon::parse($partido->horario_datetime)->format('d-m-Y H:i') }}
             </p>
             <p class="text-gray-700"><strong>Cancha:</strong> {{ $partido->cancha }}</p>
+        </div>
+
+        <div class="mb-6 flex flex-col gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="space-y-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Estado de goles</p>
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold {{ $golesConfirmados ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                        {{ $golesConfirmados ? 'Goles confirmados' : 'Pendiente de confirmacion' }}
+                    </span>
+                    <span class="text-sm text-gray-600">
+                        {{ $golesConfirmados ? 'Confirmados el '.$partido->goles_confirmados_at->format('d/m/Y H:i') : 'Todavia sin confirmacion manual.' }}
+                    </span>
+                </div>
+            </div>
+
+            <form action="{{ route($golesConfirmados ? 'planilla.quitarConfirmacionGoles' : 'planilla.confirmarGoles') }}" method="POST" class="flex flex-wrap items-center gap-2">
+                @csrf
+                <input type="hidden" name="partido_id" value="{{ $partido->id }}">
+                <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
+                <input type="hidden" name="horario" value="{{ $horarioSeleccionado }}">
+                <input type="hidden" name="tipoPartido" value="{{ $tipoPartido }}">
+                <input type="hidden" name="origen" value="{{ $contextoNavegacion['origen'] ?? request('origen') }}">
+                <input type="hidden" name="idCategoria" value="{{ $contextoNavegacion['idCategoria'] ?? request('idCategoria') }}">
+                <input type="hidden" name="idGrupo" value="{{ $contextoNavegacion['idGrupo'] ?? request('idGrupo') }}">
+                <input type="hidden" name="idFase" value="{{ $contextoNavegacion['idFase'] ?? request('idFase') }}">
+                <input type="hidden" name="idCopa" value="{{ $contextoNavegacion['idCopa'] ?? request('idCopa') }}">
+                <input type="hidden" name="estado" value="{{ $contextoNavegacion['estado'] ?? request('estado') }}">
+                <input type="hidden" name="busqueda" value="{{ $contextoNavegacion['busqueda'] ?? request('busqueda') }}">
+                <input type="hidden" name="idFecha" value="{{ $contextoNavegacion['idFecha'] ?? request('idFecha') }}">
+                <input type="hidden" name="fecha" value="{{ $contextoNavegacion['fecha'] ?? request('fecha') }}">
+                <input type="hidden" name="horario_filtro" value="{{ $contextoNavegacion['horario_filtro'] ?? request('horario_filtro') }}">
+
+                <button type="submit" class="inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold text-white {{ $golesConfirmados ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700' }} transition duration-200">
+                    {{ $golesConfirmados ? 'Quitar confirmacion' : 'Confirmar goles' }}
+                </button>
+            </form>
         </div>
 
         @if (is_null($partido->golesEquipoLocal) && is_null($partido->golesEquipoVisitante))
@@ -211,7 +249,7 @@
                                 <div class="grid grid-cols-1 gap-2">
                                     <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Goles</label>
                                     <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][goles]"
-                                        value="{{ $jugador->goles }}"
+                                        value="{{ $jugador->goles }}" min="0"
                                         class="h-9 border-gray-300 rounded-md shadow-sm text-sm text-center">
                                 </div>
                                 <div class="flex items-center justify-between">
@@ -289,7 +327,7 @@
                                     </td>
                                     <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][goles]"
-                                            value="{{ $jugador->goles }}" class="w-full min-w-0 h-9 border-gray-300 rounded-md shadow-sm text-center text-xs md:text-sm">
+                                            value="{{ $jugador->goles }}" min="0" class="w-full min-w-0 h-9 border-gray-300 rounded-md shadow-sm text-center text-xs md:text-sm">
                                     </td>
                                     <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle">
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][asistencia]"
@@ -297,6 +335,7 @@
                                             class="h-4 w-4 text-blue-600 border-gray-300 rounded">
                                     </td>
                                     <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle {{ $jugador->tarjeta_roja ? 'bg-red-50' : '' }}">
+
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][tarjeta_roja]"
                                             {{ $jugador->tarjeta_roja ? 'checked' : '' }}
                                             class="h-4 w-4 text-red-600 border-gray-300 rounded">
@@ -453,7 +492,7 @@
                                 <div class="grid grid-cols-1 gap-2">
                                     <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Goles</label>
                                     <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][goles]"
-                                        value="{{ $jugador->goles }}"
+                                        value="{{ $jugador->goles }}" min="0"
                                         class="h-9 border-gray-300 rounded-md shadow-sm text-sm text-center">
                                 </div>
                                 <div class="flex items-center justify-between">
@@ -531,7 +570,7 @@
                                     </td>
                                     <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][goles]"
-                                            value="{{ $jugador->goles }}" class="w-full min-w-0 h-9 border-gray-300 rounded-md shadow-sm text-center text-xs md:text-sm">
+                                            value="{{ $jugador->goles }}" min="0" class="w-full min-w-0 h-9 border-gray-300 rounded-md shadow-sm text-center text-xs md:text-sm">
                                     </td>
                                     <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle">
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][asistencia]"
