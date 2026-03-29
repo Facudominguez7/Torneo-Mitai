@@ -93,6 +93,12 @@
                             <p class="text-xs uppercase tracking-[0.25em] text-white/45">Solo lectura</p>
                         </div>
 
+                        <template x-if="planillaPayload.data.goles_arbitros?.hay_inconsistencias">
+                            <div class="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                                Hay goles reportados por arbitros con camisetas que no pudieron vincularse a la planilla oficial.
+                            </div>
+                        </template>
+
                         <template x-if="planillaPayload.meta?.sin_planilla">
                             <div class="rounded-3xl border border-white/10 bg-white/5 px-5 py-10 text-center">
                                 <p class="text-lg font-semibold text-white">La planilla aun no fue cargada.</p>
@@ -112,6 +118,8 @@
                                     </div>
 
                                     <div class="space-y-3">
+                                        <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/45">Dato oficial</p>
+
                                         <template x-if="planillaPayload.data.local.length === 0">
                                             <p class="rounded-2xl border border-dashed border-white/10 px-4 py-5 text-sm text-white/55">Todavia no hay jugadores cargados para el local.</p>
                                         </template>
@@ -140,6 +148,37 @@
                                             </article>
                                         </template>
                                     </div>
+
+                                    <div class="mt-4 border-t border-white/10 pt-4">
+                                        <div class="mb-3 flex items-center justify-between gap-3">
+                                            <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#f7f280]/75">Reportado por arbitros</p>
+                                            <span class="inline-flex items-center rounded-full border border-[#f7f280]/30 bg-[#f7f280]/10 px-3 py-1 text-xs font-semibold text-[#f7f280]" x-text="`${planillaPayload.data.goles_arbitros?.local?.length || 0} registros`"></span>
+                                        </div>
+
+                                        <div class="space-y-2">
+                                            <template x-if="(planillaPayload.data.goles_arbitros?.local?.length || 0) === 0">
+                                                <p class="rounded-2xl border border-dashed border-white/10 px-4 py-4 text-sm text-white/55">Todavia no hay datos arbitrales para el local.</p>
+                                            </template>
+
+                                            <template x-for="(reporte, index) in (planillaPayload.data.goles_arbitros?.local || [])" :key="`arbitro-local-${index}`">
+                                                <article class="rounded-2xl border px-4 py-3" :class="reporte.es_inconsistencia ? 'border-red-400/30 bg-red-500/10' : 'border-[#f7f280]/20 bg-[#f7f280]/5'">
+                                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                                        <div>
+                                                            <p class="font-semibold text-white" x-text="`Camiseta ${reporte.numero_camiseta ?? '-'} · ${reporte.goles_reportados} gol(es)`"></p>
+                                                            <template x-if="reporte.jugador_oficial">
+                                                                <p class="text-xs text-white/60">Vinculado a <span x-text="reporte.jugador_oficial"></span></p>
+                                                            </template>
+                                                        </div>
+                                                        <span class="text-xs font-semibold" :class="reporte.es_inconsistencia ? 'text-red-200' : 'text-emerald-200'" x-text="reporte.es_inconsistencia ? 'Inconsistencia' : 'Dato arbitral visible' "></span>
+                                                    </div>
+
+                                                    <template x-if="reporte.es_inconsistencia">
+                                                        <p class="mt-2 text-xs text-red-100/90" x-text="reporte.motivo_inconsistencia"></p>
+                                                    </template>
+                                                </article>
+                                            </template>
+                                        </div>
+                                    </div>
                                 </section>
 
                                 <section class="rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-5">
@@ -152,6 +191,8 @@
                                     </div>
 
                                     <div class="space-y-3">
+                                        <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/45">Dato oficial</p>
+
                                         <template x-if="planillaPayload.data.visitante.length === 0">
                                             <p class="rounded-2xl border border-dashed border-white/10 px-4 py-5 text-sm text-white/55">Todavia no hay jugadores cargados para el visitante.</p>
                                         </template>
@@ -179,6 +220,37 @@
                                                 </div>
                                             </article>
                                         </template>
+                                    </div>
+
+                                    <div class="mt-4 border-t border-white/10 pt-4">
+                                        <div class="mb-3 flex items-center justify-between gap-3">
+                                            <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#f7f280]/75">Reportado por arbitros</p>
+                                            <span class="inline-flex items-center rounded-full border border-[#f7f280]/30 bg-[#f7f280]/10 px-3 py-1 text-xs font-semibold text-[#f7f280]" x-text="`${planillaPayload.data.goles_arbitros?.visitante?.length || 0} registros`"></span>
+                                        </div>
+
+                                        <div class="space-y-2">
+                                            <template x-if="(planillaPayload.data.goles_arbitros?.visitante?.length || 0) === 0">
+                                                <p class="rounded-2xl border border-dashed border-white/10 px-4 py-4 text-sm text-white/55">Todavia no hay datos arbitrales para el visitante.</p>
+                                            </template>
+
+                                            <template x-for="(reporte, index) in (planillaPayload.data.goles_arbitros?.visitante || [])" :key="`arbitro-visitante-${index}`">
+                                                <article class="rounded-2xl border px-4 py-3" :class="reporte.es_inconsistencia ? 'border-red-400/30 bg-red-500/10' : 'border-[#f7f280]/20 bg-[#f7f280]/5'">
+                                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                                        <div>
+                                                            <p class="font-semibold text-white" x-text="`Camiseta ${reporte.numero_camiseta ?? '-'} · ${reporte.goles_reportados} gol(es)`"></p>
+                                                            <template x-if="reporte.jugador_oficial">
+                                                                <p class="text-xs text-white/60">Vinculado a <span x-text="reporte.jugador_oficial"></span></p>
+                                                            </template>
+                                                        </div>
+                                                        <span class="text-xs font-semibold" :class="reporte.es_inconsistencia ? 'text-red-200' : 'text-emerald-200'" x-text="reporte.es_inconsistencia ? 'Inconsistencia' : 'Dato arbitral visible' "></span>
+                                                    </div>
+
+                                                    <template x-if="reporte.es_inconsistencia">
+                                                        <p class="mt-2 text-xs text-red-100/90" x-text="reporte.motivo_inconsistencia"></p>
+                                                    </template>
+                                                </article>
+                                            </template>
+                                        </div>
                                     </div>
                                 </section>
                             </div>

@@ -64,6 +64,35 @@
             $estadoGolesLabel = 'Resultado pendiente de carga';
             $estadoGolesDetalle = 'Todavia no hay resultado oficial cargado para revisar goles.';
         }
+
+        $golesArbitrosResumen = $golesArbitrosResumen ?? [
+            'local' => ['total_reportado' => 0, 'total_inconsistencias' => 0, 'reportes' => []],
+            'visitante' => ['total_reportado' => 0, 'total_inconsistencias' => 0, 'reportes' => []],
+        ];
+
+        $filasBaseArbitros = max(
+            count($golesArbitrosResumen['local']['reportes'] ?? []),
+            count($golesArbitrosResumen['visitante']['reportes'] ?? []),
+            4,
+        );
+
+        $construirFilasArbitros = static function (array $reportes, int $cantidadMinima) {
+            $filas = array_map(static function (array $reporte): array {
+                return [
+                    'numero_camiseta' => $reporte['numero_camiseta'],
+                    'goles_reportados' => $reporte['goles_reportados'],
+                ];
+            }, $reportes);
+
+            while (count($filas) < $cantidadMinima) {
+                $filas[] = ['numero_camiseta' => null, 'goles_reportados' => null];
+            }
+
+            return $filas;
+        };
+
+        $filasArbitrosLocal = $construirFilasArbitros($golesArbitrosResumen['local']['reportes'] ?? [], $filasBaseArbitros);
+        $filasArbitrosVisitante = $construirFilasArbitros($golesArbitrosResumen['visitante']['reportes'] ?? [], $filasBaseArbitros);
     @endphp
 
     <div class="w-full p-6 bg-white rounded-lg shadow-md">
@@ -130,6 +159,96 @@
                 </a>
             </div>
         @endif
+
+        <div class="mb-8 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div class="mb-4 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Planilla arbitral</p>
+                    <h2 class="text-lg font-semibold text-gray-900">Dato oficial vs. dato reportado por arbitros</h2>
+                    <p class="text-sm text-gray-600">La planilla oficial sigue siendo la fuente de verdad. Lo arbitral se guarda aparte y marca inconsistencias cuando una camiseta no existe o no puede vincularse.</p>
+                </div>
+            </div>
+
+            <div class="grid gap-4 xl:grid-cols-2">
+                @foreach ([
+                    ['clave' => 'local', 'titulo' => $partido->equipoLocal->nombre, 'equipo' => $partido->idEquipoLocal, 'resumen' => $golesArbitrosResumen['local'], 'filas' => $filasArbitrosLocal, 'oficial' => $jugadoresLocalPlanilla->sum('goles')],
+                    ['clave' => 'visitante', 'titulo' => $partido->equipoVisitante->nombre, 'equipo' => $partido->idEquipoVisitante, 'resumen' => $golesArbitrosResumen['visitante'], 'filas' => $filasArbitrosVisitante, 'oficial' => $jugadoresVisitantePlanilla->sum('goles')],
+                ] as $panelArbitral)
+                    <div class="rounded-lg border border-white bg-white p-4 shadow-sm">
+                        <div class="flex flex-wrap items-center gap-2 border-b border-gray-100 pb-3">
+                            <h3 class="text-base font-semibold text-gray-900">{{ $panelArbitral['titulo'] }}</h3>
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Dato oficial: {{ $panelArbitral['oficial'] }} gol(es)</span>
+                            <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Reportado por arbitros: {{ $panelArbitral['resumen']['total_reportado'] }} gol(es)</span>
+                            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $panelArbitral['resumen']['total_inconsistencias'] > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">Inconsistencias: {{ $panelArbitral['resumen']['total_inconsistencias'] }}</span>
+                        </div>
+
+                        <div class="mt-4 space-y-3">
+                            @forelse ($panelArbitral['resumen']['reportes'] as $reporteArbitral)
+                                <div class="rounded-md border px-3 py-2 {{ $reporteArbitral['es_inconsistencia'] ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50' }}">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <div class="text-sm font-semibold text-gray-900">
+                                            Camiseta {{ $reporteArbitral['numero_camiseta'] ?? '-' }} · {{ $reporteArbitral['goles_reportados'] }} gol(es)
+                                        </div>
+                                        <span class="text-xs font-semibold {{ $reporteArbitral['es_inconsistencia'] ? 'text-red-700' : 'text-emerald-700' }}">
+                                            {{ $reporteArbitral['es_inconsistencia'] ? 'Inconsistencia' : 'Vinculado a planilla oficial' }}
+                                        </span>
+                                    </div>
+
+                                    @if ($reporteArbitral['jugador_oficial'])
+                                        <p class="mt-1 text-sm text-gray-600">Jugador oficial vinculado: {{ $reporteArbitral['jugador_oficial'] }}</p>
+                                    @endif
+
+                                    @if ($reporteArbitral['es_inconsistencia'])
+                                        <p class="mt-1 text-sm text-red-700">{{ $reporteArbitral['motivo_inconsistencia'] }}</p>
+                                    @endif
+                                </div>
+                            @empty
+                                <p class="rounded-md border border-dashed border-gray-200 px-3 py-4 text-sm text-gray-500">Todavia no hay goles cargados desde la planilla arbitral.</p>
+                            @endforelse
+                        </div>
+
+                        <form action="{{ route('planilla.actualizarGolesArbitros') }}" method="POST" class="mt-4 space-y-3">
+                            @csrf
+                            <input type="hidden" name="partido_id" value="{{ $partido->id }}">
+                            <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
+                            <input type="hidden" name="horario" value="{{ $horarioSeleccionado }}">
+                            <input type="hidden" name="tipoPartido" value="{{ $tipoPartido }}">
+                            <input type="hidden" name="idEquipo" value="{{ $panelArbitral['equipo'] }}">
+                            <input type="hidden" name="origen" value="{{ $contextoNavegacion['origen'] ?? request('origen') }}">
+                            <input type="hidden" name="idCategoria" value="{{ $contextoNavegacion['idCategoria'] ?? request('idCategoria') }}">
+                            <input type="hidden" name="idGrupo" value="{{ $contextoNavegacion['idGrupo'] ?? request('idGrupo') }}">
+                            <input type="hidden" name="idFase" value="{{ $contextoNavegacion['idFase'] ?? request('idFase') }}">
+                            <input type="hidden" name="idCopa" value="{{ $contextoNavegacion['idCopa'] ?? request('idCopa') }}">
+                            <input type="hidden" name="estado" value="{{ $contextoNavegacion['estado'] ?? request('estado') }}">
+                            <input type="hidden" name="busqueda" value="{{ $contextoNavegacion['busqueda'] ?? request('busqueda') }}">
+                            <input type="hidden" name="idFecha" value="{{ $contextoNavegacion['idFecha'] ?? request('idFecha') }}">
+                            <input type="hidden" name="fecha" value="{{ $contextoNavegacion['fecha'] ?? request('fecha') }}">
+                            <input type="hidden" name="horario_filtro" value="{{ $contextoNavegacion['horario_filtro'] ?? request('horario_filtro') }}">
+
+                            <div class="grid gap-2">
+                                <div class="grid grid-cols-2 gap-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                    <span>Camiseta reportada</span>
+                                    <span>Goles reportados</span>
+                                </div>
+
+                                @foreach ($panelArbitral['filas'] as $indice => $filaArbitral)
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="number" name="reportes[{{ $indice }}][numero_camiseta]" value="{{ $filaArbitral['numero_camiseta'] }}" min="0" max="999" class="h-10 rounded-md border-gray-300 text-sm" placeholder="Ej: 10">
+                                        <input type="number" name="reportes[{{ $indice }}][goles_reportados]" value="{{ $filaArbitral['goles_reportados'] }}" min="0" max="99" class="h-10 rounded-md border-gray-300 text-sm" placeholder="Ej: 2">
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button type="submit" class="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">
+                                    Guardar dato arbitral
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+        </div>
 
         <!-- Equipo Local -->
         <h2 class="text-xl font-semibold mb-2 text-center">{{ $partido->equipoLocal->nombre }}</h2>

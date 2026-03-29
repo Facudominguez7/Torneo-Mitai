@@ -10,6 +10,7 @@ use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\Fase;
 use App\Models\Fecha;
+use App\Models\GolArbitroReportado;
 use App\Models\Grupo;
 use App\Models\InstanciaFinal;
 use App\Models\Jugador;
@@ -363,6 +364,64 @@ class PlanillaPublicaTest extends TestCase
             ->assertJsonPath('data.local.0.numero_camiseta', null)
             ->assertJsonPath('data.local.0.goles', 1)
             ->assertJsonPath('data.local.0.asistencia', true);
+    }
+
+    public function test_expone_goles_arbitrales_separados_y_sus_inconsistencias(): void
+    {
+        $contexto = $this->crearContextoPlanillaPublica();
+
+        $jugador = $this->crearJugadorPlanillaPublica('40100005', 'Mario', 'Suarez');
+
+        $planilla = PlanillaJugador::create([
+            'partido_id' => $contexto['partido']->id,
+            'partido_type' => PartidoConstants::CLASS_PARTIDO,
+            'dni_jugador' => $jugador->dni,
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'numero_camiseta' => 11,
+            'fecha_nacimiento' => '2014-04-10',
+            'goles' => 1,
+            'asistio' => true,
+        ]);
+
+        GolArbitroReportado::create([
+            'partido_id' => $contexto['partido']->id,
+            'partido_type' => PartidoConstants::CLASS_PARTIDO,
+            'idEdicion' => $contexto['edicion']->id,
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'idPlanillaJugador' => $planilla->id,
+            'numero_camiseta' => 11,
+            'goles_reportados' => 1,
+            'es_inconsistencia' => false,
+        ]);
+
+        GolArbitroReportado::create([
+            'partido_id' => $contexto['partido']->id,
+            'partido_type' => PartidoConstants::CLASS_PARTIDO,
+            'idEdicion' => $contexto['edicion']->id,
+            'idEquipo' => $contexto['equipoVisitante']->id,
+            'numero_camiseta' => 99,
+            'goles_reportados' => 1,
+            'es_inconsistencia' => true,
+            'motivo_inconsistencia' => 'Camiseta no encontrada o no vinculada en la planilla oficial.',
+        ]);
+
+        $response = $this->getJson(route('planillas-publicas.show', [
+            'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+            'publicToken' => $contexto['partido']->public_token,
+        ]));
+
+        $response->assertOk()
+            ->assertJsonPath('data.goles_arbitros.local.0.numero_camiseta', 11)
+            ->assertJsonPath('data.goles_arbitros.local.0.goles_reportados', 1)
+            ->assertJsonPath('data.goles_arbitros.local.0.jugador_oficial', 'Suarez, Mario')
+            ->assertJsonPath('data.goles_arbitros.local.0.es_inconsistencia', false)
+            ->assertJsonPath('data.goles_arbitros.visitante.0.numero_camiseta', 99)
+            ->assertJsonPath('data.goles_arbitros.visitante.0.es_inconsistencia', true)
+            ->assertJsonPath('data.goles_arbitros.visitante.0.motivo_inconsistencia', 'Camiseta no encontrada o no vinculada en la planilla oficial.')
+            ->assertJsonPath('data.goles_arbitros.hay_inconsistencias', true)
+            ->assertJsonMissingPath('data.goles_arbitros.local.0.idPlanillaJugador');
     }
 
     public function test_fixture_renderiza_sin_explotar_si_falta_public_token(): void

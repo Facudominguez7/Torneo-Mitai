@@ -13,6 +13,7 @@ use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Models\TablaGoleador;
 use App\Services\BajaJugadorService;
+use App\Services\GolesArbitrosService;
 use App\Services\PlanillaConfirmacionService;
 use App\Services\ValidadorReglasJugador;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -27,6 +28,7 @@ class ControladorPlanillaJugador extends Controller
     public function __construct(
         ValidadorReglasJugador $validadorReglas,
         private readonly PlanillaConfirmacionService $planillaConfirmacionService,
+        private readonly GolesArbitrosService $golesArbitrosService,
         private readonly BajaJugadorService $bajaJugadorService,
     ) {
         $this->validadorReglas = $validadorReglas;
@@ -77,7 +79,41 @@ class ControladorPlanillaJugador extends Controller
             ->select('planilla_jugadores.*', 'jugadores.nombre', 'jugadores.apellido')
             ->get();
 
-        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado', 'contextoNavegacion'));
+        $this->golesArbitrosService->sincronizarVinculaciones($tipoPartido, (int) $partidoId, (int) $idEdicion);
+
+        $golesArbitrosResumen = $this->golesArbitrosService->obtenerResumenPorEquipos(
+            $tipoPartido,
+            (int) $partidoId,
+            (int) $idEdicion,
+            (int) $partido->idEquipoLocal,
+            (int) $partido->idEquipoVisitante,
+        );
+
+        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado', 'contextoNavegacion', 'golesArbitrosResumen'));
+    }
+
+    public function actualizarGolesArbitros(Request $request)
+    {
+        $datosValidados = $request->validate([
+            'partido_id' => ['required', 'integer'],
+            'idEdicion' => ['required', 'integer'],
+            'tipoPartido' => ['required', 'string'],
+            'idEquipo' => ['required', 'integer'],
+            'reportes' => ['nullable', 'array'],
+            'reportes.*.numero_camiseta' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'reportes.*.goles_reportados' => ['nullable', 'integer', 'min:0', 'max:99'],
+        ]);
+
+        $this->golesArbitrosService->guardarReportes(
+            $datosValidados['tipoPartido'],
+            (int) $datosValidados['partido_id'],
+            (int) $datosValidados['idEdicion'],
+            (int) $datosValidados['idEquipo'],
+            $datosValidados['reportes'] ?? [],
+        );
+
+        return $this->redirigirAPlanilla($request)
+            ->with('status', 'Goles reportados por arbitros actualizados correctamente.');
     }
 
     /**
@@ -469,6 +505,14 @@ class ControladorPlanillaJugador extends Controller
 
         // Redirigir de vuelta a la vista con un mensaje de éxito
         $mensaje = 'Jugadores actualizados correctamente.';
+
+        if ($huboCambiosReales) {
+            $this->golesArbitrosService->sincronizarVinculaciones(
+                $tipoPartido,
+                (int) $request->partido_id,
+                (int) $idEdicion,
+            );
+        }
 
         $parametrosBase = [
             'partidoId' => $request->partido_id,

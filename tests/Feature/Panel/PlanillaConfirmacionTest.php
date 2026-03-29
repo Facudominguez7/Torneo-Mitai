@@ -6,6 +6,7 @@ use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\Fecha;
+use App\Models\GolArbitroReportado;
 use App\Models\Grupo;
 use App\Models\Jugador;
 use App\Models\Partido;
@@ -327,4 +328,52 @@ it('muestra la accion para desmarcar asistencia a todos en la planilla', functio
         ]))
         ->assertOk()
         ->assertSee('Desmarcar asistencia a todos', false);
+});
+
+it('guarda goles reportados por arbitros separados del dato oficial y marca inconsistencias', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarGolesArbitros'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'reportes' => [
+                ['numero_camiseta' => 10, 'goles_reportados' => 2],
+                ['numero_camiseta' => 77, 'goles_reportados' => 1],
+            ],
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Goles reportados por arbitros actualizados correctamente.');
+
+    $reportes = GolArbitroReportado::query()
+        ->where('partido_id', $contexto['partido']->id)
+        ->orderBy('numero_camiseta')
+        ->get();
+
+    expect($reportes)->toHaveCount(2);
+    expect($reportes[0]->numero_camiseta)->toBe(10);
+    expect($reportes[0]->goles_reportados)->toBe(2);
+    expect($reportes[0]->idPlanillaJugador)->toBe($contexto['planilla']->id);
+    expect($reportes[0]->es_inconsistencia)->toBeFalse();
+
+    expect($reportes[1]->numero_camiseta)->toBe(77);
+    expect($reportes[1]->goles_reportados)->toBe(1);
+    expect($reportes[1]->idPlanillaJugador)->toBeNull();
+    expect($reportes[1]->es_inconsistencia)->toBeTrue();
+
+    $this->actingAs($contexto['admin'])
+        ->get(route('planilla.show', [
+            'partidoId' => $contexto['partido']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+            'horario' => '09:00',
+        ]))
+        ->assertOk()
+        ->assertSee('Planilla arbitral', false)
+        ->assertSee('Dato oficial: 0 gol(es)', false)
+        ->assertSee('Reportado por arbitros: 3 gol(es)', false)
+        ->assertSee('Camiseta 77', false)
+        ->assertSee('Camiseta no encontrada o no vinculada en la planilla oficial.', false);
 });
