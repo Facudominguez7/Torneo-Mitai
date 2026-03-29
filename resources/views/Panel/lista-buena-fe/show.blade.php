@@ -91,6 +91,29 @@
             </div>
         </div>
 
+        <div class="mb-6 rounded-lg bg-white p-4 shadow-md sm:p-6">
+            <form method="GET" action="{{ route('lista-buena-fe.show', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}"
+                class="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
+                <div>
+                    <label for="buscar_dni" class="mb-1 block text-sm font-medium text-gray-700">Buscar por DNI</label>
+                    <input type="text" name="buscar_dni" id="buscar_dni" value="{{ $buscarDni ?? '' }}" inputmode="numeric"
+                        pattern="\d*" maxlength="8"
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Ej: 12345678">
+                </div>
+
+                <button type="submit"
+                    class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700">
+                    Buscar
+                </button>
+
+                <a href="{{ route('lista-buena-fe.show', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}"
+                    class="inline-flex items-center justify-center rounded-md bg-slate-200 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-300">
+                    Limpiar
+                </a>
+            </form>
+        </div>
+
         {{-- Botón de Migración --}}
         @if ($jugadoresActivos->isEmpty())
             <div class="bg-yellow-50 border border-yellow-300 p-4 rounded-lg mb-6">
@@ -201,7 +224,7 @@
 
             @if ($jugadoresActivos->isEmpty())
                 <div class="p-6 text-center text-gray-500">
-                    No hay jugadores activos en la Lista de Buena Fe.
+                    {{ filled($buscarDni ?? '') ? 'No hay jugadores activos que coincidan con el DNI buscado.' : 'No hay jugadores activos en la Lista de Buena Fe.' }}
                 </div>
             @else
                 <div class="overflow-x-auto">
@@ -362,6 +385,12 @@
                         </table>
                     </div>
                 </details>
+            </div>
+        @endif
+
+        @if (filled($buscarDni ?? '') && $jugadoresActivos->isEmpty() && $jugadoresInactivos->isEmpty())
+            <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
+                No se encontraron jugadores activos ni inactivos para el DNI <span class="font-semibold">{{ $buscarDni }}</span>.
             </div>
         @endif
 

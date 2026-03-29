@@ -96,8 +96,10 @@ class ControladorListaBuenaFe extends Controller
     /**
      * Mostrar la lista de buena fe de un equipo específico
      */
-    public function show($idEquipo, $idEdicion)
+    public function show(Request $request, $idEquipo, $idEdicion)
     {
+        $buscarDni = trim((string) $request->get('buscar_dni', ''));
+
         $equipoSeleccionado = EquipoEdicion::with('equipo', 'categoria')
             ->where('idEquipo', $idEquipo)
             ->where('idEdicion', $idEdicion)
@@ -107,16 +109,23 @@ class ControladorListaBuenaFe extends Controller
         $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada);
 
         // Obtener jugadores de la lista de buena fe (activos e inactivos)
-        $jugadoresActivos = ListaBuenaFe::with('jugador', 'categoria')
+        $jugadoresActivosQuery = ListaBuenaFe::with('jugador', 'categoria')
             ->deEquipo($idEquipo, $idEdicion)
-            ->activos()
-            ->get();
+            ->activos();
 
-        $jugadoresInactivos = ListaBuenaFe::with('jugador', 'categoria')
+        $jugadoresInactivosQuery = ListaBuenaFe::with('jugador', 'categoria')
             ->deEquipo($idEquipo, $idEdicion)
             ->where('activo', false)
-            ->orderBy('fecha_baja', 'desc')
-            ->get();
+            ->orderBy('fecha_baja', 'desc');
+
+        if ($buscarDni !== '') {
+            $jugadoresActivosQuery->where('dni_jugador', 'like', "%{$buscarDni}%");
+            $jugadoresInactivosQuery->where('dni_jugador', 'like', "%{$buscarDni}%");
+        }
+
+        $jugadoresActivos = $jugadoresActivosQuery->get();
+
+        $jugadoresInactivos = $jugadoresInactivosQuery->get();
 
         // Obtener estadísticas de jugadores
         $estadisticasService = new EstadisticasService();
@@ -133,7 +142,8 @@ class ControladorListaBuenaFe extends Controller
             'estadisticasJugadores',
             'jugadoresPorCategoria',
             'ediciones',
-            'limiteJugadoresPorPlanilla'
+            'limiteJugadoresPorPlanilla',
+            'buscarDni'
         ));
     }
 

@@ -12,6 +12,10 @@ use InvalidArgumentException;
 
 class PlanillaPublicaService
 {
+    public function __construct(
+        private readonly GolesArbitrosService $golesArbitrosService,
+    ) {}
+
     public function obtenerPlanilla(string $tipoPartido, string $publicToken): array
     {
         $tipoNormalizado = $this->normalizarTipoPartido($tipoPartido);
@@ -19,6 +23,8 @@ class PlanillaPublicaService
         $partidoType = PartidoConstants::getModelClass($tipoNormalizado);
 
         $idEdicion = $partido->idEdicion;
+
+        $this->golesArbitrosService->sincronizarVinculaciones($tipoNormalizado, (int) $partido->id, (int) $idEdicion);
 
         $registros = PlanillaJugador::query()
             ->join('jugadores', 'planilla_jugadores.dni_jugador', '=', 'jugadores.dni')
@@ -70,6 +76,14 @@ class PlanillaPublicaService
         $ultimaActualizacion = $registros
             ->max('updated_at');
 
+        $golesArbitrosResumen = $this->golesArbitrosService->obtenerResumenPorEquipos(
+            $tipoNormalizado,
+            (int) $partido->id,
+            (int) $idEdicion,
+            (int) $partido->idEquipoLocal,
+            (int) $partido->idEquipoVisitante,
+        );
+
         return [
             'data' => [
                 'partido' => [
@@ -85,6 +99,12 @@ class PlanillaPublicaService
                     : null,
                 'local' => $local,
                 'visitante' => $visitante,
+                'goles_arbitros' => [
+                    'local' => $golesArbitrosResumen['local']['reportes'],
+                    'visitante' => $golesArbitrosResumen['visitante']['reportes'],
+                    'hay_inconsistencias' => $golesArbitrosResumen['local']['total_inconsistencias'] > 0
+                        || $golesArbitrosResumen['visitante']['total_inconsistencias'] > 0,
+                ],
             ],
             'meta' => [
                 'sin_planilla' => empty($local) && empty($visitante),
