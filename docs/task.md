@@ -1,27 +1,31 @@
-# Plan de tareas - equipos sin asistencia en panel admin
+# Tasks: Cambio multi-alcance de planillas, push, header y rol arbitral
 
-## Objetivo
+## Bloque 1: Hardening correctivo de header + push
 
-Implementar en `Panel/admin` un bloque que informe, para la edicion y el horario visibles, que equipos siguen sin asistencia cargada en sus planillas.
+- [ ] 1.1 Crear la bandera reversible en `config/push.php` y reflejarla en `.env.example`, dejando un unico punto de corte para UI, rutas, service worker y notificaciones.
+- [ ] 1.2 Ajustar `resources/views/layouts/navigation.blade.php`, `resources/views/head.blade.php`, `resources/js/push-notifications.js` y `public/sw.js` para ocultar el CTA de push, evitar el doble login guest y servir un worker neutro cuando `push.enabled=false`.
+- [ ] 1.3 Endurecer `routes/web.php` y `app/Http/Controllers/ControladorNotificacionesPush.php` para responder como feature apagada sin borrar endpoints ni datos historicos.
+- [ ] 1.4 Cortar el despacho de `WebPushChannel` en `app/Notifications/ResultadoCargado.php`, `app/Notifications/NotificacionPersonalizada.php` y `app/Notifications/NuevoPartidoProgramado.php` con la misma bandera.
+- [ ] 1.5 Validar el bloque con cobertura en `tests/Feature/` para guest con un solo CTA, rutas push apagadas y notificaciones sin canal webpush; luego correr `./vendor/bin/pint --test` y `php artisan test --filter=Push\|Authentication`.
 
-## Checklist de implementacion
+## Bloque 2: Baseline oficial + transparencia arbitral
 
-- [ ] 1. Extender `app/Services/EstadisticasService.php` con un metodo que resuelva la ultima fecha de la edicion activa y el subconjunto de partidos visibles segun `idEdicion` y `horario`.
-- [ ] 2. Agregar en `app/Services/EstadisticasService.php` la consulta agregada sobre `planilla_jugadores` agrupada por `partido_id` e `idEquipo`, calculando `total_planilla` y `total_asistencias` solo para `App\Models\Partido`.
-- [ ] 3. Normalizar en `app/Services/EstadisticasService.php` una salida lista para vista que distinga, por cada partido visible, si el local o el visitante estan en estado `sin_planilla` o `sin_asistencias_marcadas`.
-- [ ] 4. Garantizar en `app/Services/EstadisticasService.php` retornos seguros cuando no haya edicion seleccionada, ultima fecha o partidos visibles, sin generar falsos pendientes.
-- [ ] 5. Actualizar `app/Http/Controllers/ControladorHome.php` para solicitar el nuevo reporte al `EstadisticasService` dentro de `admin()` y exponer la variable `equiposSinAsistencia` a la vista.
-- [ ] 6. Mantener en `app/Http/Controllers/ControladorHome.php` la compatibilidad con el filtro horario actual y con el contexto usado para navegar a `planilla.show`.
-- [ ] 7. Insertar en `resources/views/Panel/admin.blade.php` un bloque visible en la ruta `admin`, ubicado antes del listado de partidos, con resumen de cantidad de pendientes y contexto de fecha/horario.
-- [ ] 8. Renderizar en `resources/views/Panel/admin.blade.php` la lista de equipos pendientes mostrando nombre del equipo, rival, categoria, fecha, horario, condicion, estado del faltante y enlace directo a la planilla del partido.
-- [ ] 9. Mostrar en `resources/views/Panel/admin.blade.php` un estado positivo y explicito cuando el contexto actual no tenga equipos pendientes reales.
-- [ ] 10. Crear `tests/Feature/Panel/AdminEquiposSinAsistenciaTest.php` con un caso que verifique que un equipo sin planilla aparece como pendiente en el panel admin.
-- [ ] 11. Agregar en `tests/Feature/Panel/AdminEquiposSinAsistenciaTest.php` un caso que verifique que un equipo con planilla pero sin asistencias marcadas sigue apareciendo como pendiente.
-- [ ] 12. Agregar en `tests/Feature/Panel/AdminEquiposSinAsistenciaTest.php` un caso que verifique que un equipo con al menos una asistencia marcada no aparece en el listado de pendientes.
-- [ ] 13. Agregar en `tests/Feature/Panel/AdminEquiposSinAsistenciaTest.php` un caso que verifique que el filtro por horario limita el reporte solo a los partidos visibles en ese contexto.
+- [ ] 2.1 Extraer la logica de `app/Http/Controllers/Panel/ControladorPlanillaJugador.php` a `app/Services/ActualizarPlanillaPartidoService.php`, conservando recalculo e invalidacion via `app/Services/PlanillaConfirmacionService.php`.
+- [ ] 2.2 Adaptar `app/Http/Controllers/Panel/ControladorPlanillaJugador.php` y, si hace falta, un `FormRequest` nuevo en `app/Http/Requests/Panel/` para que admin siga guardando sobre el servicio compartido sin cambiar semantica.
+- [ ] 2.3 Extender `app/Services/PlanillaPublicaService.php` y el view model asociado para separar `dato reportado por arbitraje` de `dato confirmado/oficial`, incluyendo pendientes de vinculacion sin inferir identidad.
+- [ ] 2.4 Actualizar `resources/views/components/planilla-publica-modal.blade.php` y la superficie admin relacionada (`resources/views/Panel/planilla/show.blade.php` y/o cards de estado) para mostrar labels, badges y mensajes de inconsistencia con foco en claridad semantica.
+- [ ] 2.5 Reforzar regresion en `tests/Feature/PlanillaPublicaTest.php`, `tests/Feature/Panel/PlanillaConfirmacionTest.php` y el test/admin card que corresponda para cubrir fuente oficial, transparencia arbitral y confirmacion invalida al cambiar goles.
 
-## Notas de ejecucion
+## Bloque 3: Rol `encargado_arbitros` mobile-first
 
-- No se deben crear migraciones ni rutas nuevas.
-- La implementacion debe reutilizar el contexto existente de `Panel/admin`.
-- La verificacion formal de lint y pruebas completas se realizara en la fase `Verifier` usando Docker.
+- [ ] 3.1 Agregar una migracion para extender `users.rol`, sumar helpers en `app/Models/User.php` y reemplazar `app/Http/Middleware/UserAccesPanelMiddleware.php` por un middleware parametrizable de roles reutilizable en panel y flujo arbitral.
+- [ ] 3.2 Incorporar rutas dedicadas en `routes/web.php` y controladores nuevos en `app/Http/Controllers/Panel/` para `ultima-fecha`, detalle restringido y guardado de goles usando contexto `idEdicion` + `tipoPartido`.
+- [ ] 3.3 Implementar la consulta de ultima fecha contextual y filtros en un servicio nuevo de `app/Services/`, limitando resultados por equipo, categoria, zona y estado de carga sin mezclar otras ediciones.
+- [ ] 3.4 Crear vistas mobile-first en `resources/views/Panel/arbitros/` para listado y planilla restringida, mostrando dorsal readonly, controles grandes de goles y estados `reportado` vs `oficial`.
+- [ ] 3.5 Validar en backend con un `FormRequest` arbitral que solo se acepten cambios sobre `goles`, ignorando o rechazando intentos de editar `numero_camiseta` u otros campos administrativos antes de invocar `ActualizarPlanillaPartidoService`.
+- [ ] 3.6 Cubrir `tests/Feature/Panel/` con acceso permitido/denegado, filtros de ultima fecha, persistencia de goles con la misma semantica que admin, rechazo de cambio de dorsal y ausencia de campos prohibidos en la vista mobile.
+
+## Bloque 4: Verificacion final integrada
+
+- [ ] 4.1 Ejecutar `./vendor/bin/pint --test` sobre todo el cambio y corregir estilo antes del cierre.
+- [ ] 4.2 Ejecutar `php artisan test --filter=PlanillaPublica\|PlanillaConfirmacion\|Arbitros\|Push` para validar los tres frentes sin hacer build.

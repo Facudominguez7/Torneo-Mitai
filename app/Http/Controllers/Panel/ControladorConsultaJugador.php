@@ -8,6 +8,7 @@ use App\Models\Jugador;
 use App\Models\PlanillaJugador;
 use App\Models\Partido;
 use App\Models\InstanciaFinal;
+use App\Models\TrazabilidadBajaJugador;
 use Illuminate\Http\Request;
 
 class ControladorConsultaJugador extends Controller
@@ -59,14 +60,20 @@ class ControladorConsultaJugador extends Controller
         }
 
         $idEdicion = $edicionActual->id;
+        $bajasArchivadas = collect();
 
         // Buscar el jugador
         $jugador = Jugador::where('dni', $dni)->first();
 
-        if (!$jugador) {
+        if (! $jugador) {
             return redirect()->route('jugador.consulta', ['dni' => $dni, 'idEdicion' => $idEdicion])
-                ->with('error', 'No se encontró ningún jugador con el DNI: ' . $dni);
+                ->with('error', 'No se encontró ningún jugador con el DNI: '.$dni);
         }
+
+        $bajasArchivadas = TrazabilidadBajaJugador::where('dni_jugador', $dni)
+            ->where('idEdicion', $idEdicion)
+            ->orderByDesc('fecha_baja')
+            ->get();
 
         // Obtener el historial desde planilla_jugadores por DNI + edición seleccionada.
         //
@@ -256,6 +263,7 @@ class ControladorConsultaJugador extends Controller
             'ediciones',
             'EdicionSeleccionada',
             'listaBuenaFe',
+            'bajasArchivadas',
             'sinRegistrosDePartidos'
         ));
     }
