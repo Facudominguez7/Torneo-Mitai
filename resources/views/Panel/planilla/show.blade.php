@@ -161,7 +161,11 @@
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Planilla arbitral</p>
                     <h2 class="text-lg font-semibold text-gray-900">Dato oficial vs. dato reportado por arbitros</h2>
-                    <p class="text-sm text-gray-600">La planilla oficial sigue siendo la fuente de verdad. Lo arbitral se guarda aparte y marca inconsistencias cuando una camiseta no existe o no puede vincularse.</p>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Solo visual</span>
+                        <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">No impacta estadísticas</span>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-600">La planilla oficial sigue siendo la fuente de verdad. Lo arbitral se guarda aparte, marca inconsistencias cuando una camiseta no existe o no puede vincularse y <span class="font-semibold text-gray-800">no modifica goles ni estadísticas oficiales de jugadores</span>.</p>
                 </div>
             </div>
 
