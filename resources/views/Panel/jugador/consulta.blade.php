@@ -69,8 +69,8 @@
 
                 @if(isset($sinRegistrosDePartidos) && $sinRegistrosDePartidos)
                     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded" role="alert">
-                        <p class="font-bold">Sin registros de partidos</p>
-                        <p>Este jugador no tiene partidos registrados en esta edición, pero está inscripto en la Lista de Buena Fe.</p>
+                        <p class="font-bold">Sin registros activos de partidos</p>
+                        <p>Este jugador no tiene partidos activos computables en esta edición. Su historial anterior fue archivado tras la baja de Lista de Buena Fe.</p>
                         @if(isset($listaBuenaFe) && $listaBuenaFe->edicion && $listaBuenaFe->edicion->id != $edicionActual->id)
                             <p class="mt-1 text-sm">Última edición registrada: <strong>{{ $listaBuenaFe->edicion->nombre }}</strong></p>
                         @endif
@@ -158,6 +158,91 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            @endif
+
+            @if(isset($bajasArchivadas) && $bajasArchivadas->isNotEmpty())
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">
+                        <i class="fas fa-box-archive text-amber-600 mr-2"></i>Historial Archivado por Bajas
+                    </h3>
+
+                    <div class="space-y-6">
+                        @foreach($bajasArchivadas as $bajaArchivada)
+                            <div class="border border-amber-200 dark:border-amber-900 rounded-lg overflow-hidden">
+                                <div class="bg-amber-50 dark:bg-amber-900/30 px-4 py-3">
+                                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                        <div>
+                                            <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                                                {{ $bajaArchivada->equipo_nombre ?? 'Equipo no disponible' }} - {{ $bajaArchivada->categoria_nombre ?? 'Categoría no disponible' }}
+                                            </p>
+                                            <p class="text-sm text-amber-700 dark:text-amber-200">
+                                                Baja: {{ optional($bajaArchivada->fecha_baja)->format('d/m/Y H:i') ?? 'Sin fecha' }}
+                                                @if($bajaArchivada->motivo_baja)
+                                                    - Motivo: {{ $bajaArchivada->motivo_baja }}
+                                                @endif
+                                            </p>
+                                        </div>
+                                        <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-200">
+                                            No computa para ese equipo
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-white dark:bg-gray-800">
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Goles archivados</p>
+                                        <p class="text-lg font-semibold text-gray-800 dark:text-white">{{ $bajaArchivada->total_goles }}</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Partidos archivados</p>
+                                        <p class="text-lg font-semibold text-gray-800 dark:text-white">{{ $bajaArchivada->total_partidos }}</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Tarjetas rojas</p>
+                                        <p class="text-lg font-semibold text-gray-800 dark:text-white">{{ $bajaArchivada->total_tarjetas_rojas }}</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Planillas archivadas</p>
+                                        <p class="text-lg font-semibold text-gray-800 dark:text-white">{{ $bajaArchivada->cantidad_planillas_archivadas }}</p>
+                                    </div>
+                                </div>
+
+                                @if(!empty($bajaArchivada->historial_planillas))
+                                    <div class="overflow-x-auto border-t border-amber-100 dark:border-amber-900/50">
+                                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                                <tr>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Origen</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Referencia</th>
+                                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Goles</th>
+                                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asistió</th>
+                                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Roja</th>
+                                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Camiseta</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                                @foreach($bajaArchivada->historial_planillas as $planillaArchivada)
+                                                    <tr>
+                                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                                            {{ data_get($planillaArchivada, 'partido_type') === 'App\\Models\\InstanciaFinal' ? 'Instancia Final' : 'Partido Regular' }}
+                                                        </td>
+                                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                                            {{ data_get($planillaArchivada, 'partido_type') === 'App\\Models\\InstanciaFinal' ? 'IF-' : 'P-' }}{{ data_get($planillaArchivada, 'partido_id', '-') }}
+                                                        </td>
+                                                        <td class="px-4 py-3 text-center text-sm text-gray-900 dark:text-gray-100">{{ data_get($planillaArchivada, 'goles', 0) }}</td>
+                                                        <td class="px-4 py-3 text-center text-sm text-gray-900 dark:text-gray-100">{{ data_get($planillaArchivada, 'asistio') ? 'Sí' : 'No' }}</td>
+                                                        <td class="px-4 py-3 text-center text-sm text-gray-900 dark:text-gray-100">{{ data_get($planillaArchivada, 'tarjeta_roja') ? 'Sí' : 'No' }}</td>
+                                                        <td class="px-4 py-3 text-center text-sm text-gray-900 dark:text-gray-100">{{ data_get($planillaArchivada, 'numero_camiseta', '-') }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             @endif

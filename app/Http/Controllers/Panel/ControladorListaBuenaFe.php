@@ -11,6 +11,7 @@ use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
 use App\Models\PlanillaJugador;
 use App\Services\ActualizadorIdentidadJugador;
+use App\Services\BajaJugadorService;
 use App\Services\EstadisticasService;
 use App\Services\ValidadorReglasJugador;
 use Illuminate\Http\Request;
@@ -23,8 +24,11 @@ class ControladorListaBuenaFe extends Controller
 
     protected $actualizadorIdentidadJugador;
 
-    public function __construct(ValidadorReglasJugador $validadorReglas, ActualizadorIdentidadJugador $actualizadorIdentidadJugador)
-    {
+    public function __construct(
+        ValidadorReglasJugador $validadorReglas,
+        ActualizadorIdentidadJugador $actualizadorIdentidadJugador,
+        private readonly BajaJugadorService $bajaJugadorService,
+    ) {
         $this->validadorReglas = $validadorReglas;
         $this->actualizadorIdentidadJugador = $actualizadorIdentidadJugador;
     }
@@ -398,16 +402,18 @@ class ControladorListaBuenaFe extends Controller
 
         try {
             $listaBuenaFe = ListaBuenaFe::findOrFail($id);
+            $usuario = auth()->user()->name ?? auth()->user()->email ?? 'Sistema';
 
-            // Si el jugador es conflictivo y no está resuelto, resolver automáticamente
-            if ($listaBuenaFe->conflictivo && ! $listaBuenaFe->resuelto) {
-                $usuario = auth()->user()->name ?? auth()->user()->email ?? 'Sistema';
-                $notas = 'Conflicto resuelto automáticamente al dar de baja al jugador. Motivo de baja: '.($request->motivo_baja ?? 'No especificado');
-                $listaBuenaFe->resolverConflicto($usuario, $notas);
-                Log::info("Conflicto auto-resuelto para jugador {$listaBuenaFe->dni_jugador} al dar de baja");
-            }
+            DB::transaction(function () use ($listaBuenaFe, $request, $usuario) {
+                // Si el jugador es conflictivo y no está resuelto, resolver automáticamente
+                if ($listaBuenaFe->conflictivo && ! $listaBuenaFe->resuelto) {
+                    $notas = 'Conflicto resuelto automáticamente al dar de baja al jugador. Motivo de baja: '.($request->motivo_baja ?? 'No especificado');
+                    $listaBuenaFe->resolverConflicto($usuario, $notas);
+                    Log::info("Conflicto auto-resuelto para jugador {$listaBuenaFe->dni_jugador} al dar de baja");
+                }
 
-            $listaBuenaFe->darDeBaja($request->motivo_baja);
+                $this->bajaJugadorService->procesarBaja($listaBuenaFe, $request->motivo_baja, $usuario);
+            });
 
             Log::info("Jugador {$listaBuenaFe->dni_jugador} dado de baja de Lista de Buena Fe. Motivo: ".($request->motivo_baja ?? 'Sin especificar'));
 

@@ -12,6 +12,7 @@ use App\Models\ListaBuenaFe;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Models\TablaGoleador;
+use App\Services\BajaJugadorService;
 use App\Services\PlanillaConfirmacionService;
 use App\Services\ValidadorReglasJugador;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -26,6 +27,7 @@ class ControladorPlanillaJugador extends Controller
     public function __construct(
         ValidadorReglasJugador $validadorReglas,
         private readonly PlanillaConfirmacionService $planillaConfirmacionService,
+        private readonly BajaJugadorService $bajaJugadorService,
     ) {
         $this->validadorReglas = $validadorReglas;
     }
@@ -654,51 +656,51 @@ class ControladorPlanillaJugador extends Controller
         $idEquipo = $planilla->idEquipo;
         $idCategoria = $planilla->idCategoria;
 
-        // Obtener TODAS las planillas del jugador en este equipo y edición
-        $todasLasPlanillas = PlanillaJugador::where('dni_jugador', $dniJugador)
+        $listaBuenaFe = ListaBuenaFe::where('dni_jugador', $dniJugador)
             ->where('idEquipo', $idEquipo)
             ->where('idEdicion', $idEdicion)
-            ->get();
+            ->first();
 
-        // Calcular estadísticas totales a restar del jugador
-        $totalGoles = $todasLasPlanillas->sum('goles');
-        $totalPartidos = $todasLasPlanillas->where('asistio', 1)->count();
-        $totalTarjetasRojas = $todasLasPlanillas->where('tarjeta_roja', 1)->count();
+        if ($listaBuenaFe) {
+            $this->bajaJugadorService->procesarBaja(
+                $listaBuenaFe,
+                'Eliminado desde planilla del partido '.$partidoId,
+                auth()->user()->name ?? auth()->user()->email ?? 'Sistema'
+            );
 
-        // Actualizar estadísticas globales del jugador
-        $jugador = Jugador::where('dni', $dniJugador)->first();
-        if ($jugador) {
-            $jugador->goles_totales = max(0, ($jugador->goles_totales ?? 0) - $totalGoles);
-            $jugador->partidos_totales = max(0, ($jugador->partidos_totales ?? 0) - $totalPartidos);
-            $jugador->tarjetas_rojas_totales = max(0, ($jugador->tarjetas_rojas_totales ?? 0) - $totalTarjetasRojas);
-            $jugador->save();
-        }
-
-        // Eliminar completamente de la tabla de goleadores de esta edición
-        TablaGoleador::where('dni_jugador', $dniJugador)
-            ->where('idEdicion', $idEdicion)
-            ->where('idCategoria', $idCategoria)
-            ->delete();
-
-        // Eliminar TODAS las planillas del jugador en este equipo y edición
-        PlanillaJugador::where('dni_jugador', $dniJugador)
-            ->where('idEquipo', $idEquipo)
-            ->where('idEdicion', $idEdicion)
-            ->delete();
-
-        // --- Sincronización con Lista de Buena Fe ---
-        try {
-            $listaBuenaFe = ListaBuenaFe::where('dni_jugador', $dniJugador)
+            Log::info("Jugador {$dniJugador} dado de baja de Lista de Buena Fe por eliminación en planilla.");
+        } else {
+            // Obtener TODAS las planillas del jugador en este equipo y edición
+            $todasLasPlanillas = PlanillaJugador::where('dni_jugador', $dniJugador)
                 ->where('idEquipo', $idEquipo)
                 ->where('idEdicion', $idEdicion)
-                ->first();
+                ->get();
 
-            if ($listaBuenaFe) {
-                $listaBuenaFe->darDeBaja('Eliminado desde planilla del partido '.$partidoId);
-                Log::info("Jugador {$dniJugador} dado de baja de Lista de Buena Fe por eliminación en planilla.");
+            // Calcular estadísticas totales a restar del jugador
+            $totalGoles = $todasLasPlanillas->sum('goles');
+            $totalPartidos = $todasLasPlanillas->where('asistio', 1)->count();
+            $totalTarjetasRojas = $todasLasPlanillas->where('tarjeta_roja', 1)->count();
+
+            // Actualizar estadísticas globales del jugador
+            $jugador = Jugador::where('dni', $dniJugador)->first();
+            if ($jugador) {
+                $jugador->goles_totales = max(0, ($jugador->goles_totales ?? 0) - $totalGoles);
+                $jugador->partidos_totales = max(0, ($jugador->partidos_totales ?? 0) - $totalPartidos);
+                $jugador->tarjetas_rojas_totales = max(0, ($jugador->tarjetas_rojas_totales ?? 0) - $totalTarjetasRojas);
+                $jugador->save();
             }
-        } catch (\Exception $e) {
-            Log::error('Error sincronizando Lista de Buena Fe al eliminar de planilla: '.$e->getMessage());
+
+            // Eliminar completamente de la tabla de goleadores de esta edición
+            TablaGoleador::where('dni_jugador', $dniJugador)
+                ->where('idEdicion', $idEdicion)
+                ->where('idCategoria', $idCategoria)
+                ->delete();
+
+            // Eliminar TODAS las planillas del jugador en este equipo y edición
+            PlanillaJugador::where('dni_jugador', $dniJugador)
+                ->where('idEquipo', $idEquipo)
+                ->where('idEdicion', $idEdicion)
+                ->delete();
         }
 
         if (PartidoConstants::isInstanciaFinal($tipoPartido)) {
@@ -751,6 +753,21 @@ class ControladorPlanillaJugador extends Controller
         int $idEdicion,
         int $idCategoria
     ): void {
+        $listaBuenaFe = ListaBuenaFe::where('dni_jugador', $dniJugador)
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->first();
+
+        if ($listaBuenaFe) {
+            $this->bajaJugadorService->procesarBaja(
+                $listaBuenaFe,
+                $listaBuenaFe->motivo_baja,
+                auth()->user()->name ?? auth()->user()->email ?? 'Sistema'
+            );
+
+            return;
+        }
+
         // 1. Obtener TODAS las planillas del jugador en este equipo y edición
         $todasLasPlanillas = PlanillaJugador::where('dni_jugador', $dniJugador)
             ->where('idEquipo', $idEquipo)
