@@ -31,6 +31,7 @@ class PlanillaPublicaService
             ->where('planilla_jugadores.partido_id', $partido->id)
             ->where('planilla_jugadores.partido_type', $partidoType)
             ->where('planilla_jugadores.idEdicion', $idEdicion)
+            ->where('planilla_jugadores.asistio', true)
             ->whereIn('planilla_jugadores.idEquipo', [
                 $partido->idEquipoLocal,
                 $partido->idEquipoVisitante,
