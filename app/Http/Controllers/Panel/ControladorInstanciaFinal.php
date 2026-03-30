@@ -204,6 +204,7 @@ class ControladorInstanciaFinal extends Controller
             'idFase' => $request->input('idFase') ?: $partido->idFase,
             'idCopa' => $request->input('idCopa') ?: $partido->idCopa,
         ]);
+        $rutaRegreso = $this->resolverRutaRegresoResultado($request, $partido, $parametrosRegreso);
 
         $golesEquipoLocal = $request->input('golesEquipoLocal');
         $golesEquipoVisitante = $request->input('golesEquipoVisitante');
@@ -232,12 +233,35 @@ class ControladorInstanciaFinal extends Controller
                 ]);
             }
 
-            return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Resultado cargado con éxito.');
+            return redirect()->to($rutaRegreso)->with('status', 'Resultado cargado con éxito.');
         }
 
         $tipo = 'instancia_final';
 
-        return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada', 'tipo', 'parametrosRegreso'));
+        return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada', 'tipo', 'parametrosRegreso', 'rutaRegreso'));
+    }
+
+    private function resolverRutaRegresoResultado(Request $request, InstanciaFinal $partido, array $parametrosRegreso): string
+    {
+        if ($request->input('origen') === 'planilla') {
+            return route('planilla.show', array_merge([
+                'partidoId' => $partido->id,
+                'idEdicion' => $partido->idEdicion,
+                'tipoPartido' => PartidoConstants::TIPO_INSTANCIA_FINAL,
+                'horario' => $request->input('retorno_horario_planilla', 0),
+            ], array_filter([
+                'origen' => $request->input('retorno_origen_planilla', $request->input('origen_planilla')),
+                'idCategoria' => $request->input('retorno_idCategoria', $request->input('idCategoria')),
+                'idFase' => $request->input('retorno_idFase', $request->input('idFase')),
+                'idCopa' => $request->input('retorno_idCopa', $request->input('idCopa')),
+                'estado' => $request->input('retorno_estado', $request->input('estado')),
+                'busqueda' => $request->input('retorno_busqueda', $request->input('busqueda')),
+                'fecha' => $request->input('retorno_fecha', $request->input('fecha')),
+                'horario_filtro' => $request->input('retorno_horario_filtro_planilla', $request->input('horario_filtro_planilla')),
+            ], static fn ($valor) => $valor !== null && $valor !== '')));
+        }
+
+        return route('instancia_final.index', $parametrosRegreso);
     }
 
     /**

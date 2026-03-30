@@ -4,7 +4,7 @@
     @php
         $esInstanciaFinal = isset($tipo) && $tipo === 'instancia_final';
         $contextoRegreso = $parametrosRegreso ?? [];
-        $rutaRegreso = $esInstanciaFinal ? route('instancia_final.index', $contextoRegreso) : route('partido.index', $contextoRegreso);
+        $rutaRegreso = $rutaRegreso ?? ($esInstanciaFinal ? route('instancia_final.index', $contextoRegreso) : route('partido.index', $contextoRegreso));
     @endphp
 
     <div class="mb-4">
@@ -178,6 +178,13 @@
             </script>
         @endif
         <input class="hidden" type="number" name="idEdicion" id="idEdicion" value="{{ $EdicionSeleccionada->id }}">
+        <input type="hidden" name="origen" value="{{ request('origen') }}">
+        <input type="hidden" name="origen_planilla" value="{{ request('origen_planilla') }}">
+        <input type="hidden" name="retorno_origen_planilla" value="{{ request('retorno_origen_planilla', request('origen_planilla')) }}">
+        <input type="hidden" name="horario_planilla" value="{{ request('horario_planilla') }}">
+        <input type="hidden" name="retorno_horario_planilla" value="{{ request('retorno_horario_planilla', request('horario_planilla')) }}">
+        <input type="hidden" name="horario_filtro_planilla" value="{{ request('horario_filtro_planilla') }}">
+        <input type="hidden" name="retorno_horario_filtro_planilla" value="{{ request('retorno_horario_filtro_planilla', request('horario_filtro_planilla')) }}">
         <input type="hidden" name="retorno_idCategoria" value="{{ $contextoRegreso['idCategoria'] ?? request('idCategoria') }}">
         <input type="hidden" name="retorno_idGrupo" value="{{ $contextoRegreso['idGrupo'] ?? request('idGrupo') }}">
         <input type="hidden" name="retorno_idFecha" value="{{ $contextoRegreso['idFecha'] ?? request('idFecha') }}">

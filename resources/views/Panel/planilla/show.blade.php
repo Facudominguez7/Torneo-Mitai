@@ -45,6 +45,10 @@
             array_merge([
                 'idEdicion' => $EdicionSeleccionada->id,
                 'idPartido' => $partido->id,
+                'origen' => 'planilla',
+                'origen_planilla' => $contextoNavegacion['origen'] ?? request('origen') ?? 'planilla',
+                'horario_planilla' => PartidoConstants::isInstanciaFinal($tipoPartido) ? 0 : $horarioSeleccionado,
+                'horario_filtro_planilla' => $contextoNavegacion['horario_filtro'] ?? request('horario_filtro'),
             ], $volverAInstancias ? $parametrosInstancia : $parametrosPartido)
         );
 

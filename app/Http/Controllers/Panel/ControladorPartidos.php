@@ -406,6 +406,7 @@ class ControladorPartidos extends Controller
             'idGrupo' => $request->input('idGrupo') ?: $partido->idGrupo,
             'idFecha' => $request->input('idFecha') ?: $partido->idFechas,
         ]);
+        $rutaRegreso = $this->resolverRutaRegresoResultado($request, $partido, $parametrosRegreso);
 
         if ($request->isMethod('post')) {
             $datosValidados = $request->validate([
@@ -428,10 +429,31 @@ class ControladorPartidos extends Controller
                 ]);
             }
 
-            return to_route('partido.index', $parametrosRegreso)->with('status', 'Resultado guardado con éxito.');
+            return redirect()->to($rutaRegreso)->with('status', 'Resultado guardado con éxito.');
         }
 
-        return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada', 'parametrosRegreso'));
+        return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada', 'parametrosRegreso', 'rutaRegreso'));
+    }
+
+    private function resolverRutaRegresoResultado(Request $request, Partido $partido, array $parametrosRegreso): string
+    {
+        if ($request->input('origen') === 'planilla') {
+            return route('planilla.show', array_merge([
+                'partidoId' => $partido->id,
+                'idEdicion' => $partido->idEdicion,
+                'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+                'horario' => $request->input('retorno_horario_planilla', $request->input('horario_planilla', 0)),
+            ], array_filter([
+                'origen' => $request->input('retorno_origen_planilla', $request->input('origen_planilla')),
+                'idCategoria' => $request->input('retorno_idCategoria', $request->input('idCategoria')),
+                'idGrupo' => $request->input('retorno_idGrupo', $request->input('idGrupo')),
+                'idFecha' => $request->input('retorno_idFecha', $request->input('idFecha')),
+                'horario_filtro' => $request->input('retorno_horario_filtro_planilla', $request->input('horario_filtro_planilla')),
+                'busqueda' => $request->input('retorno_busqueda', $request->input('busqueda')),
+            ], static fn ($valor) => $valor !== null && $valor !== '')));
+        }
+
+        return route('partido.index', $parametrosRegreso);
     }
 
     /**
