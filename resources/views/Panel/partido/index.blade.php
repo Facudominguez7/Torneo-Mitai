@@ -54,51 +54,37 @@
     <div class="rounded-lg bg-white p-3 sm:p-4 md:p-6">
         <h1 class="text-xl font-bold sm:text-2xl">Partidos de Futbol</h1>
         <div class="mt-2 flex flex-wrap items-center gap-2 px-0 sm:px-2">
-            <div x-data="{ open: false }" class="relative text-left md:ml-5 filtro-fecha hidden">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button
-                            class="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 w-full md:w-auto">
-                            Filtrar por fecha
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
-                        @foreach ($fechas as $f)
-                            <div class="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                data-id="{{ $f->id }}" data-nombre="{{ $f->nombre }}">
-                                {{ $f->nombre }}
-                            </div>
-                        @endforeach
-                    </x-slot>
-                </x-dropdown>
+            <div class="relative filtro-fecha mt-2 w-full text-left md:ml-5 md:mt-0 md:w-[18rem] hidden">
+                <select id="filtro-fecha-select"
+                    class="w-full appearance-none rounded-full bg-gray-800 py-2 pl-4 pr-10 text-sm text-white transition-all duration-300 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 sm:text-base">
+                    <option value="">Filtrar por fecha</option>
+                    @foreach ($fechas as $f)
+                        <option value="{{ $f->id }}" {{ (string) request('idFecha') === (string) $f->id ? 'selected' : '' }}>
+                            {{ $f->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+                <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
             </div>
-            <div x-data="{ open: false }" class="relative text-left filtro-grupo hidden">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button
-                            class="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 w-full md:w-auto">
-                            Filtrar por Grupo
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
-                        @foreach ($grupos as $g)
-                            <div class="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                data-id="{{ $g->id }}" data-nombre="{{ $g->nombre }}">
-                                {{ $g->nombre }}
-                            </div>
-                        @endforeach
-                    </x-slot>
-                </x-dropdown>
+            <div class="relative filtro-grupo mt-2 w-full text-left md:mt-0 md:w-[18rem] hidden">
+                <select id="filtro-grupo-select"
+                    class="w-full appearance-none rounded-full bg-gray-800 py-2 pl-4 pr-10 text-sm text-white transition-all duration-300 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 sm:text-base">
+                    <option value="">Filtrar por Grupo</option>
+                    @foreach ($grupos as $g)
+                        <option value="{{ $g->id }}" {{ (string) request('idGrupo') === (string) $g->id ? 'selected' : '' }}>
+                            {{ $g->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+                <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
             </div>
             <div class="relative filtro-categoria mt-2 w-full md:mt-0 md:w-[18rem]">
                 <select id="filtro-categoria-select"
@@ -290,13 +276,13 @@
                 const fechaFilterContainer = document.querySelector('.filtro-fecha');
                 const grupoFilterContainer = document.querySelector('.filtro-grupo');
                 const categoriaFilterSelected = idCategoria.trim() !== '';
-                const grupoFilterSelected = idGrupo.trim() !== '';
+                const edicionFilterSelected = idEdicion.trim() !== '';
 
                 // Mostrar el filtro de grupo solo si se ha seleccionado una categoría
                 grupoFilterContainer.classList.toggle('hidden', !categoriaFilterSelected);
 
-                // Mostrar el filtro de fecha solo si se ha seleccionado una categoría y un grupo
-                fechaFilterContainer.classList.toggle('hidden', !(categoriaFilterSelected && grupoFilterSelected));
+                // Mostrar el filtro de fecha siempre que exista una edición seleccionada.
+                fechaFilterContainer.classList.toggle('hidden', !edicionFilterSelected);
             }
 
             // Actualizar la URL con los filtros seleccionados
@@ -333,23 +319,11 @@
                 });
             }
 
-            // Añadir eventos a cada filtro de "Fecha"
-            document.querySelectorAll('.filtro-fecha [data-id]').forEach(function(item) {
-                item.addEventListener('click', function() {
-                    idFecha = this.getAttribute('data-id');
-                    updateUrl({
-                        idCategoria,
-                        idEdicion,
-                        idFecha,
-                        idGrupo
-                    });
-                });
-            });
+            const fechaSelect = document.getElementById('filtro-fecha-select');
 
-            // Añadir eventos a cada filtro de "Grupo"
-            document.querySelectorAll('.filtro-grupo [data-id]').forEach(function(item) {
-                item.addEventListener('click', function() {
-                    idGrupo = this.getAttribute('data-id');
+            if (fechaSelect) {
+                fechaSelect.addEventListener('change', function() {
+                    idFecha = this.value;
                     updateUrl({
                         idCategoria,
                         idEdicion,
@@ -357,7 +331,21 @@
                         idGrupo
                     });
                 });
-            });
+            }
+
+            const grupoSelect = document.getElementById('filtro-grupo-select');
+
+            if (grupoSelect) {
+                grupoSelect.addEventListener('change', function() {
+                    idGrupo = this.value;
+                    updateUrl({
+                        idCategoria,
+                        idEdicion,
+                        idFecha,
+                        idGrupo
+                    });
+                });
+            }
 
             // Añadir evento al botón de eliminar filtros
             document.getElementById('reset-filters').addEventListener('click', function() {

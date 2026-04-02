@@ -89,11 +89,18 @@ class ControladorPartidos extends Controller
             ->orderBy('nombreCategoria', 'desc')
             ->get();
 
-        $fechas = Fecha::where('idEdicion', $idEdicion)
-            ->where('idCategoria', $idCategoria)
-            ->select('id', 'nombre')
-            ->orderByDesc('id')
-            ->distinct('nombre')
+        $fechas = Fecha::query()
+            ->select('fechas.id', 'fechas.nombre')
+            ->join('partidos', 'partidos.idFechas', '=', 'fechas.id')
+            ->where('partidos.idEdicion', $idEdicion)
+            ->when($idCategoria, static function ($query, $idCategoria) {
+                $query->where('partidos.idCategoria', $idCategoria);
+            })
+            ->when($idGrupo, static function ($query, $idGrupo) {
+                $query->where('partidos.idGrupo', $idGrupo);
+            })
+            ->distinct()
+            ->orderByDesc('fechas.id')
             ->get();
 
         $grupos = Grupo::where('idEdicion', $idEdicion)
@@ -101,7 +108,7 @@ class ControladorPartidos extends Controller
             ->where('idCategoria', $idCategoria)
             ->get();
 
-        $fechas = $fechas->unique('nombre');
+        $fechas = $fechas->unique('nombre')->values();
 
         if (isset($idFecha) || isset($idGrupo) || isset($idCategoria)) {
             $fecha = $fechas->firstWhere('id', $idFecha);
