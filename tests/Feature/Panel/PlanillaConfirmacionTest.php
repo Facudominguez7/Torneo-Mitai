@@ -375,5 +375,46 @@ it('guarda goles reportados por arbitros separados del dato oficial y marca inco
         ->assertSee('Dato oficial: 0 gol(es)', false)
         ->assertSee('Reportado por arbitros: 3 gol(es)', false)
         ->assertSee('Camiseta 77', false)
-        ->assertSee('Camiseta no encontrada o no vinculada en la planilla oficial.', false);
+        ->assertSee('Camiseta no encontrada o sin asistencia en la planilla oficial.', false);
+});
+
+it('marca inconsistencia cuando la camiseta existe pero el jugador no tiene asistencia', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarGolesArbitros'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'reportes' => [
+                ['numero_camiseta' => 10, 'goles_reportados' => 1],
+            ],
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Goles reportados por arbitros actualizados correctamente.');
+
+    $reporte = GolArbitroReportado::query()
+        ->where('partido_id', $contexto['partido']->id)
+        ->where('idEquipo', $contexto['equipoLocal']->id)
+        ->first();
+
+    expect($reporte)->not->toBeNull();
+    expect($reporte->numero_camiseta)->toBe(10);
+    expect($reporte->idPlanillaJugador)->toBeNull();
+    expect($reporte->es_inconsistencia)->toBeTrue();
+    expect($reporte->motivo_inconsistencia)->toBe('Camiseta no encontrada o sin asistencia en la planilla oficial.');
+
+    $this->actingAs($contexto['admin'])
+        ->get(route('planilla.show', [
+            'partidoId' => $contexto['partido']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+            'horario' => '09:00',
+        ]))
+        ->assertOk()
+        ->assertSee('Camiseta 10', false)
+        ->assertSee('Inconsistencia', false)
+        ->assertSee('Camiseta no encontrada o sin asistencia en la planilla oficial.', false)
+        ->assertDontSee('Jugador oficial vinculado: Confirmado, Juan', false);
 });

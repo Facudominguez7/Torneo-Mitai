@@ -404,7 +404,7 @@ class PlanillaPublicaTest extends TestCase
             'numero_camiseta' => 99,
             'goles_reportados' => 1,
             'es_inconsistencia' => true,
-            'motivo_inconsistencia' => 'Camiseta no encontrada o no vinculada en la planilla oficial.',
+            'motivo_inconsistencia' => 'Camiseta no encontrada o sin asistencia en la planilla oficial.',
         ]);
 
         $response = $this->getJson(route('planillas-publicas.show', [
@@ -419,9 +419,53 @@ class PlanillaPublicaTest extends TestCase
             ->assertJsonPath('data.goles_arbitros.local.0.es_inconsistencia', false)
             ->assertJsonPath('data.goles_arbitros.visitante.0.numero_camiseta', 99)
             ->assertJsonPath('data.goles_arbitros.visitante.0.es_inconsistencia', true)
-            ->assertJsonPath('data.goles_arbitros.visitante.0.motivo_inconsistencia', 'Camiseta no encontrada o no vinculada en la planilla oficial.')
+            ->assertJsonPath('data.goles_arbitros.visitante.0.motivo_inconsistencia', 'Camiseta no encontrada o sin asistencia en la planilla oficial.')
             ->assertJsonPath('data.goles_arbitros.hay_inconsistencias', true)
             ->assertJsonMissingPath('data.goles_arbitros.local.0.idPlanillaJugador');
+    }
+
+    public function test_no_vincula_goles_arbitrales_si_la_camiseta_existe_pero_el_jugador_no_tuvo_asistencia(): void
+    {
+        $contexto = $this->crearContextoPlanillaPublica();
+
+        $jugador = $this->crearJugadorPlanillaPublica('40100006', 'Mateo', 'Rivero');
+
+        $planilla = PlanillaJugador::create([
+            'partido_id' => $contexto['partido']->id,
+            'partido_type' => PartidoConstants::CLASS_PARTIDO,
+            'dni_jugador' => $jugador->dni,
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'numero_camiseta' => 8,
+            'fecha_nacimiento' => '2014-05-20',
+            'goles' => 0,
+            'asistio' => false,
+        ]);
+
+        GolArbitroReportado::create([
+            'partido_id' => $contexto['partido']->id,
+            'partido_type' => PartidoConstants::CLASS_PARTIDO,
+            'idEdicion' => $contexto['edicion']->id,
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'idPlanillaJugador' => $planilla->id,
+            'numero_camiseta' => 8,
+            'goles_reportados' => 2,
+            'es_inconsistencia' => false,
+        ]);
+
+        $response = $this->getJson(route('planillas-publicas.show', [
+            'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+            'publicToken' => $contexto['partido']->public_token,
+        ]));
+
+        $response->assertOk()
+            ->assertJsonPath('data.goles_arbitros.local.0.numero_camiseta', 8)
+            ->assertJsonPath('data.goles_arbitros.local.0.goles_reportados', 2)
+            ->assertJsonPath('data.goles_arbitros.local.0.es_inconsistencia', true)
+            ->assertJsonPath('data.goles_arbitros.local.0.motivo_inconsistencia', 'Camiseta no encontrada o sin asistencia en la planilla oficial.')
+            ->assertJsonPath('data.goles_arbitros.local.0.jugador_oficial', null)
+            ->assertJsonPath('data.goles_arbitros.hay_inconsistencias', true);
     }
 
     public function test_fixture_renderiza_sin_explotar_si_falta_public_token(): void

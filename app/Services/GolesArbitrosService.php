@@ -123,13 +123,14 @@ class GolesArbitrosService
             ->where('idEdicion', $idEdicion)
             ->where('idEquipo', $idEquipo)
             ->where('numero_camiseta', $numeroCamiseta)
+            ->where('asistio', true)
             ->first();
 
         if ($planillaJugador === null) {
             return [
                 'idPlanillaJugador' => null,
                 'es_inconsistencia' => true,
-                'motivo_inconsistencia' => 'Camiseta no encontrada o no vinculada en la planilla oficial.',
+                'motivo_inconsistencia' => 'Camiseta no encontrada o sin asistencia en la planilla oficial.',
             ];
         }
 
