@@ -499,6 +499,7 @@ class ControladorHome extends Controller
         $idGrupo = $request->query('idGrupo');
         $idEdicion = $request->query('idEdicion');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+        $GrupoSeleccionado = $idGrupo ? Grupo::find($idGrupo) : null;
 
         // Obtener el nombre de la categoría
         $categoria = Categoria::find($idCategoria);
@@ -519,7 +520,7 @@ class ControladorHome extends Controller
             ->orderBy('equipos.nombre', 'ASC')
             ->get();
 
-        return view('layouts.tabla-posiciones', compact('tablaPosiciones', 'EdicionSeleccionada', 'nombreCategoria', 'ediciones'));
+        return view('layouts.tabla-posiciones', compact('tablaPosiciones', 'EdicionSeleccionada', 'nombreCategoria', 'ediciones', 'idCategoria', 'idGrupo', 'GrupoSeleccionado'));
     }
 
     public function tablaGoleadores(Request $request)

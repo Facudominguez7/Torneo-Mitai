@@ -22,7 +22,29 @@
                             <h1 class="text-3xl sm:text-4xl font-bold text-white">Tabla de posiciones · {{ $nombreCategoria }}</h1>
                             <p class="max-w-2xl text-sm sm:text-base text-white/70">Resumen actualizado de puntos, victorias y diferencia de gol para cada equipo del grupo. El orden prioriza puntaje y, en caso de empate, ubica primero a los equipos que ya jugaron.</p>
                         </div>
+                        @if ($EdicionSeleccionada && $idCategoria)
+                            <a href="{{ route('fixture', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria]) }}"
+                                class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/75 transition hover:border-[#f7f280]/40 hover:bg-[#f7f280]/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+                                <i class="fa-solid fa-arrow-left text-[11px]"></i>
+                                Volver al fixture
+                            </a>
+                        @endif
                     </div>
+
+                    @if ($EdicionSeleccionada)
+                        <div class="mt-6 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.25em] text-white/60">
+                            <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2">
+                                <i class="fa-regular fa-calendar-days text-[#f7f280]"></i>
+                                {{ $EdicionSeleccionada->nombre }}
+                            </span>
+                            @if ($GrupoSeleccionado)
+                                <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2">
+                                    <i class="fa-solid fa-layer-group text-[#f7f280]"></i>
+                                    {{ $GrupoSeleccionado->nombre }}
+                                </span>
+                            @endif
+                        </div>
+                    @endif
 
                     <div class="mt-10 rounded-3xl border border-[#f7f280]/25 bg-black/35 px-4 py-5 shadow-[0_28px_70px_-45px_rgba(14,75,94,0.9)] sm:px-6 sm:py-6">
                         <div class="overflow-hidden rounded-2xl border border-white/5 bg-black/40">
