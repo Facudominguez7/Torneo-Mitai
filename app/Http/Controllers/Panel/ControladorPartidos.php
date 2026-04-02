@@ -12,6 +12,7 @@ use App\Models\Grupo;
 use App\Models\Partido;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ControladorPartidos extends Controller
@@ -72,6 +73,20 @@ class ControladorPartidos extends Controller
             $query->where('partidos.idCategoria', $idCategoria);
         }
 
+        // Filtro por horario. Soporta formato legacy en `horario`
+        // y formato actual `horario_datetime`.
+        $horario = $request->query('horario');
+        if ($horario) {
+            $horarioNormalizado = str_contains($horario, ':')
+                ? (substr_count($horario, ':') === 1 ? $horario.':00' : $horario)
+                : str_pad($horario, 2, '0', STR_PAD_LEFT).':00:00';
+
+            $query->where(function ($subquery) use ($horario, $horarioNormalizado) {
+                $subquery->where('partidos.horario', $horario)
+                    ->orWhereRaw('TIME(partidos.horario_datetime) = ?', [$horarioNormalizado]);
+            });
+        }
+
         $partidos = $query
             ->with([
                 'equipoLocal:id,nombre,foto',
@@ -108,6 +123,41 @@ class ControladorPartidos extends Controller
             ->where('idCategoria', $idCategoria)
             ->get();
 
+        // Determinar si mostrar el filtro de grupo (solo si hay más de uno o si no hay categoría)
+        $mostrarFiltroGrupo = ! $idCategoria || $grupos->count() > 1;
+
+        // Obtener horarios disponibles para filtro según el contexto actual.
+        $horariosDisponibles = Partido::where('idEdicion', $idEdicion)
+            ->when($idCategoria, static function ($query, $idCategoria) {
+                $query->where('idCategoria', $idCategoria);
+            })
+            ->when($idGrupo, static function ($query, $idGrupo) {
+                $query->where('idGrupo', $idGrupo);
+            })
+            ->when($idFecha, static function ($query, $idFecha) {
+                $query->where('idFechas', $idFecha);
+            })
+            ->where(function ($query) {
+                $query->whereNotNull('horario_datetime')
+                    ->orWhereNotNull('horario');
+            })
+            ->get(['horario', 'horario_datetime'])
+            ->map(static function (Partido $partido): ?string {
+                if ($partido->horario_datetime) {
+                    return Carbon::parse($partido->horario_datetime)->format('H:i');
+                }
+
+                if ($partido->horario !== null && $partido->horario !== '') {
+                    return str_pad((string) $partido->horario, 2, '0', STR_PAD_LEFT).':00';
+                }
+
+                return null;
+            })
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
         $fechas = $fechas->unique('nombre')->values();
 
         if (isset($idFecha) || isset($idGrupo) || isset($idCategoria)) {
@@ -118,10 +168,10 @@ class ControladorPartidos extends Controller
             $categoria = $categorias->firstWhere('id', $idCategoria);
             $nombreCategoria = $categoria ? $categoria->nombreCategoria : null;
 
-            return view('Panel.partido.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fechas', 'categorias', 'grupos', 'idCategoria', 'idGrupo', 'nombreFecha', 'nombreGrupo', 'nombreCategoria'));
+            return view('Panel.partido.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fechas', 'categorias', 'grupos', 'idCategoria', 'idGrupo', 'nombreFecha', 'nombreGrupo', 'nombreCategoria', 'horariosDisponibles', 'mostrarFiltroGrupo'));
         }
 
-        return view('Panel.partido.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fechas', 'categorias', 'grupos', 'idCategoria', 'idGrupo'));
+        return view('Panel.partido.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fechas', 'categorias', 'grupos', 'idCategoria', 'idGrupo', 'horariosDisponibles', 'mostrarFiltroGrupo'));
     }
 
     /**

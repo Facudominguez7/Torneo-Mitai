@@ -70,7 +70,8 @@
                         clip-rule="evenodd" />
                 </svg>
             </div>
-            <div class="relative filtro-grupo mt-2 w-full text-left md:mt-0 md:w-[18rem] hidden">
+            @if ($mostrarFiltroGrupo)
+            <div class="relative filtro-grupo mt-2 w-full text-left md:mt-0 md:w-[18rem]">
                 <select id="filtro-grupo-select"
                     class="w-full appearance-none rounded-full bg-gray-800 py-2 pl-4 pr-10 text-sm text-white transition-all duration-300 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 sm:text-base">
                     <option value="">Filtrar por Grupo</option>
@@ -86,6 +87,7 @@
                         clip-rule="evenodd" />
                 </svg>
             </div>
+            @endif
             <div class="relative filtro-categoria mt-2 w-full md:mt-0 md:w-[18rem]">
                 <select id="filtro-categoria-select"
                     class="w-full appearance-none rounded-full bg-gray-800 py-2 pl-4 pr-10 text-sm text-white transition-all duration-300 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 sm:text-base">
@@ -93,6 +95,23 @@
                     @foreach ($categorias as $c)
                         <option value="{{ $c->id }}" {{ (string) request('idCategoria') === (string) $c->id ? 'selected' : '' }}>
                             {{ $c->nombreCategoria }}
+                        </option>
+                    @endforeach
+                </select>
+                <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
+            {{-- Filtro de horario --}}
+            <div class="relative mt-2 w-full md:mt-0 md:w-[12rem]">
+                <select id="filtro-horario-select"
+                    class="w-full appearance-none rounded-full bg-gray-800 py-2 pl-4 pr-10 text-sm text-white transition-all duration-300 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 sm:text-base">
+                    <option value="">Todos los horarios</option>
+                    @foreach ($horariosDisponibles as $h)
+                        <option value="{{ $h }}" {{ (string) request('horario') === (string) $h ? 'selected' : '' }}>
+                            {{ $h }} hs
                         </option>
                     @endforeach
                 </select>
@@ -140,24 +159,31 @@
 
         </div>
 
-        @if (request()->filled('idCategoria') || request()->filled('idGrupo') || request()->filled('idFecha'))
+        @if (request()->filled('idCategoria') || request()->filled('idGrupo') || request()->filled('idFecha') || request()->filled('horario'))
             <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+                @if (request()->filled('horario'))
+                    <a href="{{ route('partido.index', array_filter(['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')])) }}"
+                        class="inline-flex items-center gap-2 rounded-full bg-cyan-100 px-3 py-1 text-sm font-semibold text-cyan-800 hover:bg-cyan-200">
+                        Horario: {{ request('horario') }} hs
+                        <span aria-hidden="true">x</span>
+                    </a>
+                @endif
                 @if (request()->filled('idCategoria') && isset($nombreCategoria))
-                    <a href="{{ route('partido.index', array_filter(['idEdicion' => $EdicionSeleccionada->id, 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')])) }}"
+                    <a href="{{ route('partido.index', array_filter(['idEdicion' => $EdicionSeleccionada->id, 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha'), 'horario' => request('horario')])) }}"
                         class="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800 hover:bg-blue-200">
                         Categoría: {{ $nombreCategoria }}
                         <span aria-hidden="true">x</span>
                     </a>
                 @endif
                 @if (request()->filled('idGrupo') && isset($nombreGrupo))
-                    <a href="{{ route('partido.index', array_filter(['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFecha' => request('idFecha')])) }}"
+                    <a href="{{ route('partido.index', array_filter(['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFecha' => request('idFecha'), 'horario' => request('horario')])) }}"
                         class="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800 hover:bg-green-200">
                         Grupo: {{ $nombreGrupo }}
                         <span aria-hidden="true">x</span>
                     </a>
                 @endif
                 @if (request()->filled('idFecha') && isset($nombreFecha))
-                    <a href="{{ route('partido.index', array_filter(['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo')])) }}"
+                    <a href="{{ route('partido.index', array_filter(['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'horario' => request('horario')])) }}"
                         class="inline-flex items-center gap-2 rounded-full bg-purple-100 px-3 py-1 text-sm font-semibold text-purple-800 hover:bg-purple-200">
                         Fecha: {{ $nombreFecha }}
                         <span aria-hidden="true">x</span>
@@ -278,8 +304,10 @@
                 const categoriaFilterSelected = idCategoria.trim() !== '';
                 const edicionFilterSelected = idEdicion.trim() !== '';
 
-                // Mostrar el filtro de grupo solo si se ha seleccionado una categoría
-                grupoFilterContainer.classList.toggle('hidden', !categoriaFilterSelected);
+                // Mostrar el filtro de grupo solo si existe y se ha seleccionado una categoría
+                if (grupoFilterContainer) {
+                    grupoFilterContainer.classList.toggle('hidden', !categoriaFilterSelected);
+                }
 
                 // Mostrar el filtro de fecha siempre que exista una edición seleccionada.
                 fechaFilterContainer.classList.toggle('hidden', !edicionFilterSelected);
@@ -295,9 +323,6 @@
                         newUrl.searchParams.delete(key);
                     }
                 });
-                if (horario) {
-                    newUrl.searchParams.set('horario', horario);
-                }
                 window.location.href = newUrl;
             }
 
@@ -347,13 +372,30 @@
                 });
             }
 
+            // Filtro de horario
+            const horarioSelect = document.getElementById('filtro-horario-select');
+
+            if (horarioSelect) {
+                horarioSelect.addEventListener('change', function() {
+                    const horarioValue = this.value;
+                    updateUrl({
+                        idCategoria,
+                        idEdicion,
+                        idFecha,
+                        idGrupo,
+                        horario: horarioValue
+                    });
+                });
+            }
+
             // Añadir evento al botón de eliminar filtros
             document.getElementById('reset-filters').addEventListener('click', function() {
                 updateUrl({
                     idCategoria: '',
                     idEdicion,
                     idFecha: '',
-                    idGrupo: ''
+                    idGrupo: '',
+                    horario: ''
                 });
             });
 

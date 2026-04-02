@@ -38,8 +38,19 @@
             'horario' => $horarioAdminRegreso,
         ], static fn ($valor) => $valor !== null && $valor !== '');
 
+        // Determinar la ruta de regreso según el origen
         $volverAInstancias = $tipoPartido === 'instanciaFinal' || $origen === 'instancia-final-index';
-        $rutaVolver = $volverAInstancias ? route('instancia_final.index', $parametrosInstancia) : route('admin', $parametrosAdmin);
+        $volverAPartidos = $origen === 'partido-index';
+
+        if ($volverAInstancias) {
+            $rutaVolver = route('instancia_final.index', $parametrosInstancia);
+        } elseif ($volverAPartidos) {
+            $rutaVolver = route('partido.index', array_merge([
+                'idEdicion' => $EdicionSeleccionada->id,
+            ], $parametrosPartido));
+        } else {
+            $rutaVolver = route('admin', $parametrosAdmin);
+        }
 
         $rutaCargarResultado = route($tipoPartido === 'instanciaFinal' ? 'cargar-resultado-instancia' : 'cargar-resultado',
             array_merge([

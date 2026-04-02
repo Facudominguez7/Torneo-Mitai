@@ -95,7 +95,8 @@
 
                         <template x-if="planillaPayload.data.goles_arbitros?.hay_inconsistencias">
                             <div class="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-                                Hay goles reportados por arbitros con camisetas que no pudieron vincularse a la planilla oficial.
+                                <p class="font-semibold">⚠️ Hay inconsistencias entre los datos arbitrales y la planilla.</p>
+                                <p class="mt-1">Los goles reportados por los árbitros no coinciden con la planilla cargada. Es responsabilidad del profesor o delegado corroborar los goles anotados por los árbitros una vez terminado el partido.</p>
                             </div>
                         </template>
 
