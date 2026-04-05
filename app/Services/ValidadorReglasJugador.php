@@ -292,16 +292,9 @@ class ValidadorReglasJugador
                 continue;
             }
 
-            // Regla administrativa: subir de una categoria menor a una de mayor edad,
-            // solo dentro de la misma institucion.
-            // Se informa como WARNING para registro conflictivo, sin bloquear por edad.
-            $mismaInstitucion = $institucionDestinoId && $institucionDestinoId === $institucionOrigenId;
-            if ($anioCategoriaJugador > $anioEquipoActual && ! $mismaInstitucion) {
-                return [
-                    'type' => 'warning',
-                    'message' => 'El jugador ya pertenece al equipo "'.$categoriaJugador->nombreEquipo.'" en la "'.$categoriaJugador->nombreCategoria.'". Solo puede subir a una categoria de mayor edad como "'.$categoriaEquipoActual->nombreCategoria.'" dentro de la misma institucion.',
-                ];
-            }
+            // "Subir" (jugador de categoría más joven jugando en categoría de mayor edad)
+            // es siempre válido. El bloqueo por edad ya se cubre en la validación
+            // de anioNacimiento < anioEquipoActual (línea anterior).
         }
 
         return null;
@@ -316,7 +309,7 @@ class ValidadorReglasJugador
      */
     private function validarLimiteJugadores($idEquipo, $idEdicion)
     {
-        $limiteJugadores = $this->obtenerLimiteJugadoresPorEdicion($idEdicion);
+        $limiteJugadores = $this->obtenerLimiteJugadores($idEquipo, $idEdicion);
 
         $cantidadJugadores = ListaBuenaFe::where('idEquipo', $idEquipo)
             ->where('idEdicion', $idEdicion)
@@ -339,8 +332,18 @@ class ValidadorReglasJugador
      * Si no existe configuración válida, utiliza 18 como valor seguro
      * para no romper el flujo de altas en entornos legacy.
      */
-    private function obtenerLimiteJugadoresPorEdicion($idEdicion)
+    private function obtenerLimiteJugadores($idEquipo, $idEdicion)
     {
+        // Prioridad: límite de la categoría → límite de la edición → default 18
+        $equipoEdicion = \App\Models\EquipoEdicion::where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->with('categoria')
+            ->first();
+
+        if ($equipoEdicion?->categoria?->jugadores_maximos > 0) {
+            return (int) $equipoEdicion->categoria->jugadores_maximos;
+        }
+
         $edicion = Edicion::find($idEdicion);
         $limite = (int) ($edicion->jugadores_por_planilla ?? 18);
 

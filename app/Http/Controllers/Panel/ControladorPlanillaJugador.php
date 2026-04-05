@@ -296,7 +296,7 @@ class ControladorPlanillaJugador extends Controller
 
         // --- Sincronización con Lista de Buena Fe ---
         try {
-            $limiteJugadores = $this->obtenerLimiteJugadoresPorEdicion($idEdicion);
+            $limiteJugadores = $this->obtenerLimiteJugadoresPorEdicion($idEdicion, $equipo->idCategoria ?? null);
 
             // Verificar si ya existe en la lista (activo o inactivo)
             $listaBuenaFe = ListaBuenaFe::where('dni_jugador', $jugador->dni)
@@ -964,8 +964,15 @@ class ControladorPlanillaJugador extends Controller
      * Resuelve el límite de jugadores por edición para mantener sincronizada
      * la carga de planilla con la regla configurable de Lista de Buena Fe.
      */
-    private function obtenerLimiteJugadoresPorEdicion($idEdicion)
+    private function obtenerLimiteJugadoresPorEdicion($idEdicion, $idCategoria = null)
     {
+        if ($idCategoria) {
+            $categoria = \App\Models\Categoria::find($idCategoria);
+            if ($categoria && (int) ($categoria->jugadores_maximos ?? 0) > 0) {
+                return (int) $categoria->jugadores_maximos;
+            }
+        }
+
         $edicion = Edicion::find($idEdicion);
         $limite = (int) ($edicion->jugadores_por_planilla ?? 18);
 

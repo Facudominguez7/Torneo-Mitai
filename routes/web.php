@@ -95,6 +95,8 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
         ->name('admin.imprimir-fixture-arbitros');
     Route::get('/admin/imprimir-fixture-arbitros-partidos', [ControladorHome::class, 'imprimirFixtureArbitrosPartidos'])
         ->name('admin.imprimir-fixture-arbitros-partidos');
+    Route::get('/admin/planilla-cobro', [ControladorHome::class, 'planillaCobro'])
+        ->name('admin.planilla-cobro');
     Route::get('/admin/grupos-por-categoria/{idCategoria}', [ControladorHome::class, 'gruposPorCategoria'])
         ->name('admin.grupos-por-categoria');
     Route::get('/admin/fechas-por-categoria/{idCategoria}', [ControladorHome::class, 'fechasPorCategoria'])

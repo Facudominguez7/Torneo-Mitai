@@ -24,6 +24,7 @@ class StoreRequest extends FormRequest
         return [
             'nombreCategoria' => 'required|min:5|max:50',
             'idEdicion' => 'required|integer',
+            'jugadores_maximos' => 'nullable|integer|min:1|max:100',
         ];
     }
 }
