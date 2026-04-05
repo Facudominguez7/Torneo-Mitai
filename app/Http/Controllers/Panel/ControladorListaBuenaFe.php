@@ -106,7 +106,7 @@ class ControladorListaBuenaFe extends Controller
             ->firstOrFail();
 
         $EdicionSeleccionada = Edicion::findOrFail($idEdicion);
-        $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada);
+        $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada, $equipoSeleccionado->categoria ?? null);
 
         // Obtener jugadores de la lista de buena fe (activos e inactivos)
         $jugadoresActivosQuery = ListaBuenaFe::with('jugador', 'categoria')
@@ -159,7 +159,7 @@ class ControladorListaBuenaFe extends Controller
             ->firstOrFail();
 
         $EdicionSeleccionada = Edicion::findOrFail($idEdicion);
-        $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada);
+        $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada, $equipoSeleccionado->categoria ?? null);
 
         $jugadoresActivos = ListaBuenaFe::with('jugador', 'categoria')
             ->deEquipo($idEquipo, $idEdicion)
@@ -990,8 +990,12 @@ class ControladorListaBuenaFe extends Controller
      * Define el límite de jugadores de la edición para unificar reglas de alta
      * y cantidad de filas que se muestran en las planillas de impresión.
      */
-    private function obtenerLimiteJugadoresPorPlanilla($edicion)
+    private function obtenerLimiteJugadoresPorPlanilla($edicion, $categoria = null)
     {
+        if ($categoria && (int) ($categoria->jugadores_maximos ?? 0) > 0) {
+            return (int) $categoria->jugadores_maximos;
+        }
+
         if (! $edicion) {
             return 18;
         }

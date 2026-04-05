@@ -937,6 +937,63 @@ class ControladorHome extends Controller
     }
 
     /**
+     * Planilla de cobro de planillas de equipos por partido, ordenados por horario ascendente.
+     */
+    public function planillaCobro(Request $request)
+    {
+        $idEdicion = $request->query('idEdicion');
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
+        if (! $EdicionSeleccionada) {
+            return redirect()->back()->with('error', 'Debe seleccionar una edición');
+        }
+
+        // Última fecha calendario con partidos en esta edición
+        $ultimaFechaCalendario = Partido::where('idEdicion', $idEdicion)
+            ->whereNotNull('horario_datetime')
+            ->max(DB::raw('DATE(horario_datetime)'));
+
+        if (! $ultimaFechaCalendario) {
+            return view('Panel.imprimir.planilla-cobro', [
+                'entradas' => [],
+                'EdicionSeleccionada' => $EdicionSeleccionada,
+                'fechaJornada' => null,
+            ]);
+        }
+
+        $partidos = Partido::select(
+            'partidos.*',
+            'el.nombre as nombre_local',
+            'ev.nombre as nombre_visitante',
+            'cat.nombreCategoria as nombre_categoria'
+        )
+            ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
+            ->join('equipos as ev', 'partidos.idEquipoVisitante', '=', 'ev.id')
+            ->leftJoin('categorias as cat', 'partidos.idCategoria', '=', 'cat.id')
+            ->where('partidos.idEdicion', $idEdicion)
+            ->whereRaw('DATE(partidos.horario_datetime) = ?', [$ultimaFechaCalendario])
+            ->orderByRaw('TIME(partidos.horario_datetime) asc')
+            ->orderBy('cat.nombreCategoria', 'desc')
+            ->get();
+
+        // Estructura agrupada: horario → categoria → [equipos]
+        $agrupado = [];
+        foreach ($partidos as $partido) {
+            $horario = $partido->horario_datetime
+                ? \Carbon\Carbon::parse($partido->horario_datetime)->format('H:i')
+                : 'Por definir';
+            $categoria = $partido->nombre_categoria ?? 'Sin categoría';
+
+            $agrupado[$horario][$categoria][] = $partido->nombre_local;
+            $agrupado[$horario][$categoria][] = $partido->nombre_visitante;
+        }
+
+        $fechaJornada = \Carbon\Carbon::parse($ultimaFechaCalendario)->format('d/m/Y');
+
+        return view('Panel.imprimir.planilla-cobro', compact('agrupado', 'EdicionSeleccionada', 'fechaJornada'));
+    }
+
+    /**
      * API: Obtener fechas de una categoría para el dropdown de impresión.
      */
     public function fechasPorCategoria($idCategoria)

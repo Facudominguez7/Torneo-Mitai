@@ -9,7 +9,7 @@ class Categoria extends Model
 {
     use HasFactory;
     public $timestamps = false;
-    protected $fillable = ['nombreCategoria', 'idEdicion'];
+    protected $fillable = ['nombreCategoria', 'idEdicion', 'jugadores_maximos'];
 
     public function edicion()
     {
