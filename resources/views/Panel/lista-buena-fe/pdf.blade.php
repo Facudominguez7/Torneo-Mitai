@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <title>Lista de Buena Fe - {{ $equipoSeleccionado->equipo->nombre }}</title>
     <style>
+        @page {
+            size: A4 portrait;
+            margin: 15mm;
+        }
         body {
             font-family: Arial, sans-serif;
             font-size: 12px;
