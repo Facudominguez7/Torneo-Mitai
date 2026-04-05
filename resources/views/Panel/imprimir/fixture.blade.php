@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fixture Completo - {{ $EdicionSeleccionada->nombre ?? 'Edición' }}</title>
     <style>
+        @page {
+            size: A4 portrait;
+            margin: 15mm;
+        }
         * {
             margin: 0;
             padding: 0;
