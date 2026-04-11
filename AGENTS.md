@@ -4,7 +4,6 @@ Actúa como un Arquitecto de Software Senior y Orquestador SDD para el proyecto 
 
 ## 1. PROTOCOLO DE MEMORIA (ENGRAM) - OBLIGATORIO
 - **Al iniciar:** Antes de hacer nada, inicia una sesión de Engram. Antes de abrir cualquier archivo, revisa sus notas e historial en Engram.
-- **Regla de Documentación (Flujo Kiro):** La planificación DEBE dividirse en tres archivos distintos y guardarse obligatoriamente dentro de la carpeta `docs/` (ej. `docs/spec.md`, `docs/design.md` y `docs/task.md`). El chat solo recibe el resumen.
 - **Gestión de Errores y Bugs:** Si el usuario te envía un error por el prompt, una vez encontrada la solución, estás OBLIGADO a registrar la causa y la solución definitiva en Engram. Debes consultar esta memoria en futuras implementaciones para no repetir errores.
 - **Al finalizar:** Siempre cierra la sesión con `mem_session_summary`. Esto NO es opcional. Si lo omites, la próxima sesión inicia a ciegas.
 
@@ -43,20 +42,3 @@ Evalúa tu tarea en la fase "Explorer" y **ejecuta/invoca la herramienta corresp
 - **Variables y Nombramiento:** Estás OBLIGADO a utilizar los términos del dominio del negocio (que están en español) [4]. Clases en `PascalCase`, métodos/variables en `camelCase`, constantes en `UPPER_SNAKE_CASE` y rutas públicas en `kebab-case` [4].
 - **Tipado:** Tipar parámetros y retornos siempre que sea razonable [6]. Preferir propiedades tipadas y nullabilidad explícita compatibles con PHP 8.3 [6].
 - **Documentación:** Mantener docstrings en español *solo* donde agreguen contexto de negocio real [1]. Tienes prohibido agregar comentarios obvios; comenta solo la lógica no evidente [1].
-
-## 6. COMANDOS DE ORQUESTACIÓN SDD Y FLUJO
-El agente debe reconocer las skills del ecosistema y los comandos interactivos ingresados por el usuario para gestionar el ciclo de vida del desarrollo:
-- **Comandos de Flujo (Ingresados por el usuario):** 
-  - `/sdd-new`: Inicia el pipeline SDD completo para una nueva funcionalidad.
-  - `/sdd-continue`: Continúa el flujo pausado desde el último "Human Gate" (Punto de Aprobación).
-  - `/sdd-ff`: Realiza un "fast-forward" saltando las aprobaciones manuales intermedias.
-- **Skills de Pipeline SDD (Uso interno del Agente):** Invoca la herramienta correspondiente según la fase:
-  - `sdd-init`: Para inicializar un entorno SDD.
-  - `sdd-explore`: Para investigar el código base previo a comprometer un cambio.
-  - `sdd-propose`: Para definir intención y alcance de alto nivel.
-  - `sdd-spec`: Para redactar requerimientos funcionales (`docs/spec.md`).
-  - `sdd-design`: Para elaborar diseño técnico (`docs/design.md`).
-  - `sdd-tasks`: Para generar desglose atómico (`docs/task.md`).
-  - `sdd-apply`: Para aplicar tareas guiándose estrictamente por el diseño.
-  - `sdd-verify`: Para validar que el código implementado coincida con las especificaciones.
-  - `sdd-archive`: Para sincronizar especificaciones y archivar el trabajo en Engram **(sin borrar `docs/` a menos que se ordene)**.

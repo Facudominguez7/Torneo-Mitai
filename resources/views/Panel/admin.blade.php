@@ -249,6 +249,17 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('tabla_posicion.index', $parametrosEdicionActual) }}"
+                        class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+                        <svg class="flex-shrink-0 w-5 h-5 text-emerald-500 transition duration-75 group-hover:text-emerald-600"
+                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
+                            <path
+                                d="M32 32h128v128H32V32zm160 0h128v128H192V32zm160 0h128v128H352V32zM32 192h128v128H32V192zm160 0h128v128H192V192zm160 0h128v128H352V192zM32 352h128v128H32V352zm160 0h128v128H192V352zm160 0h128v128H352V352z" />
+                        </svg>
+                        <span class="flex-1 ms-3 whitespace-nowrap">Tabla de Posiciones</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('estadisticas-jugadores', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         {{-- Icono: Gráfico de barras (representa estadísticas) --}}

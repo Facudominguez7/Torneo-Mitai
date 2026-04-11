@@ -8,6 +8,14 @@
       "sessions": 26,
       "memories": 79,
       "prompts": 35
+    },
+    {
+      "id": "62aa032a",
+      "created_by": "facundo",
+      "created_at": "2026-04-11T23:58:00Z",
+      "sessions": 9,
+      "memories": 20,
+      "prompts": 13
     }
   ]
 }

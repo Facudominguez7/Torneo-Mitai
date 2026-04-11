@@ -22,6 +22,7 @@ use App\Http\Controllers\Panel\ControladorPartidos;
 use App\Http\Controllers\Panel\ControladorPlanillaJugador;
 use App\Http\Controllers\Panel\ControladorSubcampeon;
 use App\Http\Controllers\Panel\ControladorTablaGoleadores;
+use App\Http\Controllers\Panel\ControladorTablaPosiciones;
 use App\Http\Controllers\Panel\ControladorValla;
 use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\PanelEdicionContextMiddleware;
@@ -65,6 +66,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::resource('fecha', ControladorFecha::class);
     Route::resource('goleador', ControladorGoleador::class);
     Route::resource('valla', ControladorValla::class);
+    Route::resource('tabla_posicion', ControladorTablaPosiciones::class);
     Route::resource('grupos', ControladorGrupos::class);
     Route::resource('equipogrupo', ControladorEquiposGrupos::class);
     Route::post('equipogrupo/asignar-pendientes', [ControladorEquiposGrupos::class, 'asignarPendientes'])

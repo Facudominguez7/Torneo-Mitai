@@ -8,7 +8,9 @@ use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use App\Models\TablaPosicion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ControladorEquipo extends Controller
@@ -67,7 +69,7 @@ class ControladorEquipo extends Controller
             ->orderBy('nombreCategoria', 'desc')
             ->pluck('nombreCategoria', 'id');
 
-        return view('Panel.equipo.create', compact('ediciones', 'categorias', 'EdicionSeleccionada',  'equipo', 'idEdicion'));
+        return view('Panel.equipo.create', compact('ediciones', 'categorias', 'EdicionSeleccionada', 'equipo', 'idEdicion'));
     }
 
     /**
@@ -78,7 +80,7 @@ class ControladorEquipo extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
-            $filename = time() . '.' . $request->file('foto')->getClientOriginalExtension();
+            $filename = time().'.'.$request->file('foto')->getClientOriginalExtension();
             $request->file('foto')->move(public_path('../public_html/fotos/equipos'), $filename);
             $data['foto'] = $filename; // Solo guarda el nombre del archivo con su extensión
         }
@@ -89,11 +91,12 @@ class ControladorEquipo extends Controller
             'idEquipo' => $equipo->id,
             'idEdicion' => $request->idEdicion,
             'idCategoria' => $request->idCategoria,
-            'golesContra' => 0 // o cualquier valor predeterminado que desees
+            'golesContra' => 0, // o cualquier valor predeterminado que desees
         ]);
 
         return to_route('equipo.index', ['idEdicion' => $request->idEdicion])->with('status', 'Equipo Creado');
     }
+
     /**
      * Display the specified resource.
      */
@@ -140,12 +143,13 @@ class ControladorEquipo extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
-            $filename = time() . '.' . $request->file('foto')->getClientOriginalExtension();
+            $filename = time().'.'.$request->file('foto')->getClientOriginalExtension();
             $request->file('foto')->move(public_path('../public_html/fotos/equipos'), $filename);
             $data['foto'] = $filename; // Solo guarda el nombre del archivo con su extensión
         }
 
         $equipo->update($data);
+
         return to_route('equipo.index', ['idEdicion' => $request->idEdicion])->with('status', 'Equipo Actualizado');
     }
 
@@ -154,14 +158,18 @@ class ControladorEquipo extends Controller
      */
     public function destroy(Request $request, Equipo $equipo)
     {
-        $idEdicion = $request->input('idEdicion');
-        //dd($equipo);
-        $equipoedicion = EquipoEdicion::where('idEdicion', $idEdicion)
-            ->where('idEquipo', $equipo->id)
-            ->first();
-        if ($equipoedicion) {
-            $equipoedicion->delete();
-        }
-        return to_route('equipo.index', ['idEdicion' => $request->idEdicion])->with('status', 'Equipo Eliminado');
+        $idEdicion = (int) $request->integer('idEdicion', $equipo->idEdicion ?? 0);
+
+        DB::transaction(function () use ($equipo, $idEdicion): void {
+            EquipoEdicion::where('idEdicion', $idEdicion)
+                ->where('idEquipo', $equipo->id)
+                ->delete();
+
+            TablaPosicion::where('idEdicion', $idEdicion)
+                ->where('idEquipo', $equipo->id)
+                ->delete();
+        });
+
+        return to_route('equipo.index', ['idEdicion' => $idEdicion])->with('status', 'Equipo Eliminado');
     }
 }
