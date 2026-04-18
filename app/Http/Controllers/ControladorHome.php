@@ -77,6 +77,7 @@ class ControladorHome extends Controller
             'campeon' => 'campeon.index',
             'subcampeon' => 'subcampeon.index',
             'goleador' => 'goleador.index',
+            'tabla_posicion' => 'tabla_posicion.index',
             'valla' => 'valla.index',
             // Compatibilidad por enlaces viejos cacheados en navegador.
             'equipogrupo' => 'grupos.index',
@@ -84,9 +85,16 @@ class ControladorHome extends Controller
         ];
 
         if ($tipoModulo && isset($rutasPorTipo[$tipoModulo])) {
-            return to_route($rutasPorTipo[$tipoModulo], array_filter([
+            $parametros = [
                 'idEdicion' => $idEdicion,
-            ], static fn ($valor) => $valor !== null && $valor !== ''));
+            ];
+
+            if ($tipoModulo === 'tabla_posicion') {
+                $parametros['idCategoria'] = $request->query('idCategoria');
+                $parametros['idGrupo'] = $request->query('idGrupo');
+            }
+
+            return to_route($rutasPorTipo[$tipoModulo], array_filter($parametros, static fn ($valor) => $valor !== null && $valor !== ''));
         }
 
         $horarioString = $request->query('horario');

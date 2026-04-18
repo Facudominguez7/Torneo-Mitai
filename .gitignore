@@ -22,6 +22,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/.atl
 
 # System Files
 .DS_Store
