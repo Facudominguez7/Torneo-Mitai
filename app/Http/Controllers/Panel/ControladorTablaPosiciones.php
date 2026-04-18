@@ -4,126 +4,194 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TablaPosicion\StoreRequest;
+use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\Grupo;
 use App\Models\TablaPosicion;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ControladorTablaPosiciones extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
+    {
+        $contexto = $this->resolverContexto($request);
+
+        $tablaPosiciones = TablaPosicion::with(['grupo.categoria', 'equipo', 'edicion'])
+            ->when($contexto['idEdicion'], fn ($query) => $query->where('idEdicion', $contexto['idEdicion']))
+            ->when($contexto['idCategoria'], fn ($query) => $query->whereHas('grupo', fn ($grupoQuery) => $grupoQuery->where('idCategoria', $contexto['idCategoria'])))
+            ->when($contexto['idGrupo'], fn ($query) => $query->where('idGrupo', $contexto['idGrupo']))
+            ->orderBy('idGrupo')
+            ->orderByDesc('puntos')
+            ->orderByDesc('diferenciaGoles')
+            ->orderByDesc('golesFavor')
+            ->orderBy('idEquipo')
+            ->get();
+
+        $tablaPosicionesPorGrupo = $tablaPosiciones->groupBy('idGrupo');
+
+        return view('Panel.tabla_posicion.index', array_merge($contexto, compact('tablaPosiciones', 'tablaPosicionesPorGrupo')));
+    }
+
+    public function create(Request $request): View
+    {
+        $contexto = $this->resolverContexto($request);
+
+        $tablaPosicion = new TablaPosicion([
+            'idEdicion' => $contexto['idEdicion'],
+            'idGrupo' => $contexto['idGrupo'],
+        ]);
+
+        return view('Panel.tabla_posicion.create', array_merge($contexto, compact('tablaPosicion')));
+    }
+
+    public function store(StoreRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $data['idEdicion'],
+            'idCategoria' => $data['idCategoria'] ?? $request->input('idCategoria'),
+            'idGrupo' => $data['idGrupo'] ?? $request->input('idGrupo'),
+        ]);
+
+        unset($data['idCategoria']);
+
+        TablaPosicion::create($data);
+
+        return to_route('tabla_posicion.index', $parametrosRegreso)
+            ->with('status', 'Posición creada');
+    }
+
+    public function edit(Request $request, TablaPosicion $tabla_posicion): View
+    {
+        $tabla_posicion->loadMissing('grupo.categoria', 'equipo', 'edicion');
+        $contexto = $this->resolverContexto($request, $tabla_posicion);
+        $tablaPosicion = $tabla_posicion;
+
+        return view('Panel.tabla_posicion.edit', array_merge($contexto, compact('tablaPosicion')));
+    }
+
+    public function update(StoreRequest $request, TablaPosicion $tabla_posicion): RedirectResponse
+    {
+        $data = $request->validated();
+        $tabla_posicion->update(array_diff_key($data, ['idCategoria' => true]));
+
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $tabla_posicion->idEdicion,
+            'idCategoria' => $request->input('idCategoria', $tabla_posicion->grupo?->idCategoria),
+            'idGrupo' => $request->input('idGrupo', $tabla_posicion->idGrupo),
+        ]);
+
+        return to_route('tabla_posicion.index', $parametrosRegreso)
+            ->with('status', 'Posición actualizada');
+    }
+
+    public function destroy(Request $request, TablaPosicion $tabla_posicion): RedirectResponse
+    {
+        $tabla_posicion->loadMissing('grupo');
+
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $request->integer('idEdicion', $tabla_posicion->idEdicion),
+            'idCategoria' => $request->integer('idCategoria', $tabla_posicion->grupo?->idCategoria),
+            'idGrupo' => $request->integer('idGrupo', $tabla_posicion->idGrupo),
+        ]);
+
+        $tabla_posicion->delete();
+
+        return to_route('tabla_posicion.index', $parametrosRegreso)
+            ->with('status', 'Posición eliminada');
+    }
+
+    /**
+     * @return array{
+     *     ediciones:\Illuminate\Support\Collection,
+     *     EdicionSeleccionada:?\App\Models\Edicion,
+     *     CategoriaSeleccionada:?\App\Models\Categoria,
+     *     idEdicion:int,
+     *     idCategoria:?int,
+     *     idGrupo:?int,
+     *     categorias:\Illuminate\Support\Collection,
+     *     grupos:\Illuminate\Support\Collection,
+     *     equipos:\Illuminate\Support\Collection,
+     *     parametrosRegreso:array<string, mixed>
+     * }
+     */
+    private function resolverContexto(Request $request, ?TablaPosicion $tablaPosicion = null): array
     {
         $ediciones = Edicion::all();
-        $idEdicion = (int) $request->query('idEdicion', Edicion::query()->latest('id')->value('id') ?? 0);
+        $idEdicion = $request->integer('idEdicion', $tablaPosicion?->idEdicion ?? (int) (Edicion::query()->latest('id')->value('id') ?? 0));
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $idGrupo = $request->query('idGrupo');
+
+        $categorias = collect();
+        if ($EdicionSeleccionada) {
+            $categorias = Categoria::where('idEdicion', $idEdicion)
+                ->orderByDesc('id')
+                ->get();
+        }
+
+        $idCategoriaSolicitada = $request->integer('idCategoria', $tablaPosicion?->grupo?->idCategoria);
+        $idCategoria = $idCategoriaSolicitada;
+
+        if ($categorias->isNotEmpty()) {
+            if (! $idCategoria || ! $categorias->contains('id', $idCategoria)) {
+                $idCategoria = (int) $categorias->first()->id;
+            }
+        } else {
+            $idCategoria = null;
+        }
+
+        $CategoriaSeleccionada = $idCategoria ? Categoria::find($idCategoria) : null;
 
         $grupos = collect();
         $equipos = collect();
-
         if ($EdicionSeleccionada) {
             $grupos = Grupo::where('idEdicion', $idEdicion)
+                ->when($idCategoria, fn ($query) => $query->where('idCategoria', $idCategoria))
+                ->with('categoria:id,nombreCategoria')
                 ->orderBy('nombre')
                 ->get();
 
             $equipos = Equipo::where('idEdicion', $idEdicion)
+                ->when($idCategoria, fn ($query) => $query->where('idCategoria', $idCategoria))
                 ->orderBy('nombre')
                 ->get();
         }
 
-        $tablaPosiciones = TablaPosicion::with(['grupo', 'equipo', 'edicion'])
-            ->when($idEdicion, fn ($query) => $query->where('idEdicion', $idEdicion))
-            ->when($idGrupo, fn ($query) => $query->where('idGrupo', $idGrupo))
-            ->orderByDesc('puntos')
-            ->orderByDesc('diferenciaGoles')
-            ->orderByDesc('golesFavor')
-            ->orderBy('idGrupo')
-            ->orderBy('idEquipo')
-            ->paginate(20);
-
-        $tablaPosiciones->appends(array_filter([
-            'idEdicion' => $idEdicion ?: null,
-            'idGrupo' => $idGrupo,
-        ], static fn ($value) => $value !== null && $value !== ''));
-
-        return view('Panel.tabla_posicion.index', compact(
-            'ediciones',
-            'EdicionSeleccionada',
-            'idEdicion',
-            'idGrupo',
-            'grupos',
-            'equipos',
-            'tablaPosiciones'
-        ));
-    }
-
-    public function create(Request $request)
-    {
-        $ediciones = Edicion::all();
-        $idEdicion = (int) $request->query('idEdicion', Edicion::query()->latest('id')->value('id') ?? 0);
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $tablaPosicion = new TablaPosicion([
-            'idEdicion' => $idEdicion,
-        ]);
-
-        $grupos = collect();
-        $equipos = collect();
-
-        if ($EdicionSeleccionada) {
-            $grupos = Grupo::where('idEdicion', $idEdicion)->orderBy('nombre')->get();
-            $equipos = Equipo::where('idEdicion', $idEdicion)->orderBy('nombre')->get();
+        $idGrupo = $request->integer('idGrupo', $tablaPosicion?->idGrupo);
+        if ($idGrupo && ! $grupos->contains('id', $idGrupo)) {
+            $idGrupo = null;
         }
 
-        return view('Panel.tabla_posicion.create', compact(
-            'ediciones',
-            'EdicionSeleccionada',
-            'tablaPosicion',
-            'grupos',
-            'equipos'
-        ));
+        return [
+            'ediciones' => $ediciones,
+            'EdicionSeleccionada' => $EdicionSeleccionada,
+            'CategoriaSeleccionada' => $CategoriaSeleccionada,
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'idGrupo' => $idGrupo,
+            'categorias' => $categorias,
+            'grupos' => $grupos,
+            'equipos' => $equipos,
+            'parametrosRegreso' => $this->construirParametrosRegreso($request, [
+                'idEdicion' => $idEdicion,
+                'idCategoria' => $idCategoria,
+                'idGrupo' => $idGrupo,
+            ]),
+        ];
     }
 
-    public function store(StoreRequest $request)
+    /**
+     * @param  array<string, mixed>  $sobrescrituras
+     * @return array<string, mixed>
+     */
+    private function construirParametrosRegreso(Request $request, array $sobrescrituras = []): array
     {
-        $tablaPosicion = TablaPosicion::create($request->validated());
-
-        return to_route('tabla_posicion.index', ['idEdicion' => $tablaPosicion->idEdicion])
-            ->with('status', 'Posición creada');
-    }
-
-    public function edit(TablaPosicion $tabla_posicion)
-    {
-        $ediciones = Edicion::all();
-        $idEdicion = $tabla_posicion->idEdicion;
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $tablaPosicion = $tabla_posicion;
-        $grupos = Grupo::where('idEdicion', $idEdicion)->orderBy('nombre')->get();
-        $equipos = Equipo::where('idEdicion', $idEdicion)->orderBy('nombre')->get();
-
-        return view('Panel.tabla_posicion.edit', compact(
-            'ediciones',
-            'EdicionSeleccionada',
-            'tablaPosicion',
-            'grupos',
-            'equipos'
-        ));
-    }
-
-    public function update(StoreRequest $request, TablaPosicion $tabla_posicion)
-    {
-        $tabla_posicion->update($request->validated());
-
-        return to_route('tabla_posicion.index', ['idEdicion' => $tabla_posicion->idEdicion])
-            ->with('status', 'Posición actualizada');
-    }
-
-    public function destroy(Request $request, TablaPosicion $tabla_posicion)
-    {
-        $idEdicion = $request->integer('idEdicion', $tabla_posicion->idEdicion);
-        $tabla_posicion->delete();
-
-        return to_route('tabla_posicion.index', ['idEdicion' => $idEdicion])
-            ->with('status', 'Posición eliminada');
+        return array_filter(array_merge([
+            'idEdicion' => $request->input('idEdicion'),
+            'idCategoria' => $request->input('idCategoria'),
+            'idGrupo' => $request->input('idGrupo'),
+        ], $sobrescrituras), static fn ($valor) => $valor !== null && $valor !== '');
     }
 }

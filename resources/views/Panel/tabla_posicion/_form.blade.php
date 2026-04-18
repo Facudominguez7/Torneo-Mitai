@@ -5,6 +5,8 @@
     @endif
 
     <input type="hidden" name="idEdicion" value="{{ old('idEdicion', $tablaPosicion->idEdicion ?? '') }}">
+    <input type="hidden" name="idCategoria" value="{{ old('idCategoria', $idCategoria ?? '') }}">
+    <input type="hidden" name="idGrupo" value="{{ old('idGrupo', $idGrupo ?? $tablaPosicion->idGrupo ?? '') }}">
 
     <div>
         <label class="block text-sm font-semibold text-gray-700">Edición</label>
@@ -73,7 +75,7 @@
     </div>
 
     <div class="flex justify-end gap-3 pt-2">
-        <a href="{{ route('tabla_posicion.index', ['idEdicion' => $EdicionSeleccionada?->id]) }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Volver</a>
+        <a href="{{ route('tabla_posicion.index', $parametrosRegreso) }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Volver</a>
         <button type="submit" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white">Guardar</button>
     </div>
 </form>

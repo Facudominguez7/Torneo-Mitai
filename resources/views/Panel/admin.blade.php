@@ -249,7 +249,11 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('tabla_posicion.index', $parametrosEdicionActual) }}"
+                    <a href="{{ route('tabla_posicion.index', array_filter([
+                        'idEdicion' => $idEdicionActual,
+                        'idCategoria' => request('idCategoria'),
+                        'idGrupo' => request('idGrupo'),
+                    ], static fn ($valor) => $valor !== null && $valor !== '')) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
                         <svg class="flex-shrink-0 w-5 h-5 text-emerald-500 transition duration-75 group-hover:text-emerald-600"
                             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
@@ -479,6 +483,15 @@
                     'route' => route('goleador.index', ['idEdicion' => $idEdicionContexto]),
                     'grupo' => 'estadisticas',
                 ],
+                'tabla_posicion' => [
+                    'label' => 'Tabla de Posiciones',
+                    'route' => route('tabla_posicion.index', array_filter([
+                        'idEdicion' => $idEdicionContexto,
+                        'idCategoria' => request('idCategoria'),
+                        'idGrupo' => request('idGrupo'),
+                    ], static fn ($valor) => $valor !== null && $valor !== '')),
+                    'grupo' => 'estadisticas',
+                ],
                 'valla' => [
                     'label' => 'Vallas',
                     'route' => route('valla.index', ['idEdicion' => $idEdicionContexto]),
@@ -515,6 +528,7 @@
                 ['patterns' => ['campeon.*'], 'modulo' => 'campeon'],
                 ['patterns' => ['subcampeon.*'], 'modulo' => 'subcampeon'],
                 ['patterns' => ['goleador.*'], 'modulo' => 'goleador'],
+                ['patterns' => ['tabla_posicion.*'], 'modulo' => 'tabla_posicion'],
                 ['patterns' => ['valla.*'], 'modulo' => 'valla'],
             ];
 
@@ -543,7 +557,7 @@
                 'panel' => ['admin', 'partido', 'grupos', 'instancia_final', 'notificaciones', 'lista_buena_fe', 'categoria', 'campeon', 'jugador_consulta'],
                 'competencia' => ['admin', 'partido', 'grupos', 'instancia_final', 'fecha', 'notificaciones', 'lista_buena_fe', 'jugador_consulta'],
                 'gestion' => ['admin', 'edicion', 'categoria', 'equipo', 'equipoedicion', 'notificaciones', 'institucion', 'lista_buena_fe', 'jugador_consulta', 'copa', 'fase'],
-                'estadisticas' => ['admin', 'campeon', 'subcampeon', 'goleador', 'valla', 'notificaciones', 'lista_buena_fe', 'jugador_consulta'],
+                'estadisticas' => ['admin', 'campeon', 'subcampeon', 'goleador', 'tabla_posicion', 'valla', 'notificaciones', 'lista_buena_fe', 'jugador_consulta'],
             ];
 
             $grupoContextoActual = $modulosContexto[$tipoContextoActual]['grupo'] ?? 'panel';
@@ -681,6 +695,11 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <input type="hidden" name="idCategoria" value="{{ $idCategoriaContexto }}">
+                            <input type="hidden" name="idGrupo" value="{{ $idGrupoContexto }}">
+                            <input type="hidden" name="idFecha" value="{{ $idFechaContexto }}">
+                            <input type="hidden" name="idFase" value="{{ $idFaseContexto }}">
+                            <input type="hidden" name="idCopa" value="{{ $idCopaContexto }}">
                             <button type="submit"
                                 class="inline-flex h-10 items-center justify-center rounded-lg bg-cyan-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700">
                                 Cambiar

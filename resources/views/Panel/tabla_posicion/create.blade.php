@@ -7,6 +7,6 @@
             <p class="text-sm text-gray-600">{{ $EdicionSeleccionada?->nombre ?? 'Sin edición seleccionada' }}</p>
         </div>
 
-        @include('Panel.tabla_posicion._form', ['accion' => route('tabla_posicion.store'), 'metodo' => 'POST'])
+        @include('Panel.tabla_posicion._form', ['accion' => route('tabla_posicion.store'), 'metodo' => 'POST', 'parametrosRegreso' => $parametrosRegreso])
     </div>
 @endsection

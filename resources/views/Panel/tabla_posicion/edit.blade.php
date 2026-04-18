@@ -8,9 +8,10 @@
         </div>
 
         @include('Panel.tabla_posicion._form', [
-            'accion' => route('tabla_posicion.update', $tabla_posicion),
+            'accion' => route('tabla_posicion.update', $tablaPosicion),
             'metodo' => 'PUT',
-            'tablaPosicion' => $tabla_posicion,
+            'tablaPosicion' => $tablaPosicion,
+            'parametrosRegreso' => $parametrosRegreso,
         ])
     </div>
 @endsection
