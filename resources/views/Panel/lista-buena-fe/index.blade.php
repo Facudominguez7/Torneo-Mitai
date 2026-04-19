@@ -61,8 +61,8 @@
 
         {{-- Buscador de Equipos y Botón de Migración --}}
         @if ($EdicionSeleccionada)
-            <div class="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                <form action="{{ route('lista-buena-fe.index') }}" method="GET" class="flex justify-center w-full md:w-auto">
+            <div class="mb-6 flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end md:justify-between">
+                <form action="{{ route('lista-buena-fe.index') }}" method="GET" class="flex w-full justify-center md:w-auto md:flex-1">
                     <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
                     <input type="hidden" name="idCategoria" value="{{ $idCategoria ?? '' }}">
                     <div class="relative w-full max-w-md">
@@ -83,7 +83,7 @@
                     @endif
                 </form>
 
-                <div class="flex w-full flex-col gap-3 md:w-auto">
+                <div class="flex w-full flex-wrap items-end gap-3 md:w-auto md:justify-end">
                     @php
                         $urlImpresionMasiva = route('lista-buena-fe.imprimir-planillas', [
                             'idEdicion' => $EdicionSeleccionada->id,
@@ -97,20 +97,20 @@
                     @endphp
                     <button type="button"
                             data-print-url="{{ $urlImpresionMasiva }}"
-                            class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow flex items-center justify-center"
+                            class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow flex items-center justify-center whitespace-nowrap"
                             onclick="printExternal(this.dataset.printUrl)">
                         <span class="mr-2">🖨️</span> Imprimir Todas las Planillas
                     </button>
 
-                    <form class="w-full md:w-auto rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+                    <form class="w-full md:w-auto"
                           data-print-fecha-form>
-                        <label for="idFechaImpresion" class="mb-2 block text-sm font-medium text-gray-700">
+                        <label for="idFechaImpresion" class="mb-1 block text-xs font-medium text-white/90 md:text-slate-100">
                             Imprimir planillas de una fecha
                         </label>
-                        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
                             <select name="idFechaImpresion"
                                     id="idFechaImpresion"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    class="w-full rounded-md border-gray-300 bg-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:min-w-[220px]"
                                     @disabled(!$EdicionSeleccionada || $fechasEdicion->isEmpty())
                                     onchange="actualizarEstadoImpresionFecha(this)">
                                 <option value="">-- Seleccione una fecha --</option>
@@ -120,7 +120,7 @@
                             </select>
 
                             <button type="button"
-                                    class="w-full rounded-md bg-blue-600 px-4 py-2 font-bold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto"
+                                    class="w-full rounded-md bg-blue-600 px-4 py-2 font-bold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto whitespace-nowrap"
                                     data-print-url-base="{{ $urlImpresionPorFecha }}"
                                     disabled
                                     onclick="imprimirPlanillasPorFecha(this)">
@@ -129,11 +129,11 @@
                         </div>
 
                         @if($fechasEdicion->isEmpty())
-                            <p class="mt-2 text-xs text-amber-700">
+                            <p class="mt-1 text-xs text-amber-200">
                                 Esta edición todavía no tiene fechas cargadas.
                             </p>
                         @else
-                            <p class="mt-2 text-xs text-slate-500">
+                            <p class="mt-1 text-xs text-slate-200/90">
                                 La impresión se habilita cuando seleccionás una fecha de esta edición.
                             </p>
                         @endif
