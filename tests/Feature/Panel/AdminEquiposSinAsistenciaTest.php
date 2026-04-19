@@ -65,8 +65,14 @@ function crearEquipoEnEdicion(array $contexto, string $nombre): Equipo
     return $equipo;
 }
 
-function crearPartidoAdmin(array $contexto, Equipo $local, Equipo $visitante, string $horario): Partido
-{
+function crearPartidoAdmin(
+    array $contexto,
+    Equipo $local,
+    Equipo $visitante,
+    string $horario,
+    ?int $golesEquipoLocal = 0,
+    ?int $golesEquipoVisitante = 0,
+): Partido {
     return Partido::create([
         'idCategoria' => $contexto['categoria']->id,
         'idFechas' => $contexto['fecha']->id,
@@ -74,8 +80,8 @@ function crearPartidoAdmin(array $contexto, Equipo $local, Equipo $visitante, st
         'idEquipoVisitante' => $visitante->id,
         'idGrupo' => $contexto['grupo']->id,
         'idEdicion' => $contexto['edicion']->id,
-        'golesEquipoLocal' => 0,
-        'golesEquipoVisitante' => 0,
+        'golesEquipoLocal' => $golesEquipoLocal,
+        'golesEquipoVisitante' => $golesEquipoVisitante,
         'cancha' => 1,
         'jugado' => 0,
         'horario_datetime' => $horario,
@@ -177,4 +183,126 @@ it('respeta el filtro horario al mostrar los pendientes', function () {
         ->assertSee('Horario 15:00 hs')
         ->assertSee('Mitai Tarde')
         ->assertDontSee('Mitai Manana');
+});
+
+it('imprime solo los partidos de la ultima fecha disponible para arbitros', function () {
+    $admin = crearAdminPanel();
+
+    $edicion = Edicion::create([
+        'nombre' => 'Edicion Test',
+    ]);
+
+    $categoria = Categoria::create([
+        'idEdicion' => $edicion->id,
+        'nombreCategoria' => 'Sub 12',
+    ]);
+
+    $fechaAnterior = Fecha::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Fecha 1',
+    ]);
+
+    $fechaUltima = Fecha::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Fecha 2',
+    ]);
+
+    $grupo = Grupo::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Grupo A',
+    ]);
+
+    $localAnterior = Equipo::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Mitai Antiguo Local',
+        'foto' => 'escudo.png',
+    ]);
+
+    $visitanteAnterior = Equipo::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Mitai Antiguo Visitante',
+        'foto' => 'escudo.png',
+    ]);
+
+    EquipoEdicion::create([
+        'idEdicion' => $edicion->id,
+        'idEquipo' => $localAnterior->id,
+        'idCategoria' => $categoria->id,
+    ]);
+
+    EquipoEdicion::create([
+        'idEdicion' => $edicion->id,
+        'idEquipo' => $visitanteAnterior->id,
+        'idCategoria' => $categoria->id,
+    ]);
+
+    Partido::create([
+        'idCategoria' => $categoria->id,
+        'idFechas' => $fechaAnterior->id,
+        'idEquipoLocal' => $localAnterior->id,
+        'idEquipoVisitante' => $visitanteAnterior->id,
+        'idGrupo' => $grupo->id,
+        'idEdicion' => $edicion->id,
+        'golesEquipoLocal' => null,
+        'golesEquipoVisitante' => null,
+        'cancha' => 1,
+        'jugado' => 0,
+        'horario_datetime' => '2026-03-15 09:00:00',
+    ]);
+
+    $localUltimo = Equipo::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Mitai Ultimo Local',
+        'foto' => 'escudo.png',
+    ]);
+
+    $visitanteUltimo = Equipo::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Mitai Ultimo Visitante',
+        'foto' => 'escudo.png',
+    ]);
+
+    EquipoEdicion::create([
+        'idEdicion' => $edicion->id,
+        'idEquipo' => $localUltimo->id,
+        'idCategoria' => $categoria->id,
+    ]);
+
+    EquipoEdicion::create([
+        'idEdicion' => $edicion->id,
+        'idEquipo' => $visitanteUltimo->id,
+        'idCategoria' => $categoria->id,
+    ]);
+
+    Partido::create([
+        'idCategoria' => $categoria->id,
+        'idFechas' => $fechaUltima->id,
+        'idEquipoLocal' => $localUltimo->id,
+        'idEquipoVisitante' => $visitanteUltimo->id,
+        'idGrupo' => $grupo->id,
+        'idEdicion' => $edicion->id,
+        'golesEquipoLocal' => null,
+        'golesEquipoVisitante' => null,
+        'cancha' => 2,
+        'jugado' => 0,
+        'horario_datetime' => '2026-03-16 10:30:00',
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin.imprimir-fixture-arbitros-partidos', ['idEdicion' => $edicion->id]));
+
+    $response->assertOk()
+        ->assertSee('Fecha 2')
+        ->assertSee('Mitai Ultimo Local')
+        ->assertSee('Mitai Ultimo Visitante')
+        ->assertDontSee('Fecha 1')
+        ->assertDontSee('Mitai Antiguo Local')
+        ->assertDontSee('Mitai Antiguo Visitante');
 });
