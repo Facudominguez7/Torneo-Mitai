@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Panel;
 
 use App\Constants\PartidoConstants;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Panel\ActualizarPlanillaJugadoresRequest;
+use App\Http\Requests\Panel\CopiarPlanillaPartidoAnteriorRequest;
 use App\Models\Edicion;
 use App\Models\EquipoEdicion;
 use App\Models\InstanciaFinal;
@@ -13,10 +15,14 @@ use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Models\TablaGoleador;
 use App\Services\BajaJugadorService;
+use App\Services\CopiarPlanillaPartidoAnteriorService;
 use App\Services\GolesArbitrosService;
 use App\Services\PlanillaConfirmacionService;
+use App\Services\PlanillaJugadorAutosaveService;
 use App\Services\ValidadorReglasJugador;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -30,6 +36,8 @@ class ControladorPlanillaJugador extends Controller
         private readonly PlanillaConfirmacionService $planillaConfirmacionService,
         private readonly GolesArbitrosService $golesArbitrosService,
         private readonly BajaJugadorService $bajaJugadorService,
+        private readonly PlanillaJugadorAutosaveService $planillaJugadorAutosaveService,
+        private readonly CopiarPlanillaPartidoAnteriorService $copiarPlanillaPartidoAnteriorService,
     ) {
         $this->validadorReglas = $validadorReglas;
     }
@@ -89,7 +97,16 @@ class ControladorPlanillaJugador extends Controller
             (int) $partido->idEquipoVisitante,
         );
 
-        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado', 'contextoNavegacion', 'golesArbitrosResumen'));
+        $disponibilidadCopiado = $this->copiarPlanillaPartidoAnteriorService->obtenerDisponibilidadCopiadoPorEquipo(
+            (string) $tipoPartido,
+            (int) $partidoId,
+            (int) $idEdicion,
+        );
+
+        $mostrarBotonCopiarLocal = $disponibilidadCopiado['local'];
+        $mostrarBotonCopiarVisitante = $disponibilidadCopiado['visitante'];
+
+        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado', 'contextoNavegacion', 'golesArbitrosResumen', 'mostrarBotonCopiarLocal', 'mostrarBotonCopiarVisitante'));
     }
 
     public function actualizarGolesArbitros(Request $request)
@@ -394,142 +411,89 @@ class ControladorPlanillaJugador extends Controller
         }
     }
 
-    public function actualizarJugadores(Request $request)
+    public function actualizarJugadores(ActualizarPlanillaJugadoresRequest $request): JsonResponse|RedirectResponse
     {
-        $tipoPartido = $request->tipoPartido;
-        $partidoType = PartidoConstants::getModelClass($tipoPartido);
-        $horarioSeleccionado = $request->horario;
-        $idEdicion = $request->idEdicion;
-        $huboCambiosReales = false;
-        $confirmacionInvalidada = false;
+        $datosValidados = $request->validated();
+        $tipoPartido = (string) $datosValidados['tipoPartido'];
+        $resultado = $this->planillaJugadorAutosaveService->actualizarJugadores(
+            $tipoPartido,
+            (int) $datosValidados['partido_id'],
+            (int) $datosValidados['idEdicion'],
+            $datosValidados['jugadores'],
+        );
 
-        // Iniciar transacción para asegurar integridad de datos
-        DB::transaction(function () use ($request, $idEdicion, $partidoType, $tipoPartido, &$huboCambiosReales, &$confirmacionInvalidada) {
-            // Recorrer todos los jugadores enviados en el formulario
-            foreach ($request->jugadores as $dni => $datos) {
-                // Buscar la planilla y el jugador
-                $planilla = PlanillaJugador::where('partido_id', $request->partido_id)
-                    ->where('partido_type', $partidoType)
-                    ->where('dni_jugador', $dni)
-                    ->first();
-
-                $jugador = Jugador::where('dni', $dni)->lockForUpdate()->first();
-
-                if (! $planilla || ! $jugador) {
-                    continue; // Si no se encuentra la planilla o el jugador, pasar al siguiente
-                }
-
-                // Prevenir goles negativos
-                $golesNuevos = max(0, (int) ($datos['goles'] ?? 0));
-                $asistenciaNueva = isset($datos['asistencia']);
-                $numeroCamisetaNuevo = isset($datos['numero_camiseta'])
-                    ? (int) $datos['numero_camiseta']
-                    : (int) $planilla->numero_camiseta;
-                $tarjetaRojaNueva = isset($datos['tarjeta_roja']);
-
-                if (! $this->planillaTieneCambiosReales($planilla, [
-                    'goles' => $golesNuevos,
-                    'asistencia' => $asistenciaNueva,
-                    'numero_camiseta' => $numeroCamisetaNuevo,
-                    'tarjeta_roja' => $tarjetaRojaNueva,
-                ])) {
-                    continue;
-                }
-
-                $huboCambiosReales = true;
-
-                // Guardar los valores actuales antes de actualizar
-                $golesAnteriores = $planilla->goles;
-                $asistioAnteriormente = $planilla->asistio;
-                $teniaRojaAntes = (bool) $planilla->tarjeta_roja;
-
-                // Actualizar los datos de la planilla (SOLO campos permitidos)
-                $planilla->goles = $golesNuevos;
-                $planilla->asistio = $asistenciaNueva;
-                $planilla->numero_camiseta = $numeroCamisetaNuevo;
-                $planilla->tarjeta_roja = $tarjetaRojaNueva;
-                $planilla->save();
-
-                // Si pasó de no tener roja a tenerla, incrementa el total histórico del jugador
-                if (! $teniaRojaAntes && $planilla->tarjeta_roja) {
-                    $jugador->tarjetas_rojas_totales = ($jugador->tarjetas_rojas_totales ?? 0) + 1;
-                }
-
-                // Actualizar los datos del jugador (Estadísticas)
-                $jugador->goles_totales = max(0, ($jugador->goles_totales ?? 0) + ($planilla->goles - $golesAnteriores));
-
-                // Actualizar partidos_totales basándose SOLO en asistencia, no en goles
-                if ($planilla->asistio && ! $asistioAnteriormente) {
-                    $jugador->partidos_totales += 1;
-                } elseif (! $planilla->asistio && $asistioAnteriormente) {
-                    $jugador->partidos_totales = max(0, ($jugador->partidos_totales ?? 0) - 1);
-                }
-
-                $jugador->save();
-
-                // Actualizar o crear el registro en la tabla de goleadores
-                $goleador = TablaGoleador::where('dni_jugador', $dni)
-                    ->where('idEdicion', $idEdicion)
-                    ->where('idCategoria', $planilla->idCategoria)
-                    ->lockForUpdate()
-                    ->first();
-
-                $delta = $planilla->goles - $golesAnteriores;
-
-                if ($goleador) {
-                    $goleador->cantidadGoles = max(0, $goleador->cantidadGoles + $delta);
-                    if ($goleador->cantidadGoles === 0) {
-                        $goleador->delete();
-                    } else {
-                        $goleador->save();
-                    }
-                } elseif ($planilla->goles > 0) {
-                    TablaGoleador::create([
-                        'dni_jugador' => $dni,
-                        'cantidadGoles' => $planilla->goles,
-                        'idEquipo' => $planilla->idEquipo,
-                        'idEdicion' => $idEdicion,
-                        'idCategoria' => $planilla->idCategoria,
-                    ]);
-                }
-            }
-
-            if ($huboCambiosReales) {
-                $confirmacionInvalidada = $this->planillaConfirmacionService->invalidarConfirmacionPorEdicion(
-                    $tipoPartido,
-                    (int) $request->partido_id,
-                    (int) $idEdicion,
-                );
-            }
-        });
-
-        // Redirigir de vuelta a la vista con un mensaje de éxito
-        $mensaje = 'Jugadores actualizados correctamente.';
-
-        if ($huboCambiosReales) {
+        if ($resultado['huboCambiosReales']) {
             $this->golesArbitrosService->sincronizarVinculaciones(
                 $tipoPartido,
-                (int) $request->partido_id,
-                (int) $idEdicion,
+                (int) $datosValidados['partido_id'],
+                (int) $datosValidados['idEdicion'],
             );
         }
 
-        $parametrosBase = [
-            'partidoId' => $request->partido_id,
-            'idEdicion' => $idEdicion,
-            'tipoPartido' => $tipoPartido,
-            'horario' => PartidoConstants::isInstanciaFinal($tipoPartido) ? 0 : $horarioSeleccionado,
-        ];
+        if ($request->wantsJson()) {
+            $statusCode = 200;
 
-        $redirect = redirect()
-            ->route('planilla.show', array_merge($parametrosBase, $this->obtenerContextoNavegacion($request)))
-            ->with('status', $mensaje);
+            if ($resultado['status'] === 'conflict') {
+                $statusCode = 409;
+            } elseif ($resultado['status'] === 'error') {
+                $statusCode = 500;
+            }
 
-        if ($confirmacionInvalidada) {
-            $redirect = $redirect->with('status', $mensaje.' La confirmacion de goles se removio porque la planilla fue modificada.');
+            return response()->json($resultado, $statusCode);
         }
 
-        return $redirect;
+        $mensaje = 'Jugadores actualizados correctamente.';
+
+        if ($resultado['status'] === 'error') {
+            return $this->redirigirAPlanilla($request)
+                ->with('error', $resultado['message']);
+        }
+
+        if ($resultado['status'] === 'conflict') {
+            return $this->redirigirAPlanilla($request)
+                ->with('warning', $resultado['message']);
+        }
+
+        if ($resultado['confirmacionInvalidada']) {
+            $mensaje .= ' La confirmacion de goles se removio porque la planilla fue modificada.';
+        }
+
+        return $this->redirigirAPlanilla($request)
+            ->with('status', $mensaje);
+    }
+
+    public function copiarPlanillaPartidoAnterior(CopiarPlanillaPartidoAnteriorRequest $request): JsonResponse|RedirectResponse
+    {
+        $datosValidados = $request->validated();
+        $resultado = $this->copiarPlanillaPartidoAnteriorService->copiarPlanillaPartidoAnterior(
+            (string) $datosValidados['tipoPartido'],
+            (int) $datosValidados['partido_id'],
+            (int) $datosValidados['idEdicion'],
+            (string) $datosValidados['scope'],
+            $datosValidados['updated_at'] ?? null,
+        );
+
+        if ($request->wantsJson()) {
+            $statusCode = 200;
+
+            if ($resultado['status'] === 'no_previous_match') {
+                $statusCode = 404;
+            } elseif ($resultado['status'] === 'ambiguous_previous_match') {
+                $statusCode = 409;
+            } elseif ($resultado['status'] === 'error') {
+                $statusCode = 500;
+            }
+
+            return response()->json($resultado, $statusCode);
+        }
+
+        if ($resultado['status'] !== 'ok') {
+            return $this->redirigirAPlanilla($request)
+                ->with($resultado['status'] === 'no_previous_match' ? 'error' : 'warning', $resultado['message']);
+        }
+
+        return $this->redirigirAPlanilla($request)
+            ->with('status', $resultado['message']);
     }
 
     public function confirmarGoles(Request $request)

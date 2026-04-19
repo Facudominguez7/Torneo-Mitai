@@ -350,7 +350,7 @@
                 </div>
             </div>
         </div>
-    <form action="{{ route('planilla.actualizarJugadores') }}" method="POST" data-player-scope="local">
+    <form action="{{ route('planilla.actualizarJugadores') }}" method="POST" data-player-scope="local" data-player-autosave-endpoint="{{ route('planilla.actualizarJugadores') }}">
             @csrf
             <input type="hidden" name="partido_id" value="{{ $partido->id }}">
             <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
@@ -375,6 +375,8 @@
                         <div class="p-3 border border-gray-200 rounded-lg shadow-sm bg-white"
                             data-player-item="local"
                             data-player-key="{{ $jugador->dni_jugador }}"
+                            data-player-row="{{ $jugador->dni_jugador }}"
+                            data-player-updated-at="{{ $jugador->updated_at?->toIso8601String() }}"
                             data-player-name="{{ $jugador->nombre }}"
                             data-player-lastname="{{ $jugador->apellido }}"
                             data-player-dni="{{ $jugador->dni_jugador }}"
@@ -428,6 +430,19 @@
                                         class="h-5 w-5 text-red-600 border-gray-300 rounded">
                                 </div>
                             </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600"
+                                data-player-save-status="{{ $jugador->dni_jugador }}"
+                                hidden>
+                                <span data-player-save-message="{{ $jugador->dni_jugador }}"></span>
+                                <button type="button" data-player-retry-save="{{ $jugador->dni_jugador }}"
+                                    class="hidden rounded-md bg-amber-600 px-3 py-1 text-white transition hover:bg-amber-700">
+                                    Reintentar
+                                </button>
+                                <button type="button" data-player-reload-row="{{ $jugador->dni_jugador }}"
+                                    class="hidden rounded-md bg-slate-700 px-3 py-1 text-white transition hover:bg-slate-800">
+                                    Recargar
+                                </button>
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -457,6 +472,8 @@
                             @foreach ($jugadoresLocalPlanilla as $jugador)
                                 <tr data-player-item="local"
                                     data-player-key="{{ $jugador->dni_jugador }}"
+                                    data-player-row="{{ $jugador->dni_jugador }}"
+                                    data-player-updated-at="{{ $jugador->updated_at?->toIso8601String() }}"
                                     data-player-name="{{ $jugador->nombre }}"
                                     data-player-lastname="{{ $jugador->apellido }}"
                                     data-player-dni="{{ $jugador->dni_jugador }}"
@@ -469,6 +486,19 @@
                                             <input name="jugadores[{{ $jugador->dni_jugador }}][apellido]"
                                                 value="{{ $jugador->apellido }}" readonly
                                                 class="flex-1 min-w-0 w-full h-9 border-gray-300 bg-gray-100 rounded-md shadow-sm text-sm cursor-not-allowed">
+                                        </div>
+                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-600"
+                                            data-player-save-status="{{ $jugador->dni_jugador }}"
+                                            hidden>
+                                            <span data-player-save-message="{{ $jugador->dni_jugador }}"></span>
+                                            <button type="button" data-player-retry-save="{{ $jugador->dni_jugador }}"
+                                                class="hidden rounded-md bg-amber-600 px-3 py-1 text-white transition hover:bg-amber-700">
+                                                Reintentar
+                                            </button>
+                                            <button type="button" data-player-reload-row="{{ $jugador->dni_jugador }}"
+                                                class="hidden rounded-md bg-slate-700 px-3 py-1 text-white transition hover:bg-slate-800">
+                                                Recargar
+                                            </button>
                                         </div>
                                     </td>
                                     <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
@@ -511,17 +541,13 @@
             @endif
 
             <div class="mt-4 flex flex-wrap items-center gap-2">
-                <button type="button" data-mark-attendance-all="local"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
-                    Marcar asistencia a todos
-                </button>
-                <button type="button" data-toggle-attendance-all="local" data-attendance-value="0"
-                    class="px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 transition duration-200">
-                    Desmarcar asistencia a todos
-                </button>
-                <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200">
-                    Actualizar Todos
-                </button>
+                @if ($mostrarBotonCopiarLocal)
+                    <button type="button" data-copy-previous-match="local" data-copy-previous-match-endpoint="{{ route('planilla.copiarPartidoAnterior') }}"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200">
+                        Copiar local desde partido anterior
+                    </button>
+                @endif
+                <span data-copy-previous-match-feedback="local" class="text-sm font-semibold text-gray-600"></span>
             </div>
         </form>
         <hr class="my-4 border-t-2 border-gray-500">
@@ -597,7 +623,7 @@
                 </div>
             </div>
         </div>
-    <form action="{{ route('planilla.actualizarJugadores') }}" method="POST" data-player-scope="visitante">
+    <form action="{{ route('planilla.actualizarJugadores') }}" method="POST" data-player-scope="visitante" data-player-autosave-endpoint="{{ route('planilla.actualizarJugadores') }}">
             @csrf
             <input type="hidden" name="partido_id" value="{{ $partido->id }}">
             <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
@@ -622,6 +648,8 @@
                         <div class="p-3 border border-gray-200 rounded-lg shadow-sm bg-white"
                             data-player-item="visitante"
                             data-player-key="{{ $jugador->dni_jugador }}"
+                            data-player-row="{{ $jugador->dni_jugador }}"
+                            data-player-updated-at="{{ $jugador->updated_at?->toIso8601String() }}"
                             data-player-name="{{ $jugador->nombre }}"
                             data-player-lastname="{{ $jugador->apellido }}"
                             data-player-dni="{{ $jugador->dni_jugador }}"
@@ -675,6 +703,19 @@
                                         class="h-5 w-5 text-red-600 border-gray-300 rounded">
                                 </div>
                             </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600"
+                                data-player-save-status="{{ $jugador->dni_jugador }}"
+                                hidden>
+                                <span data-player-save-message="{{ $jugador->dni_jugador }}"></span>
+                                <button type="button" data-player-retry-save="{{ $jugador->dni_jugador }}"
+                                    class="hidden rounded-md bg-amber-600 px-3 py-1 text-white transition hover:bg-amber-700">
+                                    Reintentar
+                                </button>
+                                <button type="button" data-player-reload-row="{{ $jugador->dni_jugador }}"
+                                    class="hidden rounded-md bg-slate-700 px-3 py-1 text-white transition hover:bg-slate-800">
+                                    Recargar
+                                </button>
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -704,6 +745,8 @@
                             @foreach ($jugadoresVisitantePlanilla as $jugador)
                                 <tr data-player-item="visitante"
                                     data-player-key="{{ $jugador->dni_jugador }}"
+                                    data-player-row="{{ $jugador->dni_jugador }}"
+                                    data-player-updated-at="{{ $jugador->updated_at?->toIso8601String() }}"
                                     data-player-name="{{ $jugador->nombre }}"
                                     data-player-lastname="{{ $jugador->apellido }}"
                                     data-player-dni="{{ $jugador->dni_jugador }}"
@@ -716,6 +759,19 @@
                                             <input name="jugadores[{{ $jugador->dni_jugador }}][apellido]"
                                                 value="{{ $jugador->apellido }}" readonly
                                                 class="flex-1 min-w-0 w-full h-9 border-gray-300 bg-gray-100 rounded-md shadow-sm text-sm cursor-not-allowed">
+                                        </div>
+                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-600"
+                                            data-player-save-status="{{ $jugador->dni_jugador }}"
+                                            hidden>
+                                            <span data-player-save-message="{{ $jugador->dni_jugador }}"></span>
+                                            <button type="button" data-player-retry-save="{{ $jugador->dni_jugador }}"
+                                                class="hidden rounded-md bg-amber-600 px-3 py-1 text-white transition hover:bg-amber-700">
+                                                Reintentar
+                                            </button>
+                                            <button type="button" data-player-reload-row="{{ $jugador->dni_jugador }}"
+                                                class="hidden rounded-md bg-slate-700 px-3 py-1 text-white transition hover:bg-slate-800">
+                                                Recargar
+                                            </button>
                                         </div>
                                     </td>
                                     <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
@@ -757,17 +813,13 @@
             @endif
 
             <div class="mt-4 flex flex-wrap items-center gap-2">
-                <button type="button" data-mark-attendance-all="visitante"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
-                    Marcar asistencia a todos
-                </button>
-                <button type="button" data-toggle-attendance-all="visitante" data-attendance-value="0"
-                    class="px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 transition duration-200">
-                    Desmarcar asistencia a todos
-                </button>
-                <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200">
-                    Actualizar Todos
-                </button>
+                @if ($mostrarBotonCopiarVisitante)
+                    <button type="button" data-copy-previous-match="visitante" data-copy-previous-match-endpoint="{{ route('planilla.copiarPartidoAnterior') }}"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200">
+                        Copiar visitante desde partido anterior
+                    </button>
+                @endif
+                <span data-copy-previous-match-feedback="visitante" class="text-sm font-semibold text-gray-600"></span>
             </div>
         </form>
     </div>
@@ -1143,30 +1195,433 @@
                 closeAllFilterMenus();
             });
 
-            const updateForms = document.querySelectorAll('form[data-player-scope]');
-            const attendanceToggleButtons = document.querySelectorAll('[data-mark-attendance-all], [data-toggle-attendance-all]');
+            const autosaveFieldPattern = /\[(numero_camiseta|goles|asistencia|tarjeta_roja)\]$/;
+            const autosaveStateByRow = new Map();
 
-            attendanceToggleButtons.forEach((button) => {
-                button.addEventListener('click', () => {
-                    const scope = button.dataset.markAttendanceAll || button.dataset.toggleAttendanceAll;
-                    if (!scope) {
+            const getAutosaveRowItems = (scope, playerKey) => Array.from(
+                document.querySelectorAll(`[data-player-item="${scope}"][data-player-key="${playerKey}"]`)
+            );
+
+            const getPrimaryAutosaveRowItem = (scope, playerKey) => {
+                const rowItems = getAutosaveRowItems(scope, playerKey);
+
+                return rowItems.find((item) => item.offsetParent !== null) ?? rowItems[0] ?? null;
+            };
+
+            const getAutosaveState = (scope, playerKey) => {
+                const stateKey = `${scope}:${playerKey}`;
+
+                if (!autosaveStateByRow.has(stateKey)) {
+                    autosaveStateByRow.set(stateKey, {
+                        inFlight: false,
+                        queued: false,
+                        paused: false,
+                        timerId: null,
+                        statusTimerId: null
+                    });
+                }
+
+                return autosaveStateByRow.get(stateKey);
+            };
+
+            const getAutosaveMessageNodes = (playerKey) => document.querySelectorAll(`[data-player-save-message="${playerKey}"]`);
+            const getAutosaveStatusNodes = (playerKey) => document.querySelectorAll(`[data-player-save-status="${playerKey}"]`);
+            const getAutosaveRetryButtons = (playerKey) => document.querySelectorAll(`[data-player-retry-save="${playerKey}"]`);
+            const getAutosaveReloadButtons = (playerKey) => document.querySelectorAll(`[data-player-reload-row="${playerKey}"]`);
+
+            const setAutosaveStatus = (scope, playerKey, mode, message) => {
+                const statusNodes = getAutosaveStatusNodes(playerKey);
+                const messageNodes = getAutosaveMessageNodes(playerKey);
+                const retryButtons = getAutosaveRetryButtons(playerKey);
+                const reloadButtons = getAutosaveReloadButtons(playerKey);
+                const state = getAutosaveState(scope, playerKey);
+
+                if (state.statusTimerId) {
+                    clearTimeout(state.statusTimerId);
+                    state.statusTimerId = null;
+                }
+
+                statusNodes.forEach((node) => {
+                    node.hidden = false;
+                    node.dataset.playerSaveState = mode;
+                });
+
+                messageNodes.forEach((node) => {
+                    node.textContent = message;
+                });
+
+                retryButtons.forEach((button) => {
+                    button.hidden = mode !== 'error';
+                });
+
+                reloadButtons.forEach((button) => {
+                    button.hidden = mode !== 'conflict';
+                });
+
+                if (mode === 'ok') {
+                    state.statusTimerId = window.setTimeout(() => {
+                        getAutosaveStatusNodes(playerKey).forEach((node) => {
+                            node.hidden = true;
+                            node.removeAttribute('data-player-save-state');
+                        });
+
+                        getAutosaveMessageNodes(playerKey).forEach((node) => {
+                            node.textContent = '';
+                        });
+                    }, 1600);
+                }
+            };
+
+            const refreshAutosaveUpdatedAt = (scope, playerKey, updatedAt) => {
+                getAutosaveRowItems(scope, playerKey).forEach((item) => {
+                    item.dataset.playerUpdatedAt = updatedAt ?? '';
+                });
+            };
+
+            const getCopyFeedbackNode = (scope) => document.querySelector(`[data-copy-previous-match-feedback="${scope}"]`);
+
+            const setCopyFeedback = (scope, tone, message) => {
+                const feedback = getCopyFeedbackNode(scope);
+
+                if (!feedback) {
+                    return;
+                }
+
+                feedback.textContent = message;
+                feedback.classList.remove('text-emerald-700', 'text-red-700', 'text-gray-600');
+                feedback.classList.add(tone === 'error' ? 'text-red-700' : tone === 'ok' ? 'text-emerald-700' : 'text-gray-600');
+            };
+
+            const refreshCopiedRow = (scope, filaActualizada) => {
+                const rowItems = getAutosaveRowItems(scope, filaActualizada.dni);
+
+                rowItems.forEach((rowItem) => {
+                    const numeroInput = rowItem.querySelector('input[name$="[numero_camiseta]"]');
+                    const asistenciaInput = rowItem.querySelector('input[name$="[asistencia]"]');
+
+                    if (numeroInput) {
+                        numeroInput.value = filaActualizada.numero_camiseta ?? '';
+                    }
+
+                    if (asistenciaInput) {
+                        asistenciaInput.checked = !!filaActualizada.asistencia;
+                    }
+
+                    rowItem.dataset.playerUpdatedAt = filaActualizada.updated_at ?? '';
+                    refreshItemDataset(rowItem);
+                });
+
+                syncGroupValues(scope);
+            };
+
+            const buildCopyPayload = (form, scope) => {
+                const payload = new FormData();
+                const contextInputs = form.querySelectorAll('input[name]:not([name^="jugadores["])');
+
+                contextInputs.forEach((input) => {
+                    if (input.name === '_token') {
+                        payload.append(input.name, input.value);
                         return;
                     }
 
-                    const form = document.querySelector(`form[data-player-scope="${scope}"]`);
-                    if (!form) {
+                    if (input.type === 'checkbox') {
+                        if (input.checked) {
+                            payload.append(input.name, input.value || '1');
+                        }
+
                         return;
                     }
 
-                    const attendanceCheckboxes = form.querySelectorAll('input[type="checkbox"][name$="[asistencia]"]');
-                    const shouldCheck = button.dataset.attendanceValue !== '0';
+                    payload.append(input.name, input.value ?? '');
+                });
 
-                    attendanceCheckboxes.forEach((checkbox) => {
-                        checkbox.checked = shouldCheck;
+                const firstRow = form.querySelector(`[data-player-item="${scope}"][data-player-key]`);
+
+                payload.append('scope', scope);
+                payload.append('updated_at', firstRow?.dataset.playerUpdatedAt ?? '');
+
+                return payload;
+            };
+
+            const handleCopyPreviousMatch = async (button) => {
+                const scope = button.dataset.copyPreviousMatch;
+                const endpoint = button.dataset.copyPreviousMatchEndpoint;
+                const form = button.closest('form[data-player-scope]');
+
+                if (!scope || !endpoint || !form) {
+                    return;
+                }
+
+                setCopyFeedback(scope, 'neutral', 'Copiando...');
+                button.disabled = true;
+
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: buildCopyPayload(form, scope)
                     });
 
+                    const payload = await parseAutosaveMessage(response);
+
+                    if (!response.ok || payload?.status !== 'ok') {
+                        setCopyFeedback(scope, 'error', payload?.message ?? 'No se pudo copiar la planilla.');
+                        return;
+                    }
+
+                    (payload?.data?.filas_actualizadas ?? []).forEach((filaActualizada) => {
+                        refreshCopiedRow(scope, filaActualizada);
+                    });
+
+                    const resumen = payload?.data?.resumen ?? { copiados: 0, omitidos: 0, conflictos: 0 };
+                    const mensaje = `Se copiaron ${resumen.copiados} fila(s). Omitidas: ${resumen.omitidos}. Conflictos: ${resumen.conflictos}.`;
+
+                    setCopyFeedback(scope, 'ok', payload?.data?.confirmacion_invalidada ? `${mensaje} Se invalidó la confirmación de goles.` : mensaje);
+                } catch (error) {
+                    setCopyFeedback(scope, 'error', 'No se pudo conectar con el servidor.');
+                } finally {
+                    button.disabled = false;
+                }
+            };
+
+            const buildAutosavePayload = (form, scope, playerKey, rowItem) => {
+                const payload = new FormData();
+                const contextInputs = form.querySelectorAll('input[name]:not([name^="jugadores["])');
+
+                contextInputs.forEach((input) => {
+                    if (input.name === '_token') {
+                        payload.append(input.name, input.value);
+                        return;
+                    }
+
+                    if (input.type === 'checkbox') {
+                        if (input.checked) {
+                            payload.append(input.name, input.value || '1');
+                        }
+
+                        return;
+                    }
+
+                    payload.append(input.name, input.value ?? '');
+                });
+
+                const numeroCamiseta = rowItem.querySelector('input[name$="[numero_camiseta]"]');
+                const goles = rowItem.querySelector('input[name$="[goles]"]');
+                const asistencia = rowItem.querySelector('input[name$="[asistencia]"]');
+                const tarjetaRoja = rowItem.querySelector('input[name$="[tarjeta_roja]"]');
+                const updatedAt = rowItem.dataset.playerUpdatedAt ?? '';
+
+                payload.append(`jugadores[${playerKey}][numero_camiseta]`, numeroCamiseta ? (numeroCamiseta.value ?? '') : '');
+                payload.append(`jugadores[${playerKey}][goles]`, goles ? (goles.value ?? '') : '');
+                payload.append(`jugadores[${playerKey}][asistencia]`, asistencia && asistencia.checked ? '1' : '0');
+                payload.append(`jugadores[${playerKey}][tarjeta_roja]`, tarjetaRoja && tarjetaRoja.checked ? '1' : '0');
+                payload.append(`jugadores[${playerKey}][updated_at]`, updatedAt);
+
+                return payload;
+            };
+
+            const parseAutosaveMessage = async (response) => {
+                try {
+                    return await response.json();
+                } catch (error) {
+                    return null;
+                }
+            };
+
+            const extractAutosaveErrorMessage = (payload) => {
+                if (payload?.message) {
+                    return payload.message;
+                }
+
+                if (payload?.errors) {
+                    const errores = Object.values(payload.errors).flat();
+
+                    if (errores.length > 0) {
+                        return errores[0];
+                    }
+                }
+
+                return 'No se pudo guardar la fila.';
+            };
+
+            const flushAutosaveRow = async (form, scope, playerKey) => {
+                const state = getAutosaveState(scope, playerKey);
+
+                if (state.paused) {
+                    return;
+                }
+
+                if (state.inFlight) {
+                    state.queued = true;
+                    return;
+                }
+
+                const rowItem = getPrimaryAutosaveRowItem(scope, playerKey);
+
+                if (!rowItem) {
+                    return;
+                }
+
+                state.inFlight = true;
+                setAutosaveStatus(scope, playerKey, 'saving', 'Guardando...');
+
+                try {
+                    const response = await fetch(form.dataset.playerAutosaveEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: buildAutosavePayload(form, scope, playerKey, rowItem)
+                    });
+
+                    const payload = await parseAutosaveMessage(response);
+
+                    if (!response.ok) {
+                        if (response.status === 409 || payload?.status === 'conflict') {
+                            state.paused = true;
+                            setAutosaveStatus(scope, playerKey, 'conflict', payload?.message ?? 'Conflicto detectado. Recargá la planilla.');
+                            return;
+                        }
+
+                        setAutosaveStatus(scope, playerKey, 'error', extractAutosaveErrorMessage(payload));
+                        return;
+                    }
+
+                    if (payload?.status === 'conflict') {
+                        state.paused = true;
+                        setAutosaveStatus(scope, playerKey, 'conflict', payload?.message ?? 'Conflicto detectado. Recargá la planilla.');
+                        return;
+                    }
+
+                    if (payload?.status === 'error') {
+                        setAutosaveStatus(scope, playerKey, 'error', extractAutosaveErrorMessage(payload));
+                        return;
+                    }
+
+                    const updatedAt = payload?.data?.updated_at ?? rowItem.dataset.playerUpdatedAt ?? '';
+                    refreshAutosaveUpdatedAt(scope, playerKey, updatedAt);
                     syncGroupValues(scope);
-                    filterItems(scope);
+                    setAutosaveStatus(scope, playerKey, 'ok', payload?.message ?? 'Guardado');
+                } catch (error) {
+                    setAutosaveStatus(scope, playerKey, 'error', 'No se pudo conectar con el servidor.');
+                } finally {
+                    state.inFlight = false;
+
+                    if (state.queued) {
+                        state.queued = false;
+                        flushAutosaveRow(form, scope, playerKey);
+                    }
+                }
+            };
+
+            const scheduleAutosaveRow = (form, scope, playerKey) => {
+                const state = getAutosaveState(scope, playerKey);
+
+                if (state.paused) {
+                    setAutosaveStatus(scope, playerKey, 'conflict', 'Conflicto pendiente. Recargá la planilla para seguir editando.');
+                    return;
+                }
+
+                if (state.timerId) {
+                    clearTimeout(state.timerId);
+                }
+
+                state.timerId = window.setTimeout(() => {
+                    state.timerId = null;
+                    flushAutosaveRow(form, scope, playerKey);
+                }, 350);
+            };
+
+            const handleAutosaveTrigger = (event) => {
+                const input = event.target;
+
+                if (!(input instanceof HTMLInputElement)) {
+                    return;
+                }
+
+                if (!autosaveFieldPattern.test(input.name ?? '')) {
+                    return;
+                }
+
+                if (event.type === 'input' && input.type === 'checkbox') {
+                    return;
+                }
+
+                if (event.type === 'change' && input.type !== 'checkbox' && input.type !== 'number') {
+                    return;
+                }
+
+                const form = input.closest('form[data-player-scope][data-player-autosave-endpoint]');
+                const rowItem = input.closest('[data-player-item][data-player-key]');
+
+                if (!form || !rowItem) {
+                    return;
+                }
+
+                const scope = form.dataset.playerScope;
+                const playerKey = rowItem.dataset.playerKey;
+
+                if (!scope || !playerKey) {
+                    return;
+                }
+
+                syncGroupValues(scope);
+
+                if (input.type === 'checkbox' || input.name.endsWith('[asistencia]') || input.name.endsWith('[tarjeta_roja]')) {
+                    flushAutosaveRow(form, scope, playerKey);
+                    return;
+                }
+
+                scheduleAutosaveRow(form, scope, playerKey);
+            };
+
+            const autosaveForms = document.querySelectorAll('form[data-player-scope][data-player-autosave-endpoint]');
+
+            autosaveForms.forEach((form) => {
+                form.addEventListener('input', handleAutosaveTrigger);
+                form.addEventListener('change', handleAutosaveTrigger);
+            });
+
+            document.addEventListener('click', (event) => {
+                const retryButton = event.target.closest('[data-player-retry-save]');
+                const reloadButton = event.target.closest('[data-player-reload-row]');
+
+                if (retryButton) {
+                    const playerKey = retryButton.dataset.playerRetrySave;
+                    const rowItem = retryButton.closest('[data-player-item][data-player-key]');
+
+                    if (!playerKey || !rowItem) {
+                        return;
+                    }
+
+                    const scope = rowItem.dataset.playerItem;
+                    const form = rowItem.closest('form[data-player-scope][data-player-autosave-endpoint]');
+
+                    if (!scope || !form) {
+                        return;
+                    }
+
+                    const state = getAutosaveState(scope, playerKey);
+                    state.paused = false;
+                    flushAutosaveRow(form, scope, playerKey);
+                }
+
+                if (reloadButton) {
+                    window.location.reload();
+                }
+            });
+
+            const updateForms = document.querySelectorAll('form[data-player-scope]');
+
+            const copyPreviousMatchButtons = document.querySelectorAll('[data-copy-previous-match]');
+
+            copyPreviousMatchButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    handleCopyPreviousMatch(button);
                 });
             });
 

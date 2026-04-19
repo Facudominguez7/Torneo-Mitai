@@ -126,6 +126,16 @@ function postPlanillaConCsrf($testCase, string $ruta, array $parametros)
         ->post($ruta, array_merge($parametros, ['_token' => $token]));
 }
 
+function postPlanillaJsonConCsrf($testCase, string $ruta, array $parametros)
+{
+    $token = 'token-planilla-test';
+
+    return $testCase
+        ->withSession(['_token' => $token])
+        ->withHeader('Accept', 'application/json')
+        ->post($ruta, array_merge($parametros, ['_token' => $token]));
+}
+
 it('confirma goles sin warning cuando la suma individual coincide con el resultado oficial', function () {
     $contexto = crearContextoPlanillaConfirmacion();
     $jugadorVisitante = Jugador::create([
@@ -153,6 +163,7 @@ it('confirma goles sin warning cuando la suma individual coincide con el resulta
 
     $contexto['planilla']->update([
         'goles' => 2,
+        'asistio' => true,
     ]);
 
     $contexto['partido']->update([
@@ -241,6 +252,131 @@ it('no muestra la advertencia de goles al actualizar jugadores', function () {
         ->assertSessionMissing('warning');
 });
 
+it('persiste una fila por autosave json con payload parcial', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['partido']->update([
+        'goles_confirmados_at' => now(),
+    ]);
+    $otroJugador = Jugador::create([
+        'dni' => '40500003',
+        'nombre' => 'Luis',
+        'apellido' => 'Reserva',
+        'goles_totales' => 0,
+        'partidos_totales' => 0,
+        'tarjetas_rojas_totales' => 0,
+    ]);
+
+    $otraPlanilla = PlanillaJugador::create([
+        'partido_id' => $contexto['partido']->id,
+        'partido_type' => PartidoConstants::CLASS_PARTIDO,
+        'dni_jugador' => $otroJugador->dni,
+        'idEquipo' => $contexto['equipoLocal']->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'numero_camiseta' => 7,
+        'fecha_nacimiento' => '2010-04-01',
+        'goles' => 1,
+        'asistio' => false,
+        'tarjeta_roja' => false,
+    ]);
+
+    PlanillaJugador::query()
+        ->whereKey($contexto['planilla']->id)
+        ->update([
+            'updated_at' => now()->subMinute(),
+        ]);
+
+    $planillaOriginal = $contexto['planilla']->fresh();
+
+    postPlanillaJsonConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarJugadores'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'jugadores' => [
+                $contexto['jugador']->dni => [
+                    'numero_camiseta' => 11,
+                    'goles' => 2,
+                    'asistencia' => '1',
+                    'tarjeta_roja' => '0',
+                    'updated_at' => $planillaOriginal->updated_at->toIso8601String(),
+                ],
+            ],
+        ])
+    )
+        ->assertOk()
+        ->assertJsonPath('status', 'ok')
+        ->assertJsonPath('data.dni', $contexto['jugador']->dni)
+        ->assertJsonPath('data.confirmacion_invalidada', true);
+
+    $planillaActualizada = $contexto['planilla']->fresh();
+    $otraPlanillaActualizada = $otraPlanilla->fresh();
+
+    expect($planillaActualizada->numero_camiseta)->toBe(11);
+    expect($planillaActualizada->goles)->toBe(2);
+    expect((bool) $planillaActualizada->asistio)->toBeTrue();
+    expect((bool) $planillaActualizada->tarjeta_roja)->toBeFalse();
+    expect($planillaActualizada->updated_at->greaterThan($planillaOriginal->updated_at))->toBeTrue();
+
+    expect($otraPlanillaActualizada->numero_camiseta)->toBe(7);
+    expect($otraPlanillaActualizada->goles)->toBe(1);
+    expect((bool) $otraPlanillaActualizada->asistio)->toBeFalse();
+});
+
+it('rechaza un autosave con updated_at desfasado como conflicto', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $planillaOriginal = $contexto['planilla']->fresh();
+
+    postPlanillaJsonConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarJugadores'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'jugadores' => [
+                $contexto['jugador']->dni => [
+                    'numero_camiseta' => 13,
+                    'goles' => 3,
+                    'asistencia' => '1',
+                    'tarjeta_roja' => '0',
+                    'updated_at' => $planillaOriginal->updated_at->copy()->subHour()->toIso8601String(),
+                ],
+            ],
+        ])
+    )
+        ->assertStatus(409)
+        ->assertJsonPath('status', 'conflict')
+        ->assertJsonPath('data.current.numero_camiseta', $planillaOriginal->numero_camiseta)
+        ->assertJsonPath('data.current.goles', $planillaOriginal->goles);
+
+    $planillaSinCambios = $contexto['planilla']->fresh();
+
+    expect($planillaSinCambios->numero_camiseta)->toBe($planillaOriginal->numero_camiseta);
+    expect($planillaSinCambios->goles)->toBe($planillaOriginal->goles);
+    expect($planillaSinCambios->updated_at->toIso8601String())->toBe($planillaOriginal->updated_at->toIso8601String());
+});
+
+it('mantiene el redirect html para el submit tradicional', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['partido']->update([
+        'goles_confirmados_at' => now(),
+    ]);
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarJugadores'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'jugadores' => [
+                $contexto['jugador']->dni => [
+                    'numero_camiseta' => 12,
+                    'goles' => 1,
+                    'asistencia' => 'on',
+                    'tarjeta_roja' => '0',
+                ],
+            ],
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Jugadores actualizados correctamente. La confirmacion de goles se removio porque la planilla fue modificada.');
+});
+
 it('confirma goles con warning cuando hay diferencia con el resultado oficial', function () {
     $contexto = crearContextoPlanillaConfirmacion();
     $contexto['partido']->update([
@@ -258,6 +394,20 @@ it('confirma goles con warning cuando hay diferencia con el resultado oficial', 
         ->assertSessionHas('warning', fn (string $warning): bool => str_contains($warning, 'Atención: la suma de goles individuales no coincide'));
 
     expect($contexto['partido']->fresh()->goles_confirmados_at)->not->toBeNull();
+});
+
+it('no muestra el boton actualizar todos en la planilla renderizada', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+
+    $this->actingAs($contexto['admin'])
+        ->get(route('planilla.show', [
+            'partidoId' => $contexto['partido']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+            'horario' => '09:00',
+        ]))
+        ->assertOk()
+        ->assertDontSee('Actualizar Todos', false);
 });
 
 it('muestra estado pendiente de carga cuando el resultado existe pero falta confirmar goles', function () {
@@ -316,7 +466,7 @@ it('muestra estado neutral cuando todavia no hay resultado oficial cargado', fun
         ->assertDontSee('Goles pendientes de carga', false);
 });
 
-it('muestra la accion para desmarcar asistencia a todos en la planilla', function () {
+it('no muestra acciones masivas de asistencia en la planilla', function () {
     $contexto = crearContextoPlanillaConfirmacion();
 
     $this->actingAs($contexto['admin'])
@@ -327,11 +477,15 @@ it('muestra la accion para desmarcar asistencia a todos en la planilla', functio
             'horario' => '09:00',
         ]))
         ->assertOk()
-        ->assertSee('Desmarcar asistencia a todos', false);
+        ->assertDontSee('Marcar asistencia a todos', false)
+        ->assertDontSee('Desmarcar asistencia a todos', false);
 });
 
 it('guarda goles reportados por arbitros separados del dato oficial y marca inconsistencias', function () {
     $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['planilla']->update([
+        'asistio' => true,
+    ]);
 
     postPlanillaConCsrf(
         $this->actingAs($contexto['admin']),

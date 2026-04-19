@@ -107,6 +107,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
         Route::get('/{partidoId}/{idEdicion}/{tipoPartido}/{horario?}', [ControladorPlanillaJugador::class, 'mostrarPlanilla'])->name('planilla.show');
         Route::post('/agregar-jugador', [ControladorPlanillaJugador::class, 'agregarJugador'])->name('planilla.agregarJugador');
         Route::post('/actualizar-jugador', [ControladorPlanillaJugador::class, 'actualizarJugadores'])->name('planilla.actualizarJugadores');
+        Route::post('/copiar-partido-anterior', [ControladorPlanillaJugador::class, 'copiarPlanillaPartidoAnterior'])->name('planilla.copiarPartidoAnterior');
         Route::post('/actualizar-goles-arbitros', [ControladorPlanillaJugador::class, 'actualizarGolesArbitros'])->name('planilla.actualizarGolesArbitros');
         Route::post('/confirmar-goles', [ControladorPlanillaJugador::class, 'confirmarGoles'])->name('planilla.confirmarGoles');
         Route::post('/quitar-confirmacion-goles', [ControladorPlanillaJugador::class, 'quitarConfirmacionGoles'])->name('planilla.quitarConfirmacionGoles');
@@ -118,6 +119,9 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
         Route::get('/conflictivos', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'conflictivos'])->name('lista-buena-fe.conflictivos');
         Route::get('/', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'index'])->name('lista-buena-fe.index');
         Route::get('/imprimir-planillas/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'imprimirPlanillas'])->name('lista-buena-fe.imprimir-planillas');
+        Route::get('/imprimir-planillas-fecha/{idEdicion}/{idFecha}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'imprimirPlanillasPorFecha'])
+            ->whereNumber(['idEdicion', 'idFecha'])
+            ->name('lista-buena-fe.imprimir-planillas-fecha');
         Route::get('/{idEquipo}/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'show'])->name('lista-buena-fe.show');
         Route::get('/pdf/{idEquipo}/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'pdf'])->name('lista-buena-fe.pdf');
         Route::get('/imprimir-planilla/{idEquipo}/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'imprimirPlanilla'])->name('lista-buena-fe.imprimir-planilla');
