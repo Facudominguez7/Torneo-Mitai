@@ -1,187 +1,277 @@
 @extends('Panel.admin')
 
 @section('contenido')
-    <div class="container mx-auto px-4 py-6">
-        <h1 class="text-3xl font-bold mb-6 text-white">📋 Gestión de Lista de Buena Fe</h1>
+    @php
+        $equiposSinJugadores = $EdicionSeleccionada && isset($equipos)
+            ? $equipos->where('sin_jugadores', true)->count()
+            : 0;
+        $totalEquipos = $EdicionSeleccionada && isset($equipos) ? $equipos->count() : 0;
+        $totalExcedidos = isset($equiposExcedidos) ? count($equiposExcedidos) : 0;
+        $totalFechas = isset($fechasEdicion) ? $fechasEdicion->count() : 0;
+    @endphp
 
+    <div class="container mx-auto px-4 py-6 space-y-6">
+
+        {{-- ═══════════════ HERO ═══════════════ --}}
+        <header class="flex flex-col gap-2 text-white">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">📋</span>
+                <h1 class="text-3xl font-bold tracking-tight">Gestión de Lista de Buena Fe</h1>
+            </div>
+            <p class="text-sm text-slate-300 max-w-3xl">
+                Administrá la lista de buena fe de cada equipo. Seleccioná una edición para ver sus equipos, imprimir planillas y gestionar jugadores.
+            </p>
+        </header>
+
+        {{-- ═══════════════ ALERTA DE EXCEDIDOS ═══════════════ --}}
         @if(isset($equiposExcedidos) && count($equiposExcedidos) > 0)
-            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
-                <p class="font-bold">Advertencia</p>
-                <p>Los siguientes equipos tienen más de {{ $limiteJugadoresPorPlanilla }} jugadores en la lista de buena fe:</p>
-                <ul class="list-disc list-inside">
-                    @foreach($equiposExcedidos as $equipoExcedido)
-                        <li>
-                            <strong>{{ $equipoExcedido->equipo->nombre }}</strong> 
-                            <span class="text-gray-600">({{ $equipoExcedido->categoria->nombreCategoria }})</span>: 
-                            {{ $equipoExcedido->total }} jugadores
-                        </li>
-                    @endforeach
-                </ul>
+            <div role="alert" class="rounded-2xl border border-yellow-400/40 bg-gradient-to-r from-yellow-50 to-amber-50 p-5 shadow-md">
+                <div class="flex gap-3">
+                    <span class="text-2xl">⚠️</span>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-yellow-900">Equipos con más de {{ $limiteJugadoresPorPlanilla }} jugadores</h3>
+                        <ul class="mt-2 list-disc list-inside text-sm text-yellow-800 space-y-1">
+                            @foreach($equiposExcedidos as $equipoExcedido)
+                                <li>
+                                    <strong>{{ $equipoExcedido->equipo->nombre }}</strong>
+                                    <span class="text-yellow-700">({{ $equipoExcedido->categoria->nombreCategoria }})</span>:
+                                    {{ $equipoExcedido->total }} jugadores
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
             </div>
         @endif
 
-        {{-- Selectores de Edición y Categoría --}}
-        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        {{-- ═══════════════ FILTROS ═══════════════ --}}
+        <section class="rounded-2xl bg-white p-5 shadow-md ring-1 ring-slate-200/50">
+            <h2 class="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Contexto</h2>
             <form method="GET" action="{{ route('lista-buena-fe.index') }}" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                {{-- Selector de Edición --}}
                 <div>
-                    <label for="idEdicion" class="block text-sm font-medium text-gray-700 mb-2">Seleccionar Edición:</label>
-                    <select name="idEdicion" id="idEdicion" 
-                            class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    <label for="idEdicion" class="mb-1 block text-sm font-semibold text-slate-700">Edición</label>
+                    <select name="idEdicion" id="idEdicion"
+                            class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             onchange="this.form.submit()">
                         <option value="">-- Seleccione una edición --</option>
                         @foreach ($ediciones as $edicion)
-                            <option value="{{ $edicion->id }}" 
-                                    {{ $EdicionSeleccionada && $EdicionSeleccionada->id == $edicion->id ? 'selected' : '' }}>
+                            <option value="{{ $edicion->id }}" {{ $EdicionSeleccionada && $EdicionSeleccionada->id == $edicion->id ? 'selected' : '' }}>
                                 {{ $edicion->nombre }}
                             </option>
                         @endforeach
                     </select>
                 </div>
-
-                {{-- Selector de Categoría --}}
                 <div>
-                    <label for="idCategoria" class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Categoría:</label>
-                    <select name="idCategoria" id="idCategoria" 
-                            class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    <label for="idCategoria" class="mb-1 block text-sm font-semibold text-slate-700">Categoría</label>
+                    <select name="idCategoria" id="idCategoria"
+                            class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             onchange="this.form.submit()"
                             {{ !$EdicionSeleccionada ? 'disabled' : '' }}>
                         <option value="">-- Todas las categorías --</option>
                         @foreach ($categorias as $categoria)
-                            <option value="{{ $categoria->id }}" 
-                                    {{ $idCategoria == $categoria->id ? 'selected' : '' }}>
+                            <option value="{{ $categoria->id }}" {{ $idCategoria == $categoria->id ? 'selected' : '' }}>
                                 {{ $categoria->nombreCategoria }}
                             </option>
                         @endforeach
                     </select>
                 </div>
             </form>
-        </div>
+        </section>
 
-        {{-- Buscador de Equipos y Botón de Migración --}}
         @if ($EdicionSeleccionada)
-            <div class="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                <form action="{{ route('lista-buena-fe.index') }}" method="GET" class="flex justify-center w-full md:w-auto">
-                    <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
-                    <input type="hidden" name="idCategoria" value="{{ $idCategoria ?? '' }}">
-                    <div class="relative w-full max-w-md">
-                        <input type="text" name="search" value="{{ request('search') }}" 
-                            placeholder="Buscar equipo por nombre..." 
-                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
-                        <button type="submit" class="absolute right-0 top-0 mt-2 mr-3 text-gray-500 hover:text-blue-500">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    @if(request('search'))
-                        <a href="{{ route('lista-buena-fe.index', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria ?? '']) }}" 
-                           class="ml-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center shadow-sm">
-                            Limpiar
-                        </a>
-                    @endif
-                </form>
 
-                <div class="flex w-full flex-col gap-3 md:w-auto">
-                    @php
-                        $urlImpresionMasiva = route('lista-buena-fe.imprimir-planillas', [
-                            'idEdicion' => $EdicionSeleccionada->id,
-                            'idCategoria' => $idCategoria,
-                            'search' => request('search'),
-                        ]);
-                        $urlImpresionPorFecha = route('lista-buena-fe.imprimir-planillas-fecha', [
-                            'idEdicion' => $EdicionSeleccionada->id,
-                            'idFecha' => '__FECHA__',
-                        ]);
-                    @endphp
-                    <button type="button"
-                            data-print-url="{{ $urlImpresionMasiva }}"
-                            class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow flex items-center justify-center"
-                            onclick="printExternal(this.dataset.printUrl)">
-                        <span class="mr-2">🖨️</span> Imprimir Todas las Planillas
-                    </button>
-
-                    <form class="w-full md:w-auto rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
-                          data-print-fecha-form>
-                        <label for="idFechaImpresion" class="mb-2 block text-sm font-medium text-gray-700">
-                            Imprimir planillas de una fecha
-                        </label>
-                        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-                            <select name="idFechaImpresion"
-                                    id="idFechaImpresion"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    @disabled(!$EdicionSeleccionada || $fechasEdicion->isEmpty())
-                                    onchange="actualizarEstadoImpresionFecha(this)">
-                                <option value="">-- Seleccione una fecha --</option>
-                                @foreach ($fechasEdicion as $fecha)
-                                    <option value="{{ $fecha->id }}">{{ $fecha->nombre }}</option>
-                                @endforeach
-                            </select>
-
-                            <button type="button"
-                                    class="w-full rounded-md bg-blue-600 px-4 py-2 font-bold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto"
-                                    data-print-url-base="{{ $urlImpresionPorFecha }}"
-                                    disabled
-                                    onclick="imprimirPlanillasPorFecha(this)">
-                                <span class="mr-2">🗓️</span> Imprimir por fecha
-                            </button>
-                        </div>
-
-                        @if($fechasEdicion->isEmpty())
-                            <p class="mt-2 text-xs text-amber-700">
-                                Esta edición todavía no tiene fechas cargadas.
-                            </p>
-                        @else
-                            <p class="mt-2 text-xs text-slate-500">
-                                La impresión se habilita cuando seleccionás una fecha de esta edición.
-                            </p>
-                        @endif
-                    </form>
+            {{-- ═══════════════ STATS ═══════════════ --}}
+            <section class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div class="rounded-2xl bg-white p-4 shadow-md ring-1 ring-slate-200/50">
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Equipos</p>
+                    <p class="mt-1 text-3xl font-bold text-slate-800">{{ $totalEquipos }}</p>
                 </div>
+                <div class="rounded-2xl bg-white p-4 shadow-md ring-1 ring-slate-200/50 {{ $equiposSinJugadores > 0 ? 'border-l-4 border-amber-400' : '' }}">
+                    <p class="text-xs font-bold uppercase tracking-wider {{ $equiposSinJugadores > 0 ? 'text-amber-600' : 'text-slate-500' }}">Sin jugadores</p>
+                    <p class="mt-1 text-3xl font-bold {{ $equiposSinJugadores > 0 ? 'text-amber-600' : 'text-slate-800' }}">{{ $equiposSinJugadores }}</p>
+                </div>
+                <div class="rounded-2xl bg-white p-4 shadow-md ring-1 ring-slate-200/50 {{ $totalExcedidos > 0 ? 'border-l-4 border-red-400' : '' }}">
+                    <p class="text-xs font-bold uppercase tracking-wider {{ $totalExcedidos > 0 ? 'text-red-600' : 'text-slate-500' }}">Excedidos</p>
+                    <p class="mt-1 text-3xl font-bold {{ $totalExcedidos > 0 ? 'text-red-600' : 'text-slate-800' }}">{{ $totalExcedidos }}</p>
+                </div>
+                <div class="rounded-2xl bg-white p-4 shadow-md ring-1 ring-slate-200/50">
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Fechas</p>
+                    <p class="mt-1 text-3xl font-bold text-slate-800">{{ $totalFechas }}</p>
+                </div>
+            </section>
 
-                {{-- Botón de Migración Masiva --}}
-                <form method="POST" action="{{ route('lista-buena-fe.migrar-todos') }}" class="w-full md:w-auto">
-                    @csrf
-                    <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
-                    <button type="submit" 
-                            class="w-full md:w-auto bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded shadow flex items-center justify-center"
-                            onclick="return confirm('¿Estás seguro de querer migrar los jugadores de TODOS los equipos de esta edición? Esto puede tomar unos momentos.')">
-                        <span class="mr-2">🔄</span> Migrar Todos los Equipos
-                    </button>
-                </form>
-
-                <a href="{{ route('lista-buena-fe.conflictivos') }}" 
-                   class="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded shadow flex items-center justify-center">
-                    <span class="mr-2">📋</span> Revisión de Jugadores
-                </a>
-            </div>
-        @endif
-
-        @if ($EdicionSeleccionada)
+            {{-- ═══════════════ ACTION TOOLBAR ═══════════════ --}}
             @php
-                $equiposSinJugadores = $equipos->where('sin_jugadores', true)->count();
+                $urlImpresionMasiva = route('lista-buena-fe.imprimir-planillas', [
+                    'idEdicion' => $EdicionSeleccionada->id,
+                    'idCategoria' => $idCategoria,
+                    'search' => request('search'),
+                ]);
+                $urlImpresionPorFecha = route('lista-buena-fe.imprimir-planillas-fecha', [
+                    'idEdicion' => $EdicionSeleccionada->id,
+                    'idFecha' => '__FECHA__',
+                ]);
             @endphp
 
-            @if($equiposSinJugadores > 0)
-                <div class="mb-6 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-rose-50 px-5 py-4 shadow-sm">
-                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Prioridad administrativa</p>
-                            <h2 class="text-lg font-bold text-slate-800">{{ $equiposSinJugadores }} equipos sin jugadores cargados</h2>
+            <section class="rounded-2xl bg-white p-4 shadow-md ring-1 ring-slate-200/50">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+
+                    {{-- Search (dominante) --}}
+                    <form action="{{ route('lista-buena-fe.index') }}" method="GET" class="flex min-w-0 flex-1 items-center gap-2">
+                        <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
+                        <input type="hidden" name="idCategoria" value="{{ $idCategoria ?? '' }}">
+                        <div class="relative min-w-0 flex-1">
+                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </span>
+                            <input type="text" name="search" value="{{ request('search') }}"
+                                placeholder="Buscar equipo por nombre..."
+                                class="h-10 w-full rounded-lg border-slate-300 pl-10 pr-4 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
-                        <p class="text-sm text-slate-600">
-                            Se muestran primero para facilitar la carga inicial de la Lista de Buena Fe.
+                        @if(request('search'))
+                            <a href="{{ route('lista-buena-fe.index', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria ?? '']) }}"
+                               class="flex h-10 shrink-0 items-center rounded-lg bg-slate-100 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-200">
+                                Limpiar
+                            </a>
+                        @endif
+                    </form>
+
+                    {{-- Separator --}}
+                    <div class="hidden h-8 w-px bg-slate-200 lg:block"></div>
+
+                    {{-- Actions (dropdowns) --}}
+                    <div class="flex flex-wrap items-center gap-2">
+
+                        {{-- Dropdown: Impresión --}}
+                        <div x-data="{ open: false }" class="relative">
+                            <button type="button" @click="open = !open"
+                                    class="flex h-10 items-center gap-2 rounded-lg bg-green-600 px-4 text-sm font-bold text-white shadow hover:bg-green-700 whitespace-nowrap">
+                                <span>🖨️</span>
+                                <span>Impresión</span>
+                                <svg class="h-4 w-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div x-show="open" x-cloak @click.outside="open = false" x-transition
+                                 class="absolute right-0 z-20 mt-2 w-80 rounded-xl bg-white p-2 shadow-xl ring-1 ring-slate-200">
+
+                                <button type="button"
+                                        data-print-url="{{ $urlImpresionMasiva }}"
+                                        class="flex w-full items-start gap-3 rounded-lg p-3 text-left hover:bg-slate-50"
+                                        onclick="printExternal(this.dataset.printUrl); $dispatch('close-menu')">
+                                    <span class="text-xl">🖨️</span>
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-800">Todas las planillas</p>
+                                        <p class="text-xs text-slate-500">Imprime las planillas de todos los equipos filtrados.</p>
+                                    </div>
+                                </button>
+
+                                <div class="my-1 border-t border-slate-100"></div>
+
+                                <div class="p-3">
+                                    <p class="mb-2 text-sm font-semibold text-slate-800 flex items-center gap-2">
+                                        <span>🗓️</span> Por fecha
+                                    </p>
+                                    <form data-print-fecha-form class="flex items-center gap-2">
+                                        <select name="idFechaImpresion"
+                                                id="idFechaImpresion"
+                                                class="h-10 min-w-0 flex-1 rounded-md border-slate-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                                @disabled($fechasEdicion->isEmpty())
+                                                onchange="actualizarEstadoImpresionFecha(this)">
+                                            <option value="">-- Seleccionar --</option>
+                                            @foreach ($fechasEdicion as $fecha)
+                                                <option value="{{ $fecha->id }}">{{ $fecha->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                        <button type="button"
+                                                class="flex h-10 shrink-0 items-center rounded-md bg-blue-600 px-3 text-sm font-bold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                                data-print-url-base="{{ $urlImpresionPorFecha }}"
+                                                disabled
+                                                onclick="imprimirPlanillasPorFecha(this)">
+                                            Imprimir
+                                        </button>
+                                    </form>
+                                    @if($fechasEdicion->isEmpty())
+                                        <p class="mt-2 text-xs text-amber-600">Esta edición todavía no tiene fechas cargadas.</p>
+                                    @else
+                                        <p class="mt-2 text-xs text-slate-500">Se habilita al seleccionar una fecha.</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Dropdown: Administración --}}
+                        <div x-data="{ open: false }" class="relative">
+                            <button type="button" @click="open = !open"
+                                    class="flex h-10 items-center gap-2 rounded-lg bg-slate-700 px-4 text-sm font-bold text-white shadow hover:bg-slate-800 whitespace-nowrap">
+                                <span>⚙️</span>
+                                <span>Administración</span>
+                                <svg class="h-4 w-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div x-show="open" x-cloak @click.outside="open = false" x-transition
+                                 class="absolute right-0 z-20 mt-2 w-72 rounded-xl bg-white p-2 shadow-xl ring-1 ring-slate-200">
+
+                                <form method="POST" action="{{ route('lista-buena-fe.migrar-todos') }}">
+                                    @csrf
+                                    <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
+                                    <button type="submit"
+                                            class="flex w-full items-start gap-3 rounded-lg p-3 text-left hover:bg-slate-50"
+                                            onclick="return confirm('¿Estás seguro de querer migrar los jugadores de TODOS los equipos de esta edición? Esto puede tomar unos momentos.')">
+                                        <span class="text-xl">🔄</span>
+                                        <div>
+                                            <p class="text-sm font-semibold text-slate-800">Migrar todos los equipos</p>
+                                            <p class="text-xs text-slate-500">Importa jugadores de todos los equipos de esta edición.</p>
+                                        </div>
+                                    </button>
+                                </form>
+
+                                <div class="my-1 border-t border-slate-100"></div>
+
+                                <a href="{{ route('lista-buena-fe.conflictivos') }}"
+                                   class="flex items-start gap-3 rounded-lg p-3 hover:bg-slate-50">
+                                    <span class="text-xl">📋</span>
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-800">Revisión de jugadores</p>
+                                        <p class="text-xs text-slate-500">Detecta duplicados y conflictos entre equipos.</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {{-- ═══════════════ BANNER DE PRIORIDAD ═══════════════ --}}
+            @if($equiposSinJugadores > 0)
+                <div class="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-rose-50 px-5 py-4 shadow-sm">
+                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">⚡</span>
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-wider text-amber-700">Prioridad administrativa</p>
+                                <h2 class="text-lg font-bold text-slate-800">{{ $equiposSinJugadores }} {{ $equiposSinJugadores === 1 ? 'equipo' : 'equipos' }} sin jugadores cargados</h2>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-600 md:text-right">
+                            Se muestran primero para facilitar la carga inicial.
                         </p>
                     </div>
                 </div>
             @endif
 
-            {{-- Grid de Equipos --}}
+            {{-- ═══════════════ GRID DE EQUIPOS ═══════════════ --}}
             @if ($equipos->isEmpty())
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
-                    <p class="text-yellow-700 text-lg">
-                        ⚠️ No se encontraron equipos para esta edición y categoría.
+                <div class="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-md">
+                    <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-3xl">
+                        🔍
+                    </div>
+                    <p class="text-lg font-semibold text-slate-800">No se encontraron equipos</p>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Probá cambiar la categoría o ajustar el filtro de búsqueda.
                     </p>
                 </div>
             @else
@@ -191,8 +281,8 @@
                             $sinJugadores = (bool) ($equipo->sin_jugadores ?? false);
                             $totalJugadoresActivos = (int) ($equipo->total_jugadores_activos ?? 0);
                         @endphp
-                        <a href="{{ route('lista-buena-fe.show', ['idEquipo' => $equipo->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}" 
-                           class="block overflow-hidden rounded-2xl border transition duration-200 transform hover:-translate-y-1 {{ $sinJugadores ? 'border-amber-300 bg-gradient-to-br from-amber-50 via-white to-rose-50 shadow-lg shadow-amber-100/70' : 'border-slate-200 bg-white shadow-md hover:shadow-lg' }}">
+                        <a href="{{ route('lista-buena-fe.show', ['idEquipo' => $equipo->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}"
+                           class="group block overflow-hidden rounded-2xl border transition duration-200 transform hover:-translate-y-1 hover:shadow-xl {{ $sinJugadores ? 'border-amber-300 bg-gradient-to-br from-amber-50 via-white to-rose-50 shadow-lg shadow-amber-100/70' : 'border-slate-200 bg-white shadow-md' }}">
                             <div class="p-4 text-center">
                                 <div class="mb-4 flex items-start justify-between gap-3 text-left">
                                     <div class="min-w-0">
@@ -201,11 +291,11 @@
                                         </p>
                                         @if($sinJugadores)
                                             <span class="mt-2 inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
-                                                Sin jugadores cargados
+                                                Sin jugadores
                                             </span>
                                         @else
                                             <span class="mt-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                                {{ $totalJugadoresActivos }} jugadores cargados
+                                                {{ $totalJugadoresActivos }} jugadores
                                             </span>
                                         @endif
                                     </div>
@@ -214,30 +304,34 @@
                                     @endif
                                 </div>
 
-                                <div class="w-20 h-20 mx-auto mb-3 {{ $sinJugadores ? 'bg-amber-100' : 'bg-gray-100' }} rounded-full flex items-center justify-center overflow-hidden">
+                                <div class="mx-auto mb-3 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full {{ $sinJugadores ? 'bg-amber-100' : 'bg-slate-100' }}">
                                     @if($equipo->equipo->foto)
-                                        <img src="{{ asset('fotos/equipos/' . $equipo->equipo->foto) }}" alt="{{ $equipo->equipo->nombre }}" class="w-full h-full object-cover">
+                                        <img src="{{ asset('fotos/equipos/' . $equipo->equipo->foto) }}" alt="{{ $equipo->equipo->nombre }}" class="h-full w-full object-cover">
                                     @else
                                         <span class="text-2xl">🛡️</span>
                                     @endif
                                 </div>
-                                <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ $equipo->equipo->nombre }}</h3>
-                                <p class="text-sm {{ $sinJugadores ? 'text-amber-700' : 'text-blue-600' }} font-medium">
-                                    {{ $sinJugadores ? 'Requiere carga inicial de jugadores' : 'Lista disponible para gestionar' }}
+                                <h3 class="text-lg font-semibold text-slate-800">{{ $equipo->equipo->nombre }}</h3>
+                                <p class="mt-1 text-sm font-medium {{ $sinJugadores ? 'text-amber-700' : 'text-blue-600' }}">
+                                    {{ $sinJugadores ? 'Requiere carga inicial' : 'Lista disponible' }}
                                 </p>
                             </div>
-                            <div class="px-4 py-3 border-t text-center {{ $sinJugadores ? 'border-amber-200 bg-white/80' : 'bg-gray-50' }}">
-                                <span class="text-xs font-medium {{ $sinJugadores ? 'text-amber-700' : 'text-gray-500' }} uppercase tracking-wider">Ver Lista de Buena Fe</span>
+                            <div class="px-4 py-3 border-t text-center {{ $sinJugadores ? 'border-amber-200 bg-white/80' : 'border-slate-100 bg-slate-50' }}">
+                                <span class="text-xs font-semibold uppercase tracking-wider {{ $sinJugadores ? 'text-amber-700' : 'text-slate-500' }} group-hover:text-blue-600">
+                                    Ver Lista de Buena Fe →
+                                </span>
                             </div>
                         </a>
                     @endforeach
                 </div>
             @endif
         @else
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-                <p class="text-blue-600 text-lg">
-                    👆 Selecciona una edición para ver los equipos.
-                </p>
+            <div class="rounded-2xl border border-blue-200 bg-blue-50 p-12 text-center">
+                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-3xl">
+                    👆
+                </div>
+                <p class="text-lg font-semibold text-blue-800">Seleccioná una edición para comenzar</p>
+                <p class="mt-1 text-sm text-blue-600">Los equipos y acciones aparecerán abajo.</p>
             </div>
         @endif
     </div>
@@ -251,8 +345,8 @@
                 <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start">
-                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full 
-                                {{ session('migration_result')['status'] == 'success' ? 'bg-green-100' : (session('migration_result')['status'] == 'warning' ? 'bg-yellow-100' : 'bg-red-100') }} 
+                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full
+                                {{ session('migration_result')['status'] == 'success' ? 'bg-green-100' : (session('migration_result')['status'] == 'warning' ? 'bg-yellow-100' : 'bg-red-100') }}
                                 sm:mx-0 sm:h-10 sm:w-10">
                                 @if(session('migration_result')['status'] == 'success')
                                     <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -293,6 +387,8 @@
             </div>
         </div>
     @endif
+
+    <style>[x-cloak]{display:none !important}</style>
 @endsection
 
 @section('scripts')
@@ -311,14 +407,12 @@
                 printFrame.style.display = 'none';
                 document.body.appendChild(printFrame);
             }
-
             printFrame.src = url;
         }
 
         function actualizarEstadoImpresionFecha(select) {
             const form = select.closest('[data-print-fecha-form]');
             const button = form ? form.querySelector('[data-print-url-base]') : null;
-
             if (button) {
                 button.disabled = ! select.value;
             }
@@ -327,12 +421,10 @@
         function imprimirPlanillasPorFecha(button) {
             const form = button.closest('[data-print-fecha-form]');
             const select = form ? form.querySelector('[name="idFechaImpresion"]') : null;
-
             if (! select || ! select.value) {
                 alert('Seleccioná una fecha antes de imprimir.');
                 return;
             }
-
             const urlBase = button.dataset.printUrlBase;
             printExternal(urlBase.replace('__FECHA__', select.value));
         }
