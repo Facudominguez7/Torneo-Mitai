@@ -83,19 +83,62 @@
                     @endif
                 </form>
 
-                @php
-                    $urlImpresionMasiva = route('lista-buena-fe.imprimir-planillas', [
-                        'idEdicion' => $EdicionSeleccionada->id,
-                        'idCategoria' => $idCategoria,
-                        'search' => request('search'),
-                    ]);
-                @endphp
-                <button type="button"
-                        data-print-url="{{ $urlImpresionMasiva }}"
-                        class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow flex items-center justify-center"
-                        onclick="printExternal(this.dataset.printUrl)">
-                    <span class="mr-2">🖨️</span> Imprimir Todas las Planillas
-                </button>
+                <div class="flex w-full flex-col gap-3 md:w-auto">
+                    @php
+                        $urlImpresionMasiva = route('lista-buena-fe.imprimir-planillas', [
+                            'idEdicion' => $EdicionSeleccionada->id,
+                            'idCategoria' => $idCategoria,
+                            'search' => request('search'),
+                        ]);
+                        $urlImpresionPorFecha = route('lista-buena-fe.imprimir-planillas-fecha', [
+                            'idEdicion' => $EdicionSeleccionada->id,
+                            'idFecha' => '__FECHA__',
+                        ]);
+                    @endphp
+                    <button type="button"
+                            data-print-url="{{ $urlImpresionMasiva }}"
+                            class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow flex items-center justify-center"
+                            onclick="printExternal(this.dataset.printUrl)">
+                        <span class="mr-2">🖨️</span> Imprimir Todas las Planillas
+                    </button>
+
+                    <form class="w-full md:w-auto rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+                          data-print-fecha-form>
+                        <label for="idFechaImpresion" class="mb-2 block text-sm font-medium text-gray-700">
+                            Imprimir planillas de una fecha
+                        </label>
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                            <select name="idFechaImpresion"
+                                    id="idFechaImpresion"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    @disabled(!$EdicionSeleccionada || $fechasEdicion->isEmpty())
+                                    onchange="actualizarEstadoImpresionFecha(this)">
+                                <option value="">-- Seleccione una fecha --</option>
+                                @foreach ($fechasEdicion as $fecha)
+                                    <option value="{{ $fecha->id }}">{{ $fecha->nombre }}</option>
+                                @endforeach
+                            </select>
+
+                            <button type="button"
+                                    class="w-full rounded-md bg-blue-600 px-4 py-2 font-bold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto"
+                                    data-print-url-base="{{ $urlImpresionPorFecha }}"
+                                    disabled
+                                    onclick="imprimirPlanillasPorFecha(this)">
+                                <span class="mr-2">🗓️</span> Imprimir por fecha
+                            </button>
+                        </div>
+
+                        @if($fechasEdicion->isEmpty())
+                            <p class="mt-2 text-xs text-amber-700">
+                                Esta edición todavía no tiene fechas cargadas.
+                            </p>
+                        @else
+                            <p class="mt-2 text-xs text-slate-500">
+                                La impresión se habilita cuando seleccionás una fecha de esta edición.
+                            </p>
+                        @endif
+                    </form>
+                </div>
 
                 {{-- Botón de Migración Masiva --}}
                 <form method="POST" action="{{ route('lista-buena-fe.migrar-todos') }}" class="w-full md:w-auto">
@@ -254,6 +297,12 @@
 
 @section('scripts')
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-print-fecha-form] select').forEach(function (select) {
+                actualizarEstadoImpresionFecha(select);
+            });
+        });
+
         function printExternal(url) {
             let printFrame = document.getElementById('printFrame');
             if (!printFrame) {
@@ -264,6 +313,28 @@
             }
 
             printFrame.src = url;
+        }
+
+        function actualizarEstadoImpresionFecha(select) {
+            const form = select.closest('[data-print-fecha-form]');
+            const button = form ? form.querySelector('[data-print-url-base]') : null;
+
+            if (button) {
+                button.disabled = ! select.value;
+            }
+        }
+
+        function imprimirPlanillasPorFecha(button) {
+            const form = button.closest('[data-print-fecha-form]');
+            const select = form ? form.querySelector('[name="idFechaImpresion"]') : null;
+
+            if (! select || ! select.value) {
+                alert('Seleccioná una fecha antes de imprimir.');
+                return;
+            }
+
+            const urlBase = button.dataset.printUrlBase;
+            printExternal(urlBase.replace('__FECHA__', select.value));
         }
     </script>
 @endsection

@@ -7,14 +7,18 @@ use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use App\Models\Fecha;
 use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
+use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Services\ActualizadorIdentidadJugador;
 use App\Services\BajaJugadorService;
 use App\Services\EstadisticasService;
 use App\Services\ValidadorReglasJugador;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -49,8 +53,13 @@ class ControladorListaBuenaFe extends Controller
 
         if ($EdicionSeleccionada) {
             $categorias = Categoria::where('idEdicion', $EdicionSeleccionada->id)->get();
+            $fechasEdicion = Fecha::where('idEdicion', $EdicionSeleccionada->id)
+                ->select('id', 'nombre')
+                ->orderBy('id')
+                ->get();
         } else {
             $categorias = collect(); // Colección vacía si no hay edición
+            $fechasEdicion = collect();
         }
 
         $equipos = $this->obtenerEquiposFiltrados(
@@ -86,6 +95,7 @@ class ControladorListaBuenaFe extends Controller
             'EdicionSeleccionada',
             'equipos',
             'idCategoria',
+            'fechasEdicion',
             'estadisticasJugadores',
             'jugadoresPorCategoria',
             'equiposExcedidos',
@@ -199,6 +209,39 @@ class ControladorListaBuenaFe extends Controller
             'equipos',
             'jugadoresActivos',
             'limiteJugadoresPorPlanilla'
+        ));
+    }
+
+    /**
+     * Imprime todas las planillas de partido correspondientes a una fecha
+     * específica dentro de la edición seleccionada.
+     */
+    public function imprimirPlanillasPorFecha(int $idEdicion, int $idFecha): View
+    {
+        $EdicionSeleccionada = Edicion::findOrFail($idEdicion);
+        $FechaSeleccionada = Fecha::query()
+            ->where('id', $idFecha)
+            ->where('idEdicion', $idEdicion)
+            ->firstOrFail();
+
+        $partidos = Partido::with([
+            'equipoLocal:id,nombre,foto',
+            'equipoVisitante:id,nombre,foto',
+            'fecha:id,nombre',
+            'categoria:id,nombreCategoria,jugadores_maximos',
+        ])
+            ->where('idEdicion', $idEdicion)
+            ->where('idFechas', $idFecha)
+            ->orderBy('horario_datetime', 'asc')
+            ->orderBy('cancha', 'asc')
+            ->get();
+
+        $planillasImpresion = $this->construirPlanillasImpresionPorFecha($partidos, $EdicionSeleccionada);
+
+        return view('Panel.lista-buena-fe.imprimir-fecha', compact(
+            'EdicionSeleccionada',
+            'FechaSeleccionada',
+            'planillasImpresion'
         ));
     }
 
@@ -984,6 +1027,87 @@ class ControladorListaBuenaFe extends Controller
             ->groupBy(function ($jugador) {
                 return $jugador->idEquipo.'-'.$jugador->idCategoria;
             });
+    }
+
+    /**
+     * Prepara la impresión masiva de una fecha con una planilla por equipo y partido.
+     *
+     * @return Collection<int, array{partido: Partido, equipo: Equipo, rival: Equipo, jugadores: Collection, limiteJugadoresPorPlanilla: int}>
+     */
+    private function construirPlanillasImpresionPorFecha(Collection $partidos, Edicion $edicion): Collection
+    {
+        if ($partidos->isEmpty()) {
+            return collect();
+        }
+
+        $clavesEquipos = $partidos->flatMap(function (Partido $partido): array {
+            return [
+                $partido->idEquipoLocal.'-'.$partido->idCategoria,
+                $partido->idEquipoVisitante.'-'.$partido->idCategoria,
+            ];
+        })->unique()->values();
+
+        $jugadoresPorEquipo = ListaBuenaFe::with(['jugador', 'categoria'])
+            ->where('idEdicion', $edicion->id)
+            ->activos()
+            ->where(function ($query) use ($clavesEquipos): void {
+                foreach ($clavesEquipos as $indice => $claveEquipo) {
+                    [$idEquipo, $idCategoria] = array_map('intval', explode('-', $claveEquipo));
+
+                    $metodo = $indice === 0 ? 'where' : 'orWhere';
+                    $query->{$metodo}(function ($subQuery) use ($idEquipo, $idCategoria): void {
+                        $subQuery->where('idEquipo', $idEquipo)
+                            ->where('idCategoria', $idCategoria);
+                    });
+                }
+            })
+            ->get()
+            ->groupBy(function (ListaBuenaFe $jugador): string {
+                return $jugador->idEquipo.'-'.$jugador->idCategoria;
+            });
+
+        return $partidos->flatMap(function (Partido $partido) use ($jugadoresPorEquipo, $edicion): array {
+            $claveLocal = $partido->idEquipoLocal.'-'.$partido->idCategoria;
+            $claveVisitante = $partido->idEquipoVisitante.'-'.$partido->idCategoria;
+
+            return [
+                $this->armarPlanillaImpresionPartido(
+                    $partido,
+                    $partido->equipoLocal,
+                    $partido->equipoVisitante,
+                    $jugadoresPorEquipo->get($claveLocal, collect()),
+                    $edicion
+                ),
+                $this->armarPlanillaImpresionPartido(
+                    $partido,
+                    $partido->equipoVisitante,
+                    $partido->equipoLocal,
+                    $jugadoresPorEquipo->get($claveVisitante, collect()),
+                    $edicion
+                ),
+            ];
+        })->values();
+    }
+
+    /**
+     * Arma la estructura de una planilla individual dentro de la impresión por fecha.
+     *
+     * @return array{partido: Partido, equipo: Equipo, rival: Equipo, jugadores: Collection, limiteJugadoresPorPlanilla: int}
+     */
+    private function armarPlanillaImpresionPartido(
+        Partido $partido,
+        Equipo $equipo,
+        Equipo $rival,
+        Collection $jugadores,
+        Edicion $edicion
+    ): array {
+        return [
+            'partido' => $partido,
+            'equipo' => $equipo,
+            'rival' => $rival,
+            'jugadores' => $jugadores,
+            'limiteJugadoresPorPlanilla' => $this->obtenerLimiteJugadoresPorPlanilla($edicion, $partido->categoria),
+        ];
     }
 
     /**
