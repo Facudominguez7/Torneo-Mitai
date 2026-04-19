@@ -900,6 +900,20 @@ class ControladorHome extends Controller
             return redirect()->back()->with('error', 'Debe seleccionar una edición');
         }
 
+        $ultimaFechaDisponibleId = Partido::query()
+            ->where('partidos.idEdicion', $idEdicion)
+            ->whereNull('partidos.golesEquipoLocal')
+            ->whereNull('partidos.golesEquipoVisitante')
+            ->max('idFechas');
+
+        if (! $ultimaFechaDisponibleId) {
+            return view('Panel.imprimir.fixture-arbitros-partidos', [
+                'partidos' => collect(),
+                'EdicionSeleccionada' => $EdicionSeleccionada,
+                'horarioFiltro' => $horarioFiltro,
+            ]);
+        }
+
         $query = Partido::select(
             'partidos.*',
             'el.nombre as nombre_local',
@@ -915,7 +929,8 @@ class ControladorHome extends Controller
             ->leftJoin('grupos as g', 'partidos.idGrupo', '=', 'g.id')
             ->where('partidos.idEdicion', $idEdicion)
             ->whereNull('partidos.golesEquipoLocal')
-            ->whereNull('partidos.golesEquipoVisitante');
+            ->whereNull('partidos.golesEquipoVisitante')
+            ->where('partidos.idFechas', $ultimaFechaDisponibleId);
 
         if ($horarioFiltro) {
             $query->whereRaw('TIME(partidos.horario_datetime) = ?', [$horarioFiltro.':00']);
