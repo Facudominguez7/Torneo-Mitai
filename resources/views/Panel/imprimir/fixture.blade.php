@@ -23,7 +23,7 @@
             padding: 10px;
             background: #f4f7fb;
             color: #10212b;
-            line-height: 1.22;
+            line-height: 1.28;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
@@ -45,14 +45,14 @@
         }
         .header-text h1 {
             color: #0e4b5e;
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 800;
             letter-spacing: 0.02em;
             margin-bottom: 3px;
         }
         .header-text p {
             color: #5a6a74;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.08em;
@@ -62,17 +62,39 @@
             page-break-inside: auto;
             break-inside: auto;
         }
+        .categoria-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+            page-break-after: avoid;
+            break-after: avoid;
+        }
         .categoria-title {
             color: #0e4b5e;
             padding: 0 0 6px;
-            font-size: 17px;
+            font-size: 18px;
             font-weight: 800;
-            margin-bottom: 6px;
+            margin-bottom: 0;
             border-bottom: 1px solid #c9d7e2;
             text-transform: uppercase;
             letter-spacing: 0.06em;
+            flex: 1;
             page-break-after: avoid;
             break-after: avoid;
+        }
+        .categoria-partidos-chip {
+            color: #4f6371;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            background: #edf3f7;
+            border: 1px solid #d3dee7;
+            border-radius: 999px;
+            padding: 4px 10px;
+            white-space: nowrap;
         }
         .fecha-grupo {
             display: flex;
@@ -90,7 +112,7 @@
         }
         .fecha-grupo h3 {
             color: #0e4b5e;
-            font-size: 14px;
+            font-size: 15px;
             margin: 0;
             font-weight: 800;
             text-transform: uppercase;
@@ -150,7 +172,7 @@
             color: white;
             padding: 7px 6px;
             text-align: center;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -164,7 +186,7 @@
         td {
             padding: 6px;
             border-bottom: 1px solid #e3ebf1;
-            font-size: 11px;
+            font-size: 12px;
             vertical-align: middle;
             background: #fff;
         }
@@ -185,7 +207,7 @@
         }
         .equipo {
             font-weight: 800;
-            font-size: 11px;
+            font-size: 12px;
             color: #10212b;
             overflow-wrap: anywhere;
             word-break: normal;
@@ -200,7 +222,7 @@
         .resultado {
             text-align: center;
             font-weight: 900;
-            font-size: 12px;
+            font-size: 13px;
             color: #ffffff;
             min-width: 50px;
             background: linear-gradient(180deg, #0e4b5e, #0a3a49);
@@ -216,13 +238,13 @@
         }
         .horario {
             color: #4f6371;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             text-align: center;
         }
         .cancha {
             color: #4f6371;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             text-align: center;
         }
@@ -258,38 +280,50 @@
                 display: none;
             }
             body {
-                padding: 0;
-                font-size: 9px;
+                padding: 82px 0 0;
+                font-size: 10px;
             }
             .header {
-                margin-bottom: 10px;
-                padding: 4px 0 8px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                margin: 0;
+                padding: 6px 10mm 8px;
+                background: #f4f7fb;
+                z-index: 10;
             }
             .header-logo {
                 width: 34px;
             }
             .header-text h1 {
-                font-size: 19px;
+                font-size: 20px;
             }
             .header-text p {
-                font-size: 10px;
+                font-size: 11px;
             }
             .categoria-section {
                 margin-bottom: 12px;
                 page-break-inside: auto;
                 break-inside: auto;
             }
+            .categoria-title-row {
+                margin-bottom: 6px;
+            }
             .categoria-title {
                 padding: 0 0 4px;
                 font-size: 14px;
                 margin-bottom: 6px;
+            }
+            .categoria-partidos-chip {
+                font-size: 10px;
             }
             .fecha-grupo {
                 padding: 6px 8px;
                 margin: 6px 0 4px 0;
             }
             .fecha-grupo h3 {
-                font-size: 12px;
+                font-size: 13px;
             }
             .fecha-grupo span {
                 font-size: 10px;
@@ -305,20 +339,20 @@
             }
             th {
                 padding: 4px 3px;
-                font-size: 9px;
+                font-size: 10px;
             }
             td {
                 padding: 4px 5px;
-                font-size: 9px;
+                font-size: 10px;
             }
             .resultado {
                 min-width: 34px;
-                font-size: 10px;
+                font-size: 11px;
                 padding: 3px 6px;
             }
             .horario,
             .cancha {
-                font-size: 9px;
+                font-size: 10px;
             }
         }
     </style>
@@ -354,7 +388,12 @@
             
             @if($partidosCategoria && $partidosCategoria->isNotEmpty())
                 <div class="categoria-section">
-                    <div class="categoria-title">{{ $categoria->nombreCategoria }}</div>
+                    <div class="categoria-title-row">
+                        <div class="categoria-title">{{ $categoria->nombreCategoria }}</div>
+                        <span class="categoria-partidos-chip">
+                            {{ $partidosCategoria->count() }} {{ $partidosCategoria->count() === 1 ? 'Partido' : 'Partidos' }}
+                        </span>
+                    </div>
                     
                     @php
                         $partidosPorFecha = $partidosCategoria->groupBy('nombre_fecha');
@@ -362,10 +401,11 @@
 
                     @foreach($partidosPorFecha as $nombreFecha => $partidosFecha)
                         <div class="fecha-section">
-                            <div class="fecha-grupo">
-                                <h3>{{ $nombreFecha }}</h3>
-                                <span>{{ $partidosFecha->count() }} partidos</span>
-                            </div>
+                            @if($mostrarFechaEnFila)
+                                <div class="fecha-grupo">
+                                    <h3>{{ $nombreFecha }}</h3>
+                                </div>
+                            @endif
 
                             @php
                                 $gruposFecha = $partidosFecha->groupBy(fn ($partido) => $partido->idGrupo ?: 'sin-grupo');
