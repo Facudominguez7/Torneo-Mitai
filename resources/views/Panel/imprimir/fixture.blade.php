@@ -191,7 +191,7 @@
         }
         .equipo-local,
         .equipo-visitante {
-            text-align: left;
+            text-align: center;
         }
         .resultado-cell {
             text-align: center;
