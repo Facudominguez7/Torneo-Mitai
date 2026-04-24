@@ -147,7 +147,29 @@
             page-break-inside: avoid;
             break-inside: avoid;
         }
-        table {
+        .print-shell {
+            width: 100%;
+            border-collapse: collapse;
+            border: 0;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+        }
+        .print-shell > thead {
+            display: table-header-group;
+        }
+        .print-shell > tbody,
+        .print-shell > tbody > tr,
+        .print-shell > thead > tr {
+            border: 0;
+            background: transparent;
+        }
+        .print-shell-cell {
+            border: 0;
+            padding: 0;
+            background: transparent;
+        }
+        table.fixture-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
@@ -160,14 +182,14 @@
             overflow: hidden;
             background: #fff;
         }
-        thead {
+        table.fixture-table thead {
             display: table-header-group;
         }
-        tr {
+        table.fixture-table tr {
             page-break-inside: avoid;
             break-inside: avoid;
         }
-        th {
+        table.fixture-table th {
             background: linear-gradient(180deg, #0e4b5e, #0a3a49);
             color: white;
             padding: 7px 6px;
@@ -177,32 +199,32 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
-        th:first-child {
+        table.fixture-table th:first-child {
             border-top-left-radius: 9px;
         }
-        th:last-child {
+        table.fixture-table th:last-child {
             border-top-right-radius: 9px;
         }
-        td {
+        table.fixture-table td {
             padding: 6px;
             border-bottom: 1px solid #e3ebf1;
             font-size: 12px;
             vertical-align: middle;
             background: #fff;
         }
-        tr:nth-child(even) td {
+        table.fixture-table tr:nth-child(even) td {
             background-color: #f8fbfd;
         }
-        tbody tr:hover td {
+        table.fixture-table tbody tr:hover td {
             background-color: #f1f7fb;
         }
-        tbody tr:last-child td {
+        table.fixture-table tbody tr:last-child td {
             border-bottom: none;
         }
-        tbody tr:last-child td:first-child {
+        table.fixture-table tbody tr:last-child td:first-child {
             border-bottom-left-radius: 9px;
         }
-        tbody tr:last-child td:last-child {
+        table.fixture-table tbody tr:last-child td:last-child {
             border-bottom-right-radius: 9px;
         }
         .equipo {
@@ -280,18 +302,13 @@
                 display: none;
             }
             body {
-                padding: 82px 0 0;
+                padding: 0;
                 font-size: 10px;
             }
             .header {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
                 margin: 0;
-                padding: 6px 10mm 8px;
+                padding: 6px 0 8px;
                 background: #f4f7fb;
-                z-index: 10;
             }
             .header-logo {
                 width: 34px;
@@ -337,11 +354,11 @@
                 page-break-inside: avoid;
                 break-inside: avoid;
             }
-            th {
+            table.fixture-table th {
                 padding: 4px 3px;
                 font-size: 10px;
             }
-            td {
+            table.fixture-table td {
                 padding: 4px 5px;
                 font-size: 10px;
             }
@@ -359,71 +376,80 @@
 </head>
 <body>
     <button class="print-button" onclick="window.print()">Imprimir</button>
-    
-    <div class="header">
-        <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="Logo" class="header-logo">
-        <div class="header-text">
-            <h1>Fixture Completo</h1>
-            @if($EdicionSeleccionada)
-                <p>{{ $EdicionSeleccionada->nombre }}</p>
-            @endif
-            @if(isset($FechaSeleccionada) && $FechaSeleccionada)
-                <p>{{ $FechaSeleccionada->nombre }}</p>
-            @endif
-        </div>
-        <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="Logo" class="header-logo">
-    </div>
 
-    @if($partidosPorCategoria->isEmpty())
-        <p class="no-partidos">No hay partidos cargados para esta edición.</p>
-    @else
-        @php
-            $mostrarFechaEnFila = !isset($FechaSeleccionada) || ! $FechaSeleccionada;
-        @endphp
-
-        @foreach($categorias as $categoria)
-            @php
-                $partidosCategoria = $partidosPorCategoria->get($categoria->id);
-            @endphp
-            
-            @if($partidosCategoria && $partidosCategoria->isNotEmpty())
-                <div class="categoria-section">
-                    <div class="categoria-title-row">
-                        <div class="categoria-title">{{ $categoria->nombreCategoria }}</div>
-                        <span class="categoria-partidos-chip">
-                            {{ $partidosCategoria->count() }} {{ $partidosCategoria->count() === 1 ? 'Partido' : 'Partidos' }}
-                        </span>
-                    </div>
-                    
-                    @php
-                        $partidosPorFecha = $partidosCategoria->groupBy('nombre_fecha');
-                    @endphp
-
-                    @foreach($partidosPorFecha as $nombreFecha => $partidosFecha)
-                        <div class="fecha-section">
-                            @if($mostrarFechaEnFila)
-                                <div class="fecha-grupo">
-                                    <h3>{{ $nombreFecha }}</h3>
-                                </div>
+    <table class="print-shell">
+        <thead>
+            <tr>
+                <td class="print-shell-cell">
+                    <div class="header">
+                        <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="Logo" class="header-logo">
+                        <div class="header-text">
+                            <h1>Fixture Completo</h1>
+                            @if($EdicionSeleccionada)
+                                <p>{{ $EdicionSeleccionada->nombre }}</p>
                             @endif
+                            @if(isset($FechaSeleccionada) && $FechaSeleccionada)
+                                <p>{{ $FechaSeleccionada->nombre }}</p>
+                            @endif
+                        </div>
+                        <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="Logo" class="header-logo">
+                    </div>
+                </td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="print-shell-cell">
+                    @if($partidosPorCategoria->isEmpty())
+                        <p class="no-partidos">No hay partidos cargados para esta edición.</p>
+                    @else
+                        @php
+                            $mostrarFechaEnFila = !isset($FechaSeleccionada) || ! $FechaSeleccionada;
+                        @endphp
 
+                        @foreach($categorias as $categoria)
                             @php
-                                $gruposFecha = $partidosFecha->groupBy(fn ($partido) => $partido->idGrupo ?: 'sin-grupo');
-                                $mostrarTituloGrupo = $partidosCategoria->pluck('idGrupo')->map(fn ($idGrupo) => $idGrupo ?: 'sin-grupo')->unique()->count() > 1;
+                                $partidosCategoria = $partidosPorCategoria->get($categoria->id);
                             @endphp
-
-                            @foreach($gruposFecha as $idGrupoFixture => $partidosGrupo)
-                                @if($mostrarTituloGrupo)
-                                    <div class="grupo-title">
-                                        @if($idGrupoFixture !== 'sin-grupo' && isset($grupos[$idGrupoFixture]))
-                                            {{ $grupos[$idGrupoFixture]->nombre }}
-                                        @else
-                                            Sin grupo
-                                        @endif
+                            
+                            @if($partidosCategoria && $partidosCategoria->isNotEmpty())
+                                <div class="categoria-section">
+                                    <div class="categoria-title-row">
+                                        <div class="categoria-title">{{ $categoria->nombreCategoria }}</div>
+                                        <span class="categoria-partidos-chip">
+                                            {{ $partidosCategoria->count() }} {{ $partidosCategoria->count() === 1 ? 'Partido' : 'Partidos' }}
+                                        </span>
                                     </div>
-                                @endif
+                                    
+                                    @php
+                                        $partidosPorFecha = $partidosCategoria->groupBy('nombre_fecha');
+                                    @endphp
 
-                                <table>
+                                    @foreach($partidosPorFecha as $nombreFecha => $partidosFecha)
+                                        <div class="fecha-section">
+                                            @if($mostrarFechaEnFila)
+                                                <div class="fecha-grupo">
+                                                    <h3>{{ $nombreFecha }}</h3>
+                                                </div>
+                                            @endif
+
+                                            @php
+                                                $gruposFecha = $partidosFecha->groupBy(fn ($partido) => $partido->idGrupo ?: 'sin-grupo');
+                                                $mostrarTituloGrupo = $partidosCategoria->pluck('idGrupo')->map(fn ($idGrupo) => $idGrupo ?: 'sin-grupo')->unique()->count() > 1;
+                                            @endphp
+
+                                            @foreach($gruposFecha as $idGrupoFixture => $partidosGrupo)
+                                                @if($mostrarTituloGrupo)
+                                                    <div class="grupo-title">
+                                                        @if($idGrupoFixture !== 'sin-grupo' && isset($grupos[$idGrupoFixture]))
+                                                            {{ $grupos[$idGrupoFixture]->nombre }}
+                                                        @else
+                                                            Sin grupo
+                                                        @endif
+                                                    </div>
+                                                @endif
+
+                                                <table class="fixture-table">
                                     <colgroup>
                                         <col style="width: 32%;">
                                         <col style="width: 12%;">
@@ -468,13 +494,17 @@
                                             </tr>
                                         @endforeach
                                     </tbody>
-                                </table>
-                            @endforeach
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        @endforeach
-    @endif
+                                                </table>
+                                            @endforeach
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        @endforeach
+                    @endif
+                </td>
+            </tr>
+        </tbody>
+    </table>
 </body>
 </html>
