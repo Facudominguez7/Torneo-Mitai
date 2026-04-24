@@ -106,21 +106,21 @@ final class PlanillaPartidoAnteriorResolver
         $candidatos = $partidoModel::query()
             ->where('idEdicion', $idEdicion)
             ->where('idCategoria', $idCategoria)
+            ->where('jugado', 1)
             ->whereKeyNot($partidoId)
             ->where(static function ($query) use ($idEquipo): void {
                 $query->where('idEquipoLocal', $idEquipo)
                     ->orWhere('idEquipoVisitante', $idEquipo);
             })
             ->get()
-            ->filter(function (Model $partido) use ($momentoActual): bool {
+            ->filter(function (Model $partido) use ($partidoActual, $momentoActual): bool {
                 $momentoCandidato = $this->normalizarMomentoPartido($partido);
 
-                if ($momentoCandidato === null) {
+                if ($momentoCandidato === null || ! $momentoCandidato->isSameDay($momentoActual)) {
                     return false;
                 }
 
-                return $momentoCandidato->isSameDay($momentoActual)
-                    && $momentoCandidato->lt($momentoActual);
+                return $this->esPartidoAnterior($partido, $partidoActual);
             })
             ->filter(function (Model $partido) use ($idEdicion, $idEquipo, $partidoModel): bool {
                 return PlanillaJugador::query()
@@ -240,6 +240,22 @@ final class PlanillaPartidoAnteriorResolver
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    private function esPartidoAnterior(Model $candidato, Model $actual): bool
+    {
+        $momentoCandidato = $this->normalizarMomentoPartido($candidato);
+        $momentoActual = $this->normalizarMomentoPartido($actual);
+
+        if ($momentoCandidato !== null && $momentoActual !== null) {
+            if ($momentoCandidato->eq($momentoActual)) {
+                return (int) $candidato->id < (int) $actual->id;
+            }
+
+            return $momentoCandidato->lt($momentoActual);
+        }
+
+        return (int) $candidato->id < (int) $actual->id;
     }
 
     /**
