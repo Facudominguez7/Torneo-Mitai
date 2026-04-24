@@ -113,6 +113,8 @@ it('renderiza el fixture completo con estilos de impresion adaptados a A4', func
         ->assertSee('margin: 10mm', false)
         ->assertSee('table-layout: fixed', false)
         ->assertSee('font-size: 26px', false)
+        ->assertSee('print-shell', false)
+        ->assertSee('fixture-table', false)
         ->assertSee('categoria-partidos-chip', false)
         ->assertSee('overflow-wrap: anywhere', false)
         ->assertSee('break-inside: auto', false)
