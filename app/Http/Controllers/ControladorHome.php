@@ -119,6 +119,21 @@ class ControladorHome extends Controller
                 ->values();
         }
 
+        $fechasFixtureImpresion = collect();
+        if ($idEdicion) {
+            $fechasFixtureImpresion = Fecha::query()
+                ->select('fechas.id', 'fechas.nombre')
+                ->where('fechas.idEdicion', $idEdicion)
+                ->whereExists(function ($query) use ($idEdicion): void {
+                    $query->select(DB::raw(1))
+                        ->from('partidos')
+                        ->whereColumn('partidos.idFechas', 'fechas.id')
+                        ->where('partidos.idEdicion', $idEdicion);
+                })
+                ->orderBy('fechas.id')
+                ->get();
+        }
+
         $ultimaFecha = Fecha::where('idEdicion', $idEdicion)->latest('id')->first();
         $partidosQuery = Partido::select('partidos.*', 'el.nombre as nombre_local', 'ev.nombre as nombre_visitante', 'el.foto as foto_local', 'ev.foto as foto_visitante', 'f.nombre as nombre_fecha', 'c.nombreCategoria as nombre_categoria')
             ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
@@ -161,7 +176,7 @@ class ControladorHome extends Controller
             $equiposSinAsistencia = $estadisticasService->obtenerEquiposSinAsistenciaUltimaFecha((int) $idEdicion, $horarioString);
         }
 
-        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia'));
+        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion'));
     }
 
     public function campeones(Request $request)
@@ -748,10 +763,20 @@ class ControladorHome extends Controller
     public function imprimirFixture(Request $request)
     {
         $idEdicion = $request->query('idEdicion');
+        $idFecha = $request->query('idFecha');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
 
         if (! $EdicionSeleccionada) {
             return redirect()->back()->with('error', 'Debe seleccionar una edición');
+        }
+
+        $FechaSeleccionada = null;
+        if ($idFecha) {
+            $FechaSeleccionada = Fecha::where('idEdicion', $idEdicion)->find($idFecha);
+
+            if (! $FechaSeleccionada) {
+                return redirect()->back()->with('error', 'La fecha seleccionada no pertenece a la edición');
+            }
         }
 
         // Obtener todas las categorías de la edición, ordenadas de mayor a menor
@@ -779,6 +804,9 @@ class ControladorHome extends Controller
             ->join('fechas as f', 'partidos.idFechas', '=', 'f.id')
             ->leftJoin('categorias as cat', 'partidos.idCategoria', '=', 'cat.id')
             ->where('partidos.idEdicion', $idEdicion)
+            ->when($FechaSeleccionada, function ($query) use ($FechaSeleccionada) {
+                return $query->where('partidos.idFechas', $FechaSeleccionada->id);
+            })
             ->orderBy('cat.nombreCategoria', 'desc')
             ->orderBy('f.id', 'asc')
             ->orderBy('partidos.horario_datetime', 'asc')
@@ -787,7 +815,7 @@ class ControladorHome extends Controller
         // Agrupar partidos por categoría
         $partidosPorCategoria = $partidos->groupBy('idCategoriaPartido');
 
-        return view('Panel.imprimir.fixture', compact('partidosPorCategoria', 'categorias', 'grupos', 'EdicionSeleccionada'));
+        return view('Panel.imprimir.fixture', compact('partidosPorCategoria', 'categorias', 'grupos', 'EdicionSeleccionada', 'FechaSeleccionada'));
     }
 
     /**

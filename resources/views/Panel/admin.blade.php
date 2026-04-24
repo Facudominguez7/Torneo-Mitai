@@ -748,14 +748,15 @@
                     </button>
                 </div>
 
-                {{-- Botón Imprimir Fixture (todos los partidos) --}}
+                {{-- Botón Imprimir Fixture (todos los partidos o por fecha) --}}
                 <div class="min-w-0">
-                    <button onclick="imprimirEnIframe('{{ route('admin.imprimir-fixture', ['idEdicion' => $idEdicionContexto ?? '']) }}')"
+                    <button type="button"
+                        onclick="abrirModalFixtureImpresion('{{ route('admin.imprimir-fixture', ['idEdicion' => $idEdicionContexto ?? '']) }}')"
                         class="flex h-full min-h-[54px] w-full items-center justify-center gap-2 rounded-xl border border-blue-400/30 bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition duration-200 hover:-translate-y-0.5 hover:bg-blue-700">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
-                        Imprimir Fixture Completo
+                        Imprimir Fixture
                     </button>
                 </div>
 
@@ -939,6 +940,51 @@
             </section>
         </div>
     </div>
+
+    <div id="fixture-impresion-modal" class="fixed inset-0 z-[80] hidden items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="fixture-impresion-modal-title">
+        <button type="button" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" aria-label="Cerrar modal de impresión de fixture" onclick="cerrarModalFixtureImpresion()"></button>
+
+        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/15 bg-white shadow-2xl">
+            <div class="bg-gradient-to-r from-blue-700 to-cyan-700 px-6 py-5 text-white">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-blue-100">Fixture</p>
+                        <h2 id="fixture-impresion-modal-title" class="mt-1 text-xl font-bold">Seleccionar fecha de impresión</h2>
+                        <p class="mt-1 text-sm text-blue-100">Elegí una jornada específica o imprimí todo el fixture.</p>
+                    </div>
+                    <button type="button" class="rounded-full bg-white/15 p-2 text-white transition hover:bg-white/25" aria-label="Cerrar modal" onclick="cerrarModalFixtureImpresion()">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-5 px-6 py-6">
+                <div>
+                    <label for="fecha-fixture-impresion" class="mb-2 block text-sm font-semibold text-slate-700">Fecha a imprimir</label>
+                    <select id="fecha-fixture-impresion"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        <option value="">Todas las fechas</option>
+                        @foreach ($fechasFixtureImpresion ?? collect() as $fechaFixture)
+                            <option value="{{ $fechaFixture->id }}">{{ $fechaFixture->nombre }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-2 text-xs text-slate-500">Si elegís “Todas las fechas”, se imprime el fixture completo de la edición.</p>
+                </div>
+
+                <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <button type="button" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" onclick="cerrarModalFixtureImpresion()">
+                        Cancelar
+                    </button>
+                    <button type="button" id="fixture-impresion-confirmar" class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-800" onclick="confirmarImpresionFixture()">
+                        Imprimir fixture
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Mensajes de éxito
@@ -1038,6 +1084,62 @@
             
             iframe.src = url;
         }
+
+        let fixtureImpresionUrl = null;
+
+        function abrirModalFixtureImpresion(url) {
+            fixtureImpresionUrl = url;
+            const modal = document.getElementById('fixture-impresion-modal');
+            const selectorFecha = document.getElementById('fecha-fixture-impresion');
+
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.classList.add('overflow-hidden');
+
+            setTimeout(() => selectorFecha?.focus(), 50);
+        }
+
+        function cerrarModalFixtureImpresion() {
+            const modal = document.getElementById('fixture-impresion-modal');
+
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        function confirmarImpresionFixture() {
+            if (!fixtureImpresionUrl) {
+                return;
+            }
+
+            imprimirFixtureCompleto(fixtureImpresionUrl);
+            cerrarModalFixtureImpresion();
+        }
+
+        function imprimirFixtureCompleto(url) {
+            const selectorFecha = document.getElementById('fecha-fixture-impresion');
+            const urlImpresion = new URL(url, window.location.origin);
+
+            if (selectorFecha?.value) {
+                urlImpresion.searchParams.set('idFecha', selectorFecha.value);
+            }
+
+            imprimirEnIframe(urlImpresion.toString());
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                cerrarModalFixtureImpresion();
+            }
+        });
     </script>
     @yield('scripts')
 </body>

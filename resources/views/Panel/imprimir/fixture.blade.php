@@ -83,6 +83,17 @@
             color: #666;
             font-size: 11px;
         }
+        .grupo-title {
+            background: #eef2f5;
+            color: #0e4b5e;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            border-left: 3px solid #2a6d81;
+            margin: 6px 0 4px 0;
+            page-break-after: avoid;
+            break-after: avoid;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -201,6 +212,11 @@
             .fecha-grupo span {
                 font-size: 9px;
             }
+            .grupo-title {
+                padding: 4px 8px;
+                font-size: 10px;
+                margin: 4px 0 3px 0;
+            }
             th {
                 padding: 4px 3px;
                 font-size: 8px;
@@ -230,6 +246,9 @@
             @if($EdicionSeleccionada)
                 <p>{{ $EdicionSeleccionada->nombre }}</p>
             @endif
+            @if(isset($FechaSeleccionada) && $FechaSeleccionada)
+                <p>{{ $FechaSeleccionada->nombre }}</p>
+            @endif
         </div>
         <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="Logo" class="header-logo">
     </div>
@@ -256,42 +275,51 @@
                             <span>{{ $partidosFecha->count() }} partidos</span>
                         </div>
 
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th style="width: 28%;">Local</th>
-                                    <th style="width: 10%; text-align: center;">Res.</th>
-                                    <th style="width: 28%;">Visitante</th>
-                                    <th style="width: 18%;">Fecha/Hora</th>
-                                    <th style="width: 8%;">Cancha</th>
-                                    <th style="width: 8%;">Grupo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($partidosFecha as $p)
+                        @php
+                            $gruposFecha = $partidosFecha->groupBy(fn ($partido) => $partido->idGrupo ?: 'sin-grupo');
+                            $mostrarTituloGrupo = $partidosCategoria->pluck('idGrupo')->map(fn ($idGrupo) => $idGrupo ?: 'sin-grupo')->unique()->count() > 1;
+                        @endphp
+
+                        @foreach($gruposFecha as $idGrupoFixture => $partidosGrupo)
+                            @if($mostrarTituloGrupo)
+                                <div class="grupo-title">
+                                    @if($idGrupoFixture !== 'sin-grupo' && isset($grupos[$idGrupoFixture]))
+                                        {{ $grupos[$idGrupoFixture]->nombre }}
+                                    @else
+                                        Sin grupo
+                                    @endif
+                                </div>
+                            @endif
+
+                            <table>
+                                <thead>
                                     <tr>
-                                        <td class="equipo">{{ $p->nombre_local }}</td>
-                                        <td class="resultado">{{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}</td>
-                                        <td class="equipo">{{ $p->nombre_visitante }}</td>
-                                        <td class="horario">
-                                            @if($p->horario_datetime)
-                                                {{ \Carbon\Carbon::parse($p->horario_datetime)->format('d/m/Y H:i') }}
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-                                        <td class="cancha">{{ $p->cancha ?? '-' }}</td>
-                                        <td class="grupo">
-                                            @if($p->idGrupo && isset($grupos[$p->idGrupo]))
-                                                {{ $grupos[$p->idGrupo]->nombre }}
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
+                                        <th style="width: 31%;">Local</th>
+                                        <th style="width: 10%; text-align: center;">Res.</th>
+                                        <th style="width: 31%;">Visitante</th>
+                                        <th style="width: 20%;">Fecha/Hora</th>
+                                        <th style="width: 8%;">Cancha</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @foreach($partidosGrupo as $p)
+                                        <tr>
+                                            <td class="equipo">{{ $p->nombre_local }}</td>
+                                            <td class="resultado">{{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}</td>
+                                            <td class="equipo">{{ $p->nombre_visitante }}</td>
+                                            <td class="horario">
+                                                @if($p->horario_datetime)
+                                                    {{ \Carbon\Carbon::parse($p->horario_datetime)->format('d/m/Y H:i') }}
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
+                                            <td class="cancha">{{ $p->cancha ?? '-' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @endforeach
                     @endforeach
                 </div>
             @endif
