@@ -19,23 +19,25 @@
             width: 100%;
         }
         body {
-            font-family: Arial, sans-serif;
-            padding: 12px;
-            background: white;
-            color: #1f2933;
-            line-height: 1.25;
+            font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, sans-serif;
+            padding: 10px;
+            background: #f4f7fb;
+            color: #10212b;
+            line-height: 1.22;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
         .header {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 16px;
-            border-bottom: 3px solid #0e4b5e;
-            padding-bottom: 10px;
+            margin-bottom: 14px;
+            border-bottom: 2px solid #0e4b5e;
+            padding: 6px 0 10px;
             gap: 14px;
         }
         .header-logo {
-            width: 48px;
+            width: 42px;
             height: auto;
         }
         .header-text {
@@ -43,64 +45,93 @@
         }
         .header-text h1 {
             color: #0e4b5e;
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 21px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            margin-bottom: 3px;
         }
         .header-text p {
-            color: #666;
-            font-size: 14px;
+            color: #5a6a74;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
         .categoria-section {
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             page-break-inside: auto;
             break-inside: auto;
         }
         .categoria-title {
-            background: linear-gradient(135deg, #0e4b5e, #2a6d81);
-            color: white;
-            padding: 8px 12px;
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            border-radius: 5px;
+            color: #0e4b5e;
+            padding: 0 0 6px;
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #c9d7e2;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
             page-break-after: avoid;
             break-after: avoid;
         }
         .fecha-grupo {
-            background: #f0f7f9;
-            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: #ffffff;
+            padding: 8px 10px;
             margin: 8px 0 6px 0;
+            border: 1px solid #d5e1ea;
             border-left: 4px solid #0e4b5e;
+            border-radius: 8px;
             page-break-after: avoid;
             break-after: avoid;
         }
         .fecha-grupo h3 {
             color: #0e4b5e;
-            font-size: 14px;
+            font-size: 12px;
             margin: 0;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         .fecha-grupo span {
-            color: #666;
-            font-size: 11px;
+            color: #5f7080;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: #edf3f7;
+            border: 1px solid #d3dee7;
+            padding: 3px 8px;
+            border-radius: 999px;
         }
         .grupo-title {
-            background: #eef2f5;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #eaf0f5;
             color: #0e4b5e;
             padding: 5px 10px;
-            font-size: 12px;
-            font-weight: bold;
-            border-left: 3px solid #2a6d81;
-            margin: 6px 0 4px 0;
+            font-size: 11px;
+            font-weight: 800;
+            border-radius: 999px;
+            margin: 4px 0 4px 0;
             page-break-after: avoid;
             break-after: avoid;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             table-layout: fixed;
             page-break-inside: auto;
             break-inside: auto;
+            border: 1px solid #d5e1ea;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
         }
         thead {
             display: table-header-group;
@@ -110,44 +141,60 @@
             break-inside: avoid;
         }
         th {
-            background: #0e4b5e;
+            background: linear-gradient(180deg, #0e4b5e, #0a3a49);
             color: white;
-            padding: 6px;
+            padding: 7px 6px;
             text-align: left;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         td {
-            padding: 5px 6px;
-            border-bottom: 1px solid #ddd;
+            padding: 6px;
+            border-bottom: 1px solid #e3ebf1;
             font-size: 10px;
             vertical-align: middle;
+            background: #fff;
         }
         tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: #f8fbfd;
+        }
+        tbody tr:hover td {
+            background-color: #f1f7fb;
         }
         .equipo {
-            font-weight: 600;
+            font-weight: 800;
+            color: #10212b;
             overflow-wrap: anywhere;
             word-break: normal;
         }
         .resultado {
             text-align: center;
-            font-weight: bold;
-            font-size: 12px;
-            color: #0e4b5e;
+            font-weight: 900;
+            font-size: 11px;
+            color: #ffffff;
             min-width: 50px;
+            background: linear-gradient(180deg, #0e4b5e, #0a3a49);
+            border-radius: 999px;
+            padding: 4px 8px;
+            display: inline-block;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
         }
         .horario {
-            color: #666;
+            color: #4f6371;
             font-size: 9px;
+            font-weight: 700;
         }
         .cancha {
-            color: #666;
+            color: #4f6371;
             font-size: 9px;
+            font-weight: 700;
         }
         .grupo {
             overflow-wrap: anywhere;
+            color: #0e4b5e;
+            font-weight: 700;
         }
         .print-button {
             position: fixed;
@@ -168,7 +215,7 @@
         .no-partidos {
             text-align: center;
             padding: 30px;
-            color: #666;
+            color: #5f7080;
             font-style: italic;
         }
         @media print {
@@ -181,16 +228,16 @@
             }
             .header {
                 margin-bottom: 10px;
-                padding-bottom: 6px;
+                padding: 4px 0 8px;
             }
             .header-logo {
-                width: 36px;
+                width: 34px;
             }
             .header-text h1 {
-                font-size: 18px;
+                font-size: 17px;
             }
             .header-text p {
-                font-size: 11px;
+                font-size: 9px;
             }
             .categoria-section {
                 margin-bottom: 12px;
@@ -198,12 +245,12 @@
                 break-inside: auto;
             }
             .categoria-title {
-                padding: 6px 8px;
-                font-size: 13px;
+                padding: 0 0 4px;
+                font-size: 12px;
                 margin-bottom: 6px;
             }
             .fecha-grupo {
-                padding: 4px 8px;
+                padding: 6px 8px;
                 margin: 6px 0 4px 0;
             }
             .fecha-grupo h3 {
@@ -214,7 +261,7 @@
             }
             .grupo-title {
                 padding: 4px 8px;
-                font-size: 10px;
+                font-size: 9px;
                 margin: 4px 0 3px 0;
             }
             th {
@@ -222,12 +269,13 @@
                 font-size: 8px;
             }
             td {
-                padding: 3px;
+                padding: 4px 5px;
                 font-size: 8px;
             }
             .resultado {
                 min-width: 34px;
-                font-size: 9px;
+                font-size: 8px;
+                padding: 3px 6px;
             }
             .horario,
             .cancha {
