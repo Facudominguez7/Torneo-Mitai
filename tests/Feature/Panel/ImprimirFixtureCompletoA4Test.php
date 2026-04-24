@@ -112,6 +112,7 @@ it('renderiza el fixture completo con estilos de impresion adaptados a A4', func
         ->assertSee('size: A4 portrait', false)
         ->assertSee('margin: 10mm', false)
         ->assertSee('table-layout: fixed', false)
+        ->assertSee('font-size: 24px', false)
         ->assertSee('overflow-wrap: anywhere', false)
         ->assertSee('break-inside: auto', false)
         ->assertSee('display: table-header-group', false)
@@ -154,9 +155,22 @@ it('filtra la impresion del fixture completo por fecha seleccionada', function (
 
     $response->assertOk()
         ->assertSee('Fecha 1')
+        ->assertSee('<th>Hora</th>', false)
+        ->assertDontSee('<th>Fecha/Hora</th>', false)
         ->assertSee('Local Nombre Largo A4')
         ->assertDontSee('Fecha 2')
         ->assertDontSee('Local Fecha Dos');
+});
+
+it('muestra columna fecha y hora cuando imprime todas las fechas', function (): void {
+    $contexto = crearContextoImpresionFixtureCompleto();
+
+    $response = $this->actingAs($contexto['admin'])
+        ->get(route('admin.imprimir-fixture', ['idEdicion' => $contexto['edicion']->id]));
+
+    $response->assertOk()
+        ->assertSee('<th>Fecha/Hora</th>', false)
+        ->assertDontSee('<th>Hora</th>', false);
 });
 
 it('oculta el grupo por linea cuando la categoria tiene un solo grupo', function (): void {

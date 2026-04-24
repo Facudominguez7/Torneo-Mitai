@@ -45,14 +45,14 @@
         }
         .header-text h1 {
             color: #0e4b5e;
-            font-size: 21px;
+            font-size: 24px;
             font-weight: 800;
             letter-spacing: 0.02em;
             margin-bottom: 3px;
         }
         .header-text p {
             color: #5a6a74;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.08em;
@@ -65,7 +65,7 @@
         .categoria-title {
             color: #0e4b5e;
             padding: 0 0 6px;
-            font-size: 15px;
+            font-size: 17px;
             font-weight: 800;
             margin-bottom: 6px;
             border-bottom: 1px solid #c9d7e2;
@@ -90,7 +90,7 @@
         }
         .fecha-grupo h3 {
             color: #0e4b5e;
-            font-size: 12px;
+            font-size: 14px;
             margin: 0;
             font-weight: 800;
             text-transform: uppercase;
@@ -98,7 +98,7 @@
         }
         .fecha-grupo span {
             color: #5f7080;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -150,7 +150,7 @@
             color: white;
             padding: 7px 6px;
             text-align: center;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -164,7 +164,7 @@
         td {
             padding: 6px;
             border-bottom: 1px solid #e3ebf1;
-            font-size: 10px;
+            font-size: 11px;
             vertical-align: middle;
             background: #fff;
         }
@@ -185,6 +185,7 @@
         }
         .equipo {
             font-weight: 800;
+            font-size: 11px;
             color: #10212b;
             overflow-wrap: anywhere;
             word-break: normal;
@@ -199,12 +200,12 @@
         .resultado {
             text-align: center;
             font-weight: 900;
-            font-size: 11px;
+            font-size: 12px;
             color: #ffffff;
             min-width: 50px;
             background: linear-gradient(180deg, #0e4b5e, #0a3a49);
             border-radius: 999px;
-            padding: 4px 8px;
+            padding: 5px 10px;
             display: inline-block;
             box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
         }
@@ -215,13 +216,13 @@
         }
         .horario {
             color: #4f6371;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 700;
             text-align: center;
         }
         .cancha {
             color: #4f6371;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 700;
             text-align: center;
         }
@@ -268,10 +269,10 @@
                 width: 34px;
             }
             .header-text h1 {
-                font-size: 17px;
+                font-size: 19px;
             }
             .header-text p {
-                font-size: 9px;
+                font-size: 10px;
             }
             .categoria-section {
                 margin-bottom: 12px;
@@ -280,7 +281,7 @@
             }
             .categoria-title {
                 padding: 0 0 4px;
-                font-size: 12px;
+                font-size: 14px;
                 margin-bottom: 6px;
             }
             .fecha-grupo {
@@ -288,10 +289,10 @@
                 margin: 6px 0 4px 0;
             }
             .fecha-grupo h3 {
-                font-size: 11px;
+                font-size: 12px;
             }
             .fecha-grupo span {
-                font-size: 9px;
+                font-size: 10px;
             }
             .grupo-title {
                 padding: 4px 8px;
@@ -304,20 +305,20 @@
             }
             th {
                 padding: 4px 3px;
-                font-size: 8px;
+                font-size: 9px;
             }
             td {
                 padding: 4px 5px;
-                font-size: 8px;
+                font-size: 9px;
             }
             .resultado {
                 min-width: 34px;
-                font-size: 8px;
+                font-size: 10px;
                 padding: 3px 6px;
             }
             .horario,
             .cancha {
-                font-size: 8px;
+                font-size: 9px;
             }
         }
     </style>
@@ -342,6 +343,10 @@
     @if($partidosPorCategoria->isEmpty())
         <p class="no-partidos">No hay partidos cargados para esta edición.</p>
     @else
+        @php
+            $mostrarFechaEnFila = !isset($FechaSeleccionada) || ! $FechaSeleccionada;
+        @endphp
+
         @foreach($categorias as $categoria)
             @php
                 $partidosCategoria = $partidosPorCategoria->get($categoria->id);
@@ -380,10 +385,10 @@
 
                                 <table>
                                     <colgroup>
-                                        <col style="width: 31%;">
-                                        <col style="width: 10%;">
-                                        <col style="width: 31%;">
-                                        <col style="width: 20%;">
+                                        <col style="width: 32%;">
+                                        <col style="width: 12%;">
+                                        <col style="width: 32%;">
+                                        <col style="width: 16%;">
                                         <col style="width: 8%;">
                                     </colgroup>
                                     <thead>
@@ -391,7 +396,7 @@
                                             <th>Local</th>
                                             <th>Res.</th>
                                             <th>Visitante</th>
-                                            <th>Fecha/Hora</th>
+                                            <th>{{ $mostrarFechaEnFila ? 'Fecha/Hora' : 'Hora' }}</th>
                                             <th>Cancha</th>
                                         </tr>
                                     </thead>
@@ -414,7 +419,7 @@
                                                 <td class="equipo equipo-visitante">{{ $p->nombre_visitante }}</td>
                                                 <td class="horario">
                                                     @if($p->horario_datetime)
-                                                        {{ \Carbon\Carbon::parse($p->horario_datetime)->format('d/m/Y H:i') }}
+                                                        {{ \Carbon\Carbon::parse($p->horario_datetime)->format($mostrarFechaEnFila ? 'd/m/Y H:i' : 'H:i') }}
                                                     @else
                                                         -
                                                     @endif
