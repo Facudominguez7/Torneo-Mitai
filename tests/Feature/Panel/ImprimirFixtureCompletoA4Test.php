@@ -120,6 +120,7 @@ it('renderiza el fixture completo con estilos de impresion adaptados a A4', func
         ->assertSee('fecha-section', false)
         ->assertSee('resultado-cell', false)
         ->assertSee('resultado--pendiente', false)
+        ->assertSee('text-align: center', false)
         ->assertSee('Local Nombre Largo A4');
 });
 
