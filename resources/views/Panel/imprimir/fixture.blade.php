@@ -7,29 +7,35 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 15mm;
+            margin: 10mm;
         }
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+        html,
+        body {
+            width: 100%;
+        }
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
+            padding: 12px;
             background: white;
+            color: #1f2933;
+            line-height: 1.25;
         }
         .header {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 25px;
+            margin-bottom: 16px;
             border-bottom: 3px solid #0e4b5e;
-            padding-bottom: 15px;
-            gap: 20px;
+            padding-bottom: 10px;
+            gap: 14px;
         }
         .header-logo {
-            width: 60px;
+            width: 48px;
             height: auto;
         }
         .header-text {
@@ -37,7 +43,7 @@
         }
         .header-text h1 {
             color: #0e4b5e;
-            font-size: 28px;
+            font-size: 24px;
             margin-bottom: 5px;
         }
         .header-text p {
@@ -45,23 +51,28 @@
             font-size: 14px;
         }
         .categoria-section {
-            margin-bottom: 30px;
-            page-break-inside: avoid;
+            margin-bottom: 18px;
+            page-break-inside: auto;
+            break-inside: auto;
         }
         .categoria-title {
             background: linear-gradient(135deg, #0e4b5e, #2a6d81);
             color: white;
-            padding: 12px 20px;
-            font-size: 20px;
+            padding: 8px 12px;
+            font-size: 16px;
             font-weight: bold;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
             border-radius: 5px;
+            page-break-after: avoid;
+            break-after: avoid;
         }
         .fecha-grupo {
             background: #f0f7f9;
-            padding: 8px 15px;
-            margin: 12px 0 8px 0;
+            padding: 6px 10px;
+            margin: 8px 0 6px 0;
             border-left: 4px solid #0e4b5e;
+            page-break-after: avoid;
+            break-after: avoid;
         }
         .fecha-grupo h3 {
             color: #0e4b5e;
@@ -75,7 +86,17 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+            table-layout: fixed;
+            page-break-inside: auto;
+            break-inside: auto;
+        }
+        thead {
+            display: table-header-group;
+        }
+        tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
         th {
             background: #0e4b5e;
@@ -96,6 +117,8 @@
         }
         .equipo {
             font-weight: 600;
+            overflow-wrap: anywhere;
+            word-break: normal;
         }
         .resultado {
             text-align: center;
@@ -111,6 +134,9 @@
         .cancha {
             color: #666;
             font-size: 9px;
+        }
+        .grupo {
+            overflow-wrap: anywhere;
         }
         .print-button {
             position: fixed;
@@ -139,10 +165,57 @@
                 display: none;
             }
             body {
-                padding: 10px;
+                padding: 0;
+                font-size: 9px;
+            }
+            .header {
+                margin-bottom: 10px;
+                padding-bottom: 6px;
+            }
+            .header-logo {
+                width: 36px;
+            }
+            .header-text h1 {
+                font-size: 18px;
+            }
+            .header-text p {
+                font-size: 11px;
             }
             .categoria-section {
-                page-break-inside: avoid;
+                margin-bottom: 12px;
+                page-break-inside: auto;
+                break-inside: auto;
+            }
+            .categoria-title {
+                padding: 6px 8px;
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+            .fecha-grupo {
+                padding: 4px 8px;
+                margin: 6px 0 4px 0;
+            }
+            .fecha-grupo h3 {
+                font-size: 11px;
+            }
+            .fecha-grupo span {
+                font-size: 9px;
+            }
+            th {
+                padding: 4px 3px;
+                font-size: 8px;
+            }
+            td {
+                padding: 3px;
+                font-size: 8px;
+            }
+            .resultado {
+                min-width: 34px;
+                font-size: 9px;
+            }
+            .horario,
+            .cancha {
+                font-size: 8px;
             }
         }
     </style>
@@ -208,7 +281,7 @@
                                             @endif
                                         </td>
                                         <td class="cancha">{{ $p->cancha ?? '-' }}</td>
-                                        <td>
+                                        <td class="grupo">
                                             @if($p->idGrupo && isset($grupos[$p->idGrupo]))
                                                 {{ $grupos[$p->idGrupo]->nombre }}
                                             @else
