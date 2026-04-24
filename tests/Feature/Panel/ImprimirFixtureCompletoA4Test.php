@@ -117,6 +117,9 @@ it('renderiza el fixture completo con estilos de impresion adaptados a A4', func
         ->assertSee('display: table-header-group', false)
         ->assertSee('print-color-adjust: exact', false)
         ->assertSee('linear-gradient(180deg, #0e4b5e, #0a3a49)', false)
+        ->assertSee('fecha-section', false)
+        ->assertSee('resultado-cell', false)
+        ->assertSee('resultado--pendiente', false)
         ->assertSee('Local Nombre Largo A4');
 });
 
