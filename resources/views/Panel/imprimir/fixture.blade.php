@@ -121,9 +121,14 @@
             page-break-after: avoid;
             break-after: avoid;
         }
+        .fecha-section {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             margin-bottom: 8px;
             table-layout: fixed;
             page-break-inside: auto;
@@ -144,11 +149,17 @@
             background: linear-gradient(180deg, #0e4b5e, #0a3a49);
             color: white;
             padding: 7px 6px;
-            text-align: left;
+            text-align: center;
             font-size: 9px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+        }
+        th:first-child {
+            border-top-left-radius: 9px;
+        }
+        th:last-child {
+            border-top-right-radius: 9px;
         }
         td {
             padding: 6px;
@@ -157,17 +168,33 @@
             vertical-align: middle;
             background: #fff;
         }
-        tr:nth-child(even) {
+        tr:nth-child(even) td {
             background-color: #f8fbfd;
         }
         tbody tr:hover td {
             background-color: #f1f7fb;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        tbody tr:last-child td:first-child {
+            border-bottom-left-radius: 9px;
+        }
+        tbody tr:last-child td:last-child {
+            border-bottom-right-radius: 9px;
         }
         .equipo {
             font-weight: 800;
             color: #10212b;
             overflow-wrap: anywhere;
             word-break: normal;
+        }
+        .equipo-local,
+        .equipo-visitante {
+            text-align: left;
+        }
+        .resultado-cell {
+            text-align: center;
         }
         .resultado {
             text-align: center;
@@ -181,15 +208,22 @@
             display: inline-block;
             box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
         }
+        .resultado--pendiente {
+            color: #0e4b5e;
+            background: #edf3f7;
+            box-shadow: inset 0 0 0 1px #c9d7e2;
+        }
         .horario {
             color: #4f6371;
             font-size: 9px;
             font-weight: 700;
+            text-align: center;
         }
         .cancha {
             color: #4f6371;
             font-size: 9px;
             font-weight: 700;
+            text-align: center;
         }
         .grupo {
             overflow-wrap: anywhere;
@@ -264,6 +298,10 @@
                 font-size: 9px;
                 margin: 4px 0 3px 0;
             }
+            .fecha-section {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
             th {
                 padding: 4px 3px;
                 font-size: 8px;
@@ -318,56 +356,76 @@
                     @endphp
 
                     @foreach($partidosPorFecha as $nombreFecha => $partidosFecha)
-                        <div class="fecha-grupo">
-                            <h3>{{ $nombreFecha }}</h3>
-                            <span>{{ $partidosFecha->count() }} partidos</span>
-                        </div>
+                        <div class="fecha-section">
+                            <div class="fecha-grupo">
+                                <h3>{{ $nombreFecha }}</h3>
+                                <span>{{ $partidosFecha->count() }} partidos</span>
+                            </div>
 
-                        @php
-                            $gruposFecha = $partidosFecha->groupBy(fn ($partido) => $partido->idGrupo ?: 'sin-grupo');
-                            $mostrarTituloGrupo = $partidosCategoria->pluck('idGrupo')->map(fn ($idGrupo) => $idGrupo ?: 'sin-grupo')->unique()->count() > 1;
-                        @endphp
+                            @php
+                                $gruposFecha = $partidosFecha->groupBy(fn ($partido) => $partido->idGrupo ?: 'sin-grupo');
+                                $mostrarTituloGrupo = $partidosCategoria->pluck('idGrupo')->map(fn ($idGrupo) => $idGrupo ?: 'sin-grupo')->unique()->count() > 1;
+                            @endphp
 
-                        @foreach($gruposFecha as $idGrupoFixture => $partidosGrupo)
-                            @if($mostrarTituloGrupo)
-                                <div class="grupo-title">
-                                    @if($idGrupoFixture !== 'sin-grupo' && isset($grupos[$idGrupoFixture]))
-                                        {{ $grupos[$idGrupoFixture]->nombre }}
-                                    @else
-                                        Sin grupo
-                                    @endif
-                                </div>
-                            @endif
+                            @foreach($gruposFecha as $idGrupoFixture => $partidosGrupo)
+                                @if($mostrarTituloGrupo)
+                                    <div class="grupo-title">
+                                        @if($idGrupoFixture !== 'sin-grupo' && isset($grupos[$idGrupoFixture]))
+                                            {{ $grupos[$idGrupoFixture]->nombre }}
+                                        @else
+                                            Sin grupo
+                                        @endif
+                                    </div>
+                                @endif
 
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th style="width: 31%;">Local</th>
-                                        <th style="width: 10%; text-align: center;">Res.</th>
-                                        <th style="width: 31%;">Visitante</th>
-                                        <th style="width: 20%;">Fecha/Hora</th>
-                                        <th style="width: 8%;">Cancha</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($partidosGrupo as $p)
+                                <table>
+                                    <colgroup>
+                                        <col style="width: 31%;">
+                                        <col style="width: 10%;">
+                                        <col style="width: 31%;">
+                                        <col style="width: 20%;">
+                                        <col style="width: 8%;">
+                                    </colgroup>
+                                    <thead>
                                         <tr>
-                                            <td class="equipo">{{ $p->nombre_local }}</td>
-                                            <td class="resultado">{{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}</td>
-                                            <td class="equipo">{{ $p->nombre_visitante }}</td>
-                                            <td class="horario">
-                                                @if($p->horario_datetime)
-                                                    {{ \Carbon\Carbon::parse($p->horario_datetime)->format('d/m/Y H:i') }}
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
-                                            <td class="cancha">{{ $p->cancha ?? '-' }}</td>
+                                            <th>Local</th>
+                                            <th>Res.</th>
+                                            <th>Visitante</th>
+                                            <th>Fecha/Hora</th>
+                                            <th>Cancha</th>
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @endforeach
+                                    </thead>
+                                    <tbody>
+                                        @foreach($partidosGrupo as $p)
+                                            @php
+                                                $resultadoPendiente = $p->golesEquipoLocal === null || $p->golesEquipoVisitante === null;
+                                            @endphp
+                                            <tr>
+                                                <td class="equipo equipo-local">{{ $p->nombre_local }}</td>
+                                                <td class="resultado-cell">
+                                                    <span class="resultado {{ $resultadoPendiente ? 'resultado--pendiente' : '' }}">
+                                                        @if($resultadoPendiente)
+                                                            —
+                                                        @else
+                                                            {{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}
+                                                        @endif
+                                                    </span>
+                                                </td>
+                                                <td class="equipo equipo-visitante">{{ $p->nombre_visitante }}</td>
+                                                <td class="horario">
+                                                    @if($p->horario_datetime)
+                                                        {{ \Carbon\Carbon::parse($p->horario_datetime)->format('d/m/Y H:i') }}
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <td class="cancha">{{ $p->cancha ?? '-' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @endforeach
+                        </div>
                     @endforeach
                 </div>
             @endif
