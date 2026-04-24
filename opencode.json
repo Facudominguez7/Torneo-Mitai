@@ -5,6 +5,11 @@
             "type": "local",
             "enabled": true,
             "command": [
+                "docker",
+                "compose",
+                "exec",
+                "-T",
+                "app",
                 "php",
                 "artisan",
                 "boost:mcp"
