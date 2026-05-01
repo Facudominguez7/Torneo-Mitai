@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Constants\PartidoConstants;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Partido\StoreRequest;
 use App\Models\Categoria;
@@ -494,7 +495,11 @@ class ControladorPartidos extends Controller
 
     private function resolverRutaRegresoResultado(Request $request, Partido $partido, array $parametrosRegreso): string
     {
-        if ($request->input('origen') === 'planilla') {
+        $origen = $request->input('origen')
+            ?? $request->input('retorno_origen_planilla')
+            ?? $request->input('origen_planilla');
+
+        if ($origen === 'planilla') {
             return route('planilla.show', array_merge([
                 'partidoId' => $partido->id,
                 'idEdicion' => $partido->idEdicion,

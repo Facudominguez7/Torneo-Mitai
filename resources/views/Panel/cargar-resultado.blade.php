@@ -5,6 +5,13 @@
         $esInstanciaFinal = isset($tipo) && $tipo === 'instancia_final';
         $contextoRegreso = $parametrosRegreso ?? [];
         $rutaRegreso = $rutaRegreso ?? ($esInstanciaFinal ? route('instancia_final.index', $contextoRegreso) : route('partido.index', $contextoRegreso));
+        $horarioMostrado = null;
+
+        if (!empty($partido?->horario)) {
+            $horarioMostrado = $partido->horario . ' PM';
+        } elseif (!empty($partido?->horario_datetime)) {
+            $horarioMostrado = \Carbon\Carbon::parse($partido->horario_datetime)->format('H:i');
+        }
     @endphp
 
     <div class="mb-4">
@@ -38,10 +45,12 @@
                 <div class="flex flex-col md:flex-row items-center justify-between md:px-6 py-4 border-b">
                     <div class="flex items-center gap-4">
                         <img src="{{ asset('fotos/equipos/' . $partido->equipoLocal->foto) }}" width="40" height="40" alt="Escudo {{ $partido->equipoLocal->nombre }}"
+                            onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';"
                             class="rounded-full object-cover" />
                         <div class="font-medium text-lg">{{ $partido->equipoLocal->nombre }}</div>
                         <div class="text-gray-500">vs</div>
                         <img src="{{ asset('fotos/equipos/' . $partido->equipoVisitante->foto) }}" width="40" height="40" alt="Escudo {{ $partido->equipoVisitante->nombre }}"
+                            onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';"
                             class="rounded-full object-cover" />
                         <div class="font-medium text-lg">{{ $partido->equipoVisitante->nombre }}</div>
                     </div>
@@ -60,12 +69,12 @@
                             <path fill-rule="evenodd"
                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12zm0-10a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H7a1 1 0 110-2h3V7a1 1 0 011-1z" />
                         </svg>
-                        <span class="whitespace-nowrap">{{ $partido->horario }} PM</span>
+                        <span class="whitespace-nowrap">{{ $horarioMostrado ?? '--:--' }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12zm0-10a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H7a1 1 0 110-2h3V7a1-1z" />
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12zm0-10a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H7a1 1 0 110-2h3V7a1 1 0 011-1z" />
                         </svg>
                         <span class="whitespace-nowrap">Cancha {{ $partido->cancha }}</span>
                     </div>
