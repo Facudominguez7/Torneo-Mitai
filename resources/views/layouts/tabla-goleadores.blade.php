@@ -91,16 +91,24 @@
                             <div>
                                 <h2 class="text-sm font-semibold uppercase tracking-[0.3em] text-white/70">Buscar
                                     jugador</h2>
-                                <p class="text-xs text-white/50">Filtrá al instante por nombre dentro de la tabla.</p>
+                                <p class="text-xs text-white/50">Buscá por nombre en toda la tabla con paginación.</p>
                             </div>
-                            <label for="buscador-goleadores" class="relative w-full md:max-w-sm">
-                                <span
-                                    class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#f7f280]">
-                                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                                </span>
-                                <input id="buscador-goleadores" type="text" placeholder="Buscar por nombre..."
-                                    class="w-full rounded-2xl border border-[#f7f280]/35 bg-white/5 px-4 py-3 pl-11 text-sm font-semibold text-white placeholder:text-white/45 focus:border-[#f7f280]/60 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
-                            </label>
+                            <form id="form-busqueda-goleadores" method="GET" action="{{ route('tabla-goleadores') }}"
+                                class="w-full md:max-w-sm">
+                                <input type="hidden" name="idEdicion" value="{{ request('idEdicion') }}">
+                                <input type="hidden" name="idCategoria" value="{{ request('idCategoria') }}">
+                                <input type="hidden" name="sort" value="{{ request('sort', 'goles') }}">
+                                <input type="hidden" name="dir" value="{{ request('dir', request('sort', 'goles') === 'goles' ? 'desc' : 'asc') }}">
+                                <label for="buscador-goleadores" class="relative block">
+                                    <span
+                                        class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#f7f280]">
+                                        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                                    </span>
+                                    <input id="buscador-goleadores" name="search_value" type="text"
+                                        value="{{ request('search_value') }}" placeholder="Buscar por nombre..."
+                                        class="w-full rounded-2xl border border-[#f7f280]/35 bg-white/5 px-4 py-3 pl-11 text-sm font-semibold text-white placeholder:text-white/45 focus:border-[#f7f280]/60 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+                                </label>
+                            </form>
                         </div>
                     </div>
 
@@ -161,8 +169,7 @@
                                         </thead>
                                         <tbody class="divide-y divide-white/5">
                                             @foreach ($goleadores_t as $index => $g)
-                                                <tr class="fila-goleador transition hover:bg-white/5"
-                                                    data-jugador="{{ $g->nombreJugador }}">
+                                                <tr class="transition hover:bg-white/5">
                                                     <td class="py-4 pl-6 pr-3 text-sm font-semibold text-white/80">
                                                         {{ $posOffset + $index + 1 }}
                                                     </td>
@@ -188,8 +195,7 @@
                             <div class="grid gap-5 lg:hidden">
                                 @foreach ($goleadores_t as $index => $g)
                                     <article
-                                        class="card-goleador-movil rounded-3xl border border-[#f7f280]/25 bg-gradient-to-br from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/90 p-5 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.85)]"
-                                        data-jugador="{{ $g->nombreJugador }}">
+                                        class="card-goleador-movil rounded-3xl border border-[#f7f280]/25 bg-gradient-to-br from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/90 p-5 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.85)]">
                                         <div
                                             class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
                                             <span>#{{ str_pad($posOffset + $index + 1, 2, '0', STR_PAD_LEFT) }}</span>
@@ -210,10 +216,6 @@
                                     </article>
                                 @endforeach
                             </div>
-                            <div id="sin-coincidencias"
-                                class="hidden rounded-3xl border border-[#f7f280]/25 bg-black/20 px-6 py-8 text-center text-sm font-semibold text-white/70">
-                                No encontramos jugadores que coincidan con tu búsqueda en esta página.
-                            </div>
                         @endif
                     </div>
 
@@ -233,56 +235,20 @@
             var idCategoria = new URLSearchParams(window.location.search).get('idCategoria') || '';
             var url = "{{ route('tabla-goleadores') }}";
 
-            const normalizar = (valor) => valor
-                .toString()
-                .toLowerCase()
-                .normalize('NFD')
-                .replace(/\p{Diacritic}/gu, '');
-
             const buscador = document.getElementById('buscador-goleadores');
-            const filas = Array.from(document.querySelectorAll('.fila-goleador'));
-            const tarjetas = Array.from(document.querySelectorAll('.card-goleador-movil'));
-            const mensajeSinCoincidencias = document.getElementById('sin-coincidencias');
-
-            function aplicarFiltro(nombre) {
-                const termino = normalizar(nombre.trim());
-                let coincidencias = 0;
-
-                const evaluar = (datasetNombre) => {
-                    if (!termino) {
-                        return true;
-                    }
-                    return normalizar(datasetNombre).includes(termino);
-                };
-
-                filas.forEach(function (fila) {
-                    const coincide = evaluar(fila.dataset.jugador || '');
-                    fila.classList.toggle('hidden', !coincide);
-                    if (coincide) {
-                        coincidencias++;
-                    }
-                });
-
-                tarjetas.forEach(function (card) {
-                    const coincide = evaluar(card.dataset.jugador || '');
-                    card.classList.toggle('hidden', !coincide);
-                    if (coincide) {
-                        coincidencias++;
-                    }
-                });
-
-                if (mensajeSinCoincidencias) {
-                    if (termino && coincidencias === 0) {
-                        mensajeSinCoincidencias.classList.remove('hidden');
-                    } else {
-                        mensajeSinCoincidencias.classList.add('hidden');
-                    }
-                }
-            }
+            const formBusqueda = document.getElementById('form-busqueda-goleadores');
 
             if (buscador) {
+                let debounceBusqueda = null;
                 buscador.addEventListener('input', function (event) {
-                    aplicarFiltro(event.target.value || '');
+                    if (!formBusqueda) {
+                        return;
+                    }
+
+                    clearTimeout(debounceBusqueda);
+                    debounceBusqueda = setTimeout(function () {
+                        formBusqueda.submit();
+                    }, 350);
                 });
             }
 
@@ -306,12 +272,11 @@
                         idCategoria,
                         idEdicion,
                         sort: new URLSearchParams(window.location.search).get('sort') || '',
-                        dir: new URLSearchParams(window.location.search).get('dir') || ''
+                        dir: new URLSearchParams(window.location.search).get('dir') || '',
+                        search_value: new URLSearchParams(window.location.search).get('search_value') || ''
                     });
                 });
             });
-
-            aplicarFiltro('');
         });
     </script>
 </body>
