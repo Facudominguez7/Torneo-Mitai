@@ -10,6 +10,169 @@ use Illuminate\Support\Facades\DB;
 
 class GolesArbitrosService
 {
+    /**
+     * @return array{aplicado: bool, bloqueado: bool, goles_aplicados: int, mensaje: string}
+     */
+    public function aplicarReportesAPlanillaOficial(string $tipoPartido, int $partidoId, int $idEdicion, int $idEquipo): array
+    {
+        $partidoType = PartidoConstants::getModelClass($tipoPartido);
+
+        if ($this->equipoTieneGolesOficiales($partidoId, $partidoType, $idEdicion, $idEquipo)) {
+            return [
+                'aplicado' => false,
+                'bloqueado' => true,
+                'goles_aplicados' => 0,
+                'mensaje' => 'No se aplicaron goles arbitrales: el equipo ya tiene goles oficiales cargados.',
+            ];
+        }
+
+        return DB::transaction(function () use ($partidoId, $partidoType, $idEdicion, $idEquipo): array {
+            if ($this->equipoTieneGolesOficiales($partidoId, $partidoType, $idEdicion, $idEquipo, true)) {
+                return [
+                    'aplicado' => false,
+                    'bloqueado' => true,
+                    'goles_aplicados' => 0,
+                    'mensaje' => 'No se aplicaron goles arbitrales: el equipo ya tiene goles oficiales cargados.',
+                ];
+            }
+
+            $golesPorPlanilla = GolArbitroReportado::query()
+                ->where('partido_id', $partidoId)
+                ->where('partido_type', $partidoType)
+                ->where('idEdicion', $idEdicion)
+                ->where('idEquipo', $idEquipo)
+                ->where('es_inconsistencia', false)
+                ->whereNotNull('idPlanillaJugador')
+                ->selectRaw('idPlanillaJugador, SUM(goles_reportados) as goles_reportados')
+                ->groupBy('idPlanillaJugador')
+                ->get();
+
+            if ($golesPorPlanilla->isEmpty()) {
+                return [
+                    'aplicado' => false,
+                    'bloqueado' => false,
+                    'goles_aplicados' => 0,
+                    'mensaje' => 'No hay goles arbitrales vinculados para aplicar en este equipo.',
+                ];
+            }
+
+            $planillasIds = $golesPorPlanilla->pluck('idPlanillaJugador')->all();
+
+            $planillas = PlanillaJugador::query()
+                ->where('partido_id', $partidoId)
+                ->where('partido_type', $partidoType)
+                ->where('idEdicion', $idEdicion)
+                ->where('idEquipo', $idEquipo)
+                ->whereIn('id', $planillasIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            $totalAplicado = 0;
+
+            foreach ($golesPorPlanilla as $fila) {
+                $planilla = $planillas->get((int) $fila->idPlanillaJugador);
+
+                if ($planilla === null) {
+                    continue;
+                }
+
+                $golesReportados = (int) $fila->goles_reportados;
+                $planilla->goles = $golesReportados;
+                $planilla->save();
+                $totalAplicado += $golesReportados;
+            }
+
+            return [
+                'aplicado' => true,
+                'bloqueado' => false,
+                'goles_aplicados' => $totalAplicado,
+                'mensaje' => 'Goles arbitrales aplicados sobre la planilla oficial del equipo.',
+            ];
+        }, 3);
+    }
+
+    /**
+     * @return array{aplicables: array<int, array<string, mixed>>, ignorados: array<int, array<string, mixed>>, ambiguos: array<int, array<string, mixed>>}
+     */
+    public function obtenerCandidatosAplicables(string $tipoPartido, int $partidoId, int $idEdicion, int $idEquipo): array
+    {
+        $partidoType = PartidoConstants::getModelClass($tipoPartido);
+
+        $reportes = GolArbitroReportado::query()
+            ->where('partido_id', $partidoId)
+            ->where('partido_type', $partidoType)
+            ->where('idEdicion', $idEdicion)
+            ->where('idEquipo', $idEquipo)
+            ->orderBy('id')
+            ->get();
+
+        $duplicadosPorCamiseta = PlanillaJugador::query()
+            ->where('partido_id', $partidoId)
+            ->where('partido_type', $partidoType)
+            ->where('idEdicion', $idEdicion)
+            ->where('idEquipo', $idEquipo)
+            ->where('asistio', true)
+            ->selectRaw('numero_camiseta, COUNT(*) as total')
+            ->groupBy('numero_camiseta')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('total', 'numero_camiseta');
+
+        $aplicables = [];
+        $ignorados = [];
+        $ambiguos = [];
+
+        foreach ($reportes as $reporte) {
+            $filaBase = [
+                'idReporte' => (int) $reporte->id,
+                'idPlanillaJugador' => $reporte->idPlanillaJugador !== null ? (int) $reporte->idPlanillaJugador : null,
+                'numeroCamiseta' => $reporte->numero_camiseta !== null ? (int) $reporte->numero_camiseta : null,
+                'golesReportados' => (int) $reporte->goles_reportados,
+            ];
+
+            if ((bool) $reporte->es_inconsistencia || $reporte->idPlanillaJugador === null || (int) $reporte->goles_reportados <= 0) {
+                $ignorados[] = $filaBase;
+
+                continue;
+            }
+
+            $numeroCamiseta = $reporte->numero_camiseta !== null ? (int) $reporte->numero_camiseta : null;
+            if ($numeroCamiseta !== null && $duplicadosPorCamiseta->has($numeroCamiseta)) {
+                $ambiguos[] = $filaBase;
+
+                continue;
+            }
+
+            $aplicables[] = $filaBase;
+        }
+
+        return [
+            'aplicables' => $aplicables,
+            'ignorados' => $ignorados,
+            'ambiguos' => $ambiguos,
+        ];
+    }
+
+    public function obtenerAdvertenciaDiferenciaConResultadoOficial(string $tipoPartido, int $partidoId, int $idEdicion, int $idEquipo): ?string
+    {
+        $partido = app(PlanillaConfirmacionService::class)->resolverPartido($tipoPartido, $partidoId, $idEdicion);
+
+        $sumaIndividual = (int) PlanillaJugador::query()
+            ->where('partido_id', $partidoId)
+            ->where('partido_type', PartidoConstants::getModelClass($tipoPartido))
+            ->where('idEdicion', $idEdicion)
+            ->where('idEquipo', $idEquipo)
+            ->sum('goles');
+
+        $golesOficiales = (int) ($partido->idEquipoLocal === $idEquipo ? $partido->golesEquipoLocal : $partido->golesEquipoVisitante);
+
+        if ($sumaIndividual === $golesOficiales) {
+            return null;
+        }
+
+        return 'Advertencia: la suma de goles individuales del equipo ('.$sumaIndividual.') difiere del resultado oficial ('.$golesOficiales.').';
+    }
+
     public function guardarReportes(string $tipoPartido, int $partidoId, int $idEdicion, int $idEquipo, array $reportes): void
     {
         $partidoType = PartidoConstants::getModelClass($tipoPartido);
@@ -150,6 +313,7 @@ class GolesArbitrosService
                 $jugador = $reporte->planillaJugador?->jugador;
 
                 return [
+                    'id' => (int) $reporte->id,
                     'numero_camiseta' => $reporte->numero_camiseta !== null ? (int) $reporte->numero_camiseta : null,
                     'goles_reportados' => (int) $reporte->goles_reportados,
                     'jugador_oficial' => $jugador ? trim($jugador->apellido.', '.$jugador->nombre, ' ,') : null,
@@ -167,5 +331,21 @@ class GolesArbitrosService
         }
 
         return (int) $valor;
+    }
+
+    public function equipoTieneGolesOficiales(int $partidoId, string $partidoType, int $idEdicion, int $idEquipo, bool $forUpdate = false): bool
+    {
+        $consulta = PlanillaJugador::query()
+            ->where('partido_id', $partidoId)
+            ->where('partido_type', $partidoType)
+            ->where('idEdicion', $idEdicion)
+            ->where('idEquipo', $idEquipo)
+            ->where('goles', '>', 0);
+
+        if ($forUpdate) {
+            $consulta->lockForUpdate();
+        }
+
+        return $consulta->exists();
     }
 }

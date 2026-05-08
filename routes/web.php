@@ -109,6 +109,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
         Route::post('/actualizar-jugador', [ControladorPlanillaJugador::class, 'actualizarJugadores'])->name('planilla.actualizarJugadores');
         Route::post('/copiar-partido-anterior', [ControladorPlanillaJugador::class, 'copiarPlanillaPartidoAnterior'])->name('planilla.copiarPartidoAnterior');
         Route::post('/actualizar-goles-arbitros', [ControladorPlanillaJugador::class, 'actualizarGolesArbitros'])->name('planilla.actualizarGolesArbitros');
+        Route::post('/aplicar-goles-arbitrales', [ControladorPlanillaJugador::class, 'aplicarGolesArbitrales'])->name('planilla.aplicarGolesArbitrales');
         Route::post('/confirmar-goles', [ControladorPlanillaJugador::class, 'confirmarGoles'])->name('planilla.confirmarGoles');
         Route::post('/quitar-confirmacion-goles', [ControladorPlanillaJugador::class, 'quitarConfirmacionGoles'])->name('planilla.quitarConfirmacionGoles');
         Route::post('/eliminar-jugador', [ControladorPlanillaJugador::class, 'eliminarJugador'])->name('planilla.eliminarJugador');
