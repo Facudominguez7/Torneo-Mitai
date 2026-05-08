@@ -552,7 +552,7 @@ class ControladorHome extends Controller
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $idCategoria = $request->idCategoria;
-        $search_value = $request->search_value;
+        $searchValue = trim((string) $request->query('search_value', ''));
         // Nuevos parámetros de ordenamiento (UX): sort = goles|nombre|equipo|categoria, dir = asc|desc
         $sort = $request->query('sort');
         $dir = strtolower($request->query('dir', '')) === 'asc' ? 'asc' : 'desc';
@@ -572,13 +572,22 @@ class ControladorHome extends Controller
             $dir = $sortKey === 'goles' ? 'desc' : 'asc';
         }
 
-        $baseQuery = TablaGoleador::search($search_value)
+        $baseQuery = TablaGoleador::query()
             ->join('ediciones as ed', 'tabla_goleadores.idEdicion', '=', 'ed.id')
             ->join('equipos as e', 'tabla_goleadores.idEquipo', '=', 'e.id')
             ->join('categorias as cat', 'tabla_goleadores.idCategoria', '=', 'cat.id')
             ->join('jugadores as j', 'tabla_goleadores.dni_jugador', '=', 'j.dni')
             ->select('tabla_goleadores.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo', \Illuminate\Support\Facades\DB::raw("CONCAT(j.apellido, ' ', j.nombre) as nombreJugador"))
             ->where('tabla_goleadores.idEdicion', $idEdicion);
+
+        if ($searchValue !== '') {
+            $baseQuery->where(function ($query) use ($searchValue) {
+                $likePattern = "%{$searchValue}%";
+                $query->whereLike('j.nombre', $likePattern)
+                    ->orWhereLike('j.apellido', $likePattern)
+                    ->orWhereLike(\Illuminate\Support\Facades\DB::raw("CONCAT(j.apellido, ' ', j.nombre)"), $likePattern);
+            });
+        }
 
         if (! is_null($idCategoria)) {
             $baseQuery->where('tabla_goleadores.idCategoria', $idCategoria);
@@ -590,9 +599,9 @@ class ControladorHome extends Controller
             ->orderBy('cat.nombreCategoria', 'desc')
             ->orderBy('tabla_goleadores.cantidadGoles', 'desc');
 
-        $goleadores_t = $baseQuery->paginate(30);
+        $goleadores_t = $baseQuery->paginate(30)->withQueryString();
         // Mantener parámetros en la paginación
-        $appendParams = ['idEdicion' => $idEdicion, 'search_value' => $search_value, 'sort' => $sortKey, 'dir' => $dir];
+        $appendParams = ['idEdicion' => $idEdicion, 'search_value' => $searchValue, 'sort' => $sortKey, 'dir' => $dir];
         if (! is_null($idCategoria)) {
             $appendParams['idCategoria'] = $idCategoria;
         }
