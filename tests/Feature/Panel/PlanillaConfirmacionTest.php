@@ -11,6 +11,7 @@ use App\Models\Grupo;
 use App\Models\Jugador;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
+use App\Models\TablaGoleador;
 use App\Models\User;
 
 function crearContextoPlanillaConfirmacion(): array
@@ -571,4 +572,68 @@ it('marca inconsistencia cuando la camiseta existe pero el jugador no tiene asis
         ->assertSee('Inconsistencia', false)
         ->assertSee('Camiseta no encontrada o sin asistencia en la planilla oficial.', false)
         ->assertDontSee('Jugador oficial vinculado: Confirmado, Juan', false);
+});
+
+it('aplica goles arbitrales al equipo cuando todos los goles oficiales estan en cero', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['planilla']->update(['asistio' => true, 'goles' => 0]);
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarGolesArbitros'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'reportes' => [
+                ['numero_camiseta' => 10, 'goles_reportados' => 3],
+            ],
+        ])
+    )->assertRedirect();
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.aplicarGolesArbitrales'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Goles arbitrales aplicados sobre la planilla oficial del equipo.');
+
+    $planillaActualizada = $contexto['planilla']->fresh();
+    $jugadorActualizado = $contexto['jugador']->fresh();
+
+    expect($planillaActualizada)->not->toBeNull();
+    expect((int) $planillaActualizada->goles)->toBe(3);
+    expect((int) $jugadorActualizado->goles_totales)->toBe(3);
+    expect(TablaGoleador::query()->where('dni_jugador', $contexto['jugador']->dni)->value('cantidadGoles'))->toBe(3);
+});
+
+it('bloquea la aplicacion de goles arbitrales si existe al menos un gol oficial en el equipo', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['planilla']->update(['asistio' => true, 'goles' => 1]);
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarGolesArbitros'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'reportes' => [
+                ['numero_camiseta' => 10, 'goles_reportados' => 2],
+            ],
+        ])
+    )->assertRedirect();
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.aplicarGolesArbitrales'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionHasErrors('idEquipo');
+
+    $planillaSinCambios = $contexto['planilla']->fresh();
+    expect($planillaSinCambios)->not->toBeNull();
+    expect((int) $planillaSinCambios->goles)->toBe(1);
 });

@@ -7,7 +7,6 @@ namespace App\Services;
 use App\Constants\PartidoConstants;
 use App\Models\Jugador;
 use App\Models\PlanillaJugador;
-use App\Models\TablaGoleador;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +16,7 @@ final class PlanillaJugadorAutosaveService
 {
     public function __construct(
         private readonly PlanillaConfirmacionService $planillaConfirmacionService,
+        private readonly EstadisticasJugadorService $estadisticasJugadorService,
     ) {}
 
     /**
@@ -165,7 +165,7 @@ final class PlanillaJugadorAutosaveService
                     $jugador->tarjetas_rojas_totales = ($jugador->tarjetas_rojas_totales ?? 0) + 1;
                 }
 
-                $jugador->goles_totales = max(0, ($jugador->goles_totales ?? 0) + ($planilla->goles - $golesAnteriores));
+                $deltaGoles = $planilla->goles - $golesAnteriores;
 
                 if ($planilla->asistio && ! $asistioAnteriormente) {
                     $jugador->partidos_totales = ($jugador->partidos_totales ?? 0) + 1;
@@ -175,32 +175,13 @@ final class PlanillaJugadorAutosaveService
 
                 $jugador->save();
 
-                $goleador = TablaGoleador::query()
-                    ->where('dni_jugador', $dniJugador)
-                    ->where('idEdicion', $idEdicion)
-                    ->where('idCategoria', $planilla->idCategoria)
-                    ->lockForUpdate()
-                    ->first();
-
-                $delta = $planilla->goles - $golesAnteriores;
-
-                if ($goleador !== null) {
-                    $goleador->cantidadGoles = max(0, $goleador->cantidadGoles + $delta);
-
-                    if ($goleador->cantidadGoles === 0) {
-                        $goleador->delete();
-                    } else {
-                        $goleador->save();
-                    }
-                } elseif ($planilla->goles > 0) {
-                    TablaGoleador::create([
-                        'dni_jugador' => $dniJugador,
-                        'cantidadGoles' => $planilla->goles,
-                        'idEquipo' => $planilla->idEquipo,
-                        'idEdicion' => $idEdicion,
-                        'idCategoria' => $planilla->idCategoria,
-                    ]);
-                }
+                $this->estadisticasJugadorService->actualizarDeltaGoles(
+                    $dniJugador,
+                    $idEdicion,
+                    (int) $planilla->idCategoria,
+                    (int) $planilla->idEquipo,
+                    $deltaGoles,
+                );
 
                 $confirmacionInvalidada = $this->planillaConfirmacionService->invalidarConfirmacionPorEdicion(
                     $tipoPartido,

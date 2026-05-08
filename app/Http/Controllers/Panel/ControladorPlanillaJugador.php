@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Panel;
 use App\Constants\PartidoConstants;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Panel\ActualizarPlanillaJugadoresRequest;
+use App\Http\Requests\Panel\AplicarGolesArbitralesRequest;
 use App\Http\Requests\Panel\CopiarPlanillaPartidoAnteriorRequest;
 use App\Models\Edicion;
 use App\Models\EquipoEdicion;
@@ -14,6 +15,7 @@ use App\Models\ListaBuenaFe;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Models\TablaGoleador;
+use App\Services\AplicarGolesArbitralesService;
 use App\Services\BajaJugadorService;
 use App\Services\CopiarPlanillaPartidoAnteriorService;
 use App\Services\GolesArbitrosService;
@@ -35,6 +37,7 @@ class ControladorPlanillaJugador extends Controller
         ValidadorReglasJugador $validadorReglas,
         private readonly PlanillaConfirmacionService $planillaConfirmacionService,
         private readonly GolesArbitrosService $golesArbitrosService,
+        private readonly AplicarGolesArbitralesService $aplicarGolesArbitralesService,
         private readonly BajaJugadorService $bajaJugadorService,
         private readonly PlanillaJugadorAutosaveService $planillaJugadorAutosaveService,
         private readonly CopiarPlanillaPartidoAnteriorService $copiarPlanillaPartidoAnteriorService,
@@ -97,6 +100,26 @@ class ControladorPlanillaJugador extends Controller
             (int) $partido->idEquipoVisitante,
         );
 
+        $candidatosArbitrales = [
+            'local' => $this->golesArbitrosService->obtenerCandidatosAplicables(
+                (string) $tipoPartido,
+                (int) $partidoId,
+                (int) $idEdicion,
+                (int) $partido->idEquipoLocal,
+            ),
+            'visitante' => $this->golesArbitrosService->obtenerCandidatosAplicables(
+                (string) $tipoPartido,
+                (int) $partidoId,
+                (int) $idEdicion,
+                (int) $partido->idEquipoVisitante,
+            ),
+        ];
+
+        $equipoBloqueado = [
+            'local' => $this->obtenerDetalleBloqueoEquipo((string) $tipoPartido, (int) $partidoId, (int) $idEdicion, (int) $partido->idEquipoLocal),
+            'visitante' => $this->obtenerDetalleBloqueoEquipo((string) $tipoPartido, (int) $partidoId, (int) $idEdicion, (int) $partido->idEquipoVisitante),
+        ];
+
         $disponibilidadCopiado = $this->copiarPlanillaPartidoAnteriorService->obtenerDisponibilidadCopiadoPorEquipo(
             (string) $tipoPartido,
             (int) $partidoId,
@@ -106,7 +129,38 @@ class ControladorPlanillaJugador extends Controller
         $mostrarBotonCopiarLocal = $disponibilidadCopiado['local'];
         $mostrarBotonCopiarVisitante = $disponibilidadCopiado['visitante'];
 
-        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado', 'contextoNavegacion', 'golesArbitrosResumen', 'mostrarBotonCopiarLocal', 'mostrarBotonCopiarVisitante'));
+        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado', 'contextoNavegacion', 'golesArbitrosResumen', 'candidatosArbitrales', 'equipoBloqueado', 'mostrarBotonCopiarLocal', 'mostrarBotonCopiarVisitante'));
+    }
+
+    /**
+     * @return array{bloqueado: bool, detalle: string}
+     */
+    private function obtenerDetalleBloqueoEquipo(string $tipoPartido, int $partidoId, int $idEdicion, int $idEquipo): array
+    {
+        $jugadoresConGoles = PlanillaJugador::query()
+            ->where('partido_id', $partidoId)
+            ->where('partido_type', PartidoConstants::getModelClass($tipoPartido))
+            ->where('idEdicion', $idEdicion)
+            ->where('idEquipo', $idEquipo)
+            ->where('goles', '>', 0)
+            ->orderByDesc('goles')
+            ->get(['dni_jugador', 'numero_camiseta', 'goles']);
+
+        if ($jugadoresConGoles->isEmpty()) {
+            return [
+                'bloqueado' => false,
+                'detalle' => '',
+            ];
+        }
+
+        $detalle = $jugadoresConGoles
+            ->map(fn (PlanillaJugador $planilla): string => '#'.$planilla->numero_camiseta.' ('.$planilla->dni_jugador.')='.$planilla->goles)
+            ->implode(', ');
+
+        return [
+            'bloqueado' => true,
+            'detalle' => $detalle,
+        ];
     }
 
     public function actualizarGolesArbitros(Request $request)
@@ -131,6 +185,24 @@ class ControladorPlanillaJugador extends Controller
 
         return $this->redirigirAPlanilla($request)
             ->with('status', 'Goles reportados por arbitros actualizados correctamente.');
+    }
+
+    public function aplicarGolesArbitrales(AplicarGolesArbitralesRequest $request): RedirectResponse
+    {
+        $resultado = $this->aplicarGolesArbitralesService->aplicarPorEquipo(
+            (string) $request->input('tipoPartido'),
+            (int) $request->input('partido_id'),
+            (int) $request->input('idEdicion'),
+            (int) $request->input('idEquipo'),
+        );
+
+        $redirect = $this->redirigirAPlanilla($request)->with('status', $resultado->message);
+
+        if ($resultado->advertencia !== null) {
+            $redirect->with('warning', $resultado->advertencia);
+        }
+
+        return $redirect;
     }
 
     /**

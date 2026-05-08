@@ -85,6 +85,16 @@
             'visitante' => ['total_reportado' => 0, 'total_inconsistencias' => 0, 'reportes' => []],
         ];
 
+        $candidatosArbitrales = $candidatosArbitrales ?? [
+            'local' => ['aplicables' => [], 'ignorados' => [], 'ambiguos' => []],
+            'visitante' => ['aplicables' => [], 'ignorados' => [], 'ambiguos' => []],
+        ];
+
+        $equipoBloqueado = $equipoBloqueado ?? [
+            'local' => ['bloqueado' => false, 'detalle' => ''],
+            'visitante' => ['bloqueado' => false, 'detalle' => ''],
+        ];
+
         $filasBaseArbitros = 4;
 
         $construirFilasArbitros = static function (array $reportes, int $cantidadMinima) {
@@ -186,9 +196,21 @@
 
             <div class="grid gap-4 xl:grid-cols-2">
                 @foreach ([
-                    ['clave' => 'local', 'titulo' => $partido->equipoLocal->nombre, 'equipo' => $partido->idEquipoLocal, 'resumen' => $golesArbitrosResumen['local'], 'filas' => $filasArbitrosLocal, 'oficial' => $jugadoresLocalPlanilla->sum('goles')],
-                    ['clave' => 'visitante', 'titulo' => $partido->equipoVisitante->nombre, 'equipo' => $partido->idEquipoVisitante, 'resumen' => $golesArbitrosResumen['visitante'], 'filas' => $filasArbitrosVisitante, 'oficial' => $jugadoresVisitantePlanilla->sum('goles')],
+                    ['clave' => 'local', 'titulo' => $partido->equipoLocal->nombre, 'equipo' => $partido->idEquipoLocal, 'resumen' => $golesArbitrosResumen['local'], 'filas' => $filasArbitrosLocal, 'oficial' => $jugadoresLocalPlanilla->sum('goles'), 'candidatos' => $candidatosArbitrales['local'] ?? ['aplicables' => [], 'ignorados' => [], 'ambiguos' => []], 'bloqueo' => $equipoBloqueado['local'] ?? ['bloqueado' => false, 'detalle' => '']],
+                    ['clave' => 'visitante', 'titulo' => $partido->equipoVisitante->nombre, 'equipo' => $partido->idEquipoVisitante, 'resumen' => $golesArbitrosResumen['visitante'], 'filas' => $filasArbitrosVisitante, 'oficial' => $jugadoresVisitantePlanilla->sum('goles'), 'candidatos' => $candidatosArbitrales['visitante'] ?? ['aplicables' => [], 'ignorados' => [], 'ambiguos' => []], 'bloqueo' => $equipoBloqueado['visitante'] ?? ['bloqueado' => false, 'detalle' => '']],
                 ] as $panelArbitral)
+                    @php
+                        $estadoPorReporte = [];
+                        foreach ($panelArbitral['candidatos']['aplicables'] as $reporteAplicable) {
+                            $estadoPorReporte[(int) $reporteAplicable['idReporte']] = ['label' => 'Estado: aplicable', 'clase' => 'bg-emerald-100 text-emerald-700'];
+                        }
+                        foreach ($panelArbitral['candidatos']['ignorados'] as $reporteIgnorado) {
+                            $estadoPorReporte[(int) $reporteIgnorado['idReporte']] = ['label' => 'Estado: ignorado', 'clase' => 'bg-slate-100 text-slate-700'];
+                        }
+                        foreach ($panelArbitral['candidatos']['ambiguos'] as $reporteAmbiguo) {
+                            $estadoPorReporte[(int) $reporteAmbiguo['idReporte']] = ['label' => 'Estado: ambiguo', 'clase' => 'bg-amber-100 text-amber-700'];
+                        }
+                    @endphp
                     <details class="group rounded-lg border border-white bg-white shadow-sm" {{ $panelArbitral['resumen']['total_inconsistencias'] > 0 ? 'open' : '' }}>
                         <summary class="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4 marker:hidden">
                             <div class="flex flex-wrap items-center gap-2">
@@ -208,13 +230,19 @@
                         <div class="border-t border-gray-100 px-4 pb-4 pt-1">
                             <div class="mt-4 space-y-3">
                                 @forelse ($panelArbitral['resumen']['reportes'] as $reporteArbitral)
+                                    @php
+                                        $estadoReporte = $estadoPorReporte[(int) ($reporteArbitral['id'] ?? 0)] ?? ['label' => 'Estado: ignorado', 'clase' => 'bg-slate-100 text-slate-700'];
+                                        if ($panelArbitral['bloqueo']['bloqueado']) {
+                                            $estadoReporte = ['label' => 'Estado: bloqueado', 'clase' => 'bg-red-100 text-red-700'];
+                                        }
+                                    @endphp
                                     <div class="rounded-md border px-3 py-2 {{ $reporteArbitral['es_inconsistencia'] ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50' }}">
                                         <div class="flex flex-wrap items-center justify-between gap-2">
                                             <div class="text-sm font-semibold text-gray-900">
                                                 Camiseta {{ $reporteArbitral['numero_camiseta'] ?? '-' }} · {{ $reporteArbitral['goles_reportados'] }} gol(es)
                                             </div>
-                                            <span class="text-xs font-semibold {{ $reporteArbitral['es_inconsistencia'] ? 'text-red-700' : 'text-emerald-700' }}">
-                                                {{ $reporteArbitral['es_inconsistencia'] ? 'Inconsistencia' : 'Vinculado a planilla oficial' }}
+                                            <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold {{ $estadoReporte['clase'] }}">
+                                                {{ $estadoReporte['label'] }}
                                             </span>
                                         </div>
 
@@ -268,11 +296,42 @@
                                         Agregar línea
                                     </button>
 
-                                    <button type="submit" class="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">
-                                        Guardar dato arbitral
-                                    </button>
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                        <button type="submit" class="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">
+                                            Guardar dato arbitral
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
+
+                            <form action="{{ route('planilla.aplicarGolesArbitrales') }}" method="POST" class="mt-3 flex justify-end">
+                                @csrf
+                                <input type="hidden" name="partido_id" value="{{ $partido->id }}">
+                                <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
+                                <input type="hidden" name="horario" value="{{ $horarioSeleccionado }}">
+                                <input type="hidden" name="tipoPartido" value="{{ $tipoPartido }}">
+                                <input type="hidden" name="idEquipo" value="{{ $panelArbitral['equipo'] }}">
+                                <input type="hidden" name="origen" value="{{ $contextoNavegacion['origen'] ?? request('origen') }}">
+                                <input type="hidden" name="idCategoria" value="{{ $contextoNavegacion['idCategoria'] ?? request('idCategoria') }}">
+                                <input type="hidden" name="idGrupo" value="{{ $contextoNavegacion['idGrupo'] ?? request('idGrupo') }}">
+                                <input type="hidden" name="idFase" value="{{ $contextoNavegacion['idFase'] ?? request('idFase') }}">
+                                <input type="hidden" name="idCopa" value="{{ $contextoNavegacion['idCopa'] ?? request('idCopa') }}">
+                                <input type="hidden" name="estado" value="{{ $contextoNavegacion['estado'] ?? request('estado') }}">
+                                <input type="hidden" name="busqueda" value="{{ $contextoNavegacion['busqueda'] ?? request('busqueda') }}">
+                                <input type="hidden" name="idFecha" value="{{ $contextoNavegacion['idFecha'] ?? request('idFecha') }}">
+                                <input type="hidden" name="fecha" value="{{ $contextoNavegacion['fecha'] ?? request('fecha') }}">
+                                <input type="hidden" name="horario_filtro" value="{{ $contextoNavegacion['horario_filtro'] ?? request('horario_filtro') }}">
+
+                                <button type="submit" @disabled($panelArbitral['bloqueo']['bloqueado']) class="rounded-md border px-4 py-2 text-sm font-semibold transition {{ $panelArbitral['bloqueo']['bloqueado'] ? 'cursor-not-allowed border-red-200 bg-red-50 text-red-600' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}">
+                                    Aplicar goles válidos
+                                </button>
+                            </form>
+
+                            @if ($panelArbitral['bloqueo']['bloqueado'])
+                                <p class="mt-2 text-right text-xs font-semibold text-red-700">
+                                    Equipo bloqueado. Ya existen goles oficiales cargados en la planilla ({{ $panelArbitral['bloqueo']['detalle'] }}).
+                                </p>
+                            @endif
                         </div>
                     </details>
                 @endforeach
