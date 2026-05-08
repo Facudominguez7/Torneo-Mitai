@@ -202,13 +202,13 @@
                     @php
                         $estadoPorReporte = [];
                         foreach ($panelArbitral['candidatos']['aplicables'] as $reporteAplicable) {
-                            $estadoPorReporte[(int) $reporteAplicable['idReporte']] = ['label' => 'Estado: aplicable', 'clase' => 'bg-emerald-100 text-emerald-700'];
+                            $estadoPorReporte[(int) $reporteAplicable['idReporte']] = ['label' => 'Aplicable', 'clase' => 'bg-emerald-100 text-emerald-700'];
                         }
                         foreach ($panelArbitral['candidatos']['ignorados'] as $reporteIgnorado) {
-                            $estadoPorReporte[(int) $reporteIgnorado['idReporte']] = ['label' => 'Estado: ignorado', 'clase' => 'bg-slate-100 text-slate-700'];
+                            $estadoPorReporte[(int) $reporteIgnorado['idReporte']] = ['label' => 'Ignorado', 'clase' => 'bg-slate-100 text-slate-700'];
                         }
                         foreach ($panelArbitral['candidatos']['ambiguos'] as $reporteAmbiguo) {
-                            $estadoPorReporte[(int) $reporteAmbiguo['idReporte']] = ['label' => 'Estado: ambiguo', 'clase' => 'bg-amber-100 text-amber-700'];
+                            $estadoPorReporte[(int) $reporteAmbiguo['idReporte']] = ['label' => 'Ambiguo', 'clase' => 'bg-amber-100 text-amber-700'];
                         }
                     @endphp
                     <details class="group rounded-lg border border-white bg-white shadow-sm" {{ $panelArbitral['resumen']['total_inconsistencias'] > 0 ? 'open' : '' }}>
@@ -231,9 +231,9 @@
                             <div class="mt-4 space-y-3">
                                 @forelse ($panelArbitral['resumen']['reportes'] as $reporteArbitral)
                                     @php
-                                        $estadoReporte = $estadoPorReporte[(int) ($reporteArbitral['id'] ?? 0)] ?? ['label' => 'Estado: ignorado', 'clase' => 'bg-slate-100 text-slate-700'];
-                                        if ($panelArbitral['bloqueo']['bloqueado']) {
-                                            $estadoReporte = ['label' => 'Estado: bloqueado', 'clase' => 'bg-red-100 text-red-700'];
+                                        $estadoReporte = $estadoPorReporte[(int) ($reporteArbitral['id'] ?? 0)] ?? ['label' => 'Ignorado', 'clase' => 'bg-slate-100 text-slate-700'];
+                                        if ($reporteArbitral['es_inconsistencia']) {
+                                            $estadoReporte = ['label' => 'Inconsistencia', 'clase' => 'bg-red-100 text-red-700'];
                                         }
                                     @endphp
                                     <div class="rounded-md border px-3 py-2 {{ $reporteArbitral['es_inconsistencia'] ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50' }}">
@@ -328,9 +328,11 @@
                             </form>
 
                             @if ($panelArbitral['bloqueo']['bloqueado'])
-                                <p class="mt-2 text-right text-xs font-semibold text-red-700">
-                                    Equipo bloqueado. Ya existen goles oficiales cargados en la planilla ({{ $panelArbitral['bloqueo']['detalle'] }}).
-                                </p>
+                                <div class="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                                    <p class="font-semibold">Equipo bloqueado para aplicar goles arbitrales.</p>
+                                    <p class="mt-1">Ya hay goles oficiales cargados en la planilla: {{ $panelArbitral['bloqueo']['detalle'] }}.</p>
+                                    <p class="mt-1">Mientras exista ese registro oficial, no se aplican goles arbitrales de este equipo.</p>
+                                </div>
                             @endif
                         </div>
                     </details>

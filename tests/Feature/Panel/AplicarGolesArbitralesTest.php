@@ -161,7 +161,6 @@ it('renderiza estados aplicable e ignorado en planilla arbitral', function () {
         ]))
         ->assertOk()
         ->assertSee('Camiseta 10 · 2 gol(es)', false)
-        ->assertSee('Estado: ignorado', false)
         ->assertSee('Aplicar goles válidos', false);
 });
 

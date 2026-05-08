@@ -143,8 +143,9 @@ class ControladorPlanillaJugador extends Controller
             ->where('idEdicion', $idEdicion)
             ->where('idEquipo', $idEquipo)
             ->where('goles', '>', 0)
+            ->leftJoin('jugadores', 'jugadores.dni', '=', 'planilla_jugadores.dni_jugador')
             ->orderByDesc('goles')
-            ->get(['dni_jugador', 'numero_camiseta', 'goles']);
+            ->get(['planilla_jugadores.numero_camiseta', 'planilla_jugadores.goles', 'jugadores.nombre', 'jugadores.apellido']);
 
         if ($jugadoresConGoles->isEmpty()) {
             return [
@@ -154,7 +155,20 @@ class ControladorPlanillaJugador extends Controller
         }
 
         $detalle = $jugadoresConGoles
-            ->map(fn (PlanillaJugador $planilla): string => '#'.$planilla->numero_camiseta.' ('.$planilla->dni_jugador.')='.$planilla->goles)
+            ->map(static function (PlanillaJugador $planilla): string {
+                $camiseta = $planilla->numero_camiseta ?? '-';
+                $goles = (int) $planilla->goles;
+                $apellido = trim((string) ($planilla->apellido ?? ''));
+                $nombre = trim((string) ($planilla->nombre ?? ''));
+
+                if ($apellido !== '' || $nombre !== '') {
+                    $nombreCompleto = trim($apellido.($apellido !== '' && $nombre !== '' ? ', ' : '').$nombre);
+
+                    return 'Camiseta '.$camiseta.' — '.$nombreCompleto.': '.$goles.' gol(es) oficiales';
+                }
+
+                return 'Camiseta '.$camiseta.': '.$goles.' gol(es) oficiales';
+            })
             ->implode(', ');
 
         return [
