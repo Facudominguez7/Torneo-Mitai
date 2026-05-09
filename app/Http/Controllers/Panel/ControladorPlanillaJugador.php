@@ -197,8 +197,27 @@ class ControladorPlanillaJugador extends Controller
             $datosValidados['reportes'] ?? [],
         );
 
-        return $this->redirigirAPlanilla($request)
-            ->with('status', 'Goles reportados por arbitros actualizados correctamente.');
+        $resultadoAplicacion = $this->aplicarGolesArbitralesService->aplicarPorEquipo(
+            (string) $datosValidados['tipoPartido'],
+            (int) $datosValidados['partido_id'],
+            (int) $datosValidados['idEdicion'],
+            (int) $datosValidados['idEquipo'],
+        );
+
+        $mensajeEstado = match ($resultadoAplicacion->status) {
+            'ok' => 'Goles arbitrales guardados y aplicados sobre la planilla oficial del equipo.',
+            'bloqueado' => 'Goles arbitrales guardados. No se aplicaron goles a la planilla oficial porque el equipo ya tiene goles oficiales cargados.',
+            default => 'Goles arbitrales guardados. No hubo cambios aplicables en la planilla oficial.',
+        };
+
+        $redirect = $this->redirigirAPlanilla($request)
+            ->with('status', $mensajeEstado);
+
+        if ($resultadoAplicacion->advertencia !== null) {
+            $redirect->with('warning', $resultadoAplicacion->advertencia);
+        }
+
+        return $redirect;
     }
 
     public function aplicarGolesArbitrales(AplicarGolesArbitralesRequest $request): RedirectResponse

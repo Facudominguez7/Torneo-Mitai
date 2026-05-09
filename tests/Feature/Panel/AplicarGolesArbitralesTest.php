@@ -161,7 +161,7 @@ it('renderiza estados aplicable e ignorado en planilla arbitral', function () {
         ]))
         ->assertOk()
         ->assertSee('Camiseta 10 · 2 gol(es)', false)
-        ->assertSee('Aplicar goles válidos', false);
+        ->assertSee('Guardar y aplicar goles válidos', false);
 });
 
 it('aplica goles arbitrales y actualiza estadisticas del goleador', function () {
@@ -192,6 +192,62 @@ it('aplica goles arbitrales y actualiza estadisticas del goleador', function () 
     expect((int) $contexto['planillaLocal']->fresh()->goles)->toBe(3);
     expect((int) $contexto['jugadorLocal']->fresh()->goles_totales)->toBe(3);
     expect(TablaGoleador::query()->where('dni_jugador', $contexto['jugadorLocal']->dni)->value('cantidadGoles'))->toBe(3);
+});
+
+it('guarda reportes arbitrales y aplica goles en un unico submit', function () {
+    $contexto = crearContextoAplicarGolesArbitrales();
+
+    postAplicarGolesConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarGolesArbitros'),
+        array_merge(parametrosBaseAplicarGoles($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'reportes' => [
+                ['numero_camiseta' => 10, 'goles_reportados' => 2],
+            ],
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Goles arbitrales guardados y aplicados sobre la planilla oficial del equipo.');
+
+    expect((int) $contexto['planillaLocal']->fresh()->goles)->toBe(2);
+    expect((int) $contexto['jugadorLocal']->fresh()->goles_totales)->toBe(2);
+
+    $reporte = GolArbitroReportado::query()
+        ->where('partido_id', $contexto['partido']->id)
+        ->where('idEquipo', $contexto['equipoLocal']->id)
+        ->first();
+
+    expect($reporte)->not->toBeNull();
+    expect((int) $reporte->goles_reportados)->toBe(2);
+});
+
+it('si el equipo esta bloqueado guarda reportes arbitrales pero no aplica goles oficiales', function () {
+    $contexto = crearContextoAplicarGolesArbitrales();
+    $contexto['planillaLocal']->update(['goles' => 1]);
+
+    postAplicarGolesConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarGolesArbitros'),
+        array_merge(parametrosBaseAplicarGoles($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'reportes' => [
+                ['numero_camiseta' => 10, 'goles_reportados' => 3],
+            ],
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Goles arbitrales guardados. No se aplicaron goles a la planilla oficial porque el equipo ya tiene goles oficiales cargados.');
+
+    expect((int) $contexto['planillaLocal']->fresh()->goles)->toBe(1);
+
+    $reporte = GolArbitroReportado::query()
+        ->where('partido_id', $contexto['partido']->id)
+        ->where('idEquipo', $contexto['equipoLocal']->id)
+        ->first();
+
+    expect($reporte)->not->toBeNull();
+    expect((int) $reporte->goles_reportados)->toBe(3);
 });
 
 it('bloquea la aplicacion completa del equipo si existe un gol oficial', function () {
