@@ -298,33 +298,10 @@
 
                                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                         <button type="submit" class="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">
-                                            Guardar dato arbitral
+                                            Guardar y aplicar goles válidos
                                         </button>
                                     </div>
                                 </div>
-                            </form>
-
-                            <form action="{{ route('planilla.aplicarGolesArbitrales') }}" method="POST" class="mt-3 flex justify-end">
-                                @csrf
-                                <input type="hidden" name="partido_id" value="{{ $partido->id }}">
-                                <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
-                                <input type="hidden" name="horario" value="{{ $horarioSeleccionado }}">
-                                <input type="hidden" name="tipoPartido" value="{{ $tipoPartido }}">
-                                <input type="hidden" name="idEquipo" value="{{ $panelArbitral['equipo'] }}">
-                                <input type="hidden" name="origen" value="{{ $contextoNavegacion['origen'] ?? request('origen') }}">
-                                <input type="hidden" name="idCategoria" value="{{ $contextoNavegacion['idCategoria'] ?? request('idCategoria') }}">
-                                <input type="hidden" name="idGrupo" value="{{ $contextoNavegacion['idGrupo'] ?? request('idGrupo') }}">
-                                <input type="hidden" name="idFase" value="{{ $contextoNavegacion['idFase'] ?? request('idFase') }}">
-                                <input type="hidden" name="idCopa" value="{{ $contextoNavegacion['idCopa'] ?? request('idCopa') }}">
-                                <input type="hidden" name="estado" value="{{ $contextoNavegacion['estado'] ?? request('estado') }}">
-                                <input type="hidden" name="busqueda" value="{{ $contextoNavegacion['busqueda'] ?? request('busqueda') }}">
-                                <input type="hidden" name="idFecha" value="{{ $contextoNavegacion['idFecha'] ?? request('idFecha') }}">
-                                <input type="hidden" name="fecha" value="{{ $contextoNavegacion['fecha'] ?? request('fecha') }}">
-                                <input type="hidden" name="horario_filtro" value="{{ $contextoNavegacion['horario_filtro'] ?? request('horario_filtro') }}">
-
-                                <button type="submit" @disabled($panelArbitral['bloqueo']['bloqueado']) class="rounded-md border px-4 py-2 text-sm font-semibold transition {{ $panelArbitral['bloqueo']['bloqueado'] ? 'cursor-not-allowed border-red-200 bg-red-50 text-red-600' : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}">
-                                    Aplicar goles válidos
-                                </button>
                             </form>
 
                             @if ($panelArbitral['bloqueo']['bloqueado'])
