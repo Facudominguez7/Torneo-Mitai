@@ -7,6 +7,7 @@ use App\Http\Requests\TablaPosicion\StoreRequest;
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\Grupo;
 use App\Models\TablaPosicion;
 use Illuminate\Contracts\View\View;
@@ -29,6 +30,18 @@ class ControladorTablaPosiciones extends Controller
             ->orderByDesc('golesFavor')
             ->orderBy('idEquipo')
             ->get();
+
+        // Goles en contra generales por equipo: viven en equipo_ediciones (acumulado de la edicion),
+        // no en tabla_posiciones (que es por grupo). Se indexan por idEquipo-idCategoria.
+        $golesContraGenerales = EquipoEdicion::query()
+            ->when($contexto['idEdicion'], fn ($query) => $query->where('idEdicion', $contexto['idEdicion']))
+            ->get()
+            ->keyBy(fn ($registro) => $registro->idEquipo.'-'.$registro->idCategoria);
+
+        $tablaPosiciones->each(function ($fila) use ($golesContraGenerales) {
+            $clave = $fila->idEquipo.'-'.$fila->grupo?->idCategoria;
+            $fila->golesContraGeneral = $golesContraGenerales->get($clave)?->golesContra;
+        });
 
         $tablaPosicionesPorGrupo = $tablaPosiciones->groupBy('idGrupo');
 
@@ -153,9 +166,11 @@ class ControladorTablaPosiciones extends Controller
                 ->orderBy('nombre')
                 ->get();
 
-            $equipos = Equipo::where('idEdicion', $idEdicion)
-                ->when($idCategoria, fn ($query) => $query->where('idCategoria', $idCategoria))
-                ->orderBy('nombre')
+            $equipos = Equipo::join('equipo_ediciones', 'equipos.id', '=', 'equipo_ediciones.idEquipo')
+                ->where('equipo_ediciones.idEdicion', $idEdicion)
+                ->when($idCategoria, fn ($query) => $query->where('equipo_ediciones.idCategoria', $idCategoria))
+                ->select('equipos.*')
+                ->orderBy('equipos.nombre')
                 ->get();
         }
 

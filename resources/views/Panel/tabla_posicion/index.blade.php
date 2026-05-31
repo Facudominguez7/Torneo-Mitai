@@ -87,6 +87,7 @@
                             <th class="hidden lg:table-cell p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 text-center whitespace-nowrap">GF</th>
                             <th class="hidden lg:table-cell p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 text-center whitespace-nowrap">GC</th>
                             <th class="hidden lg:table-cell p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 text-center whitespace-nowrap">DG</th>
+                            <th class="hidden lg:table-cell p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 text-center whitespace-nowrap" title="Goles en contra generales de la edición">GC Gral</th>
                             <th class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">Accion</th>
                         </tr>
                     </thead>
@@ -109,6 +110,10 @@
                                 <td class="p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">{{ $fila->golesFavor }}</td>
                                 <td class="p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">{{ $fila->golesContra }}</td>
                                 <td class="p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">{{ $fila->diferenciaGoles }}</td>
+                                <td class="p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                                    <span class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">GC Gral</span>
+                                    {{ $fila->golesContraGeneral ?? '-' }}
+                                </td>
                                 <td class="p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static whitespace-nowrap">
                                     <div class="lg:flex lg:justify-center lg:space-x-4 lg:flex-row flex justify-center flex-col">
                                         <a href="{{ route('tabla_posicion.edit', array_merge(['tabla_posicion' => $fila], $parametrosRegreso)) }}" class="btn btn-editar mb-1 lg:mb-0">Editar</a>
