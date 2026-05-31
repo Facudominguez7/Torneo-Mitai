@@ -3,6 +3,7 @@
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\Grupo;
 use App\Models\TablaPosicion;
 use App\Models\User;
@@ -38,6 +39,12 @@ function crearContextoTablaPosicionesCrud(string $nombreEdicion, string $nombreC
         'idEdicion' => $edicion->id,
         'nombre' => 'Mitai Azul',
         'foto' => 'escudo.png',
+    ]);
+
+    EquipoEdicion::create([
+        'idEquipo' => $equipo->id,
+        'idEdicion' => $edicion->id,
+        'idCategoria' => $categoria->id,
     ]);
 
     return compact('edicion', 'categoria', 'grupo', 'equipo');

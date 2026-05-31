@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\TablaPosicion;
 
-use App\Models\Equipo;
 use App\Models\Grupo;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -44,7 +43,9 @@ class StoreRequest extends FormRequest
             'idEquipo' => [
                 'required',
                 'integer',
-                Rule::exists('equipos', 'id')->where(fn ($query) => $query
+                // La pertenencia del equipo a la edicion/categoria vive en equipo_ediciones,
+                // no en los campos legacy de la tabla equipos (que conservan datos historicos).
+                Rule::exists('equipo_ediciones', 'idEquipo')->where(fn ($query) => $query
                     ->where('idEdicion', $idEdicion)
                     ->when($idCategoria, fn ($subQuery) => $subQuery->where('idCategoria', $idCategoria))),
             ],
@@ -71,15 +72,6 @@ class StoreRequest extends FormRequest
             $grupo = Grupo::find($this->integer('idGrupo'));
             if ($grupo && (int) $grupo->idCategoria !== $idCategoria) {
                 $validation->errors()->add('idGrupo', 'El grupo no pertenece a la categoría seleccionada.');
-            }
-
-            $equipo = Equipo::find($this->integer('idEquipo'));
-            if ($equipo && (int) $equipo->idCategoria !== $idCategoria) {
-                $validation->errors()->add('idEquipo', 'El equipo no pertenece a la categoría seleccionada.');
-            }
-
-            if ($grupo && $equipo && (int) $grupo->idCategoria !== (int) $equipo->idCategoria) {
-                $validation->errors()->add('idEquipo', 'El equipo no pertenece al grupo seleccionado.');
             }
         });
     }

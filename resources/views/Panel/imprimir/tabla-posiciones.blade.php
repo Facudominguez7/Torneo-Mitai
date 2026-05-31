@@ -51,8 +51,8 @@
         .categoria-title {
             background: linear-gradient(135deg, #0e4b5e, #2a6d81);
             color: white;
-            padding: 12px 20px;
-            font-size: 20px;
+            padding: 14px 22px;
+            font-size: 24px;
             font-weight: bold;
             margin-bottom: 15px;
             border-radius: 5px;
@@ -64,8 +64,8 @@
         .grupo-title {
             background: #f0f7f9;
             color: #0e4b5e;
-            padding: 8px 15px;
-            font-size: 16px;
+            padding: 10px 16px;
+            font-size: 20px;
             font-weight: bold;
             border-left: 4px solid #0e4b5e;
             margin-bottom: 10px;
@@ -77,9 +77,9 @@
             table-layout: fixed;
         }
         th, td {
-            padding: 6px 4px;
+            padding: 9px 7px;
             text-align: center;
-            font-size: 11px;
+            font-size: 15px;
             border-bottom: 1px solid #ddd;
         }
         th {
