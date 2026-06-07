@@ -14,7 +14,7 @@
             {{-- Fila de botones principales --}}
             <div class="flex flex-row flex-wrap justify-center gap-2">
                 <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final']) }}">
-                    <button class="bg-gray-800 hover:bg-gray-900 text-white py-2 px-4 rounded-lg transition-all duration-300 md:py-3 md:px-6">
+                    <button class="bg-cyan-600 hover:bg-cyan-700 text-white py-2 px-4 rounded-lg shadow-sm transition-all duration-300 md:py-3 md:px-6">
                         + Agregar Partido
                     </button>
                 </a>
@@ -25,10 +25,10 @@
                         </button>
                     </a>
                 @endif
-                <div class="flex items-center gap-2 rounded-lg bg-slate-900/85 px-3 py-2 text-white shadow-md">
+                <div class="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white shadow-sm backdrop-blur-sm">
                     <label for="selector-impresion-instancias" class="text-sm font-semibold whitespace-nowrap">Imprimir</label>
                     <select id="selector-impresion-instancias"
-                        class="min-w-[220px] rounded-lg border border-white/15 bg-slate-950/70 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                        class="min-w-[220px] rounded-lg border border-white/30 bg-white/95 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
                         <option value="" class="text-slate-900">Seleccionar opción</option>
                         <option value="fixture" class="text-slate-900">Fixture</option>
                         <option value="arbitros" class="text-slate-900">Planilla Árbitros</option>
@@ -36,7 +36,7 @@
                     </select>
                     <button type="button"
                         onclick="ejecutarImpresionInstanciasFinales('{{ $urlImprimirFixture }}', '{{ $urlImprimirArbitros }}', '{{ $urlPlanillaCobro }}')"
-                        class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all duration-300 flex items-center gap-2">
+                        class="bg-cyan-600 hover:bg-cyan-700 text-white py-2 px-4 rounded-lg shadow-sm transition-all duration-300 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
