@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Constants\PartidoConstants;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\InstanciaFinal\StoreRequest;
 use App\Models\Categoria;
@@ -10,6 +11,7 @@ use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\Fase;
 use App\Models\InstanciaFinal;
+use App\Services\EstadisticasService;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
 use Illuminate\Http\Request;
@@ -20,9 +22,12 @@ class ControladorInstanciaFinal extends Controller
 
     protected $partidoService;
 
-    public function __construct(PartidoService $partidoService)
+    protected $estadisticasService;
+
+    public function __construct(PartidoService $partidoService, EstadisticasService $estadisticasService)
     {
         $this->partidoService = $partidoService;
+        $this->estadisticasService = $estadisticasService;
     }
 
     public function index(Request $request)
@@ -100,6 +105,11 @@ class ControladorInstanciaFinal extends Controller
             ->orderBy('instancias_finales.horario', 'asc')
             ->get();
 
+        $equiposSinAsistencia = $this->estadisticasService->obtenerEquiposSinAsistenciaInstanciasFinales(
+            $partidos,
+            $idEdicion ? (int) $idEdicion : null,
+        );
+
         $categorias = Categoria::whereIn('id', function ($query) use ($idEdicion) {
             $query->select('idCategoria')->from('instancias_finales')->where('idEdicion', $idEdicion)->distinct();
         })
@@ -132,7 +142,7 @@ class ControladorInstanciaFinal extends Controller
         $nombreFase = $fases->firstWhere('id', $idFase)->nombre ?? null;
         $nombreCategoria = $categorias->firstWhere('id', $idCategoria)->nombreCategoria ?? null;
 
-        return view('Panel.instancia_final.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fases', 'categorias', 'idCategoria', 'nombreFase', 'nombreCategoria', 'copas', 'estado', 'busquedaEquipo', 'idCopa', 'fechaFiltro', 'fechasDisponibles'));
+        return view('Panel.instancia_final.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fases', 'categorias', 'idCategoria', 'nombreFase', 'nombreCategoria', 'copas', 'estado', 'busquedaEquipo', 'idCopa', 'fechaFiltro', 'fechasDisponibles', 'equiposSinAsistencia'));
     }
 
     public function create(Request $request)
