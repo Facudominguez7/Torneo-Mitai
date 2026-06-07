@@ -181,14 +181,9 @@ class ControladorInstanciaFinal extends Controller
         $data = $request->validated();
         InstanciaFinal::create($data);
 
-        $parametrosRegreso = $this->construirParametrosRegreso($request, [
-            'idEdicion' => $data['idEdicion'],
-            'idCategoria' => $data['idCategoria'] ?? $request->input('idCategoria'),
-            'fecha' => $request->input('fecha') ?: $request->input('retorno_fecha'),
-            'horario' => $request->input('horario') ?: $request->input('retorno_horario'),
-        ]);
-
-        return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Partido creado con éxito.');
+        // Tras crear, volver al listado sin filtros preseleccionados (solo el contexto de edición).
+        return to_route('instancia_final.index', ['idEdicion' => $data['idEdicion']])
+            ->with('status', 'Partido creado con éxito.');
     }
 
     /**
