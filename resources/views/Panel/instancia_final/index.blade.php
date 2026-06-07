@@ -8,12 +8,13 @@
                 'idEdicion' => $EdicionSeleccionada->id ?? '',
                 'horario' => request('horario'),
             ]);
+            $urlPlanillaCobro = route('admin.planilla-cobro', ['idEdicion' => $EdicionSeleccionada->id ?? '']);
         @endphp
         <div class="flex flex-col items-center gap-3 mb-4">
             {{-- Fila de botones principales --}}
             <div class="flex flex-row flex-wrap justify-center gap-2">
                 <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final']) }}">
-                    <button class="bg-gray-800 hover:bg-gray-900 text-white py-2 px-4 rounded-lg transition-all duration-300 md:py-3 md:px-6">
+                    <button class="bg-cyan-600 hover:bg-cyan-700 text-white py-2 px-4 rounded-lg shadow-sm transition-all duration-300 md:py-3 md:px-6">
                         + Agregar Partido
                     </button>
                 </a>
@@ -24,20 +25,24 @@
                         </button>
                     </a>
                 @endif
-                <button onclick="imprimirEnIframe('{{ $urlImprimirFixture }}')"
-                    class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-all duration-300 md:py-3 md:px-6 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                    </svg>
-                    Imprimir Fixture
-                </button>
-                <button onclick="imprimirEnIframe('{{ $urlImprimirArbitros }}')"
-                    class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all duration-300 md:py-3 md:px-6 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                    </svg>
-                    Imprimir Planilla Árbitros
-                </button>
+                <div class="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white shadow-sm backdrop-blur-sm">
+                    <label for="selector-impresion-instancias" class="text-sm font-semibold whitespace-nowrap">Imprimir</label>
+                    <select id="selector-impresion-instancias"
+                        class="min-w-[220px] rounded-lg border border-white/30 bg-white/95 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
+                        <option value="" class="text-slate-900">Seleccionar opción</option>
+                        <option value="fixture" class="text-slate-900">Fixture</option>
+                        <option value="arbitros" class="text-slate-900">Planilla Árbitros</option>
+                        <option value="planilla_cobro" class="text-slate-900">Planilla de Cobro</option>
+                    </select>
+                    <button type="button"
+                        onclick="ejecutarImpresionInstanciasFinales('{{ $urlImprimirFixture }}', '{{ $urlImprimirArbitros }}', '{{ $urlPlanillaCobro }}')"
+                        class="bg-cyan-600 hover:bg-cyan-700 text-white py-2 px-4 rounded-lg shadow-sm transition-all duration-300 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Ir a imprimir
+                    </button>
+                </div>
             </div>
             
             {{-- Filtro de horario --}}
@@ -133,6 +138,7 @@
             $partidosJugados = $partidos->filter(fn($p) => $p->golesEquipoLocal !== null && $p->golesEquipoVisitante !== null)->count();
             $partidosPendientes = $totalPartidos - $partidosJugados;
             $partidosAgrupados = $partidos->groupBy(fn($p) => $p->categoria->nombreCategoria ?? 'Sin categoría');
+            $pendientesPorPartido = collect($equiposSinAsistencia['equipos'] ?? [])->groupBy('partido_key');
         @endphp
 
         <div class="bg-white p-6 border-t">
@@ -160,6 +166,7 @@
                 $resultadoCargado = $p->golesEquipoLocal !== null && $p->golesEquipoVisitante !== null;
                 $estadoGolesLabel = null;
                 $estadoGolesClase = '';
+                $partidoKey = \App\Models\InstanciaFinal::class.'-'.$p->id;
 
                 if ($p->goles_confirmados_at !== null) {
                     $estadoGolesLabel = 'Goles confirmados';
@@ -240,6 +247,18 @@
                                 </span>
                             </div>
                         @endif
+                        @if($pendientesPorPartido->has($partidoKey))
+                            <div class="flex flex-wrap items-center justify-center gap-2 px-6 pb-3">
+                                @foreach($pendientesPorPartido->get($partidoKey) as $pendiente)
+                                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold {{ $pendiente['estado'] === 'sin_planilla' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700' }}">
+                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        {{ $pendiente['equipo'] }} ({{ $pendiente['condicion'] }}): {{ $pendiente['estado_label'] }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
 
                         {{-- Botones de acción --}}
                         <div class="flex flex-wrap justify-center gap-2 px-6 py-4 bg-gray-50">
@@ -278,6 +297,34 @@
 
 
     <script>
+        function ejecutarImpresionInstanciasFinales(urlFixture, urlArbitros, urlPlanillaCobro) {
+            const selector = document.getElementById('selector-impresion-instancias');
+
+            if (!selector?.value) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Seleccioná una opción',
+                    text: 'Elegí qué querés imprimir antes de continuar.',
+                    confirmButtonColor: '#2563eb',
+                });
+                return;
+            }
+
+            if (selector.value === 'fixture') {
+                imprimirEnIframe(urlFixture);
+                return;
+            }
+
+            if (selector.value === 'arbitros') {
+                imprimirEnIframe(urlArbitros);
+                return;
+            }
+
+            if (selector.value === 'planilla_cobro') {
+                imprimirConTitulo(urlPlanillaCobro, 'Planilla de Cobro');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             var idEdicion = "{{ $EdicionSeleccionada->id ?? '' }}";
             var horario = new URLSearchParams(window.location.search).get('horario') || '';

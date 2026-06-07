@@ -1009,13 +1009,21 @@ class ControladorHome extends Controller
         }
 
         // Última fecha calendario con partidos en esta edición
-        $ultimaFechaCalendario = Partido::where('idEdicion', $idEdicion)
+        $ultimaFechaPartidos = Partido::where('idEdicion', $idEdicion)
             ->whereNotNull('horario_datetime')
             ->max(DB::raw('DATE(horario_datetime)'));
 
+        $ultimaFechaInstanciasFinales = InstanciaFinal::where('idEdicion', $idEdicion)
+            ->whereNotNull('horario')
+            ->max(DB::raw('DATE(horario)'));
+
+        $ultimaFechaCalendario = collect([$ultimaFechaPartidos, $ultimaFechaInstanciasFinales])
+            ->filter()
+            ->max();
+
         if (! $ultimaFechaCalendario) {
             return view('Panel.imprimir.planilla-cobro', [
-                'entradas' => [],
+                'agrupado' => [],
                 'EdicionSeleccionada' => $EdicionSeleccionada,
                 'fechaJornada' => null,
             ]);
@@ -1036,16 +1044,47 @@ class ControladorHome extends Controller
             ->orderBy('cat.nombreCategoria', 'desc')
             ->get();
 
-        // Estructura agrupada: horario → categoria → [equipos]
-        $agrupado = [];
+        $instanciasFinales = InstanciaFinal::select(
+            'instancias_finales.*',
+            'el.nombre as nombre_local',
+            'ev.nombre as nombre_visitante',
+            'cat.nombreCategoria as nombre_categoria'
+        )
+            ->join('equipos as el', 'instancias_finales.idEquipoLocal', '=', 'el.id')
+            ->join('equipos as ev', 'instancias_finales.idEquipoVisitante', '=', 'ev.id')
+            ->leftJoin('categorias as cat', 'instancias_finales.idCategoria', '=', 'cat.id')
+            ->where('instancias_finales.idEdicion', $idEdicion)
+            ->whereRaw('DATE(instancias_finales.horario) = ?', [$ultimaFechaCalendario])
+            ->orderByRaw('TIME(instancias_finales.horario) asc')
+            ->orderBy('cat.nombreCategoria', 'desc')
+            ->get();
+
+        $entradas = collect();
+
         foreach ($partidos as $partido) {
             $horario = $partido->horario_datetime
                 ? \Carbon\Carbon::parse($partido->horario_datetime)->format('H:i')
                 : 'Por definir';
             $categoria = $partido->nombre_categoria ?? 'Sin categoría';
 
-            $agrupado[$horario][$categoria][] = $partido->nombre_local;
-            $agrupado[$horario][$categoria][] = $partido->nombre_visitante;
+            $entradas->push(['horario' => $horario, 'categoria' => $categoria, 'equipo' => $partido->nombre_local]);
+            $entradas->push(['horario' => $horario, 'categoria' => $categoria, 'equipo' => $partido->nombre_visitante]);
+        }
+
+        foreach ($instanciasFinales as $instanciaFinal) {
+            $horario = $instanciaFinal->horario
+                ? \Carbon\Carbon::parse($instanciaFinal->horario)->format('H:i')
+                : 'Por definir';
+            $categoria = $instanciaFinal->nombre_categoria ?? 'Sin categoría';
+
+            $entradas->push(['horario' => $horario, 'categoria' => $categoria, 'equipo' => $instanciaFinal->nombre_local]);
+            $entradas->push(['horario' => $horario, 'categoria' => $categoria, 'equipo' => $instanciaFinal->nombre_visitante]);
+        }
+
+        // Estructura agrupada: horario → categoria → [equipos]
+        $agrupado = [];
+        foreach ($entradas->sortBy('horario') as $entrada) {
+            $agrupado[$entrada['horario']][$entrada['categoria']][] = $entrada['equipo'];
         }
 
         $fechaJornada = \Carbon\Carbon::parse($ultimaFechaCalendario)->format('d/m/Y');

@@ -106,7 +106,13 @@ final class PlanillaPartidoAnteriorResolver
         $candidatos = $partidoModel::query()
             ->where('idEdicion', $idEdicion)
             ->where('idCategoria', $idCategoria)
-            ->where('jugado', 1)
+            ->when(
+                $partidoModel === Partido::class,
+                static fn ($query) => $query->where('jugado', 1),
+                static fn ($query) => $query
+                    ->whereNotNull('golesEquipoLocal')
+                    ->whereNotNull('golesEquipoVisitante')
+            )
             ->whereKeyNot($partidoId)
             ->where(static function ($query) use ($idEquipo): void {
                 $query->where('idEquipoLocal', $idEquipo)

@@ -7,18 +7,19 @@ use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\Fecha;
 use App\Models\Grupo;
+use App\Models\InstanciaFinal;
 use App\Models\Jugador;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Models\User;
+use App\Services\PlanillaPartidoAnteriorResolver;
 
 function crearContextoCopiaPlanillaAnterior(
     string $scope,
     bool $conAntecedentes = true,
     bool $partidoAnteriorMismoDia = true,
     bool $conAsistenciasMarcadas = true,
-): array
-{
+): array {
     $admin = User::factory()->create([
         'rol' => 'admin',
         'email_verified_at' => now(),
@@ -515,4 +516,100 @@ it('oculta botones para copiar cuando no hay asistencias marcadas en el partido 
         ->assertOk()
         ->assertDontSee('Copiar local desde partido anterior', false)
         ->assertDontSee('Copiar visitante desde partido anterior', false);
+});
+
+it('resuelve antecedente de instancia final por goles cargados sin usar la columna jugado', function () {
+    $edicion = Edicion::create([
+        'nombre' => 'Edicion Finales',
+    ]);
+
+    $categoria = Categoria::create([
+        'idEdicion' => $edicion->id,
+        'nombreCategoria' => 'Sub 20',
+    ]);
+
+    $equipoObjetivo = Equipo::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Finalista objetivo',
+        'foto' => 'objetivo.png',
+    ]);
+
+    $equipoRival = Equipo::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Finalista rival',
+        'foto' => 'rival.png',
+    ]);
+
+    $partidoActual = InstanciaFinal::create([
+        'idCategoria' => $categoria->id,
+        'idCopa' => null,
+        'idEdicion' => $edicion->id,
+        'idFase' => 1,
+        'idEquipoLocal' => $equipoObjetivo->id,
+        'idEquipoVisitante' => $equipoRival->id,
+        'horario' => '2026-04-10 09:00:00',
+        'cancha' => '1',
+    ]);
+
+    $partidoSinGoles = InstanciaFinal::create([
+        'idCategoria' => $categoria->id,
+        'idCopa' => null,
+        'idEdicion' => $edicion->id,
+        'idFase' => 1,
+        'idEquipoLocal' => $equipoRival->id,
+        'idEquipoVisitante' => $equipoObjetivo->id,
+        'horario' => '2026-04-10 07:30:00',
+        'cancha' => '1',
+    ]);
+
+    $partidoAnterior = InstanciaFinal::create([
+        'idCategoria' => $categoria->id,
+        'idCopa' => null,
+        'idEdicion' => $edicion->id,
+        'idFase' => 1,
+        'idEquipoLocal' => $equipoRival->id,
+        'idEquipoVisitante' => $equipoObjetivo->id,
+        'golesEquipoLocal' => 1,
+        'golesEquipoVisitante' => 2,
+        'horario' => '2026-04-10 08:00:00',
+        'cancha' => '1',
+    ]);
+
+    $jugador = Jugador::create([
+        'dni' => '40520001',
+        'nombre' => 'Final',
+        'apellido' => 'Copiable',
+        'goles_totales' => 0,
+        'partidos_totales' => 0,
+        'tarjetas_rojas_totales' => 0,
+    ]);
+
+    foreach ([$partidoSinGoles, $partidoAnterior] as $partido) {
+        PlanillaJugador::create([
+            'partido_id' => $partido->id,
+            'partido_type' => PartidoConstants::CLASS_INSTANCIA_FINAL,
+            'dni_jugador' => $jugador->dni,
+            'idEquipo' => $equipoObjetivo->id,
+            'idEdicion' => $edicion->id,
+            'idCategoria' => $categoria->id,
+            'numero_camiseta' => 7,
+            'fecha_nacimiento' => '2010-01-01',
+            'goles' => 0,
+            'asistio' => true,
+            'tarjeta_roja' => false,
+        ]);
+    }
+
+    $resolucion = app(PlanillaPartidoAnteriorResolver::class)->resolverMismoDiaConAsistencia(
+        PartidoConstants::TIPO_INSTANCIA_FINAL,
+        $partidoActual->id,
+        $edicion->id,
+        $categoria->id,
+        $equipoObjetivo->id,
+    );
+
+    expect($resolucion['status'])->toBe('ok')
+        ->and($resolucion['partido_anterior_id'])->toBe($partidoAnterior->id);
 });
