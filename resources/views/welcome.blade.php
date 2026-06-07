@@ -277,7 +277,7 @@
                 <div
                     class="mt-6 -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 xl:grid-cols-4">
                     <a href="{{ $edicionActual ? route('campeones', ['idEdicion' => $edicionActual->id]) : route('campeones', ['idEdicion' => optional($ultimaEdicion)->id]) }}"
-                        class="group relative flex min-w-[260px] snap-start flex-col overflow-hidden rounded-3xl border border-yellow-200/60 bg-gradient-to-br from-yellow-500/95 via-yellow-100/90 to-yellow-500/85 p-6 text-black shadow-[0_24px_60px_-30px_rgba(253,224,71,0.9)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_32px_70px_-28px_rgba(248,220,82,1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-yellow-200 sm:min-w-0 sm:h-full">
+                        class="group relative flex min-w-[260px] snap-start flex-col isolate overflow-hidden rounded-3xl border border-yellow-200/60 bg-gradient-to-br from-yellow-500/95 via-yellow-100/90 to-yellow-500/85 p-6 text-black shadow-[0_24px_60px_-30px_rgba(253,224,71,0.9)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_32px_70px_-28px_rgba(248,220,82,1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-yellow-200 sm:min-w-0 sm:h-full">
                         <div
                             class="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-yellow-300 blur-3xl transition-opacity duration-300 group-hover:opacity-70">
                         </div>
@@ -296,7 +296,7 @@
                         </div>
                     </a>
                     <a href="{{ $edicionActual ? route('subcampeones', ['idEdicion' => $edicionActual->id]) : route('subcampeones', ['idEdicion' => optional($ultimaEdicion)->id]) }}"
-                        class="group relative flex min-w-[260px] snap-start flex-col overflow-hidden rounded-3xl border border-gray-200/60 bg-gradient-to-br from-gray-500/95 via-gray-200/90 to-gray-500/90 p-6 text-slate-900 shadow-[0_20px_55px_-35px_rgba(148,163,184,0.9)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_28px_65px_-30px_rgba(16,185,129,0.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gray-200 sm:min-w-0 sm:h-full">
+                        class="group relative flex min-w-[260px] snap-start flex-col isolate overflow-hidden rounded-3xl border border-gray-200/60 bg-gradient-to-br from-gray-500/95 via-gray-200/90 to-gray-500/90 p-6 text-slate-900 shadow-[0_20px_55px_-35px_rgba(148,163,184,0.9)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_28px_65px_-30px_rgba(16,185,129,0.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gray-200 sm:min-w-0 sm:h-full">
                         <div
                             class="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-gray-300 blur-3xl transition-opacity duration-300 group-hover:opacity-90">
                         </div>
@@ -317,7 +317,7 @@
                         </div>
                     </a>
                     <a href="{{ $edicionActual ? route('vallas', ['idEdicion' => $edicionActual->id]) : route('vallas', ['idEdicion' => optional($ultimaEdicion)->id]) }}"
-                        class="group relative flex min-w-[260px] snap-start flex-col overflow-hidden rounded-3xl border border-green-200/60 bg-gradient-to-br from-green-500/95 via-green-200/90 to-green-500/85 p-6 text-emerald-950 shadow-[0_24px_60px_-30px_rgba(16,185,129,0.6)] transition-transform duration-300 hover:-translate-y-1 hover:border-emerald-500/60 hover:shadow-[0_30px_70px_-28px_rgba(16,185,129,0.75)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-300 sm:min-w-0 sm:h-full">
+                        class="group relative flex min-w-[260px] snap-start flex-col isolate overflow-hidden rounded-3xl border border-green-200/60 bg-gradient-to-br from-green-500/95 via-green-200/90 to-green-500/85 p-6 text-emerald-950 shadow-[0_24px_60px_-30px_rgba(16,185,129,0.6)] transition-transform duration-300 hover:-translate-y-1 hover:border-emerald-500/60 hover:shadow-[0_30px_70px_-28px_rgba(16,185,129,0.75)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-300 sm:min-w-0 sm:h-full">
                         <div
                             class="absolute -right-14 -top-14 h-32 w-32 rounded-full bg-green-300 blur-3xl transition-opacity duration-300 group-hover:opacity-80">
                         </div>
@@ -340,7 +340,7 @@
                         </div>
                     </a>
                     <a href="{{ $edicionActual ? route('goleadores', ['idEdicion' => $edicionActual->id]) : route('goleadores', ['idEdicion' => optional($ultimaEdicion)->id]) }}"
-                        class="group relative flex min-w-[260px] snap-start flex-col overflow-hidden rounded-3xl border border-blue-200/60 bg-gradient-to-br from-blue-500/95 via-blue-200/90 to-blue-500/85 p-6 text-blue-950 shadow-[0_24px_60px_-30px_rgba(56,189,248,0.65)] transition-transform duration-300 hover:-translate-y-1 hover:border-sky-400/60 hover:shadow-[0_32px_75px_-28px_rgba(59,130,246,0.75)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-300 sm:min-w-0 sm:h-full">
+                        class="group relative flex min-w-[260px] snap-start flex-col isolate overflow-hidden rounded-3xl border border-blue-200/60 bg-gradient-to-br from-blue-500/95 via-blue-200/90 to-blue-500/85 p-6 text-blue-950 shadow-[0_24px_60px_-30px_rgba(56,189,248,0.65)] transition-transform duration-300 hover:-translate-y-1 hover:border-sky-400/60 hover:shadow-[0_32px_75px_-28px_rgba(59,130,246,0.75)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-300 sm:min-w-0 sm:h-full">
                         <div
                             class="absolute -right-14 -top-14 h-32 w-32 rounded-full bg-blue-300 blur-3xl transition-opacity duration-300 group-hover:opacity-85">
                         </div>
