@@ -32,7 +32,7 @@
         class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
         @foreach ($equipos as $equipo)
             <option value="{{ $equipo->id }}"
-                {{ old('idEquipo', $equipo->id) == $equipo->id ? 'selected' : '' }}>
+                {{ old('idEquipoLocal', $partido->idEquipoLocal) == $equipo->id ? 'selected' : '' }}>
                 {{ $equipo->nombre }}
             </option>
         @endforeach
@@ -46,7 +46,7 @@
         class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
         @foreach ($equipos as $equipo)
             <option value="{{ $equipo->id }}"
-                {{ old('idEquipo', $equipo->id) == $equipo->id ? 'selected' : '' }}>
+                {{ old('idEquipoVisitante', $partido->idEquipoVisitante) == $equipo->id ? 'selected' : '' }}>
                 {{ $equipo->nombre }}
             </option>
         @endforeach
@@ -60,7 +60,7 @@
         class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
         @foreach ($fases as $f)
             <option value="{{ $f->id }}"
-                {{ old('idFase', $f->id) == $f->id ? 'selected' : '' }}>
+                {{ old('idFase', $partido->idFase) == $f->id ? 'selected' : '' }}>
                 {{ $f->nombre }}
             </option>
         @endforeach
@@ -75,7 +75,7 @@
         <option value="">Ninguna copa</option> <!-- Opción para ninguna copa -->
         @foreach ($copas as $copa)
             <option value="{{ $copa->id }}"
-                {{ old('idCopa', $copa->id) == $copa->id ? 'selected' : '' }}>
+                {{ old('idCopa', $partido->idCopa) == $copa->id ? 'selected' : '' }}>
                 {{ $copa->nombre }}
             </option>
         @endforeach
