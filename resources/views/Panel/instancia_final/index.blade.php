@@ -44,6 +44,31 @@
                 </div>
             </div>
             
+            {{-- Filtros de la tabla (categoría + horario, uno al lado del otro) --}}
+            <div class="mt-2 flex flex-wrap items-center justify-center gap-3">
+            @if($categorias->count() > 0)
+                    <div class="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
+                        <label for="filtro-categoria" class="text-sm font-medium text-gray-700">Filtrar tabla por categoría:</label>
+                        <select id="filtro-categoria"
+                            class="bg-white border border-gray-300 text-gray-700 py-1 px-3 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                            <option value="">Todas</option>
+                            @foreach ($categorias as $categoria)
+                                <option value="{{ $categoria->id }}" {{ request('idCategoria') == $categoria->id ? 'selected' : '' }}>
+                                    {{ $categoria->nombreCategoria }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @if(request('idCategoria'))
+                            <a href="{{ route('instancia_final.index', array_merge(request()->except('idCategoria'), ['idCategoria' => null])) }}"
+                               class="text-red-500 hover:text-red-700 ml-2" title="Quitar filtro">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </a>
+                        @endif
+                    </div>
+            @endif
+
             {{-- Filtro de horario --}}
             @php
                 $horariosInstanciasFinales = \App\Models\InstanciaFinal::where('idEdicion', $EdicionSeleccionada->id ?? 0)
@@ -58,7 +83,6 @@
             @endphp
             
             @if($horariosInstanciasFinales->count() > 0)
-                <div class="mt-2 text-center">
                     <div class="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
                         <label for="filtro-horario" class="text-sm font-medium text-gray-700">Filtrar tabla por horario:</label>
                         <select id="filtro-horario"
@@ -79,8 +103,8 @@
                             </a>
                         @endif
                     </div>
-                </div>
             @endif
+            </div>
         </div>
     @endif
     <div class="bg-white p-6">
@@ -332,7 +356,8 @@
 
             // Actualizar la URL con los filtros seleccionados
             function updateUrl(params) {
-                var newUrl = new URL(url, window.location.origin);
+                // Partimos de la URL actual para preservar los filtros ya aplicados.
+                var newUrl = new URL(window.location.href);
                 // Aseguramos que idEdicion se mantenga
                 if(idEdicion) newUrl.searchParams.set('idEdicion', idEdicion);
                 
@@ -352,6 +377,14 @@
                 selectHorario.addEventListener('change', function () {
                     horario = this.value;
                     updateUrl({ horario: horario });
+                });
+            }
+
+            // Filtro por Categoría (select)
+            var selectCategoria = document.getElementById('filtro-categoria');
+            if (selectCategoria) {
+                selectCategoria.addEventListener('change', function () {
+                    updateUrl({ idCategoria: this.value });
                 });
             }
         });
