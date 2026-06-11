@@ -292,7 +292,6 @@ class ControladorInstanciaFinal extends Controller
         $partido = $instancia_final;
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $idEdicion,
-            'idCategoria' => $idCategoria,
         ]);
 
         return view('Panel.instancia_final.edit', compact('ediciones', 'partido', 'EdicionSeleccionada', 'fases', 'equipos', 'idCategoria', 'CategoriaSeleccionada', 'copas', 'parametrosRegreso'));
