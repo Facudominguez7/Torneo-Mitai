@@ -285,13 +285,11 @@
 
                         {{-- Botones de acción --}}
                         <div class="flex flex-wrap justify-center gap-2 px-6 py-4 bg-gray-50">
-                            @if ($p->golesEquipoLocal === null && $p->golesEquipoVisitante === null)
-                                <a href="{{ route('cargar-resultado-instancia', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final', 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}">
-                                    <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                                        Cargar Resultado
-                                    </button>
-                                </a>
-                            @endif
+                            <a href="{{ route('cargar-resultado-instancia', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final', 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}">
+                                <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                    {{ $resultadoCargado ? 'Editar Resultado' : 'Cargar Resultado' }}
+                                </button>
+                            </a>
                             <a href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'instanciaFinal', 'horario' => 0, 'origen' => 'instancia-final-index', 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario_filtro' => request('horario')]) }}">
                                 <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                                     Planillas

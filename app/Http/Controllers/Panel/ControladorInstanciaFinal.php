@@ -205,9 +205,6 @@ class ControladorInstanciaFinal extends Controller
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $idEdicion,
-            'idCategoria' => $request->input('idCategoria') ?: $partido->idCategoria,
-            'idFase' => $request->input('idFase') ?: $partido->idFase,
-            'idCopa' => $request->input('idCopa') ?: $partido->idCopa,
         ]);
         $rutaRegreso = $this->resolverRutaRegresoResultado($request, $partido, $parametrosRegreso);
 
@@ -311,9 +308,13 @@ class ControladorInstanciaFinal extends Controller
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $data['idEdicion'],
-            'idCategoria' => $data['idCategoria'] ?? $instancia_final->idCategoria,
-            'fecha' => $request->input('fecha') ?: $request->input('retorno_fecha'),
-            'horario' => $request->input('horario') ?: $request->input('retorno_horario'),
+            'idCategoria' => $request->input('retorno_idCategoria'),
+            'idFase' => $request->input('retorno_idFase'),
+            'idCopa' => $request->input('retorno_idCopa'),
+            'estado' => $request->input('retorno_estado'),
+            'busqueda' => $request->input('retorno_busqueda'),
+            'fecha' => $request->input('retorno_fecha'),
+            'horario' => $request->input('retorno_horario'),
         ]);
 
         return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Partido actualizado con éxito.');
@@ -326,9 +327,6 @@ class ControladorInstanciaFinal extends Controller
     {
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $request->idEdicion ?: $instancia_final->idEdicion,
-            'idCategoria' => $request->input('idCategoria') ?: $instancia_final->idCategoria,
-            'fecha' => $request->input('fecha') ?: $request->input('retorno_fecha'),
-            'horario' => $request->input('horario') ?: $request->input('retorno_horario'),
         ]);
 
         $instancia_final->delete();
@@ -345,14 +343,14 @@ class ControladorInstanciaFinal extends Controller
     private function construirParametrosRegreso(Request $request, array $sobrescrituras = []): array
     {
         $parametros = [
-            'idEdicion' => $sobrescrituras['idEdicion'] ?? $request->input('idEdicion'),
-            'idCategoria' => $sobrescrituras['idCategoria'] ?? $request->input('idCategoria') ?? $request->input('retorno_idCategoria'),
-            'idFase' => $sobrescrituras['idFase'] ?? $request->input('idFase') ?? $request->input('retorno_idFase'),
-            'idCopa' => $sobrescrituras['idCopa'] ?? $request->input('idCopa') ?? $request->input('retorno_idCopa'),
-            'estado' => $sobrescrituras['estado'] ?? $request->input('estado') ?? $request->input('retorno_estado'),
-            'busqueda' => $sobrescrituras['busqueda'] ?? $request->input('busqueda') ?? $request->input('retorno_busqueda'),
-            'fecha' => $sobrescrituras['fecha'] ?? $request->input('fecha') ?? $request->input('retorno_fecha'),
-            'horario' => $sobrescrituras['horario'] ?? $request->input('horario') ?? $request->input('retorno_horario'),
+            'idEdicion' => array_key_exists('idEdicion', $sobrescrituras) ? $sobrescrituras['idEdicion'] : $request->input('idEdicion'),
+            'idCategoria' => array_key_exists('idCategoria', $sobrescrituras) ? $sobrescrituras['idCategoria'] : $request->input('idCategoria') ?? $request->input('retorno_idCategoria'),
+            'idFase' => array_key_exists('idFase', $sobrescrituras) ? $sobrescrituras['idFase'] : $request->input('idFase') ?? $request->input('retorno_idFase'),
+            'idCopa' => array_key_exists('idCopa', $sobrescrituras) ? $sobrescrituras['idCopa'] : $request->input('idCopa') ?? $request->input('retorno_idCopa'),
+            'estado' => array_key_exists('estado', $sobrescrituras) ? $sobrescrituras['estado'] : $request->input('estado') ?? $request->input('retorno_estado'),
+            'busqueda' => array_key_exists('busqueda', $sobrescrituras) ? $sobrescrituras['busqueda'] : $request->input('busqueda') ?? $request->input('retorno_busqueda'),
+            'fecha' => array_key_exists('fecha', $sobrescrituras) ? $sobrescrituras['fecha'] : $request->input('fecha') ?? $request->input('retorno_fecha'),
+            'horario' => array_key_exists('horario', $sobrescrituras) ? $sobrescrituras['horario'] : $request->input('horario') ?? $request->input('retorno_horario'),
         ];
 
         return array_filter($parametros, static fn ($valor) => $valor !== null && $valor !== '');
