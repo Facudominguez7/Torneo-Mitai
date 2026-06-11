@@ -251,7 +251,7 @@
 
                         // 3. Redirigir inmediatamente
                         setTimeout(() => {
-                            window.location.href = "{{ $rutaRegreso }}";
+                            window.location.href = @json($rutaRegreso);
                         }, 500);
                         
                     } catch (error) {

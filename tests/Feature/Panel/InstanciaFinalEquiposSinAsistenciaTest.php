@@ -141,16 +141,109 @@ it('mantiene visible la accion para editar resultado cuando la instancia final y
 it('preserva solo los filtros de regreso al cargar resultado de instancia final', function () {
     $admin = crearAdminInstanciaFinal();
     $contexto = crearPartidoInstanciaFinalConContexto();
+    $filtros = [
+        'idEdicion' => $contexto['edicion']->id,
+        'idFase' => $contexto['fase']->id,
+        'estado' => 'pendiente',
+        'busqueda' => 'Mitai',
+        'fecha' => '2026-03-20',
+        'horario' => '10:00',
+    ];
+
+    $this->actingAs($admin)
+        ->get(route('instancia_final.index', $filtros))
+        ->assertOk()
+        ->assertSee('Cargar Resultado')
+        ->assertSee('idPartido='.$contexto['partido']->id, false)
+        ->assertSee('estado=pendiente', false)
+        ->assertSee('busqueda=Mitai', false);
+
+    $this->actingAs($admin)
+        ->get(route('cargar-resultado-instancia', array_merge($filtros, [
+            'idPartido' => $contexto['partido']->id,
+            'tipo' => 'instancia_final',
+        ])))
+        ->assertOk()
+        ->assertSee('name="retorno_idFase" value="'.$contexto['fase']->id.'"', false)
+        ->assertSee('name="retorno_estado" value="pendiente"', false)
+        ->assertSee('name="retorno_busqueda" value="Mitai"', false)
+        ->assertSee('name="retorno_fecha" value="2026-03-20"', false)
+        ->assertSee('name="retorno_horario" value="10:00"', false)
+        ->assertSee('name="retorno_idCategoria" value=""', false);
 
     $response = $this->actingAs($admin)
         ->withSession(['_token' => 'resultado-token'])
-        ->post(route('cargar-resultado-instancia', [
+        ->post(route('cargar-resultado-instancia', array_merge($filtros, [
             'idPartido' => $contexto['partido']->id,
-            'idEdicion' => $contexto['edicion']->id,
-        ]), [
+        ])), [
             '_token' => 'resultado-token',
             'golesEquipoLocal' => 3,
             'golesEquipoVisitante' => 1,
+            'retorno_idFase' => $contexto['fase']->id,
+            'retorno_estado' => 'pendiente',
+            'retorno_busqueda' => 'Mitai',
+            'retorno_fecha' => '2026-03-20',
+            'retorno_horario' => '10:00',
+        ]);
+
+    $query = obtenerQueryRedirectInstanciaFinal($response);
+
+    $response->assertRedirect();
+    expect($query)->toMatchArray([
+        'idEdicion' => (string) $contexto['edicion']->id,
+        'idFase' => (string) $contexto['fase']->id,
+        'estado' => 'pendiente',
+        'busqueda' => 'Mitai',
+        'fecha' => '2026-03-20',
+        'horario' => '10:00',
+    ])->not->toHaveKey('idCategoria');
+});
+
+it('preserva filtros al abrir editar instancia final desde el card y actualizar', function () {
+    $admin = crearAdminInstanciaFinal();
+    $contexto = crearPartidoInstanciaFinalConContexto();
+    $filtros = [
+        'idEdicion' => $contexto['edicion']->id,
+        'idFase' => $contexto['fase']->id,
+        'estado' => 'pendiente',
+        'busqueda' => 'Mitai',
+        'fecha' => '2026-03-20',
+        'horario' => '10:00',
+    ];
+
+    $this->actingAs($admin)
+        ->get(route('instancia_final.index', $filtros))
+        ->assertOk()
+        ->assertSee('Editar')
+        ->assertSee('instancia_final/'.$contexto['partido']->id.'/edit', false)
+        ->assertSee('estado=pendiente', false)
+        ->assertSee('busqueda=Mitai', false);
+
+    $this->actingAs($admin)
+        ->get(route('instancia_final.edit', array_merge($filtros, [
+            'instancia_final' => $contexto['partido']->id,
+        ])))
+        ->assertOk()
+        ->assertSee('name="retorno_idFase" value="'.$contexto['fase']->id.'"', false)
+        ->assertSee('name="retorno_estado" value="pendiente"', false)
+        ->assertSee('name="retorno_busqueda" value="Mitai"', false)
+        ->assertSee('name="retorno_fecha" value="2026-03-20"', false)
+        ->assertSee('name="retorno_horario" value="10:00"', false)
+        ->assertSee('name="retorno_idCategoria" value=""', false);
+
+    $response = $this->actingAs($admin)
+        ->withSession(['_token' => 'edit-token'])
+        ->put(route('instancia_final.update', $contexto['partido']), [
+            '_token' => 'edit-token',
+            'idCategoria' => $contexto['categoria']->id,
+            'idCopa' => null,
+            'idEdicion' => $contexto['edicion']->id,
+            'idEquipoLocal' => $contexto['local']->id,
+            'idEquipoVisitante' => $contexto['visitante']->id,
+            'idFase' => $contexto['fase']->id,
+            'horario' => '2026-03-21T11:30',
+            'cancha' => 2,
+            'retorno_idCategoria' => '',
             'retorno_idFase' => $contexto['fase']->id,
             'retorno_estado' => 'pendiente',
             'retorno_busqueda' => 'Mitai',
