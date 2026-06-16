@@ -290,10 +290,24 @@ class GolesArbitrosService
             ->first();
 
         if ($planillaJugador === null) {
+            // Se distinguen las dos causas reales para no dar a entender que el
+            // jugador faltó al partido cuando en realidad es un dato sin vincular.
+            $camisetaCargada = PlanillaJugador::query()
+                ->where('partido_id', $partidoId)
+                ->where('partido_type', $partidoType)
+                ->where('idEdicion', $idEdicion)
+                ->where('idEquipo', $idEquipo)
+                ->where('numero_camiseta', $numeroCamiseta)
+                ->exists();
+
+            $motivo = $camisetaCargada
+                ? "El jugador con la camiseta N° {$numeroCamiseta} figura en la planilla pero no está marcado como presente en este partido, por eso el gol no se vinculó."
+                : "El número de camiseta N° {$numeroCamiseta} reportado por los árbitros no figura en la planilla oficial de este equipo. El gol no se vinculó a ningún jugador.";
+
             return [
                 'idPlanillaJugador' => null,
                 'es_inconsistencia' => true,
-                'motivo_inconsistencia' => 'Camiseta no encontrada o sin asistencia en la planilla oficial.',
+                'motivo_inconsistencia' => $motivo,
             ];
         }
 

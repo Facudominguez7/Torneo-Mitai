@@ -530,7 +530,7 @@ it('guarda goles reportados por arbitros separados del dato oficial y marca inco
         ->assertSee('Dato oficial: 0 gol(es)', false)
         ->assertSee('Reportado por arbitros: 3 gol(es)', false)
         ->assertSee('Camiseta 77', false)
-        ->assertSee('Camiseta no encontrada o sin asistencia en la planilla oficial.', false);
+        ->assertSee('El número de camiseta N° 77 reportado por los árbitros no figura en la planilla oficial de este equipo. El gol no se vinculó a ningún jugador.', false);
 });
 
 it('marca inconsistencia cuando la camiseta existe pero el jugador no tiene asistencia', function () {
@@ -558,7 +558,7 @@ it('marca inconsistencia cuando la camiseta existe pero el jugador no tiene asis
     expect($reporte->numero_camiseta)->toBe(10);
     expect($reporte->idPlanillaJugador)->toBeNull();
     expect($reporte->es_inconsistencia)->toBeTrue();
-    expect($reporte->motivo_inconsistencia)->toBe('Camiseta no encontrada o sin asistencia en la planilla oficial.');
+    expect($reporte->motivo_inconsistencia)->toBe('El jugador con la camiseta N° 10 figura en la planilla pero no está marcado como presente en este partido, por eso el gol no se vinculó.');
 
     $this->actingAs($contexto['admin'])
         ->get(route('planilla.show', [
@@ -570,7 +570,7 @@ it('marca inconsistencia cuando la camiseta existe pero el jugador no tiene asis
         ->assertOk()
         ->assertSee('Camiseta 10', false)
         ->assertSee('Inconsistencia', false)
-        ->assertSee('Camiseta no encontrada o sin asistencia en la planilla oficial.', false)
+        ->assertSee('El jugador con la camiseta N° 10 figura en la planilla pero no está marcado como presente en este partido, por eso el gol no se vinculó.', false)
         ->assertDontSee('Jugador oficial vinculado: Confirmado, Juan', false);
 });
 

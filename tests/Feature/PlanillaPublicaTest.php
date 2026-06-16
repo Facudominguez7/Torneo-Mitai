@@ -404,7 +404,7 @@ class PlanillaPublicaTest extends TestCase
             'numero_camiseta' => 99,
             'goles_reportados' => 1,
             'es_inconsistencia' => true,
-            'motivo_inconsistencia' => 'Camiseta no encontrada o sin asistencia en la planilla oficial.',
+            'motivo_inconsistencia' => 'El número de camiseta N° 99 reportado por los árbitros no figura en la planilla oficial de este equipo. El gol no se vinculó a ningún jugador.',
         ]);
 
         $response = $this->getJson(route('planillas-publicas.show', [
@@ -419,7 +419,7 @@ class PlanillaPublicaTest extends TestCase
             ->assertJsonPath('data.goles_arbitros.local.0.es_inconsistencia', false)
             ->assertJsonPath('data.goles_arbitros.visitante.0.numero_camiseta', 99)
             ->assertJsonPath('data.goles_arbitros.visitante.0.es_inconsistencia', true)
-            ->assertJsonPath('data.goles_arbitros.visitante.0.motivo_inconsistencia', 'Camiseta no encontrada o sin asistencia en la planilla oficial.')
+            ->assertJsonPath('data.goles_arbitros.visitante.0.motivo_inconsistencia', 'El número de camiseta N° 99 reportado por los árbitros no figura en la planilla oficial de este equipo. El gol no se vinculó a ningún jugador.')
             ->assertJsonPath('data.goles_arbitros.hay_inconsistencias', true)
             ->assertJsonMissingPath('data.goles_arbitros.local.0.idPlanillaJugador');
     }
@@ -463,7 +463,7 @@ class PlanillaPublicaTest extends TestCase
             ->assertJsonPath('data.goles_arbitros.local.0.numero_camiseta', 8)
             ->assertJsonPath('data.goles_arbitros.local.0.goles_reportados', 2)
             ->assertJsonPath('data.goles_arbitros.local.0.es_inconsistencia', true)
-            ->assertJsonPath('data.goles_arbitros.local.0.motivo_inconsistencia', 'Camiseta no encontrada o sin asistencia en la planilla oficial.')
+            ->assertJsonPath('data.goles_arbitros.local.0.motivo_inconsistencia', 'El jugador con la camiseta N° 8 figura en la planilla pero no está marcado como presente en este partido, por eso el gol no se vinculó.')
             ->assertJsonPath('data.goles_arbitros.local.0.jugador_oficial', null)
             ->assertJsonPath('data.goles_arbitros.hay_inconsistencias', true);
     }
