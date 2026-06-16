@@ -149,7 +149,7 @@ it('renderiza estados aplicable e ignorado en planilla arbitral', function () {
         'numero_camiseta' => 44,
         'goles_reportados' => 1,
         'es_inconsistencia' => true,
-        'motivo_inconsistencia' => 'Camiseta no encontrada o sin asistencia en la planilla oficial.',
+        'motivo_inconsistencia' => 'El número de camiseta N° 44 reportado por los árbitros no figura en la planilla oficial de este equipo. El gol no se vinculó a ningún jugador.',
     ]);
 
     $this->actingAs($contexto['admin'])

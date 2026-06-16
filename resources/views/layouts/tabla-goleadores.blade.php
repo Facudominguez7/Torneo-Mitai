@@ -63,8 +63,8 @@
                                     <x-slot name="trigger">
                                         <button
                                             class="inline-flex w-full items-center justify-between gap-2 rounded-2xl border border-[#f7f280]/40 bg-gradient-to-r from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/85 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
-                                            <span class="truncate">
-                                                {{ optional($categorias->firstWhere('id', request('idCategoria')))->nombreCategoria ?? 'Filtrar por categoría' }}
+                                            <span id="label-categoria" class="truncate">
+                                                {{ optional($categorias->firstWhere('id', $idCategoria))->nombreCategoria ?? 'Filtrar por categoría' }}
                                             </span>
                                             <i class="fa-solid fa-chevron-down text-xs"></i>
                                         </button>
@@ -95,132 +95,25 @@
                             </div>
                             <form id="form-busqueda-goleadores" method="GET" action="{{ route('tabla-goleadores') }}"
                                 class="w-full md:max-w-sm">
-                                <input type="hidden" name="idEdicion" value="{{ request('idEdicion') }}">
-                                <input type="hidden" name="idCategoria" value="{{ request('idCategoria') }}">
-                                <input type="hidden" name="sort" value="{{ request('sort', 'goles') }}">
-                                <input type="hidden" name="dir" value="{{ request('dir', request('sort', 'goles') === 'goles' ? 'desc' : 'asc') }}">
+                                <input type="hidden" name="idEdicion" value="{{ $idEdicion }}">
+                                <input type="hidden" name="idCategoria" value="{{ $idCategoria }}">
+                                <input type="hidden" name="sort" value="{{ $sortKey }}">
+                                <input type="hidden" name="dir" value="{{ $dir }}">
                                 <label for="buscador-goleadores" class="relative block">
                                     <span
                                         class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#f7f280]">
                                         <i class="fa-solid fa-magnifying-glass text-sm"></i>
                                     </span>
                                     <input id="buscador-goleadores" name="search_value" type="text"
-                                        value="{{ request('search_value') }}" placeholder="Buscar por nombre..."
+                                        value="{{ $searchValue }}" placeholder="Buscar por nombre..."
                                         class="w-full rounded-2xl border border-[#f7f280]/35 bg-white/5 px-4 py-3 pl-11 text-sm font-semibold text-white placeholder:text-white/45 focus:border-[#f7f280]/60 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
                                 </label>
                             </form>
                         </div>
                     </div>
 
-                    @php
-                        $sort = request('sort', 'goles');
-                        $dir = request('dir', $sort === 'goles' ? 'desc' : 'asc');
-                        $toggle = fn($k) => ($sort === $k && $dir === 'asc') ? 'desc' : 'asc';
-                        $arrow = fn($k) => $sort === $k ? ($dir === 'asc' ? '▲' : '▼') : '';
-                        $queryBase = array_filter(request()->except(['page']));
-                        $posOffset = ($goleadores_t->currentPage() - 1) * $goleadores_t->perPage();
-                    @endphp
-
-                    <div class="mt-10 space-y-6">
-                        @if ($goleadores_t->isEmpty())
-                            <div
-                                class="rounded-3xl border border-[#f7f280]/25 bg-black/30 px-6 py-10 text-center text-lg font-semibold text-white/70">
-                                No existen registros para la combinación seleccionada.
-                            </div>
-                        @else
-                            <div class="hidden lg:block">
-                                <div
-                                    class="overflow-hidden rounded-3xl border border-[#f7f280]/25 bg-black/40 shadow-[0_28px_70px_-45px_rgba(14,75,94,0.9)]">
-                                    <table class="w-full min-w-[720px] border-collapse">
-                                        <thead class="bg-gradient-to-r from-[#0e4b5e]/90 to-[#2a6d81]/90">
-                                            <tr>
-                                                <th
-                                                    class="py-4 pl-6 pr-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                                    #</th>
-                                                <th
-                                                    class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                                    <a class="inline-flex items-center gap-2 hover:text-white"
-                                                        href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'nombre', 'dir' => $toggle('nombre')])) }}">
-                                                        Nombre <span>{{ $arrow('nombre') }}</span>
-                                                    </a>
-                                                </th>
-                                                <th
-                                                    class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                                    <a class="inline-flex items-center gap-2 hover:text-white"
-                                                        href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'equipo', 'dir' => $toggle('equipo')])) }}">
-                                                        Equipo <span>{{ $arrow('equipo') }}</span>
-                                                    </a>
-                                                </th>
-                                                <th
-                                                    class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                                    <a class="inline-flex items-center gap-2 hover:text-white"
-                                                        href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'categoria', 'dir' => $toggle('categoria')])) }}">
-                                                        Categoría <span>{{ $arrow('categoria') }}</span>
-                                                    </a>
-                                                </th>
-                                                <th
-                                                    class="py-4 pr-6 pl-3 text-right text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                                    <a class="inline-flex items-center gap-2 hover:text-white"
-                                                        href="{{ route('tabla-goleadores', array_merge($queryBase, ['sort' => 'goles', 'dir' => $toggle('goles')])) }}">
-                                                        Goles <span>{{ $arrow('goles') }}</span>
-                                                    </a>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-white/5">
-                                            @foreach ($goleadores_t as $index => $g)
-                                                <tr class="transition hover:bg-white/5">
-                                                    <td class="py-4 pl-6 pr-3 text-sm font-semibold text-white/80">
-                                                        {{ $posOffset + $index + 1 }}
-                                                    </td>
-                                                    <td class="py-4 px-3 text-sm font-semibold text-white">
-                                                        {{ $g->nombreJugador }}
-                                                    </td>
-                                                    <td class="py-4 px-3 text-sm text-white/80">
-                                                        {{ $g->nombreEquipo }}
-                                                    </td>
-                                                    <td class="py-4 px-3 text-sm text-white/65">
-                                                        {{ $g->nombreCategoria }}
-                                                    </td>
-                                                    <td class="py-4 pr-6 pl-3 text-right text-lg font-bold text-[#f7f280]">
-                                                        {{ $g->cantidadGoles }}
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="grid gap-5 lg:hidden">
-                                @foreach ($goleadores_t as $index => $g)
-                                    <article
-                                        class="card-goleador-movil rounded-3xl border border-[#f7f280]/25 bg-gradient-to-br from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/90 p-5 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.85)]">
-                                        <div
-                                            class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
-                                            <span>#{{ str_pad($posOffset + $index + 1, 2, '0', STR_PAD_LEFT) }}</span>
-                                            <span>{{ $g->nombreCategoria }}</span>
-                                        </div>
-                                        <div class="mt-4 space-y-2">
-                                            <h3 class="text-lg font-bold text-white">{{ $g->nombreJugador }}</h3>
-                                            <p class="text-sm text-white/70">{{ $g->nombreEquipo }}</p>
-                                        </div>
-                                        <div class="mt-6 flex items-center justify-between">
-                                            <span
-                                                class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
-                                                <i class="fa-solid fa-medal text-[#f7f280]"></i>
-                                                Goles
-                                            </span>
-                                            <span class="text-2xl font-bold text-[#f7f280]">{{ $g->cantidadGoles }}</span>
-                                        </div>
-                                    </article>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
-
-                    <div class="mt-8 flex justify-center">
-                        {{ $goleadores_t->links() }}
+                    <div id="resultados-goleadores">
+                        @include('partials.goleadores-resultados')
                     </div>
                 </section>
             </main>
@@ -232,51 +125,84 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var idEdicion = "{{ $EdicionSeleccionada->id ?? '' }}";
-            var idCategoria = new URLSearchParams(window.location.search).get('idCategoria') || '';
             var url = "{{ route('tabla-goleadores') }}";
 
             const buscador = document.getElementById('buscador-goleadores');
+            const contenedor = document.getElementById('resultados-goleadores');
             const formBusqueda = document.getElementById('form-busqueda-goleadores');
+            const triggerCategoria = document.getElementById('label-categoria');
 
-            if (buscador) {
-                let debounceBusqueda = null;
-                buscador.addEventListener('input', function (event) {
-                    if (!formBusqueda) {
+            // Pide los resultados por AJAX y reemplaza solo el contenedor. El
+            // estado de los filtros se conserva en sesión del lado del servidor,
+            // así que cada llamada solo envía lo que cambia.
+            async function loadResults(params) {
+                if (!contenedor) {
+                    return;
+                }
+
+                const qs = new URLSearchParams(params).toString();
+
+                try {
+                    const response = await fetch(url + (qs ? '?' + qs : ''), {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html',
+                        },
+                    });
+
+                    if (!response.ok) {
                         return;
                     }
 
+                    contenedor.innerHTML = await response.text();
+                } catch (error) {
+                    // Ante un fallo de red se deja el contenido actual intacto.
+                }
+            }
+
+            if (buscador && formBusqueda) {
+                // Se evita el submit nativo (que recargaría la página).
+                formBusqueda.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                });
+
+                let debounceBusqueda = null;
+                buscador.addEventListener('input', function () {
                     clearTimeout(debounceBusqueda);
                     debounceBusqueda = setTimeout(function () {
-                        formBusqueda.submit();
+                        loadResults({ search_value: buscador.value });
                     }, 350);
                 });
             }
 
-            function updateUrl(params) {
-                var newUrl = new URL(url);
-                Object.keys(params).forEach(function (key) {
-                    if (params[key]) {
-                        newUrl.searchParams.set(key, params[key]);
-                    } else {
-                        newUrl.searchParams.delete(key);
-                    }
-                });
-
-                window.location.href = newUrl;
-            }
-
             document.querySelectorAll('.filtro-categoria [data-id]').forEach(function (item) {
                 item.addEventListener('click', function () {
-                    idCategoria = this.getAttribute('data-id') || '';
-                    updateUrl({
-                        idCategoria,
-                        idEdicion,
-                        sort: new URLSearchParams(window.location.search).get('sort') || '',
-                        dir: new URLSearchParams(window.location.search).get('dir') || '',
-                        search_value: new URLSearchParams(window.location.search).get('search_value') || ''
-                    });
+                    const idCategoria = this.getAttribute('data-id') || '';
+
+                    if (triggerCategoria) {
+                        triggerCategoria.textContent = this.getAttribute('data-nombre') || 'Filtrar por categoría';
+                    }
+
+                    loadResults({ idCategoria, idEdicion });
                 });
             });
+
+            // Delegación: los links de orden y de paginación viven dentro del
+            // parcial que se reemplaza, así que se interceptan desde el padre.
+            if (contenedor) {
+                contenedor.addEventListener('click', function (event) {
+                    const link = event.target.closest('a.orden-goleadores, .pagination a, nav a');
+
+                    if (!link || !contenedor.contains(link)) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    const params = Object.fromEntries(new URL(link.href).searchParams.entries());
+                    loadResults(params);
+                });
+            }
         });
     </script>
 </body>

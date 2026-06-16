@@ -96,7 +96,7 @@
                         <template x-if="planillaPayload.data.goles_arbitros?.hay_inconsistencias">
                             <div class="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">
                                 <p class="font-semibold">⚠️ Hay inconsistencias entre los datos arbitrales y la planilla.</p>
-                                <p class="mt-1">Los goles reportados por los árbitros no coinciden con la planilla cargada. Es responsabilidad del profesor o delegado corroborar los goles anotados por los árbitros una vez terminado el partido.</p>
+                                <p class="mt-1">Una inconsistencia <span class="font-semibold">no significa</span> que el jugador haya faltado al partido: el número de camiseta que anotaron los árbitros no se pudo vincular con la planilla (por ejemplo, se cargó mal el número o falta marcar la asistencia). Es responsabilidad del profesor o delegado corroborar los goles anotados por los árbitros una vez terminado el partido.</p>
                             </div>
                         </template>
 
