@@ -548,14 +548,45 @@ class ControladorHome extends Controller
 
     public function tablaGoleadores(Request $request)
     {
+        $sessionKey = 'tabla_goleadores_filtros';
+        $filtroKeys = ['idEdicion', 'idCategoria', 'sort', 'dir', 'search_value', 'page'];
+
+        // Patrón PRG: si la petición trae filtros en la query string, se
+        // persisten en sesión y se redirige a una URL limpia para no exponerlos.
+        if (! empty($request->query())) {
+            $incoming = $request->only($filtroKeys);
+
+            // Cambiar un filtro (no la paginación) reinicia a la primera página.
+            $cambiaFiltro = ! empty(array_diff(array_keys($incoming), ['page']));
+            if ($cambiaFiltro && ! $request->has('page')) {
+                $incoming['page'] = 1;
+            }
+
+            $request->session()->put(
+                $sessionKey,
+                array_merge($request->session()->get($sessionKey, []), $incoming)
+            );
+
+            // Las peticiones AJAX (búsqueda en vivo, orden, paginación) no se
+            // redirigen: devuelven el parcial de resultados más abajo. Las
+            // navegaciones normales sí redirigen para limpiar la URL.
+            if (! $request->ajax()) {
+                return redirect()->route('tabla-goleadores');
+            }
+        }
+
+        // Sin query string: el estado de los filtros vive en sesión.
+        $filtros = $request->session()->get($sessionKey, []);
+
         $ediciones = Edicion::all();
-        $idEdicion = $request->idEdicion;
+        $idEdicion = $filtros['idEdicion'] ?? null;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $idCategoria = $request->idCategoria;
-        $searchValue = trim((string) $request->query('search_value', ''));
-        // Nuevos parámetros de ordenamiento (UX): sort = goles|nombre|equipo|categoria, dir = asc|desc
-        $sort = $request->query('sort');
-        $dir = strtolower($request->query('dir', '')) === 'asc' ? 'asc' : 'desc';
+        $idCategoria = isset($filtros['idCategoria']) && $filtros['idCategoria'] !== '' ? $filtros['idCategoria'] : null;
+        $searchValue = trim((string) ($filtros['search_value'] ?? ''));
+        // Parámetros de ordenamiento (UX): sort = goles|nombre|equipo|categoria, dir = asc|desc
+        $sort = $filtros['sort'] ?? null;
+        $dir = strtolower($filtros['dir'] ?? '') === 'asc' ? 'asc' : 'desc';
+        $page = max(1, (int) ($filtros['page'] ?? 1));
 
         // Normalizar clave de orden
         $sortKey = in_array($sort, ['goles', 'nombre', 'equipo', 'categoria']) ? $sort : 'goles';
@@ -568,7 +599,7 @@ class ControladorHome extends Controller
             'categoria' => 'cat.nombreCategoria',
         ];
         // Dirección por defecto: goles desc, resto asc (más natural en listados)
-        if (! $request->has('dir')) {
+        if (! array_key_exists('dir', $filtros)) {
             $dir = $sortKey === 'goles' ? 'desc' : 'asc';
         }
 
@@ -583,9 +614,9 @@ class ControladorHome extends Controller
         if ($searchValue !== '') {
             $baseQuery->where(function ($query) use ($searchValue) {
                 $likePattern = "%{$searchValue}%";
-                $query->whereLike('j.nombre', $likePattern)
-                    ->orWhereLike('j.apellido', $likePattern)
-                    ->orWhereLike(\Illuminate\Support\Facades\DB::raw("CONCAT(j.apellido, ' ', j.nombre)"), $likePattern);
+                $query->where('j.nombre', 'like', $likePattern)
+                    ->orWhere('j.apellido', 'like', $likePattern)
+                    ->orWhere(\Illuminate\Support\Facades\DB::raw("CONCAT(j.apellido, ' ', j.nombre)"), 'like', $likePattern);
             });
         }
 
@@ -599,13 +630,9 @@ class ControladorHome extends Controller
             ->orderBy('cat.nombreCategoria', 'desc')
             ->orderBy('tabla_goleadores.cantidadGoles', 'desc');
 
-        $goleadores_t = $baseQuery->paginate(30)->withQueryString();
-        // Mantener parámetros en la paginación
-        $appendParams = ['idEdicion' => $idEdicion, 'search_value' => $searchValue, 'sort' => $sortKey, 'dir' => $dir];
-        if (! is_null($idCategoria)) {
-            $appendParams['idCategoria'] = $idCategoria;
-        }
-        $goleadores_t->appends($appendParams);
+        // La página actual vive en sesión; los links del paginador solo
+        // necesitan emitir ?page=N, que el patrón PRG vuelve a limpiar.
+        $goleadores_t = $baseQuery->paginate(30, ['*'], 'page', $page);
 
         $categorias = collect();
         if (isset($EdicionSeleccionada)) {
@@ -615,7 +642,23 @@ class ControladorHome extends Controller
                 ->get();
         }
 
-        return view('layouts.tabla-goleadores', compact('ediciones', 'EdicionSeleccionada', 'goleadores_t', 'categorias'));
+        // En AJAX solo se devuelve el parcial de resultados para reemplazar el
+        // contenedor sin recargar la página ni perder el foco del buscador.
+        if ($request->ajax()) {
+            return view('partials.goleadores-resultados', compact('goleadores_t', 'sortKey', 'dir'));
+        }
+
+        return view('layouts.tabla-goleadores', compact(
+            'ediciones',
+            'EdicionSeleccionada',
+            'goleadores_t',
+            'categorias',
+            'idEdicion',
+            'idCategoria',
+            'searchValue',
+            'sortKey',
+            'dir'
+        ));
     }
 
     public function instanciasFinales(Request $request)
