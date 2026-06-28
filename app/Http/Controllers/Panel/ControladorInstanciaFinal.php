@@ -240,7 +240,26 @@ class ControladorInstanciaFinal extends Controller
 
         $tipo = 'instancia_final';
 
-        return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada', 'tipo', 'parametrosRegreso', 'rutaRegreso'));
+        $partidoIda = InstanciaFinal::where('idEdicion', $partido->idEdicion)
+            ->where('idCategoria', $partido->idCategoria)
+            ->where('id', '!=', $partido->id)
+            ->where(function ($q) use ($partido) {
+                $q->where(function ($q2) use ($partido) {
+                    $q2->where('idEquipoLocal', $partido->idEquipoLocal)
+                        ->where('idEquipoVisitante', $partido->idEquipoVisitante);
+                })->orWhere(function ($q2) use ($partido) {
+                    $q2->where('idEquipoLocal', $partido->idEquipoVisitante)
+                        ->where('idEquipoVisitante', $partido->idEquipoLocal);
+                });
+            })
+            ->whereNotNull('golesEquipoLocal')
+            ->whereNotNull('golesEquipoVisitante')
+            ->where('horario', '<', $partido->horario)
+            ->with(['equipoLocal:id,nombre', 'equipoVisitante:id,nombre'])
+            ->orderBy('horario', 'desc')
+            ->first();
+
+        return view('Panel.cargar-resultado', compact('partido', 'ediciones', 'EdicionSeleccionada', 'tipo', 'parametrosRegreso', 'rutaRegreso', 'partidoIda'));
     }
 
     private function resolverRutaRegresoResultado(Request $request, InstanciaFinal $partido, array $parametrosRegreso): string

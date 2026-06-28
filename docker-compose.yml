@@ -53,9 +53,7 @@ services:
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
-      - .:/var/www/html:delegated
-      - ./storage:/var/www/html/storage:delegated
-      - ./bootstrap/cache:/var/www/html/bootstrap/cache:delegated
+      - .:/var/www/html
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
       - /var/www/html/vendor
     networks:
@@ -81,7 +79,7 @@ services:
     ports:
       - "8000:80"
     volumes:
-      - .:/var/www/html:delegated
+      - .:/var/www/html
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     networks:
       - mitai-network
@@ -97,7 +95,7 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - .:/var/www/html:delegated
+      - .:/var/www/html
       - /var/www/html/node_modules
     networks:
       - mitai-network

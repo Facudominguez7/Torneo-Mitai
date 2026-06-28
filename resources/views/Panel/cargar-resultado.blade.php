@@ -83,6 +83,24 @@
         </div>
     @endif
 
+    @if (isset($partidoIda) && $partidoIda)
+        <div class="mb-5 rounded-lg border border-blue-200 bg-blue-50 px-5 py-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-blue-500 mb-2">Resultado IDA</p>
+            <div class="flex items-center justify-between gap-4">
+                <span class="font-medium text-gray-800">{{ $partidoIda->equipoLocal->nombre }}</span>
+                <span class="text-2xl font-bold text-blue-700">
+                    {{ $partidoIda->golesEquipoLocal }} - {{ $partidoIda->golesEquipoVisitante }}
+                </span>
+                <span class="font-medium text-gray-800">{{ $partidoIda->equipoVisitante->nombre }}</span>
+            </div>
+            @if ($partidoIda->penalesEquipoLocal !== null && $partidoIda->penalesEquipoVisitante !== null)
+                <p class="mt-1 text-center text-xs text-blue-400">
+                    Penales: {{ $partidoIda->penalesEquipoLocal }} - {{ $partidoIda->penalesEquipoVisitante }}
+                </p>
+            @endif
+        </div>
+    @endif
+
     <form
         action="{{ route(($tipo ?? '') === 'instancia_final' ? 'cargar-resultado-instancia' : 'cargar-resultado', ['idPartido' => $partido->id, 'idEdicion' => $EdicionSeleccionada->id]) }}"
         method="POST">

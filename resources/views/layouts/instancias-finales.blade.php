@@ -205,7 +205,7 @@
                                                                     <span class="text-[11px] font-semibold text-white/70">Penales: {{ $p->penalesEquipoLocal }} - {{ $p->penalesEquipoVisitante }}</span>
                                                                 @endif
                                                                 @if (!is_null($p->resultadoGlobal))
-                                                                    <span class="text-[11px] font-semibold text-white/70">Global: {{ $p->resultadoGlobal }}</span>
+                                                                    <span class="mt-1 inline-block rounded-full bg-yellow-400/20 px-2 py-0.5 text-[11px] font-bold text-yellow-300 ring-1 ring-yellow-400/40">Global: {{ $p->resultadoGlobal }}</span>
                                                                 @endif
                                                             </div>
                                                             <div class="flex flex-col items-center gap-3 text-center">
@@ -235,7 +235,7 @@
                                                                     <span class="text-xs font-semibold text-white/70">Penales: {{ $p->penalesEquipoLocal }} - {{ $p->penalesEquipoVisitante }}</span>
                                                                 @endif
                                                                 @if (!is_null($p->resultadoGlobal))
-                                                                    <span class="text-xs font-semibold text-white/70">Global: {{ $p->resultadoGlobal }}</span>
+                                                                    <span class="mt-1 inline-block rounded-full bg-yellow-400/20 px-3 py-0.5 text-xs font-bold text-yellow-300 ring-1 ring-yellow-400/40">Global: {{ $p->resultadoGlobal }}</span>
                                                                 @endif
                                                             </div>
 
