@@ -168,28 +168,27 @@
                     const penalesVisitanteInput = document.getElementById('penalesEquipoVisitante');
                     const resultadoGlobalInput = document.getElementById('resultadoGlobal');
 
+                    function globalEsEmpate() {
+                        if (!resultadoGlobalInput) return false;
+                        const partes = resultadoGlobalInput.value.trim().split('-');
+                        if (partes.length !== 2) return false;
+                        const a = parseInt(partes[0]);
+                        const b = parseInt(partes[1]);
+                        return !isNaN(a) && !isNaN(b) && a === b;
+                    }
+
                     function checkPenales() {
                         if (!containerPenales) return;
 
                         const golesLocal = parseInt(golesLocalInput.value);
                         const golesVisitante = parseInt(golesVisitanteInput.value);
 
-                        console.log('Verificando penales:', {
-                            golesLocal: golesLocal,
-                            golesVisitante: golesVisitante,
-                            sonIguales: golesLocal === golesVisitante
-                        });
+                        const partidoEmpatado = !isNaN(golesLocal) && !isNaN(golesVisitante) && golesLocal === golesVisitante;
 
-                        if (!isNaN(golesLocal) && !isNaN(golesVisitante) && golesLocal === golesVisitante) {
+                        if (partidoEmpatado || globalEsEmpate()) {
                             containerPenales.style.display = 'block';
-                            console.log('Mostrando container de penales');
                         } else {
                             containerPenales.style.display = 'none';
-                            console.log('Ocultando container de penales');
-                            // Opcional: limpiar valores si se oculta
-                            // penalesLocalInput.value = '';
-                            // penalesVisitanteInput.value = '';
-                            // resultadoGlobalInput.value = '';
                         }
                     }
 
@@ -198,9 +197,11 @@
                         golesLocalInput.addEventListener('change', checkPenales);
                         golesVisitanteInput.addEventListener('input', checkPenales);
                         golesVisitanteInput.addEventListener('change', checkPenales);
-                        // Ejecutar al cargar por si ya hay valores
+                        if (resultadoGlobalInput) {
+                            resultadoGlobalInput.addEventListener('input', checkPenales);
+                            resultadoGlobalInput.addEventListener('change', checkPenales);
+                        }
                         checkPenales();
-                        console.log('Event listeners agregados');
                     }
                 });
             </script>
