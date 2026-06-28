@@ -104,6 +104,15 @@
                 class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md" />
         </div>
         @if (isset($tipo) && $tipo === 'instancia_final')
+            <div class="mb-5">
+                <label for="resultadoGlobal" class="mb-3 block text-base font-medium text-white">
+                    Resultado Global
+                </label>
+                <input type="text" name="resultadoGlobal" id="resultadoGlobal"
+                    placeholder="Ej: 3-2"
+                    value="{{ old('resultadoGlobal', $partido->resultadoGlobal) }}"
+                    class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md" />
+            </div>
             <div id="containerPenales" style="display: none;">
                 <div class="mb-5">
                     <label for="penalesEquipoLocal" class="mb-3 block text-base font-medium text-white">
@@ -119,14 +128,6 @@
                     </label>
                     <input type="number" name="penalesEquipoVisitante" id="penalesEquipoVisitante"
                         value="{{ old('penalesEquipoVisitante', $partido->penalesEquipoVisitante) }}"
-                        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md" />
-                </div>
-                <div class="mb-5">
-                    <label for="resultadoGlobal" class="mb-3 block text-base font-medium text-white">
-                        Resultado Global
-                    </label>
-                    <input type="text" name="resultadoGlobal" id="resultadoGlobal"
-                        value="{{ old('resultadoGlobal', $partido->resultadoGlobal) }}"
                         class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md" />
                 </div>
             </div>
