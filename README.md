@@ -30,7 +30,7 @@
 | **Frontend** | Blade, TailwindCSS, Alpine.js |
 | **Base de Datos** | MySQL |
 | **Autenticación** | Laravel Breeze, Google OAuth (Socialite) |
-| **Notificaciones** | Web Push Notifications (VAPID) |
+| **Notificaciones** | Notificaciones por email |
 | **PDF** | DomPDF |
 | **Build Tool** | Vite |
 | **Testing** | Pest |
@@ -104,16 +104,6 @@
 |--------|-------------|
 | **Gestión de Instituciones** | Crear, editar y asociar instituciones a equipos |
 | **Vinculación de Equipos** | Asociar/desvincular equipos de instituciones |
-
-### 🔔 Notificaciones Push
-
-| Funcionalidad | Descripción |
-|---------------|-------------|
-| **Suscripción de Usuarios** | Los usuarios pueden activar notificaciones desde el menú |
-| **Notificaciones Automáticas** | Alertas al cargar resultados de partidos |
-| **Envío Manual (Admin)** | Envío de notificaciones personalizadas desde el panel |
-| **Notificaciones Rápidas** | Botones predefinidos: "Fixture Cargado", "Goleadores Actualizados" |
-| **Rate Limiting** | Protección contra abuso en endpoints de suscripción |
 
 ### 📊 Reportes y Exportación
 
@@ -203,7 +193,7 @@ flowchart LR
     
     A -->|puede ver| D[Portal Público]
     B -->|puede ver| D
-    B -->|puede activar| E[Notificaciones Push]
+    B -->|puede recibir| E[Notificaciones por email]
     C -->|accede a| F[Panel Administración]
     C -->|puede enviar| G[Notificaciones Manuales]
 ```
@@ -249,9 +239,6 @@ php artisan key:generate
 # Ejecutar migraciones
 php artisan migrate
 
-# Generar claves VAPID para push notifications
-php artisan webpush:vapid
-
 # Compilar assets
 npm run build
 
@@ -293,9 +280,6 @@ GOOGLE_CLIENT_ID=your_client_id
 GOOGLE_CLIENT_SECRET=your_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
 
-# Push Notifications (VAPID)
-VAPID_PUBLIC_KEY=your_public_key
-VAPID_PRIVATE_KEY=your_private_key
 ```
 
 ---
@@ -318,7 +302,7 @@ php artisan test
 ├── app/
 │   ├── Http/Controllers/
 │   │   ├── ControladorHome.php          # Páginas públicas
-│   │   ├── ControladorNotificacionesPush.php
+│   │   ├── ControladorNotificacionesEmail.php
 │   │   └── Panel/                        # Controladores del admin
 │   │       ├── ControladorEquipo.php
 │   │       ├── ControladorPartidos.php

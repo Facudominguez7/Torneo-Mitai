@@ -326,12 +326,12 @@
 
             </ul>
 
-            <!-- Botón de Notificaciones Push -->
+             <!-- Gestión de notificaciones por email -->
             <div class="px-3 py-4 border-t border-gray-300">
                 <div class="mb-2">
                     <span class="px-2 text-xs font-semibold text-gray-500 uppercase">Notificaciones</span>
                 </div>
-                <a href="{{ route('push.suscriptores') }}"
+                 <a href="{{ route('notificaciones.index') }}"
                     class="flex items-center w-full px-4 py-2 mb-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors font-medium text-sm">
                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                         <path
@@ -440,7 +440,7 @@
                 ],
                 'notificaciones' => [
                     'label' => 'Notificaciones',
-                    'route' => route('push.suscriptores', ['idEdicion' => $idEdicionContexto]),
+                     'route' => route('notificaciones.index', ['idEdicion' => $idEdicionContexto]),
                     'grupo' => 'gestion',
                 ],
                 'lista_buena_fe' => [
@@ -502,7 +502,7 @@
             $tipoSolicitado = request('tipo');
             $aliasTipo = [
                 'equipogrupo' => 'grupos',
-                'push.suscriptores' => 'notificaciones',
+                 'notificaciones.index' => 'notificaciones',
                 'lista-buena-fe' => 'lista_buena_fe',
                 'jugador.consulta' => 'jugador_consulta',
             ];
@@ -519,7 +519,7 @@
                 ['patterns' => ['categoria.*'], 'modulo' => 'categoria'],
                 ['patterns' => ['equipo.*'], 'modulo' => 'equipo'],
                 ['patterns' => ['equipoedicion.*'], 'modulo' => 'equipoedicion'],
-                ['patterns' => ['push.*'], 'modulo' => 'notificaciones'],
+                 ['patterns' => ['notificaciones.*'], 'modulo' => 'notificaciones'],
                 ['patterns' => ['lista-buena-fe.*'], 'modulo' => 'lista_buena_fe'],
                 ['patterns' => ['jugador.*'], 'modulo' => 'jugador_consulta'],
                 ['patterns' => ['institucion.*'], 'modulo' => 'institucion'],
@@ -715,7 +715,7 @@
             <div class="mb-3 grid grid-cols-1 gap-3 px-3 sm:grid-cols-2 sm:px-4 xl:grid-cols-4">
                 <div class="min-w-0">
                     <a
-                        href="{{ route('push.suscriptores', ['idEdicion' => $idEdicionContexto]) }}">
+                         href="{{ route('notificaciones.index', ['idEdicion' => $idEdicionContexto]) }}">
                         <button type="button"
                             class="group flex h-full min-h-[54px] w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-slate-900/75 px-4 py-2 text-sm font-semibold text-white shadow transition duration-200 hover:-translate-y-0.5 hover:bg-slate-900">
                             <svg class="h-4 w-4 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">

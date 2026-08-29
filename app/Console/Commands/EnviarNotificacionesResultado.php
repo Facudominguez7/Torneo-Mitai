@@ -2,11 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Services\EmailDomainGuard;
-use Illuminate\Console\Command;
 use App\Models\Partido;
 use App\Models\User;
 use App\Notifications\ResultadoCargado;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class EnviarNotificacionesResultado extends Command
@@ -31,15 +30,16 @@ class EnviarNotificacionesResultado extends Command
     public function handle()
     {
         $partidoId = $this->argument('partido_id');
-        
+
         Log::info("Iniciando comando de notificación background para partido #{$partidoId}");
 
         try {
             $partido = Partido::with(['equipoLocal', 'equipoVisitante', 'categoria'])
                 ->find($partidoId);
 
-            if (!$partido) {
+            if (! $partido) {
                 Log::error("Partido #{$partidoId} no encontrado.");
+
                 return 1;
             }
 
@@ -56,37 +56,26 @@ class EnviarNotificacionesResultado extends Command
 
             $notificacion = new ResultadoCargado($datosPartido);
 
-            // Obtener usuarios notificables (Email habilitado o Push)
             // Las cuentas nuevas con política reforzada solo reciben emails
-            // si ya verificaron su direccion.
-            User::where(function ($q) {
-                $q->where(function($q2) {
-                    $q2->where('email_subscribed', true)
-                       ->whereNotNull('email')
-                       ->where('email', '!=', '')
-                       ->where(function ($emailPolicyQuery) {
-                           $emailPolicyQuery->where('requires_email_verification_for_notifications', false)
-                               ->orWhereNotNull('email_verified_at');
-                       });
-                    EmailDomainGuard::applyBlockedDomainsFilter($q2);
-                })
-                ->orWhereHas('pushSubscriptions');
-            })->chunk(50, function ($users) use ($notificacion) {
+            // si ya verificaron su dirección.
+            User::suscritosAEmail()->chunk(50, function ($users) use ($notificacion) {
                 foreach ($users as $user) {
                     try {
                         $user->notify($notificacion);
                         $user->forceFill(['last_notification_at' => now()])->saveQuietly();
                     } catch (\Exception $e) {
-                        Log::error("Fallo notificando usuario {$user->id}: " . $e->getMessage());
+                        Log::error("Fallo notificando usuario {$user->id}: ".$e->getMessage());
                     }
                 }
             });
 
             Log::info("Comando de notificaciones finalizado exitosamente para partido #{$partidoId}");
+
             return 0;
 
         } catch (\Exception $e) {
-            Log::error("Error fatal en comando notificaciones: " . $e->getMessage());
+            Log::error('Error fatal en comando notificaciones: '.$e->getMessage());
+
             return 1;
         }
     }

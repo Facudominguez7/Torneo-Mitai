@@ -26,7 +26,6 @@ export default defineConfig(({ mode }) => {
                     "resources/js/app.js",
                     "resources/js/welcome.js",
                     "resources/js/admin/admin.js",
-                    "resources/js/push-notifications.js",
                 ],
                 refresh: true,
             }),
