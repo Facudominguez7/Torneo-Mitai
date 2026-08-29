@@ -91,7 +91,11 @@ jobs:
             echo "✅ Unnecessary files removed."
             
             # Instalar dependencias
-            composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
+            # --no-scripts evita que Composer lance package:discover como subproceso:
+            # el PHP del servidor tiene proc_open deshabilitado (disable_functions),
+            # que no se puede re-habilitar desde CLI. Ejecutamos el discover aparte.
+            composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist --no-scripts
+            php artisan package:discover --ansi
             
             # Asegurar permisos correctos
             chmod -R 775 storage bootstrap/cache
