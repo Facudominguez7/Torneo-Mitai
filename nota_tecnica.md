@@ -173,7 +173,7 @@ Resultado esperado:
   - `app/Services/ResendMailTransport.php`
   - `app/Services/ResendWebhookVerifier.php`
   - `app/Http/Controllers/ResendWebhookController.php`
-  - logica BCC/SMTP legacy en `ControladorNotificacionesPush`
+  - logica BCC/SMTP legacy en `ControladorNotificacionesEmail`
 - Dejar una sola estrategia de envio mantenible.
 
 ## Impacto esperado por area
@@ -223,7 +223,7 @@ Resultado esperado:
 - `app/Listeners/PersistNotificationDispatch.php`
 - `app/Listeners/CacheNotificationDispatchContext.php`
 - `app/Listeners/LogNotificacionEnviada.php`
-- `app/Http/Controllers/ControladorNotificacionesPush.php`
+- `app/Http/Controllers/ControladorNotificacionesEmail.php`
 - `app/Notifications/VerifyEmailCodeNotification.php`
 - `app/Notifications/ResultadoCargado.php`
 - `app/Notifications/NotificacionPersonalizada.php`

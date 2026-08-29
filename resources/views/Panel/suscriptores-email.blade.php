@@ -144,7 +144,7 @@
         </div>
 
         {{-- Filtros --}}
-        <form method="GET" action="{{ route('push.suscriptores') }}" class="mb-8 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4">
+        <form method="GET" action="{{ route('notificaciones.index') }}" class="mb-8 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="md:col-span-1">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
@@ -160,14 +160,6 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Estado Push</label>
-                    <select name="push_status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="todos" {{ request('push_status') == 'todos' ? 'selected' : '' }}>Todos</option>
-                        <option value="activo" {{ request('push_status') == 'activo' ? 'selected' : '' }}>Activo</option>
-                        <option value="inactivo" {{ request('push_status') == 'inactivo' ? 'selected' : '' }}>Inactivo</option>
-                    </select>
-                </div>
-                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Suscripción Email</label>
                     <select name="email_notif_status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         <option value="todos" {{ request('email_notif_status') == 'todos' ? 'selected' : '' }}>Todos</option>
@@ -177,7 +169,7 @@
                 </div>
             </div>
             <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <a href="{{ route('push.suscriptores') }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-center text-sm text-gray-600 transition hover:bg-gray-50">Limpiar</a>
+                <a href="{{ route('notificaciones.index') }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-center text-sm text-gray-600 transition hover:bg-gray-50">Limpiar</a>
                 <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm text-white shadow-sm transition hover:bg-blue-700">Filtrar Resultados</button>
             </div>
         </form>
@@ -220,12 +212,6 @@
                                 @endif
                             </div>
                             <div class="rounded-md bg-gray-50 p-2">
-                                <p class="font-semibold text-gray-700">Push</p>
-                                <p class="mt-1 text-gray-700">
-                                    {{ $user->push_subscriptions_count > 0 ? $user->push_subscriptions_count . ' dispositivo(s)' : 'Inactivo' }}
-                                </p>
-                            </div>
-                            <div class="rounded-md bg-gray-50 p-2">
                                 <p class="font-semibold text-gray-700">Email</p>
                                 <p class="mt-1 text-gray-700">{{ $user->email_subscribed ? 'Suscrito' : 'Baja' }}</p>
                             </div>
@@ -236,7 +222,7 @@
                         </div>
 
                         @if(!$user->hasVerifiedEmail())
-                            <form action="{{ route('push.reenviar-verificacion', $user->id) }}" method="POST" class="mt-3">
+                            <form action="{{ route('notificaciones.reenviar-verificacion', $user->id) }}" method="POST" class="mt-3">
                                 @csrf
                                 <button type="submit" class="inline-flex w-full items-center justify-center gap-1 rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100">
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
@@ -254,7 +240,6 @@
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Usuario</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Verificación Email</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Push</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Notif. Email</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Último Envío</th>
                             <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
@@ -295,15 +280,6 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($user->push_subscriptions_count > 0)
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                            📱 {{ $user->push_subscriptions_count }} Dispositivo(s)
-                                        </span>
-                                    @else
-                                        <span class="text-sm text-gray-400 italic">Inactivo</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
                                     @if($user->email_subscribed)
                                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
                                             📧 Suscrito
@@ -319,7 +295,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     @if(!$user->hasVerifiedEmail())
-                                        <form action="{{ route('push.reenviar-verificacion', $user->id) }}" method="POST" class="inline-block">
+                                        <form action="{{ route('notificaciones.reenviar-verificacion', $user->id) }}" method="POST" class="inline-block">
                                             @csrf
                                             <button type="submit" class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md transition text-xs font-semibold flex items-center gap-1 ml-auto" title="Reenviar email de verificación">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
@@ -495,23 +471,23 @@
         const ENDPOINTS = {
             recordatorios: {
                 start_msg: 'Enviando recordatorios...',
-                count_route: '{{ route("push.contar-pendientes") }}',
-                send_route: '{{ route("push.enviar-lote") }}',
-                log_route: '{{ route("push.log-completo") }}',
+                count_route: '{{ route("notificaciones.contar-pendientes") }}',
+                send_route: '{{ route("notificaciones.enviar-lote") }}',
+                log_route: '{{ route("notificaciones.log-completo") }}',
                 batch_size: 10,
             },
             manual: {
                 start_msg: 'Enviando notificación masiva...',
-                count_route: '{{ route("push.manual.contar") }}',
-                send_route: '{{ route("push.manual.enviar-lote") }}',
-                log_route: '{{ route("push.log-completo") }}',
+                count_route: '{{ route("notificaciones.manual.contar") }}',
+                send_route: '{{ route("notificaciones.manual.enviar-lote") }}',
+                log_route: '{{ route("notificaciones.log-completo") }}',
                 batch_size: 20,
             },
             resumen_fecha: {
                 start_msg: 'Enviando resumen de fecha...',
-                count_route: '{{ route("push.resumen-fecha.contar") }}',
-                send_route: '{{ route("push.resumen-fecha.enviar-lote") }}',
-                log_route: '{{ route("push.log-completo") }}',
+                count_route: '{{ route("notificaciones.resumen-fecha.contar") }}',
+                send_route: '{{ route("notificaciones.resumen-fecha.enviar-lote") }}',
+                log_route: '{{ route("notificaciones.log-completo") }}',
                 batch_size: 20,
             }
         };

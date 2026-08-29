@@ -6,21 +6,19 @@ use App\Notifications\VerifyEmailCodeNotification;
 use App\Services\EmailDomainGuard;
 use App\Services\EmailVerificationCodeService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use NotificationChannels\WebPush\HasPushSubscriptions;
-use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Modelo de Usuario.
- * 
+ *
  * Representa a los usuarios del sistema con soporte para:
  * - Autenticación estándar y OAuth (Google)
- * - Notificaciones push (WebPush)
  * - Notificaciones por email con opción de desuscripción
- * 
+ *
  * @property int $id
  * @property string $name
  * @property string $email
@@ -30,7 +28,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable, HasPushSubscriptions;
+    use HasFactory, Notifiable;
 
     /**
      * Atributos que se pueden asignar masivamente.
@@ -59,8 +57,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Verificar si el usuario es administrador.
-     *
-     * @return bool
      */
     public function isAdmin(): bool
     {
@@ -81,7 +77,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Verificar si el usuario desea recibir notificaciones por email.
-     * 
+     *
      * Regla de negocio actual:
      * - Los usuarios legacy conservan el comportamiento historico.
      * - Las cuentas nuevas marcadas con politica reforzada deben verificar
@@ -89,8 +85,6 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * El usuario conserva siempre la opción de baja desde el enlace incluido
      * en cada correo notificado.
-     *
-     * @return bool
      */
     public function quiereRecibirEmails(): bool
     {
@@ -102,12 +96,9 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Scope para filtrar usuarios suscritos a notificaciones por email.
-     * 
+     *
      * Mantiene compatibilidad con usuarios legacy, pero exige email verificado
      * para las cuentas nuevas que usan la politica reforzada.
-     *
-     * @param Builder $query
-     * @return Builder
      */
     public function scopeSuscritosAEmail(Builder $query): Builder
     {

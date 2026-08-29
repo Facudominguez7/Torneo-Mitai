@@ -7,8 +7,7 @@
     "require": {
         "php": "^8.3",
         "barryvdh/laravel-dompdf": "^3.1",
-        "laravel-notification-channels/webpush": "^10.3",
-        "laravel/framework": "^11.9",
+        "laravel/framework": "^11.47.0",
         "laravel/socialite": "^5.15",
         "laravel/tinker": "^2.9"
     },
@@ -16,6 +15,7 @@
         "fakerphp/faker": "^1.23",
         "kitloong/laravel-migrations-generator": "^7.0",
         "laravel-lang/common": "^6.4",
+        "laravel/boost": "2.7.0",
         "laravel/breeze": "^2.1",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.26",

@@ -37,7 +37,6 @@
             'resources/css/app.css',
             'resources/js/welcome.js',
             'resources/js/app.js',
-            'resources/js/push-notifications.js',
         ];
 
         if ($esRutaPanel) {

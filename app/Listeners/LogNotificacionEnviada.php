@@ -7,17 +7,14 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Listener para registrar cada notificación enviada.
- * 
+ *
  * Se ejecuta automáticamente después de que cualquier notificación
- * sea enviada exitosamente (email, push, etc).
+ * sea enviada exitosamente (email, etc.).
  */
 class LogNotificacionEnviada
 {
     /**
      * Manejar el evento de notificación enviada.
-     *
-     * @param NotificationSent $event
-     * @return void
      */
     public function handle(NotificationSent $event): void
     {

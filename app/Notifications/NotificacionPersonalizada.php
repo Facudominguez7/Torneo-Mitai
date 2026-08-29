@@ -6,14 +6,12 @@ use App\Services\EmailDeliverabilityHeaders;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use NotificationChannels\WebPush\WebPushChannel;
-use NotificationChannels\WebPush\WebPushMessage;
 
 /**
- * Notificación push y email personalizada para anuncios del administrador.
+ * Notificación por email personalizada para anuncios del administrador.
  *
  * Permite enviar notificaciones con título, mensaje y URL personalizados.
- * Se envía tanto por WebPush como por email a usuarios suscritos.
+ * Se envía por email a usuarios suscritos.
  * Implementa ShouldQueue para procesarse en segundo plano.
  */
 class NotificacionPersonalizada extends Notification
@@ -69,52 +67,14 @@ class NotificacionPersonalizada extends Notification
     /**
      * Obtener los canales de entrega de la notificación.
      *
-     * Determina dinámicamente qué canales usar según las preferencias del usuario:
-     * - WebPush: Si tiene suscripciones push activas
-     * - Mail: Si tiene email habilitado y está suscrito a emails
+     * Determina si el usuario tiene habilitadas las notificaciones por email.
      *
      * @param  mixed  $notifiable  Usuario que recibirá la notificación
      * @return array Canales de notificación a usar
      */
     public function via($notifiable): array
     {
-        $canales = [];
-
-        // Canal WebPush si el usuario tiene suscripciones activas
-        if ($notifiable->pushSubscriptions()->exists()) {
-            $canales[] = WebPushChannel::class;
-        }
-
-        // Canal Email si el usuario quiere recibir emails
-        if ($notifiable->quiereRecibirEmails()) {
-            $canales[] = 'mail';
-        }
-
-        return $canales;
-    }
-
-    /**
-     * Obtener la representación Web Push de la notificación.
-     *
-     * @param  mixed  $notifiable  Usuario destinatario
-     * @param  mixed  $notification  Instancia de la notificación
-     * @return WebPushMessage Mensaje push configurado
-     */
-    public function toWebPush($notifiable, $notification): WebPushMessage
-    {
-        return (new WebPushMessage)
-            ->title("{$this->icono} {$this->titulo}")
-            ->icon('/fotos/Logo_Mitai_SinFondo.png')
-            ->badge('/fotos/Logo_Mitai_SinFondo.png')
-            ->body($this->mensaje)
-            ->tag('anuncio-'.time())
-            ->data([
-                'url' => $this->url,
-            ])
-            ->options([
-                'TTL' => 86400,
-                'urgency' => 'normal',
-            ]);
+        return $notifiable->quiereRecibirEmails() ? ['mail'] : [];
     }
 
     /**

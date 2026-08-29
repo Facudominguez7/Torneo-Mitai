@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\ControladorHome;
+use App\Http\Controllers\ControladorNotificacionesEmail;
 use App\Http\Controllers\ControladorPlanillaPublica;
 use App\Http\Controllers\Google\LoginController;
 use App\Http\Controllers\LogController;
@@ -13,11 +14,14 @@ use App\Http\Controllers\Panel\ControladorEdicion;
 use App\Http\Controllers\Panel\ControladorEquipo;
 use App\Http\Controllers\Panel\ControladorEquiposEdiciones;
 use App\Http\Controllers\Panel\ControladorEquiposGrupos;
+use App\Http\Controllers\Panel\ControladorEstadisticasJugadores;
 use App\Http\Controllers\Panel\ControladorFase;
 use App\Http\Controllers\Panel\ControladorFecha;
 use App\Http\Controllers\Panel\ControladorGoleador;
 use App\Http\Controllers\Panel\ControladorGrupos;
 use App\Http\Controllers\Panel\ControladorInstanciaFinal;
+use App\Http\Controllers\Panel\ControladorInstitucion;
+use App\Http\Controllers\Panel\ControladorListaBuenaFe;
 use App\Http\Controllers\Panel\ControladorPartidos;
 use App\Http\Controllers\Panel\ControladorPlanillaJugador;
 use App\Http\Controllers\Panel\ControladorSubcampeon;
@@ -117,23 +121,23 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
 
     // Lista de Buena Fe
     Route::prefix('lista-buena-fe')->group(function () {
-        Route::get('/conflictivos', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'conflictivos'])->name('lista-buena-fe.conflictivos');
-        Route::get('/', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'index'])->name('lista-buena-fe.index');
-        Route::get('/imprimir-planillas/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'imprimirPlanillas'])->name('lista-buena-fe.imprimir-planillas');
-        Route::get('/imprimir-planillas-fecha/{idEdicion}/{idFecha}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'imprimirPlanillasPorFecha'])
+        Route::get('/conflictivos', [ControladorListaBuenaFe::class, 'conflictivos'])->name('lista-buena-fe.conflictivos');
+        Route::get('/', [ControladorListaBuenaFe::class, 'index'])->name('lista-buena-fe.index');
+        Route::get('/imprimir-planillas/{idEdicion}', [ControladorListaBuenaFe::class, 'imprimirPlanillas'])->name('lista-buena-fe.imprimir-planillas');
+        Route::get('/imprimir-planillas-fecha/{idEdicion}/{idFecha}', [ControladorListaBuenaFe::class, 'imprimirPlanillasPorFecha'])
             ->whereNumber(['idEdicion', 'idFecha'])
             ->name('lista-buena-fe.imprimir-planillas-fecha');
-        Route::get('/{idEquipo}/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'show'])->name('lista-buena-fe.show');
-        Route::get('/pdf/{idEquipo}/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'pdf'])->name('lista-buena-fe.pdf');
-        Route::get('/imprimir-planilla/{idEquipo}/{idEdicion}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'imprimirPlanilla'])->name('lista-buena-fe.imprimir-planilla');
-        Route::post('/agregar', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'agregarJugador'])->name('lista-buena-fe.agregar');
-        Route::put('/dar-baja/{id}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'darDeBaja'])->name('lista-buena-fe.dar-baja');
-        Route::put('/reactivar/{id}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'reactivar'])->name('lista-buena-fe.reactivar');
-        Route::put('/actualizar/{id}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'actualizar'])->name('lista-buena-fe.actualizar');
-        Route::post('/migrar', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'migrarDesdePartidos'])->name('lista-buena-fe.migrar');
-        Route::post('/migrar-todos', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'migrarTodos'])->name('lista-buena-fe.migrar-todos');
-        Route::put('/resolver-conflicto/{id}', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'resolverConflicto'])->name('lista-buena-fe.resolver-conflicto');
-        Route::get('/buscar-dni', [\App\Http\Controllers\Panel\ControladorListaBuenaFe::class, 'buscarPorDni'])->name('lista-buena-fe.buscar-dni');
+        Route::get('/{idEquipo}/{idEdicion}', [ControladorListaBuenaFe::class, 'show'])->name('lista-buena-fe.show');
+        Route::get('/pdf/{idEquipo}/{idEdicion}', [ControladorListaBuenaFe::class, 'pdf'])->name('lista-buena-fe.pdf');
+        Route::get('/imprimir-planilla/{idEquipo}/{idEdicion}', [ControladorListaBuenaFe::class, 'imprimirPlanilla'])->name('lista-buena-fe.imprimir-planilla');
+        Route::post('/agregar', [ControladorListaBuenaFe::class, 'agregarJugador'])->name('lista-buena-fe.agregar');
+        Route::put('/dar-baja/{id}', [ControladorListaBuenaFe::class, 'darDeBaja'])->name('lista-buena-fe.dar-baja');
+        Route::put('/reactivar/{id}', [ControladorListaBuenaFe::class, 'reactivar'])->name('lista-buena-fe.reactivar');
+        Route::put('/actualizar/{id}', [ControladorListaBuenaFe::class, 'actualizar'])->name('lista-buena-fe.actualizar');
+        Route::post('/migrar', [ControladorListaBuenaFe::class, 'migrarDesdePartidos'])->name('lista-buena-fe.migrar');
+        Route::post('/migrar-todos', [ControladorListaBuenaFe::class, 'migrarTodos'])->name('lista-buena-fe.migrar-todos');
+        Route::put('/resolver-conflicto/{id}', [ControladorListaBuenaFe::class, 'resolverConflicto'])->name('lista-buena-fe.resolver-conflicto');
+        Route::get('/buscar-dni', [ControladorListaBuenaFe::class, 'buscarPorDni'])->name('lista-buena-fe.buscar-dni');
     });
 
     // En routes/web.php
@@ -147,105 +151,69 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
 
     // Gestión de Instituciones
     Route::prefix('instituciones')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Panel\ControladorInstitucion::class, 'index'])->name('institucion.index');
-        Route::post('/', [\App\Http\Controllers\Panel\ControladorInstitucion::class, 'store'])->name('institucion.store');
-        Route::put('/{institucion}', [\App\Http\Controllers\Panel\ControladorInstitucion::class, 'update'])->name('institucion.update');
-        Route::post('/cambiar-equipo', [\App\Http\Controllers\Panel\ControladorInstitucion::class, 'cambiarInstitucionEquipo'])->name('institucion.cambiarEquipo');
-        Route::post('/desvincular-equipo', [\App\Http\Controllers\Panel\ControladorInstitucion::class, 'desvincularEquipo'])->name('institucion.desvincularEquipo');
+        Route::get('/', [ControladorInstitucion::class, 'index'])->name('institucion.index');
+        Route::post('/', [ControladorInstitucion::class, 'store'])->name('institucion.store');
+        Route::put('/{institucion}', [ControladorInstitucion::class, 'update'])->name('institucion.update');
+        Route::post('/cambiar-equipo', [ControladorInstitucion::class, 'cambiarInstitucionEquipo'])->name('institucion.cambiarEquipo');
+        Route::post('/desvincular-equipo', [ControladorInstitucion::class, 'desvincularEquipo'])->name('institucion.desvincularEquipo');
     });
 
     // Estadísticas de Jugadores (vista global con estadísticas por edición)
-    Route::get('/estadisticas-jugadores', [\App\Http\Controllers\Panel\ControladorEstadisticasJugadores::class, 'index'])->name('estadisticas-jugadores');
+    Route::get('/estadisticas-jugadores', [ControladorEstadisticasJugadores::class, 'index'])->name('estadisticas-jugadores');
 });
 
-// Notificaciones Push - Solo requiere autenticación (no verified) para permitir usuarios Google
-Route::prefix('Panel/push')->middleware(['auth'])->group(function () {
-    Route::post('/subscribe', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'subscribe'])
-        ->middleware('throttle:10,1') // Rate limit: 10 requests por minuto
-        ->name('push.subscribe');
-    Route::post('/unsubscribe', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'unsubscribe'])
-        ->middleware('throttle:10,1') // Rate limit: 10 requests por minuto
-        ->name('push.unsubscribe');
-    Route::get('/status', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'status'])
-        ->name('push.status');
-    Route::post('/enviar-manual', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarNotificacionManual'])
-        ->middleware(UserAccesPanelMiddleware::class) // Solo admins
-        ->name('push.enviar-manual');
-    Route::get('/suscriptores', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'listarSuscriptores'])
-        ->middleware(UserAccesPanelMiddleware::class) // Solo admins
-        ->name('push.suscriptores');
-    Route::post('/suscriptores/{id}/reenviar-verificacion', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'reenviarVerificacionManual'])
-        ->middleware(UserAccesPanelMiddleware::class) // Solo admins
-        ->name('push.reenviar-verificacion');
-
-    // Rutas AJAX para envío de recordatorios por lotes
-    Route::get('/recordatorios/contar', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'contarUsuariosPendientes'])
-        ->middleware(UserAccesPanelMiddleware::class)
-        ->name('push.contar-pendientes');
-    Route::post('/recordatorios/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteRecordatorios'])
-        ->middleware(UserAccesPanelMiddleware::class)
-        ->name('push.enviar-lote');
-    Route::post('/recordatorios/log-completo', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'logEnvioCompleto'])
-        ->middleware(UserAccesPanelMiddleware::class)
-        ->name('push.log-completo');
-
-    // Rutas para notificación manual masiva por lotes
-    Route::get('/manual/contar', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'contarSuscriptores'])
-        ->middleware(UserAccesPanelMiddleware::class)
-        ->name('push.manual.contar');
-    Route::post('/manual/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteNotificacionManual'])
-        ->middleware(UserAccesPanelMiddleware::class)
-        ->name('push.manual.enviar-lote');
-
-    // Rutas para resumen de resultados por fecha (envío centralizado)
-    Route::get('/resumen-fecha/contar', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'contarDestinatariosResumenFecha'])
-        ->middleware(UserAccesPanelMiddleware::class)
-        ->name('push.resumen-fecha.contar');
-    Route::post('/resumen-fecha/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResumenFecha'])
-        ->middleware(UserAccesPanelMiddleware::class)
-        ->name('push.resumen-fecha.enviar-lote');
-
-    // Ruta para notificación de resultados masiva por lotes
-    Route::post('/resultado/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResultado'])
-        ->middleware(UserAccesPanelMiddleware::class)
-        ->name('push.resultado.enviar-lote');
-
-    // Ruta para notificación de resultados de instancias finales por lotes
-    Route::post('/resultado-instancia/enviar-lote', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'enviarLoteResultadoInstancia'])
-        ->middleware(UserAccesPanelMiddleware::class)
-        ->name('push.resultado-instancia.enviar-lote');
+// Gestión administrativa de notificaciones por email
+Route::prefix('Panel/notificaciones')->middleware(['auth', UserAccesPanelMiddleware::class])->group(function () {
+    Route::get('/', [ControladorNotificacionesEmail::class, 'listarUsuariosNotificaciones'])
+        ->name('notificaciones.index');
+    Route::post('/suscriptores/{id}/reenviar-verificacion', [ControladorNotificacionesEmail::class, 'reenviarVerificacionManual'])
+        ->name('notificaciones.reenviar-verificacion');
+    Route::get('/recordatorios/contar', [ControladorNotificacionesEmail::class, 'contarUsuariosPendientes'])
+        ->name('notificaciones.contar-pendientes');
+    Route::post('/recordatorios/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteRecordatorios'])
+        ->name('notificaciones.enviar-lote');
+    Route::post('/recordatorios/log-completo', [ControladorNotificacionesEmail::class, 'logEnvioCompleto'])
+        ->name('notificaciones.log-completo');
+    Route::get('/manual/contar', [ControladorNotificacionesEmail::class, 'contarSuscriptores'])
+        ->name('notificaciones.manual.contar');
+    Route::post('/manual/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteNotificacionManual'])
+        ->name('notificaciones.manual.enviar-lote');
+    Route::get('/resumen-fecha/contar', [ControladorNotificacionesEmail::class, 'contarDestinatariosResumenFecha'])
+        ->name('notificaciones.resumen-fecha.contar');
+    Route::post('/resumen-fecha/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResumenFecha'])
+        ->name('notificaciones.resumen-fecha.enviar-lote');
+    Route::post('/resultado/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResultado'])
+        ->name('notificaciones.resultado.enviar-lote');
+    Route::post('/resultado-instancia/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResultadoInstancia'])
+        ->name('notificaciones.resultado-instancia.enviar-lote');
 });
-
-// Ruta pública para obtener la clave VAPID (no requiere autenticación)
-Route::get('/push/vapid-public-key', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'getVapidPublicKey'])
-    ->name('push.vapid');
 
 // Rutas para gestión de suscripción a emails de notificación
 // Toggle de suscripción (requiere autenticación)
-Route::post('/email/toggle-suscripcion', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'toggleEmailSubscription'])
+Route::post('/email/toggle-suscripcion', [ControladorNotificacionesEmail::class, 'toggleEmailSubscription'])
     ->middleware(['auth', 'throttle:10,1'])
     ->name('email.toggle');
 
 // Darse de baja de emails sin login (usando token de verificación via query string)
-Route::get('/email/baja', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'darseDeBajaEmail'])
+Route::get('/email/baja', [ControladorNotificacionesEmail::class, 'darseDeBajaEmail'])
     ->middleware('throttle:5,1')
     ->name('email.baja');
 
 // One-click unsubscribe via POST (RFC 8058 - requerido por Gmail/Outlook)
-Route::post('/email/baja', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'oneClickUnsubscribe'])
+Route::post('/email/baja', [ControladorNotificacionesEmail::class, 'oneClickUnsubscribe'])
     ->middleware('throttle:10,1')
     ->name('email.baja.post');
 
 // Baja general para envíos masivos en BCC
-Route::get('/email/baja-general', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'formularioBajaGeneral'])
+Route::get('/email/baja-general', [ControladorNotificacionesEmail::class, 'formularioBajaGeneral'])
     ->middleware('throttle:20,1')
     ->name('email.baja-general.form');
-Route::post('/email/baja-general', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'procesarBajaGeneral'])
+Route::post('/email/baja-general', [ControladorNotificacionesEmail::class, 'procesarBajaGeneral'])
     ->middleware('throttle:20,1')
     ->name('email.baja-general.procesar');
 
 // Estado de suscripción a emails (requiere autenticación)
-Route::get('/email/estado', [\App\Http\Controllers\ControladorNotificacionesPush::class, 'estadoEmail'])
+Route::get('/email/estado', [ControladorNotificacionesEmail::class, 'estadoEmail'])
     ->middleware('auth')
     ->name('email.estado');
 
