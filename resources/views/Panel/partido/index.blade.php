@@ -263,22 +263,25 @@
                             </div>
                         @endif
                     </div>
-                    <div class="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 md:flex md:items-center md:justify-center md:px-6">
+                    <div class="grid grid-cols-1 gap-2 px-3 py-3 sm:grid-cols-2 md:mx-auto md:max-w-2xl md:grid-cols-4 md:px-4">
                         <a href="{{ route('cargar-resultado', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')]) }}"
-                            class="inline-flex justify-center">
-                            <button class="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full transition">
-                                {{ $p->golesEquipoLocal === null && $p->golesEquipoVisitante === null ? 'Cargar Resultado' : 'Editar Resultado' }}
-                            </button>
+                            class="inline-flex h-9 w-full items-center justify-center rounded-full bg-blue-500 px-4 text-center text-sm font-semibold text-white transition hover:bg-blue-600">
+                            {{ $p->golesEquipoLocal === null && $p->golesEquipoVisitante === null ? 'Cargar Resultado' : 'Editar Resultado' }}
                         </a>
-                        <a href="{{ route('partido.edit', ['partido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')]) }}" class="inline-flex justify-center">
-                            <button class="w-full md:w-auto bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-full transition">
-                                Editar
-                            </button>
+                        <a href="{{ route('partido.edit', ['partido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')]) }}"
+                            class="inline-flex h-9 w-full items-center justify-center rounded-full bg-yellow-500 px-4 text-center text-sm font-semibold text-white transition hover:bg-yellow-600">
+                            Editar
                         </a>
-                        <a href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0, 'origen' => 'partido-index', 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha'), 'horario_filtro' => request('horario'), 'busqueda' => request('busqueda')]) }}" class="inline-flex justify-center">
-                            <button class="w-full md:w-auto bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-full transition">
-                                Planillas
+                        <form action="{{ route('partido.destroy', array_filter(['partido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha'), 'horario' => request('horario'), 'busqueda' => request('busqueda')])) }}" method="POST" class="flex h-9 w-full" onsubmit="return confirm('¿Eliminar este partido? Se revertirán posiciones, historial y estadísticas asociadas.');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="inline-flex h-9 w-full items-center justify-center rounded-full bg-red-500 px-4 text-center text-sm font-semibold text-white transition hover:bg-red-600">
+                                Eliminar
                             </button>
+                        </form>
+                        <a href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0, 'origen' => 'partido-index', 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha'), 'horario_filtro' => request('horario'), 'busqueda' => request('busqueda')]) }}"
+                            class="inline-flex h-9 w-full items-center justify-center rounded-full bg-indigo-500 px-4 text-center text-sm font-semibold text-white transition hover:bg-indigo-600">
+                            Planillas
                         </a>
                     </div>
                 </div>

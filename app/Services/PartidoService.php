@@ -4,14 +4,18 @@ namespace App\Services;
 
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use App\Models\GolArbitroReportado;
 use App\Models\Grupo;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
+use App\Models\PlanillaJugador;
 use App\Models\TablaPosicion;
 use Illuminate\Support\Facades\DB;
 
 class PartidoService
 {
+    public function __construct(private readonly EstadisticasJugadorService $estadisticasJugadorService) {}
+
     public function actualizarResultado(Partido $partido, $golesEquipoLocal, $golesEquipoVisitante)
     {
         $partido->loadMissing(['equipoLocal', 'equipoVisitante']);
@@ -19,7 +23,7 @@ class PartidoService
         DB::transaction(function () use ($partido, $golesEquipoLocal, $golesEquipoVisitante) {
             // Bloquear el partido para evitar condiciones de carrera
             $partido = Partido::where('id', $partido->id)->lockForUpdate()->first();
-            
+
             $resultadoPrevioDisponible = $partido->jugado && $partido->golesEquipoLocal !== null && $partido->golesEquipoVisitante !== null;
 
             if ($resultadoPrevioDisponible) {
@@ -62,7 +66,7 @@ class PartidoService
             ['idEdicion', '=', $partido->idEdicion],
         ])->lockForUpdate()->first();
 
-        if (!$tablaLocal) {
+        if (! $tablaLocal) {
             // Si no existe, se crea un nuevo registro
             $tablaLocal = TablaPosicion::create([
                 'idGrupo' => $idGrupoLocal,
@@ -86,7 +90,7 @@ class PartidoService
             ['idEdicion', '=', $partido->idEdicion],
         ])->lockForUpdate()->first();
 
-        if (!$tablaVisitante) {
+        if (! $tablaVisitante) {
             // Si no existe, se crea un nuevo registro
             $tablaVisitante = TablaPosicion::create([
                 'idGrupo' => $idGrupoVisitante,
@@ -107,7 +111,6 @@ class PartidoService
         $this->actualizarEstadisticasEquipo($tablaLocal, $golesEquipoLocal, $golesEquipoVisitante);
         $this->actualizarEstadisticasEquipo($tablaVisitante, $golesEquipoVisitante, $golesEquipoLocal);
     }
-
 
     protected function revertirTablaPosiciones(Partido $partido, $golesEquipoLocal, $golesEquipoVisitante)
     {
@@ -150,12 +153,11 @@ class PartidoService
     {
         return Grupo::where('idCategoria', $categoriaId)
             ->where('idEdicion', $edicionId)
-            ->whereHas('equipos', function($q) use ($equipoId) {
+            ->whereHas('equipos', function ($q) use ($equipoId) {
                 $q->where('equipos.id', $equipoId);
             })
             ->first();
     }
-
 
     protected function actualizarEstadisticasEquipo($tablaPosicion, $golesAFavor, $golesEnContra, $factor = 1)
     {
@@ -208,7 +210,7 @@ class PartidoService
     {
         // Recargar equipo con bloqueo para evitar condiciones de carrera
         $equipo = Equipo::where('id', $equipo->id)->lockForUpdate()->first();
-        
+
         $equipo->partidos_jugados += $factor;
 
         if ($golesAFavor > $golesEnContra) {
@@ -235,6 +237,106 @@ class PartidoService
         $equipo->diferenciaGoles = $equipo->golesFavor - $equipo->golesContra;
 
         $equipo->save();
+    }
+
+    /**
+     * Motivos por los que no se pueden cambiar los equipos de un partido regular.
+     *
+     * @return list<string>
+     */
+    public function razonesBloqueoCambioEquipos(Partido $partido): array
+    {
+        $razones = [];
+
+        if ($partido->jugado || $partido->golesEquipoLocal !== null || $partido->golesEquipoVisitante !== null) {
+            $razones[] = 'el partido ya tiene resultado cargado';
+        }
+
+        if ($partido->goles_confirmados_at !== null) {
+            $razones[] = 'el partido ya tiene goles confirmados';
+        }
+
+        $tienePlanillas = PlanillaJugador::query()
+            ->where('partido_type', Partido::class)
+            ->where('partido_id', $partido->id)
+            ->exists();
+
+        if ($tienePlanillas) {
+            $razones[] = 'el partido ya tiene planillas cargadas';
+        }
+
+        return $razones;
+    }
+
+    /**
+     * Elimina un partido regular revirtiendo en una misma transacción:
+     * tabla de posiciones, historial de equipos, estadísticas de jugadores
+     * y goleadores (por delta, preservando datos manuales), reportes
+     * arbitrales y planillas; recalcula golesContra de equipo_ediciones.
+     */
+    public function eliminarPartido(Partido $partido): void
+    {
+        DB::transaction(function () use ($partido): void {
+            $partido = Partido::query()
+                ->whereKey($partido->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $resultadoAplicado = (bool) $partido->jugado
+                && $partido->golesEquipoLocal !== null
+                && $partido->golesEquipoVisitante !== null;
+
+            if ($resultadoAplicado) {
+                $this->revertirTablaPosiciones($partido, (int) $partido->golesEquipoLocal, (int) $partido->golesEquipoVisitante);
+                $this->revertirHistorialEquipos($partido, (int) $partido->golesEquipoLocal, (int) $partido->golesEquipoVisitante);
+            }
+
+            $planillas = PlanillaJugador::query()
+                ->where('partido_type', Partido::class)
+                ->where('partido_id', $partido->id)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($planillas as $planilla) {
+                $this->estadisticasJugadorService->actualizarDeltaGoles(
+                    (string) $planilla->dni_jugador,
+                    (int) $planilla->idEdicion,
+                    (int) $planilla->idCategoria,
+                    (int) $planilla->idEquipo,
+                    -1 * (int) $planilla->goles,
+                );
+            }
+
+            GolArbitroReportado::query()
+                ->where('partido_type', Partido::class)
+                ->where('partido_id', $partido->id)
+                ->delete();
+
+            PlanillaJugador::query()
+                ->where('partido_type', Partido::class)
+                ->where('partido_id', $partido->id)
+                ->delete();
+
+            $partido->delete();
+
+            foreach ([$partido->idEquipoLocal, $partido->idEquipoVisitante] as $idEquipo) {
+                $existeEquipoEdicion = EquipoEdicion::query()
+                    ->where('idEquipo', $idEquipo)
+                    ->where('idEdicion', $partido->idEdicion)
+                    ->exists();
+
+                if ($existeEquipoEdicion) {
+                    $idGrupoEquipo = $partido->idGrupo;
+
+                    if ($partido->esInterzonal()) {
+                        $grupoEquipo = $this->obtenerGrupoEquipo($idEquipo, $partido->idCategoria, $partido->idEdicion);
+                        $idGrupoEquipo = $grupoEquipo ? $grupoEquipo->id : $partido->idGrupo;
+                    }
+
+                    $this->actualizarGolesContraEquipoEdicion($idEquipo, $partido->idEdicion, $idGrupoEquipo);
+                }
+            }
+        }, 3);
     }
 
     /**
@@ -271,12 +373,12 @@ class PartidoService
         $equipoEdicion = EquipoEdicion::where('idEquipo', $equipoId)
             ->where('idEdicion', $idEdicion)
             ->first();
-    
-        if (!$equipoEdicion) {
+
+        if (! $equipoEdicion) {
             // Manejar el caso en que no se encuentre el equipo_edicion
             throw new \Exception("EquipoEdicion no encontrado para el equipo $equipoId en la edición $idEdicion");
         }
-    
+
         // Obtener goles en contra de la tabla de posiciones
         $originalIdEdicion = $idEdicion;
         if (in_array($idEdicion, [1, 2, 3])) {
@@ -291,7 +393,7 @@ class PartidoService
         }
 
         $golesContraFaseGrupos = $golesContraFaseGruposQuery->sum('golesContra');
-    
+
         // Restaurar el valor original de idEdicion
         $idEdicion = $originalIdEdicion;
 
@@ -299,20 +401,19 @@ class PartidoService
         $partidosInstanciasFinales = InstanciaFinal::where('idEdicion', $idEdicion)
             ->where(function ($query) use ($equipoId) {
                 $query->where('idEquipoLocal', $equipoId)
-                      ->orWhere('idEquipoVisitante', $equipoId);
+                    ->orWhere('idEquipoVisitante', $equipoId);
             })
             ->get();
-    
+
         $golesContraInstanciasFinales = 0;
         if ($partidosInstanciasFinales->isNotEmpty()) {
             $golesContraInstanciasFinales = $partidosInstanciasFinales->sum(function ($partido) use ($equipoId) {
                 return $partido->idEquipoLocal == $equipoId ? $partido->golesEquipoVisitante : $partido->golesEquipoLocal;
             });
         }
-    
+
         // Sumar ambos valores y actualizar en equipo_ediciones
         $equipoEdicion->golesContra = $golesContraFaseGrupos + $golesContraInstanciasFinales;
         $equipoEdicion->save();
     }
-    
 }
