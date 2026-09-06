@@ -607,6 +607,8 @@ it('la vista index muestra el formulario de eliminacion con confirmacion y filtr
     $response->assertSee(htmlspecialchars($urlEliminacion, ENT_QUOTES), false);
     $response->assertSee('name="_method" value="DELETE"', false);
     $response->assertSee('confirm(', false);
+    $response->assertSee('event.defaultPrevented', false);
+    $response->assertSee("loader.classList.remove('hidden')", false);
     $response->assertSee('md:grid-cols-4', false);
     $response->assertSee('md:max-w-2xl', false);
 

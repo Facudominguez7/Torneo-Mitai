@@ -6,12 +6,14 @@
     document.addEventListener('DOMContentLoaded', function () {
         const loader = document.getElementById('loader');
 
-        // Escuchar el evento de envío en todos los formularios
         const forms = document.querySelectorAll('form');
 
         forms.forEach(form => {
-            form.addEventListener('submit', function () {
-                // Mostrar el loader
+            form.addEventListener('submit', function (event) {
+                if (event.defaultPrevented) {
+                    return;
+                }
+
                 loader.classList.remove('hidden');
             });
         });
