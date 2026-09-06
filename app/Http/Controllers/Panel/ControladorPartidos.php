@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Panel;
 use App\Constants\PartidoConstants;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Partido\StoreRequest;
+use App\Http\Requests\Partido\UpdateRequest;
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
@@ -15,6 +16,8 @@ use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ControladorPartidos extends Controller
 {
@@ -220,7 +223,7 @@ class ControladorPartidos extends Controller
                 ->get();
         }
         $grupo = Grupo::where('id', $idGrupo)->select('id', 'nombre')->get();
-        $partido = new Partido();
+        $partido = new Partido;
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $idEdicion,
             'idCategoria' => $idCategoria,
@@ -285,7 +288,7 @@ class ControladorPartidos extends Controller
             $equipos = $equipos->merge($equiposGrupo);
         }
 
-        $partido = new Partido();
+        $partido = new Partido;
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $idEdicion,
             'idCategoria' => $idCategoria,
@@ -393,6 +396,8 @@ class ControladorPartidos extends Controller
             'idFecha' => $partido->idFechas,
         ]);
 
+        $puedeEditarEquipos = $this->partidoService->razonesBloqueoCambioEquipos($partido) === [];
+
         return view('Panel.partido.edit', compact(
             'partido',
             'ediciones',
@@ -404,6 +409,7 @@ class ControladorPartidos extends Controller
             'grupo',
             'idGrupo',
             'idCategoria',
+            'puedeEditarEquipos',
             'parametrosRegreso'
         ));
     }
@@ -411,14 +417,9 @@ class ControladorPartidos extends Controller
     /**
      * Actualiza un partido y regresa al listado con el mismo contexto de filtros.
      */
-    public function update(StoreRequest $request, Partido $partido)
+    public function update(UpdateRequest $request, Partido $partido)
     {
-        $data = $request->validated();
-        // No permitir actualizar resultados desde esta edición
-        unset($data['golesEquipoLocal'], $data['golesEquipoVisitante']);
-        // No permitir cambiar Edición, Grupo y Categoría desde editar
-        unset($data['idEdicion'], $data['idGrupo'], $data['idCategoria']);
-        $partido->update($data);
+        $partido->update($request->validated());
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $partido->idEdicion,
@@ -443,7 +444,17 @@ class ControladorPartidos extends Controller
             'idFecha' => $partido->idFechas,
         ]);
 
-        $partido->delete();
+        try {
+            $this->partidoService->eliminarPartido($partido);
+        } catch (Throwable $error) {
+            Log::error('No se pudo eliminar el partido', [
+                'partido_id' => $partido->id,
+                'idEdicion' => $partido->idEdicion,
+            ]);
+
+            return to_route('partido.index', $parametrosRegreso)
+                ->with('error', 'No se pudo eliminar el partido. Intenta nuevamente.');
+        }
 
         return to_route('partido.index', $parametrosRegreso)->with('status', 'Partido eliminado con éxito.');
     }

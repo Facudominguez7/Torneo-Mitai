@@ -4,7 +4,24 @@
     @include('Panel.fragment._errores-formulario')
     @php
         $parametrosRegreso = $parametrosRegreso ?? ['idEdicion' => $partido->idEdicion];
+        $puedeEditarEquipos = $puedeEditarEquipos ?? true;
     @endphp
+
+    @if (!$puedeEditarEquipos)
+        <p class="mx-auto mb-4 w-full max-w-[550px] rounded-md bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">
+            Los equipos no pueden modificarse porque el partido ya tiene resultado, planillas o goles confirmados.
+        </p>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                ['idEquipoLocal', 'idEquipoVisitante'].forEach(function (idCampo) {
+                    var selector = document.getElementById(idCampo);
+                    if (selector) {
+                        selector.disabled = true;
+                    }
+                });
+            });
+        </script>
+    @endif
 
     <div class="mb-4 px-4 md:px-0">
         <a href="{{ route('partido.index', $parametrosRegreso) }}"
