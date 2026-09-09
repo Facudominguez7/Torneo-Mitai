@@ -548,35 +548,9 @@ class ControladorHome extends Controller
 
     public function tablaGoleadores(Request $request)
     {
-        $sessionKey = 'tabla_goleadores_filtros';
-        $filtroKeys = ['idEdicion', 'idCategoria', 'sort', 'dir', 'search_value', 'page'];
-
-        // Patrón PRG: si la petición trae filtros en la query string, se
-        // persisten en sesión y se redirige a una URL limpia para no exponerlos.
-        if (! empty($request->query())) {
-            $incoming = $request->only($filtroKeys);
-
-            // Cambiar un filtro (no la paginación) reinicia a la primera página.
-            $cambiaFiltro = ! empty(array_diff(array_keys($incoming), ['page']));
-            if ($cambiaFiltro && ! $request->has('page')) {
-                $incoming['page'] = 1;
-            }
-
-            $request->session()->put(
-                $sessionKey,
-                array_merge($request->session()->get($sessionKey, []), $incoming)
-            );
-
-            // Las peticiones AJAX (búsqueda en vivo, orden, paginación) no se
-            // redirigen: devuelven el parcial de resultados más abajo. Las
-            // navegaciones normales sí redirigen para limpiar la URL.
-            if (! $request->ajax()) {
-                return redirect()->route('tabla-goleadores');
-            }
-        }
-
-        // Sin query string: el estado de los filtros vive en sesión.
-        $filtros = $request->session()->get($sessionKey, []);
+        // La URL es la única fuente de verdad: un enlace público debe poder
+        // reproducirse sin sesión previa, igual que el resto de vistas públicas.
+        $filtros = $request->query();
 
         $ediciones = Edicion::all();
         $idEdicion = $filtros['idEdicion'] ?? null;
@@ -630,9 +604,15 @@ class ControladorHome extends Controller
             ->orderBy('cat.nombreCategoria', 'desc')
             ->orderBy('tabla_goleadores.cantidadGoles', 'desc');
 
-        // La página actual vive en sesión; los links del paginador solo
-        // necesitan emitir ?page=N, que el patrón PRG vuelve a limpiar.
-        $goleadores_t = $baseQuery->paginate(30, ['*'], 'page', $page);
+        $appendParams = array_filter([
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'search_value' => $searchValue,
+            'sort' => $sortKey,
+            'dir' => $dir,
+        ]);
+
+        $goleadores_t = $baseQuery->paginate(30, ['*'], 'page', $page)->appends($appendParams);
 
         $categorias = collect();
         if (isset($EdicionSeleccionada)) {
@@ -645,7 +625,14 @@ class ControladorHome extends Controller
         // En AJAX solo se devuelve el parcial de resultados para reemplazar el
         // contenedor sin recargar la página ni perder el foco del buscador.
         if ($request->ajax()) {
-            return view('partials.goleadores-resultados', compact('goleadores_t', 'sortKey', 'dir'));
+            return view('partials.goleadores-resultados', compact(
+                'goleadores_t',
+                'sortKey',
+                'dir',
+                'idEdicion',
+                'idCategoria',
+                'searchValue'
+            ));
         }
 
         return view('layouts.tabla-goleadores', compact(
