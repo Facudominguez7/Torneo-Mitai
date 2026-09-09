@@ -131,12 +131,15 @@
             const contenedor = document.getElementById('resultados-goleadores');
             const formBusqueda = document.getElementById('form-busqueda-goleadores');
             const triggerCategoria = document.getElementById('label-categoria');
+            let secuenciaCargas = 0;
 
             // Pide los resultados por AJAX y reemplaza solo el contenedor. El
             // estado vive en la URL: se parte de los filtros actuales y se aplican
             // encima solo los que cambian. Cada cambio apila una entrada de
             // historial, salvo que la navegación venga de popstate.
             async function loadResults(params, opciones = {}) {
+                const miTurno = ++secuenciaCargas;
+
                 if (!contenedor) {
                     return;
                 }
@@ -166,7 +169,15 @@
                         return;
                     }
 
-                    contenedor.innerHTML = await response.text();
+                    const html = await response.text();
+
+                    // Si una carga más nueva empezó mientras esta esperaba, esta respuesta
+                    // llegó tarde: se descarta entera para no pisar tabla ni historial.
+                    if (miTurno !== secuenciaCargas) {
+                        return;
+                    }
+
+                    contenedor.innerHTML = html;
 
                     if (opciones.desdeHistorial) {
                         history.replaceState(null, '', destino);
