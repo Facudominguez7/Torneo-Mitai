@@ -3,6 +3,13 @@
     $toggle = fn($k) => ($sort === $k && $dir === 'asc') ? 'desc' : 'asc';
     $arrow = fn($k) => $sort === $k ? ($dir === 'asc' ? '▲' : '▼') : '';
     $posOffset = ($goleadores_t->currentPage() - 1) * $goleadores_t->perPage();
+
+    $queryBase = array_filter([
+        'idEdicion' => $idEdicion ?? null,
+        'idCategoria' => $idCategoria ?? null,
+        'search_value' => $searchValue ?? null,
+    ]);
+    $urlOrden = fn($k) => route('tabla-goleadores', array_merge($queryBase, ['sort' => $k, 'dir' => $toggle($k), 'page' => 1]));
 @endphp
 
 <div class="mt-10 space-y-6">
@@ -24,28 +31,28 @@
                             <th
                                 class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
                                 <a class="orden-goleadores inline-flex items-center gap-2 hover:text-white"
-                                    href="{{ route('tabla-goleadores', ['sort' => 'nombre', 'dir' => $toggle('nombre')]) }}">
+                                    href="{{ $urlOrden('nombre') }}">
                                     Nombre <span>{{ $arrow('nombre') }}</span>
                                 </a>
                             </th>
                             <th
                                 class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
                                 <a class="orden-goleadores inline-flex items-center gap-2 hover:text-white"
-                                    href="{{ route('tabla-goleadores', ['sort' => 'equipo', 'dir' => $toggle('equipo')]) }}">
+                                    href="{{ $urlOrden('equipo') }}">
                                     Equipo <span>{{ $arrow('equipo') }}</span>
                                 </a>
                             </th>
                             <th
                                 class="py-4 px-3 text-left text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
                                 <a class="orden-goleadores inline-flex items-center gap-2 hover:text-white"
-                                    href="{{ route('tabla-goleadores', ['sort' => 'categoria', 'dir' => $toggle('categoria')]) }}">
+                                    href="{{ $urlOrden('categoria') }}">
                                     Categoría <span>{{ $arrow('categoria') }}</span>
                                 </a>
                             </th>
                             <th
                                 class="py-4 pr-6 pl-3 text-right text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
                                 <a class="orden-goleadores inline-flex items-center gap-2 hover:text-white"
-                                    href="{{ route('tabla-goleadores', ['sort' => 'goles', 'dir' => $toggle('goles')]) }}">
+                                    href="{{ $urlOrden('goles') }}">
                                     Goles <span>{{ $arrow('goles') }}</span>
                                 </a>
                             </th>

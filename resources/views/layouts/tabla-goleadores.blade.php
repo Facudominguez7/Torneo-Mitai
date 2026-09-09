@@ -133,17 +133,29 @@
             const triggerCategoria = document.getElementById('label-categoria');
 
             // Pide los resultados por AJAX y reemplaza solo el contenedor. El
-            // estado de los filtros se conserva en sesión del lado del servidor,
-            // así que cada llamada solo envía lo que cambia.
-            async function loadResults(params) {
+            // estado vive en la URL: se parte de los filtros actuales y se aplican
+            // encima solo los que cambian. Cada cambio apila una entrada de
+            // historial, salvo que la navegación venga de popstate.
+            async function loadResults(params, opciones = {}) {
                 if (!contenedor) {
                     return;
                 }
 
-                const qs = new URLSearchParams(params).toString();
+                const search = new URLSearchParams(window.location.search);
+
+                Object.entries(params).forEach(function ([clave, valor]) {
+                    if (valor === undefined || valor === null || valor === '') {
+                        search.delete(clave);
+                    } else {
+                        search.set(clave, valor);
+                    }
+                });
+
+                const qs = search.toString();
+                const destino = url + (qs ? '?' + qs : '');
 
                 try {
-                    const response = await fetch(url + (qs ? '?' + qs : ''), {
+                    const response = await fetch(destino, {
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'text/html',
@@ -155,6 +167,12 @@
                     }
 
                     contenedor.innerHTML = await response.text();
+
+                    if (opciones.desdeHistorial) {
+                        history.replaceState(null, '', destino);
+                    } else {
+                        history.pushState(null, '', destino);
+                    }
                 } catch (error) {
                     // Ante un fallo de red se deja el contenido actual intacto.
                 }
@@ -170,7 +188,7 @@
                 buscador.addEventListener('input', function () {
                     clearTimeout(debounceBusqueda);
                     debounceBusqueda = setTimeout(function () {
-                        loadResults({ search_value: buscador.value });
+                        loadResults({ search_value: buscador.value, page: 1 });
                     }, 350);
                 });
             }
@@ -183,7 +201,7 @@
                         triggerCategoria.textContent = this.getAttribute('data-nombre') || 'Filtrar por categoría';
                     }
 
-                    loadResults({ idCategoria, idEdicion });
+                    loadResults({ idCategoria, idEdicion, page: 1 });
                 });
             });
 
@@ -203,6 +221,34 @@
                     loadResults(params);
                 });
             }
+
+            // Los controles de filtro viven fuera del contenedor que reemplaza
+            // loadResults, así que al restaurar historial hay que realinearlos.
+            function sincronizarControles() {
+                const search = new URLSearchParams(window.location.search);
+
+                if (buscador) {
+                    buscador.value = search.get('search_value') || '';
+                }
+
+                if (triggerCategoria) {
+                    const idCategoriaUrl = search.get('idCategoria') || '';
+                    const opcion = Array.from(document.querySelectorAll('.filtro-categoria [data-id]'))
+                        .find(function (item) {
+                            return (item.getAttribute('data-id') || '') === idCategoriaUrl;
+                        });
+
+                    triggerCategoria.textContent = opcion
+                        ? opcion.getAttribute('data-nombre')
+                        : 'Filtrar por categoría';
+                }
+            }
+
+            // Atrás/Adelante: se repide el parcial con los filtros de la URL restaurada.
+            window.addEventListener('popstate', function () {
+                sincronizarControles();
+                loadResults({}, { desdeHistorial: true });
+            });
         });
     </script>
 </body>
