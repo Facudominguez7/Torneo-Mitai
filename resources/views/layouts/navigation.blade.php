@@ -1,4 +1,5 @@
-<nav aria-label="Navegación principal" class="sticky top-0 z-50 border-b border-white/10 bg-black/40 backdrop-blur">
+<div id="nav-centinela" class="h-px" aria-hidden="true"></div>
+<nav aria-label="Navegación principal" id="nav-principal" class="sticky top-0 z-50 border-b border-white/10 bg-black/40 backdrop-blur">
     @php
         $itemsSeccion = [
             ['label' => 'Inicio', 'ruta' => 'home', 'patterns' => ['home']],
@@ -10,7 +11,7 @@
     @endphp
 
     <div
-        class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 lg:px-8">
+        class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 lg:px-8 [.nav-compacta_&]:py-2">
         @php
             $edicionActiva = $EdicionSeleccionada ?? $ultimaEdicion ?? null;
         @endphp
@@ -19,7 +20,7 @@
             $homeUrl = optional($edicionActiva)->id ? route('home', ['idEdicion' => $edicionActiva->id]) : route('home');
         @endphp
         <a href="{{ $homeUrl }}"
-            class="flex items-center gap-3 rounded-lg text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 sm:self-auto">
+            class="flex items-center gap-3 rounded-lg text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 sm:self-auto [.nav-compacta_&]:hidden">
             <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" class="h-10 w-10" alt="MITAI Logo">
             <div class="flex flex-col text-center sm:text-left">
                 <span class="text-sm font-semibold uppercase tracking-[0.3em] text-white/60">Torneo Mitai</span>
@@ -41,7 +42,7 @@
         </div>
 
         <div
-            class="flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:justify-end sm:gap-4">
+            class="flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:justify-end sm:gap-4 [.nav-compacta_&]:hidden">
             @auth
                 @if (Auth::user()->rol === 'admin')
                     <a href="{{ route('admin', ['idEdicion' => optional($edicionActiva)->id]) }}"
@@ -136,6 +137,20 @@
                     activo.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
                 }
             }
+        });
+    </script>
+    <script>
+        // Al scrollear la barra queda fija solo con la navegación de
+        // secciones: el bloque de logo/sesión se oculta vía .nav-compacta.
+        document.addEventListener('DOMContentLoaded', function () {
+            var barra = document.getElementById('nav-principal');
+            var centinela = document.getElementById('nav-centinela');
+            if (!barra || !centinela || !('IntersectionObserver' in window)) {
+                return;
+            }
+            new IntersectionObserver(function (entrada) {
+                barra.classList.toggle('nav-compacta', !entrada[0].isIntersecting);
+            }).observe(centinela);
         });
     </script>
 </nav>
