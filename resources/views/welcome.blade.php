@@ -216,6 +216,43 @@
                 </div>
             </div>
         </section>
+
+        @if (isset($equiposDeLaEdicion) && $edicionActual && $equiposDeLaEdicion->isNotEmpty())
+            <section id="seguir-equipo-bloque" data-id-edicion="{{ $edicionActual->id }}"
+                class="bg-gradient-to-b from-slate-950 via-black to-slate-900 py-14 sm:py-16">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div
+                        class="max-w-2xl mx-auto rounded-3xl border border-white/15 bg-gradient-to-br from-white/10 to-white/5 p-6 sm:p-8 shadow-2xl backdrop-blur">
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-400/90 text-white text-xl shadow-lg shadow-emerald-500/40">
+                                <i class="fa-solid fa-star"></i>
+                            </span>
+                            <div>
+                                <p class="text-sm uppercase tracking-widest text-white/70">tu equipo, siempre a la
+                                    vista</p>
+                                <h2 class="text-2xl font-bold text-white">Seguir mi equipo</h2>
+                            </div>
+                        </div>
+                        <div id="seguir-equipo-selector" class="mt-6">
+                            <label for="seguir-equipo-buscador" class="text-sm font-semibold text-white/80">
+                                Elegí tu equipo de {{ optional($edicionActual)->nombre }}
+                            </label>
+                            <input type="search" id="seguir-equipo-buscador" autocomplete="off"
+                                placeholder="Escribí el nombre del equipo..."
+                                class="mt-2 w-full rounded-2xl border border-white/20 bg-slate-950/70 px-4 py-3 text-sm font-medium text-white placeholder-white/40 shadow-inner shadow-black/40 focus:border-emerald-300 focus:outline-none focus:ring focus:ring-emerald-300/30">
+                            <ul id="seguir-equipo-lista" class="mt-3 grid max-h-72 gap-2 overflow-y-auto pr-1"></ul>
+                            <p id="seguir-equipo-sin-resultados" class="mt-3 hidden text-sm text-white/60">
+                                No encontramos equipos con ese nombre.
+                            </p>
+                        </div>
+                        <div id="seguir-equipo-card" aria-live="polite" class="mt-6 hidden"></div>
+                    </div>
+                </div>
+                <script type="application/json" id="seguir-equipo-datos">@json($equiposDeLaEdicion->values())</script>
+            </section>
+        @endif
+
         @if ($categorias->count() && $edicionActual)
             <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-black to-slate-900 py-14 sm:py-16">
                 <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"></div>
