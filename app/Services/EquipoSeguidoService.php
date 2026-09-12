@@ -13,10 +13,13 @@ class EquipoSeguidoService
      * Resuelve el equipo por nombre dentro de una edición y arma el payload
      * del endpoint público: próximo partido, último resultado y accesos a
      * fixture y tabla de posiciones. Nunca falla por falta de partidos.
+     *
+     * Enmienda #100: si llega idCategoria, la resolución se restringe a esa
+     * categoría; sin ella se conserva el primer match por id (retrocompatible).
      */
-    public function resolver(string $nombre, int $idEdicion): array
+    public function resolver(string $nombre, int $idEdicion, ?int $idCategoria = null): array
     {
-        $equipo = $this->resolverEquipo($nombre, $idEdicion);
+        $equipo = $this->resolverEquipo($nombre, $idEdicion, $idCategoria);
 
         if ($equipo === null) {
             return ['disponible' => false];
@@ -38,11 +41,12 @@ class EquipoSeguidoService
         ];
     }
 
-    private function resolverEquipo(string $nombre, int $idEdicion): ?Equipo
+    private function resolverEquipo(string $nombre, int $idEdicion, ?int $idCategoria): ?Equipo
     {
         return Equipo::query()
             ->where('idEdicion', $idEdicion)
             ->where('nombre', self::normalizarNombre($nombre))
+            ->when($idCategoria !== null, fn ($query) => $query->where('idCategoria', $idCategoria))
             ->orderBy('id')
             ->first();
     }

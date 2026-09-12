@@ -232,3 +232,63 @@ it('permite consultar el endpoint sin sesion iniciada', function () {
         'idEdicion' => $contexto['edicion']->id,
     ]))->assertOk()->assertJson(['disponible' => true]);
 });
+
+it('resuelve el equipo de la categoria indicada cuando hay homonimos (enmienda #100)', function () {
+    $contexto = seguirEquipoBase();
+    $categoriaB = Categoria::create(['idEdicion' => $contexto['edicion']->id, 'nombreCategoria' => 'Sub 16']);
+    $azulSub14 = equipoSeguido($contexto, 'Deportivo Misiones Azul');
+    $azulSub16 = Equipo::create([
+        'idCategoria' => $categoriaB->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'nombre' => 'Deportivo Misiones Azul',
+        'foto' => 'equipo.png',
+    ]);
+
+    $respuesta = $this->getJson(seguirEquipoUrl([
+        'nombre' => 'Deportivo Misiones Azul',
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $categoriaB->id,
+    ]));
+
+    $respuesta->assertOk()->assertJson([
+        'disponible' => true,
+        'equipo' => ['nombre' => 'Deportivo Misiones Azul', 'idCategoria' => $categoriaB->id],
+    ]);
+
+    expect($respuesta->json('equipo.idCategoria'))->not->toBe($azulSub14->idCategoria)
+        ->and($respuesta->json('equipo.idCategoria'))->toBe($azulSub16->idCategoria);
+});
+
+it('sin idCategoria mantiene el primer match por id (retrocompatible)', function () {
+    $contexto = seguirEquipoBase();
+    $categoriaB = Categoria::create(['idEdicion' => $contexto['edicion']->id, 'nombreCategoria' => 'Sub 16']);
+    $primero = equipoSeguido($contexto, 'Deportivo Misiones Azul');
+    $otro = Equipo::create([
+        'idCategoria' => $categoriaB->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'nombre' => 'Deportivo Misiones Azul',
+        'foto' => 'equipo.png',
+    ]);
+    expect($otro->id)->toBeInt();
+
+    $respuesta = $this->getJson(seguirEquipoUrl([
+        'nombre' => 'Deportivo Misiones Azul',
+        'idEdicion' => $contexto['edicion']->id,
+    ]));
+
+    $respuesta->assertOk()->assertJson([
+        'disponible' => true,
+        'equipo' => ['idCategoria' => $primero->idCategoria],
+    ]);
+});
+
+it('responde 422 con un idCategoria inexistente', function () {
+    $contexto = seguirEquipoBase();
+    equipoSeguido($contexto, 'Los Lapachos');
+
+    $this->getJson(seguirEquipoUrl([
+        'nombre' => 'Los Lapachos',
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => 99999,
+    ]))->assertStatus(422);
+});
