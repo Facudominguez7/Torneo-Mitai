@@ -18,6 +18,7 @@ use App\Models\TablaPosicion;
 use App\Models\User;
 use App\Models\VallaMenosVencida;
 use App\Services\EstadisticasService;
+use App\Services\FixtureExploradorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -413,6 +414,8 @@ class ControladorHome extends Controller
         $orden = in_array(strtolower((string) $ordenParam), ['asc', 'desc'])
             ? strtolower($ordenParam)
             : ($estado === 'proximos' ? 'asc' : 'desc');
+        $equipo = trim((string) $request->query('equipo', ''));
+        $fixtureExplorador = new FixtureExploradorService();
 
         $categorias = collect();
         if (isset($EdicionSeleccionada)) {
@@ -430,15 +433,18 @@ class ControladorHome extends Controller
 
         if (isset($CategoriaSeleccionada)) {
             // Incluir las fechas que estén asociadas a la categoría seleccionada y también aquellas sin categoría asignada
-            $fechas = Fecha::where('idEdicion', $idEdicion)
-                ->where(function ($query) use ($idCategoria) {
-                    $query->where('idCategoria', $idCategoria) // Fechas asociadas a la categoría seleccionada
-                        ->orWhereNull('idCategoria'); // O fechas sin categoría
-                })
-                ->select('id', 'nombre')
-                ->orderByDesc('id')
-                ->distinct('nombre')
-                ->get();
+            $fechas = $fixtureExplorador->ordenarFechas(
+                Fecha::where('idEdicion', $idEdicion)
+                    ->where(function ($query) use ($idCategoria) {
+                        $query->where('idCategoria', $idCategoria) // Fechas asociadas a la categoría seleccionada
+                            ->orWhereNull('idCategoria'); // O fechas sin categoría
+                    })
+                    ->select('id', 'nombre')
+                    ->distinct('nombre')
+                    ->get(),
+                (int) $idEdicion,
+                (int) $idCategoria,
+            );
 
             $grupos = Grupo::where('idCategoria', $idCategoria)
                 ->where('grupos.idEdicion', $idEdicion)
@@ -453,16 +459,36 @@ class ControladorHome extends Controller
                 ->select('grupos.id', 'grupos.nombre', 'grupos.idCategoria', 'c.nombreCategoria as categoria_nombre')
                 ->distinct('nombre')
                 ->get();
+
+            $fechas = $fixtureExplorador->ordenarFechas(
+                Fecha::where('idEdicion', $idEdicion)
+                    ->select('id', 'nombre')
+                    ->get(),
+                (int) $idEdicion,
+            );
         }
+
+        // Fecha relevante por defecto; 'todas' y la búsqueda de equipo la ignoran.
+        $idFechaRelevante = isset($EdicionSeleccionada)
+            ? $fixtureExplorador->resolverFechaRelevante((int) $idEdicion, isset($idCategoria) ? (int) $idCategoria : null)
+            : null;
+
+        // Solo un id numérico existente en la edición fija la fecha; cualquier
+        // otro valor (inexistente o basura) cae a la fecha relevante sin explotar.
+        $idFechaPedida = ctype_digit((string) $idFecha)
+            ? Fecha::where('idEdicion', $idEdicion)->find((int) $idFecha)?->id
+            : null;
 
         // Cargar partidos según filtros (con o sin categoría)
         if (isset($EdicionSeleccionada)) {
-            if (isset($idFecha)) {
-                $partidos = Partido::select('partidos.*', 'el.nombre as nombre_local', 'ev.nombre as nombre_visitante', 'el.foto as foto_local', 'ev.foto as foto_visitante', 'cat.nombreCategoria as nombre_categoria')
+            if ($equipo !== '') {
+                // Búsqueda multi-fecha: el término precede a idFecha y agrupa por fecha.
+                $patronEquipo = '%'.addcslashes($equipo, '\\%_').'%';
+                $partidos = Partido::select('partidos.*', 'el.nombre as nombre_local', 'ev.nombre as nombre_visitante', 'el.foto as foto_local', 'ev.foto as foto_visitante', 'f.nombre as nombre_fecha', 'cat.nombreCategoria as nombre_categoria')
                     ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
                     ->join('equipos as ev', 'partidos.idEquipoVisitante', '=', 'ev.id')
+                    ->join('fechas as f', 'partidos.idFechas', '=', 'f.id')
                     ->leftJoin('categorias as cat', 'partidos.idCategoria', '=', 'cat.id')
-                    ->where('partidos.idFechas', $idFecha)
                     ->where('partidos.idEdicion', $idEdicion)
                     ->when($idCategoria, fn ($q) => $q->where('partidos.idCategoria', $idCategoria))
                     ->when($estado === 'finalizados', function ($q) {
@@ -474,11 +500,14 @@ class ControladorHome extends Controller
                                 ->orWhereNull('partidos.jugado');
                         });
                     })
+                    ->where(function ($query) use ($patronEquipo) {
+                        $query->where('el.nombre', 'like', $patronEquipo)
+                            ->orWhere('ev.nombre', 'like', $patronEquipo);
+                    })
                     ->orderBy('partidos.horario_datetime', $orden)
+                    ->with('fecha')
                     ->get();
-                $fecha = Fecha::find($idFecha);
-                $nombreFecha = $fecha?->nombre;
-            } else {
+            } elseif ($idFecha === 'todas') {
                 $partidos = Partido::select('partidos.*', 'el.nombre as nombre_local', 'ev.nombre as nombre_visitante', 'el.foto as foto_local', 'ev.foto as foto_visitante', 'f.nombre as nombre_fecha', 'cat.nombreCategoria as nombre_categoria')
                     ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
                     ->join('equipos as ev', 'partidos.idEquipoVisitante', '=', 'ev.id')
@@ -496,7 +525,32 @@ class ControladorHome extends Controller
                         });
                     })
                     ->orderBy('partidos.horario_datetime', $orden)
+                    ->with('fecha')
                     ->get();
+            } else {
+                $idFechaEfectiva = $idFechaPedida ?? $idFechaRelevante;
+                if ($idFechaEfectiva !== null) {
+                    $partidos = Partido::select('partidos.*', 'el.nombre as nombre_local', 'ev.nombre as nombre_visitante', 'el.foto as foto_local', 'ev.foto as foto_visitante', 'cat.nombreCategoria as nombre_categoria')
+                        ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
+                        ->join('equipos as ev', 'partidos.idEquipoVisitante', '=', 'ev.id')
+                        ->leftJoin('categorias as cat', 'partidos.idCategoria', '=', 'cat.id')
+                        ->where('partidos.idFechas', $idFechaEfectiva)
+                        ->where('partidos.idEdicion', $idEdicion)
+                        ->when($idCategoria, fn ($q) => $q->where('partidos.idCategoria', $idCategoria))
+                        ->when($estado === 'finalizados', function ($q) {
+                            $q->where('partidos.jugado', 1);
+                        })
+                        ->when($estado === 'proximos', function ($q) {
+                            $q->where(function ($sub) {
+                                $sub->where('partidos.jugado', 0)
+                                    ->orWhereNull('partidos.jugado');
+                            });
+                        })
+                        ->orderBy('partidos.horario_datetime', $orden)
+                        ->with('fecha')
+                        ->get();
+                    $nombreFecha = Fecha::find($idFechaEfectiva)?->nombre;
+                }
             }
         }
         if (isset($idCategoria)) {
@@ -506,7 +560,7 @@ class ControladorHome extends Controller
             $nombreCategoria = 'Todas las categorías';
         }
 
-        return view('layouts.fixture', compact('nombreFecha', 'nombreCategoria', 'grupos', 'ediciones', 'EdicionSeleccionada', 'categorias', 'idCategoria', 'CategoriaSeleccionada', 'fechas', 'partidos'));
+        return view('layouts.fixture', compact('nombreFecha', 'nombreCategoria', 'grupos', 'ediciones', 'EdicionSeleccionada', 'categorias', 'idEdicion', 'idCategoria', 'CategoriaSeleccionada', 'idFecha', 'idFechaRelevante', 'estado', 'equipo', 'fechas', 'partidos'));
     }
 
     /**
