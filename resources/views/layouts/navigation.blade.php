@@ -1,7 +1,8 @@
 <div id="nav-centinela" class="h-px" aria-hidden="true"></div>
 <nav aria-label="Navegación principal" id="nav-principal" class="sticky top-0 z-50 border-b border-white/10 bg-black/40 backdrop-blur">
-    @php
-        $itemsSeccion = [
+        @php
+            $navInlineSecciones = ! (auth()->check() && (Auth::user()->rol ?? '') === 'admin');
+            $itemsSeccion = [
             ['label' => 'Inicio', 'ruta' => 'home', 'patterns' => ['home']],
             ['label' => 'Partidos', 'ruta' => 'fixture', 'patterns' => ['fixture']],
             ['label' => 'Posiciones', 'ruta' => 'tabla-posiciones', 'patterns' => ['tabla-posiciones']],
@@ -11,7 +12,7 @@
     @endphp
 
     <div
-        class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 lg:px-8 [.nav-compacta_&]:py-2">
+        class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 lg:gap-6 lg:px-8 [.nav-compacta_&]:py-2">
         @php
             $edicionActiva = $EdicionSeleccionada ?? $ultimaEdicion ?? null;
         @endphp
@@ -20,7 +21,7 @@
             $homeUrl = optional($edicionActiva)->id ? route('home', ['idEdicion' => $edicionActiva->id]) : route('home');
         @endphp
         <a href="{{ $homeUrl }}"
-            class="flex items-center gap-3 rounded-lg text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 sm:self-auto [.nav-compacta_&]:hidden">
+            class="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 sm:self-auto [.nav-compacta_&]:hidden">
             <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" class="h-10 w-10" alt="MITAI Logo">
             <div class="flex flex-col text-center sm:text-left">
                 <span class="text-sm font-semibold uppercase tracking-[0.3em] text-white/60">Torneo Mitai</span>
@@ -29,7 +30,7 @@
             </div>
         </a>
 
-        <div class="hidden lg:flex flex-1 items-center justify-center gap-8">
+        <div class="{{ $navInlineSecciones ? 'hidden min-w-0 overflow-hidden xl:flex flex-1 items-center justify-center gap-6' : 'hidden' }}">
             @foreach ($itemsSeccion as $item)
                 <a href="{{ route($item['ruta'], ['idEdicion' => optional($edicionActiva)->id]) }}"
                     @if (request()->routeIs($item['patterns']))
@@ -42,7 +43,7 @@
         </div>
 
         <div
-            class="flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:justify-end sm:gap-4 [.nav-compacta_&]:hidden">
+            class="flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap [.nav-compacta_&]:hidden">
             @auth
                 @if (Auth::user()->rol === 'admin')
                     <a href="{{ route('admin', ['idEdicion' => optional($edicionActiva)->id]) }}"
@@ -117,7 +118,7 @@
     </div>
 
     <div id="nav-secciones-mobile"
-        class="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-6 gap-y-2 overflow-x-auto border-t border-white/10 px-4 pt-3 pb-4 sm:flex-nowrap sm:px-6 lg:hidden lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        class="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-6 gap-y-2 overflow-x-auto border-t border-white/10 px-4 pt-3 pb-4 sm:flex-nowrap sm:px-6 {{ $navInlineSecciones ? 'xl:hidden' : '' }} xl:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         @foreach ($itemsSeccion as $item)
             <a href="{{ route($item['ruta'], ['idEdicion' => optional($edicionActiva)->id]) }}"
                 @if (request()->routeIs($item['patterns']))
