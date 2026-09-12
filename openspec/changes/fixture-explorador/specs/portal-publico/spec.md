@@ -74,6 +74,11 @@ enviaba `idFecha`.
 
 ### Requirement: Navegación por chips de fecha
 
+> **ENMIENDA (decisión del owner, post-aprobación):** los chips de fecha se
+> muestran en orden descendente (más reciente primero) por decisión del owner.
+> El orden calendario ascendente del service se conserva como fuente de datos;
+> la inversión es solo de presentación en la vista.
+
 La vista de fixture MUST exponer un chip por cada fecha de la
 categoría activa, cada uno enlazando a esa fecha mediante `idFecha`. El chip
 correspondiente a la fecha actualmente mostrada MUST llevar
@@ -127,6 +132,10 @@ búsqueda).
 (Trazabilidad: issue #98, criterio 4 — "filtros por categoría".)
 
 ### Requirement: Chips de estado
+
+> **ENMIENDA (decisión del owner, post-aprobación):** se eliminan los chips de
+> estado de la UI; el filtrado por estado queda disponible solo vía query
+> param. Los scenarios de este requirement quedan sin efecto.
 
 La vista de fixture MUST exponer tres chips de estado — `todos`,
 `proximos` y `finalizados` — que expongan el parámetro `estado` en su
