@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\ControladorEquipoSeguido;
 use App\Http\Controllers\ControladorHome;
 use App\Http\Controllers\ControladorNotificacionesEmail;
 use App\Http\Controllers\ControladorPlanillaPublica;
@@ -54,6 +55,7 @@ Route::get('/vallas', [ControladorHome::class, 'vallas'])->name('vallas');
 Route::get('/fixture', [ControladorHome::class, 'fixture'])->name('fixture');
 Route::get('/planillas-publicas/{tipoPartido}/{publicToken}', [ControladorPlanillaPublica::class, 'show'])
     ->name('planillas-publicas.show');
+Route::get('/equipo-seguido', [ControladorEquipoSeguido::class, 'show'])->name('equipo-seguido');
 Route::get('/tabla-de-posiciones', [ControladorHome::class, 'tablaPosiciones'])->name('tabla-posiciones');
 Route::get('/tabla-de-goleadores', [ControladorHome::class, 'tablaGoleadores'])->name('tabla-goleadores');
 Route::get('/tabla-de-vallas', [ControladorHome::class, 'tablaVallas'])->name('tabla-vallas');
