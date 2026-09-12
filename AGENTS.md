@@ -332,3 +332,12 @@ it('has emails', function (string $email) {
 
 - Always use Tailwind CSS v3; verify you're using only classes supported by this version.
 </laravel-boost-guidelines>
+
+=== 8. VERIFICACIÓN VISUAL OBLIGATORIA CON PLAYWRIGHT (UX/UI) ===
+
+- Siempre que se modifique experiencia UX/UI (vistas Blade, CSS/Tailwind, JS de frontend, navegación, flujos visuales), la verificación debe incluir Playwright además de los tests automatizados. No se reporta un cambio de UI como listo solo con tests HTTP.
+- Toolbox instalado FUERA del repositorio en `~/.local/mitai-playwright` (playwright-core + Chrome del sistema; no instalar dependencias de Playwright dentro del proyecto Laravel):
+  - Captura: `node ~/.local/mitai-playwright/shot.js <url> <salida.png> [ancho] [alto] [scrollY] [fullpage]`
+  - Aserciones de DOM/estado: scripts Node con `page.evaluate` (elementos visibles, clases, posición sticky, contadores).
+- Mínimo a verificar en cada cambio de UI: desktop (1280px) y mobile (390px), comportamiento con scroll (sticky/fixed), y los flujos puntuales afectados. Revisar las capturas con `read` antes de reportar.
+- Si el toolbox no existe, recrearlo (npm init + `npm install playwright-core`) antes de tocar UI; usar el Chrome del sistema (`executablePath: /usr/bin/google-chrome-stable`), sin descargar browsers.

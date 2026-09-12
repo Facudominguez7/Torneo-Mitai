@@ -167,3 +167,123 @@ docker compose exec app ./vendor/bin/pint --test tests/Feature/FixtureExplorador
 
 - Estado nativo: `changeName: null` + `applyState: blocked` por ambigüedad de selección → resuelto por mandato explícito del prompt (change `fixture-explorador`). `actionContext.mode: repo-local`, `allowedEditRoots` = raíz del repo → superficies respetadas: solo los 5 archivos permitidos (+2 archivos nuevos dentro de las superficies). Ningún archivo fuera de raíz.
 - Store: `openspec` (`openspec/changes/fixture-explorador/`). Tasks actualizados in situ: 20/22 checkboxes `- [x]`; restantes = 2 verificaciones manuales de browser (arriba).
+
+## Ronda 5 (reconstrucción vista + filtros consolidados)
+
+**Contexto:** la vista nueva se descartó en el split PR1/PR2 y el working tree quedó en la vista legacy de HEAD. Se reconstruyó sobre el backend de PR1 (`114aba8`), incorporando el feedback de usuario: demasiados filtros sueltos → UN panel consolidado en la zona del hero. Incidente de arranque diagnosticado y resuelto por el orquestador: el working tree estaba en `fix/nav-sticky-ligera` sin el backend; `git switch feat/fixture-explorador` (los 4 sucios ajenos se trasladaron sin conflicto).
+
+### Diseño implementado del panel consolidado
+
+Un solo contenedor `div.mt-8.rounded-3xl.border-f7f280/25.bg-black/30` con dos filas:
+
+- **Fila 1 (fechas):** chip `Todas` (`idFecha=todas`, activo solo con `idFecha=todas`) + un chip por fecha de `$fechas` (orden calendario del service). El chip de la fecha **relevante** enlaza SIN `idFecha` (default implícito); las demás llevan `idFecha=N`. Todos preservan `idEdicion`/`idCategoria`/`estado` y NO llevan `equipo` (clic en fecha limpia la búsqueda, por diseño del encargo).
+- **Fila 2 (categoría + estado + buscador):** chips de categoría (solo `idEdicion`+`idCategoria`: reinician fecha/estado/búsqueda), chips de estado `Todos/Próximos/Finalizados` (preservan fecha explícita —incluida `todas`—, categoría y equipo; siempre llevan `estado=X` explícito) y el `<form method="GET">` con hidden `idEdicion`, `idCategoria` (si hay) e `estado`, input `type="search" name="equipo"`.
+- Gramática de chips idéntica a tabla-posiciones/nav: activo `border-f7f280 bg-f7f280/20 text-f7f280` + `aria-current="page"`; inactivo `border-white/20 bg-white/5 text-white/70 hover:*`; `focus-visible:ring-f7f280/40`; `overflow-x-auto` mobile con scrollbar oculta y `lg:flex-wrap` en desktop.
+- Chips activos por parámetro: fecha activa si `(string) $idFecha === (string) $fecha->id` o si no vino `idFecha` y es la relevante; estado activo si `$estado === $valor` (estado desconocido ⇒ ninguno); categoría activa por `idCategoria`.
+
+### Comportamiento acompañante
+
+- **Self-heal `#fecha-N`:** IIFE que si `location.hash` matchea `#fecha-(\d+)` y la URL no tiene `idFecha`, hace `history.replaceState` con `idFecha=N` y `location.reload()` (una sola vez: tras el reload `params.has('idFecha')` corta). Los anchors legacy `#fecha-N` de la barra sticky siguen funcionando gracias a esto.
+- **Hack de scroll eliminado:** fuera el `scrollIntoView({ block: 'center' })` al próximo partido y el listener `pageshow`. El `scrollTo(0,0)` legacy ahora corre solo SIN hash (dentro de `if (!window.location.hash)`) para no pelear con el salto del anchor tras el reload del self-heal.
+- **Barra sticky conservada** con su IntersectionObserver intacta; ahora marca como activa (`aria-current` + clases activas) la fecha activa server-side, reusando la MISMA función `$fechaEsActiva` del panel. Su chip `Todas` dejó de estar activo siempre: enlaza a `?idFecha=todas` (con categoría/estado) y solo se marca activo en modo `todas`. La barra sigue listando `$fechasNavegacion` (fechas con partidos renderizados: sus anchors `#fecha-N` necesitan destino), mientras el panel lista `$fechas` completo.
+- **Mensaje sin resultados:** `No se encontraron partidos para "..."` dentro de `#fixture-contenido` cuando hay búsqueda y `$partidos` vacío.
+- Defaults Blade en toda variable nueva (`$estado ?? 'todos'`, `$equipo ?? ''`, `$idFecha ?? null`, `$idFechaRelevante ?? null`, `$categorias ?? collect()`, `$fechas ?? collect()`): `PlanillaPublicaTest` renderiza la vista con array parcial y sigue pasando.
+
+### Evidencia TDD (Docker)
+
+```text
+RED   docker compose exec app ./vendor/bin/pest tests/Feature/FixtureExploradorVistaTest.php   # 7 failed, 7 passed (46 assertions)
+      # Rojos esperados: chips de estado (desconocido), chip fecha activa, chips categoría,
+      # chips estado preservando, buscador hidden inputs, sin resultados, hack de scroll
+GREEN docker compose exec app ./vendor/bin/pest tests/Feature/FixtureExploradorVistaTest.php   # 14 passed (78 assertions)
+GREEN docker compose exec app ./vendor/bin/pest tests/Feature/FixtureExploradorTest.php        # 8 passed (13 assertions)
+BASE  docker compose exec app ./vendor/bin/pest tests/Feature/PlanillaPublicaTest.php          # 1 failed (baseline preexistente ultima_actualizacion) + 12 passed
+```
+
+Durante el GREEN se corrigieron dos desvíos detectados por los tests: (1) el panel iteraba `$fechasNavegacion` y con `estado=finalizados` ocultaba los chips de fechas sin partidos en el set filtrado → pasó a `$fechas`; (2) quedaba un `scrollTo(0,0)` legacy duplicado y sin guard → eliminado, quedó solo el guard con hash.
+
+### Verificación de reindentación
+
+```text
+git diff --stat HEAD -- resources/views/layouts/fixture.blade.php   # 180 líneas (152+/28-)
+git diff -w --stat HEAD -- resources/views/layouts/fixture.blade.php # 176 líneas (150+/26-)
+```
+
+El delta de 4 líneas son EXCLUSIVAMENTE las líneas `window.scrollTo`/`setTimeout`/`}` que se reindentaron al quedar dentro del guard `if (!window.location.hash)` — un bloque que esta ronda reescribió, no un bloque ajeno. El `@php` legacy de `$fechasNavegacion` quedó byte-a-byte intacto en su posición original.
+
+### Humo con edición real (id 10, vía HTTP contra Docker)
+
+```text
+GET /fixture?idEdicion=10                  # 200; 1 aria-label por cada grupo del panel; placeholder "Buscar equipo...";
+                                           # UNA sola sección id="fecha-253" (relevante); 28 partido-cards
+GET /fixture?idEdicion=10&idFecha=todas    # 200; secciones fecha-248..253 (todas)
+GET /fixture?idEdicion=10&equipo=Huracan   # 200; 22 partido-cards
+```
+
+### Desvíos documentados de esta ronda
+
+1. **Hidden input `estado` en el buscador:** el diseño del encargo pedía hidden `idEdicion` + `idCategoria (si hay)`, pero el test 12 exige `name="estado"` en el HTML. Se agregó `<input type="hidden" name="estado" value="{{ $estadoFiltro }}">` (además preserva el filtro al re-buscar, coherente con los chips de estado).
+2. **Panel lista `$fechas` completo, barra sticky mantiene `$fechasNavegacion`:** el test 9 exige chips de TODAS las fechas aunque el filtro de estado deje solo una con partidos. La barra sticky conserva su semántica legacy (anchors `#fecha-N` que requieren destino renderizado).
+3. **`Todas` de la barra sticky cambió `#fixture-contenido` → `?idFecha=todas`:** en modo fecha única el anchor interno no llevaba a ninguna vista de todas las fechas y quedaba activo siempre. Es la "modificación chica" autorizada para sincronizar el estado activo de la barra.
+
+### Checklist Playwright (a ejecutar por el orquestador; toolbox `~/.local/mitai-playwright`)
+
+- [ ] Desktop 1280×800, `/fixture?idEdicion=10`: panel único visible bajo el hero (sin bloques sueltos); fila 1 en `lg:flex-wrap` sin scroll horizontal; fila 2 con buscador a la derecha; chip de fecha relevante con estilo activo + `aria-current="page"`; chip `Todas` inactivo.
+- [ ] Desktop: `?idEdicion=10&idFecha=todas` ⇒ chip `Todas` activo, ninguna fecha activa; `?idEdicion=10&estado=finalizados` ⇒ chip `Finalizados` activo.
+- [ ] Mobile 390×844: filas 1 y 2 scrollean horizontal (`overflow-x-auto`) con scrollbar oculta; buscador full-width; tapping chip de otra fecha navega a esa fecha preservando estado; tapping chip de categoría resetea fecha/estado/búsqueda.
+- [ ] Sticky bar: scrollear hasta que el sentinel salga de vista ⇒ barra fija `fixed top-0` con spacer correcto (sin salto); chip de fecha activa marcado en la barra; anclar `#fecha-250` de otra fecha ⇒ self-heal recarga con `idFecha=250` y aterriza en la fecha (sin loop).
+- [ ] Buscador: buscar `Huracan` ⇒ 22 cards agrupadas; buscar `Equipo Inexistente Total` ⇒ mensaje "No se encontraron partidos"; enviar búsqueda con `estado=finalizados` previo ⇒ el hidden preserva el estado.
+- [ ] Capturas desktop+mobile de los 3 caminos (default / todas / búsqueda) revisadas con `read` antes de cerrar la ronda.
+
+## Ronda 6 (feedback del owner post-reconstrucción: 3 decisiones)
+
+**Contexto:** sobre la vista reconstruida de Ronda 5 (SIN commitear, 14 tests verdes), el owner emitió 3 decisiones que anulan partes del spec. Se documentan como enmiendas, sin borrar historial. Los chips de estado ya habían sido eliminados de la vista por el owner antes de esta ronda (quedaban 2 tests colgando que los asertaban).
+
+### Decisiones aplicadas
+
+1. **Bloque "Acceso rápido" a tabla de posiciones: ELIMINADO.** Ambas variantes (mobile `sm:hidden` con `fa-ranking-star` + desktop `sm:block` con "Encontrá la tabla de posiciones sin perderte en el fixture") y su `section`/`@if` envolvente completa (≈66 líneas) — sin dejar contenedores vacíos. El bloque "Ver instancias finales" del hero NO se tocó. La nav ya tiene Posiciones a un clic.
+2. **Chips de fecha en orden DESCENDENTE (más reciente primero, "Todas" primero).** Solo presentación en la vista: panel consolidado itera `($fechas ?? collect())->reverse()` y barra sticky (modo `todas`) itera `$fechasNavegacion->reverse()`. El service NO se tocó (su orden calendario ascendente alimenta la lógica de fecha relevante). El render de secciones/partidos no cambia.
+3. **Tests: asserts de chips de estado fuera.** El param `estado` server-side sigue funcionando; solo se deja de probar como UI.
+
+### Tests eliminados / ajustados (tests/Feature/FixtureExploradorVistaTest.php)
+
+| Test | Acción | Detalle |
+|---|---|---|
+| `no marca ningun chip de estado activo con un estado desconocido` | **ELIMINADO** | Asertaba exclusivamente el chip de estado "Todos" (ya inexistente en UI). Era 1 de los 2 rojos del baseline. |
+| `los chips de estado preservan fecha categoria y busqueda` | **ELIMINADO** | Asertaba exclusivamente chips de estado ("Próximos"/"Todos"). El otro rojo del baseline. |
+| `combina la busqueda de equipo con el estado finalizados` | **AJUSTADO** | Mantenida la búsqueda multi-fecha; como refuerzo de "contenido renderizado finalizado": `toContain('Leones Del Norte')` + `not->toContain('Pumas Del Centro')` (Title Case por el mutator de `Equipo`). |
+| `los chips de categoria reinician fecha estado y busqueda` | **SIN CAMBIOS** | No asertaba chips de estado (solo params del href del chip de categoría: reset de `idFecha`/`estado`/`equipo` sigue vigente). |
+| `muestra los chips de fecha en orden descendente con Todas primero` | **NUEVO** | Protege la decisión 2: orden de anclas por posición (helper `posicionAnclaVista`) en vista default Y en modo `todas` (panel + barra). |
+
+Archivo: 14 → **13 tests** (2 fuera, 1 nuevo).
+
+### Spec enmendado (openspec/changes/fixture-explorador/specs/portal-publico/spec.md)
+
+- Requirement **Chips de estado**: nota de enmienda — chips eliminados de la UI, filtrado solo vía query param, scenarios sin efecto (scenarios preservados como historial).
+- Requirement **Navegación por chips de fecha**: nota de enmienda — orden descendente por decisión del owner; orden calendario del service intacto como fuente de datos.
+
+### Evidencia (Docker, secuencial — en paralelo pest pisa la misma `mitai_testing`, artefacto ya conocido)
+
+```text
+RED (baseline pre-edición)  pest tests/Feature/FixtureExploradorVistaTest.php  # 2 failed, 12 passed — exactamente los 2 tests de chips de estado eliminados
+GREEN                       pest tests/Feature/FixtureExploradorVistaTest.php  # 13 passed (80 assertions)
+                            pest tests/Feature/FixtureExploradorTest.php       # 8 passed (13 assertions) — sin cambios
+BASE                        pest tests/Feature/PlanillaPublicaTest.php         # 1 failed (preexistente ultima_actualizacion) + 12 passed
+PINT                        pint --test tests/Feature/FixtureExploradorVistaTest.php  # PASS
+```
+
+### Humo edición 10 real (HTTP)
+
+```text
+GET /fixture?idEdicion=10                 # 200; 0× "Acceso rápido", 0× "Encontrá la tabla de posiciones", 0× "Filtrar por estado"
+                                          # chips (BD: 248=1° … 253=6°): Todas, 6°(relevante, sin idFecha), 5°(252), 4°(251), 3°(250), 2°(249), 1°(248)
+GET /fixture?idEdicion=10&idFecha=todas   # 200; sin bloque de acceso rápido; panel: todas→253…248 DESC; barra sticky: #fecha-253→#fecha-248 DESC
+```
+
+### Diff noise
+
+`git diff --stat` vs `git diff -w --stat`: la vista mantiene el delta de 4 líneas preexistente de Ronda 5 (reindentado del guard `if (!window.location.hash)` en JS). Esta ronda NO agrega ruido: eliminación de bloque completo + 2 líneas `foreach` modificadas + notas de spec/progress. Ajenos (`.gitignore`, `AGENTS.md`, `opencode.json`, `sync-db.sh`) intactos.
+
+### Pendiente (orquestador)
+
+- Checklist Playwright de Ronda 5 sigue abierto (esta ronda no lo ejecuta: verificación del encargo = tests + humo HTTP). Impacto visual de la ronda: sin bloque teal de acceso rápido; fila 1 del panel y barra sticky con orden de fechas invertido.

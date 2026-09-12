@@ -19,8 +19,7 @@
                                 <span class="h-2 w-2 rounded-full bg-yellow-300"></span>
                                 Agenda oficial
                             </span>
-                            <h1 class="text-3xl sm:text-4xl font-bold text-white">Fixture {{ $nombreCategoria }}</h1>
-                            <p class="text-sm sm:text-base text-white/70">Explorá todos los partidos programados, filtrá por categoría, fecha o estado y no te pierdas ningún cruce de la {{ optional($EdicionSeleccionada)->nombre ?? 'vigente' }}.</p>
+                            <h1 class="text-3xl sm:text-4xl font-bold text-white">Fixture</h1>
                         </div>
                         <div class="grid gap-3 text-sm text-white/70">
                             <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
@@ -50,8 +49,104 @@
                         })->values();
                 @endphp
 
+                {{-- Panel consolidado de filtros: fechas, categoria, estado y buscador --}}
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    @php
+                        $estadoFiltro = $estado ?? 'todos';
+                        $equipoBuscado = trim((string) ($equipo ?? ''));
+                        $idFechaSolicitada = $idFecha ?? null;
+                        $idFechaRelevanteVista = $idFechaRelevante ?? null;
+                        $esVistaTodas = (string) $idFechaSolicitada === 'todas';
+                        $parametrosBase = collect([
+                            'idEdicion' => $idEdicion ?? null,
+                            'idCategoria' => $idCategoria ?? null,
+                        ])->filter(fn ($valor) => $valor !== null && $valor !== '')->all();
+
+                        $armarUrlFixture = function (array $parametros): string {
+                            $query = http_build_query($parametros);
+
+                            return route('fixture').($query === '' ? '' : '?'.$query);
+                        };
+
+                        $clasesChip = function (bool $activa): string {
+                            $clasesBase = 'inline-flex min-w-max items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40';
+
+                            return $activa
+                                ? $clasesBase.' border-[#f7f280] bg-[#f7f280]/20 text-[#f7f280]'
+                                : $clasesBase.' border-white/20 bg-white/5 text-white/70 hover:border-[#f7f280]/40 hover:bg-[#f7f280]/10 hover:text-white';
+                        };
+
+                        $fechaEsActiva = function ($fecha) use ($idFechaSolicitada, $idFechaRelevanteVista): bool {
+                            if ((string) ($idFechaSolicitada ?? '') === (string) $fecha->id) {
+                                return true;
+                            }
+
+                            return $idFechaSolicitada === null
+                                && $idFechaRelevanteVista !== null
+                                && (int) $idFechaRelevanteVista === (int) $fecha->id;
+                        };
+
+                        $fechaEsRelevante = function ($fecha) use ($esVistaTodas, $idFechaRelevanteVista): bool {
+                            return ! $esVistaTodas
+                                && $idFechaRelevanteVista !== null
+                                && (int) $idFechaRelevanteVista === (int) $fecha->id;
+                        };
+
+                        $parametrosChipTodas = $parametrosBase + ['estado' => $estadoFiltro, 'idFecha' => 'todas'];
+                    @endphp
+                    <div class="mt-8 rounded-3xl border border-[#f7f280]/25 bg-black/30 p-4 sm:p-5 space-y-3">
+                        <div role="group" aria-label="Cambiar fecha" class="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-x-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                            <a href="{{ $armarUrlFixture($parametrosChipTodas) }}"
+                                @if ($esVistaTodas) aria-current="page" @endif
+                                class="{{ $clasesChip($esVistaTodas) }}">
+                                Todas
+                            </a>
+                            @foreach (($fechas ?? collect())->reverse() as $fechaChip)
+                                @php
+                                    $activaChipFecha = $fechaEsActiva($fechaChip);
+                                    $parametrosChipFecha = $parametrosBase + ['estado' => $estadoFiltro];
+                                    if (! $fechaEsRelevante($fechaChip)) {
+                                        $parametrosChipFecha['idFecha'] = $fechaChip->id;
+                                    }
+                                @endphp
+                                <a href="{{ $armarUrlFixture($parametrosChipFecha) }}"
+                                    @if ($activaChipFecha) aria-current="page" @endif
+                                    class="{{ $clasesChip($activaChipFecha) }}">
+                                    {{ $fechaChip->nombre }}
+                                </a>
+                            @endforeach
+                        </div>
+                        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                            <div role="group" aria-label="Cambiar categoría" class="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-x-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                @foreach ($categorias ?? collect() as $categoriaChip)
+                                    @php
+                                        $activaChipCategoria = (string) ($idCategoria ?? '') === (string) $categoriaChip->id;
+                                        $parametrosChipCategoria = collect([
+                                            'idEdicion' => $idEdicion ?? null,
+                                            'idCategoria' => $categoriaChip->id,
+                                        ])->filter(fn ($valor) => $valor !== null && $valor !== '')->all();
+                                    @endphp
+                                    <a href="{{ $armarUrlFixture($parametrosChipCategoria) }}"
+                                        @if ($activaChipCategoria) aria-current="page" @endif
+                                        class="{{ $clasesChip($activaChipCategoria) }}">
+                                        {{ $categoriaChip->nombreCategoria }}
+                                    </a>
+                                @endforeach
+                            </div>
+                            <form method="GET" action="{{ route('fixture') }}" class="flex items-center gap-2 lg:ml-auto">
+                                <input type="hidden" name="idEdicion" value="{{ $idEdicion ?? '' }}">
+                                @if (filled($idCategoria ?? null))
+                                    <input type="hidden" name="idCategoria" value="{{ $idCategoria }}">
+                                @endif
+                                <input type="hidden" name="estado" value="{{ $estadoFiltro }}">
+                                <input type="search" name="equipo" value="{{ $equipoBuscado }}" placeholder="Buscar equipo..." aria-label="Buscar equipo por nombre" class="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-[#f7f280]/60 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40 w-full lg:w-48">
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="relative">
-                @if ($fechasNavegacion->isNotEmpty())
+                @if (($idFecha ?? '') === 'todas' && $fechasNavegacion->isNotEmpty())
                     <div id="fixture-fechas-sentinel" aria-hidden="true" class="h-px w-full"></div>
                     <div id="fixture-fechas-spacer" class="hidden"></div>
                     <section id="fixture-fechas-bar" class="relative z-40 border-b border-white/10 bg-black/90 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)] backdrop-blur-xl">
@@ -71,15 +166,18 @@
 
                             <div class="-mx-4 mt-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                                 <div class="flex w-max gap-3 pb-1">
-                                    <a href="#fixture-contenido"
-                                        class="inline-flex min-w-max items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40 border-[#f7f280]/45 bg-[#f7f280]/10 text-[#f7f280]">
+                                    <a href="{{ $armarUrlFixture($parametrosChipTodas) }}"
+                                        @if ($esVistaTodas) aria-current="page" @endif
+                                        class="inline-flex min-w-max items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40 {{ $esVistaTodas ? 'border-[#f7f280]/45 bg-[#f7f280]/10 text-[#f7f280]' : 'border-white/15 bg-black/15 text-white/70 hover:border-[#f7f280]/40 hover:text-white' }}">
                                         <i class="fa-solid fa-layer-group text-xs"></i>
                                         Todas
                                     </a>
 
-                                    @foreach ($fechasNavegacion as $f)
+                                    @foreach ($fechasNavegacion->reverse() as $f)
+                                        @php $activaChipBarra = $fechaEsActiva($f); @endphp
                                         <a href="#fecha-{{ $f->id }}"
-                                            class="inline-flex min-w-max items-center gap-2 rounded-full border border-white/15 bg-black/15 px-4 py-3 text-sm font-semibold text-white/70 transition hover:border-[#f7f280]/40 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+                                            @if ($activaChipBarra) aria-current="page" @endif
+                                            class="inline-flex min-w-max items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40 {{ $activaChipBarra ? 'border-[#f7f280]/45 bg-[#f7f280]/10 text-[#f7f280]' : 'border-white/15 bg-black/15 text-white/70 hover:border-[#f7f280]/40 hover:text-white' }}">
                                             <i class="fa-regular fa-calendar text-xs"></i>
                                             {{ $f->nombre }}
                                         </a>
@@ -91,74 +189,13 @@
                 @endif
 
                 @if (!is_null($grupos) && $grupos->isNotEmpty())
-                    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
-                        <div class="sm:hidden">
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#f7f280]/75">Acceso rápido</p>
-                                    <p class="mt-1 text-sm font-semibold text-white/80">Tabla de posiciones por grupo</p>
-                                </div>
-                                <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/15 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/55">
-                                    <i class="fa-solid fa-table-list text-[#f7f280]"></i>
-                                    {{ $grupos->count() }}
-                                </span>
-                            </div>
-
-                            <div class="-mx-4 mt-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                <div class="flex w-max gap-3 pb-1">
-                                    @foreach ($grupos as $g)
-                                        <a href="{{ route('tabla-posiciones', ['idCategoria' => $idCategoria ?: $g->idCategoria, 'idGrupo' => $g->id, 'idEdicion' => $EdicionSeleccionada->id]) }}"
-                                            class="group inline-flex min-w-max items-center gap-3 rounded-2xl border border-[#f7f280]/35 bg-[#0e4b5e]/85 px-4 py-3 text-white transition hover:border-[#f7f280]/60 hover:bg-[#f7f280]/10 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
-                                            <i class="fa-solid fa-ranking-star text-xs text-[#f7f280]"></i>
-                                            <span class="flex flex-col text-left leading-tight">
-                                                <span class="text-sm font-semibold">{{ $g->nombre }}</span>
-                                                @if (!empty($g->categoria_nombre))
-                                                    <span class="mt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/55">{{ $g->categoria_nombre }}</span>
-                                                @endif
-                                            </span>
-                                            <i class="fa-solid fa-arrow-right text-[10px] text-white/50 transition group-hover:translate-x-1 group-hover:text-[#f7f280]"></i>
-                                        </a>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="hidden rounded-3xl border border-[#f7f280]/25 bg-gradient-to-br from-[#0e4b5e]/80 via-[#2a6d81]/70 to-[#0e4b5e]/80 p-5 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.85)] sm:block sm:p-6">
-                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                <div class="max-w-2xl space-y-2">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-[#f7f280]/75">Acceso rápido</p>
-                                    <h2 class="text-xl font-bold text-white sm:text-2xl">Encontrá la tabla de posiciones sin perderte en el fixture</h2>
-                                    <p class="text-sm text-white/70">Cada grupo tiene su acceso directo. Elegí uno y saltá a la tabla de posiciones al instante.</p>
-                                </div>
-                                <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white/60">
-                                    <i class="fa-solid fa-table-list text-[#f7f280]"></i>
-                                    {{ $grupos->count() }} {{ $grupos->count() === 1 ? 'grupo disponible' : 'grupos disponibles' }}
-                                </div>
-                            </div>
-
-                            <div class="mt-5 flex flex-wrap gap-3">
-                                @foreach ($grupos as $g)
-                                    <a href="{{ route('tabla-posiciones', ['idCategoria' => $idCategoria ?: $g->idCategoria, 'idGrupo' => $g->id, 'idEdicion' => $EdicionSeleccionada->id]) }}"
-                                        class="group inline-flex items-center gap-3 rounded-2xl border border-[#f7f280]/35 bg-black/15 px-4 py-3 text-sm font-semibold text-white transition hover:border-[#f7f280]/60 hover:bg-[#f7f280]/10 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
-                                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#f7f280]/30 bg-[#f7f280]/10 text-[#f7f280]">
-                                            <i class="fa-solid fa-ranking-star text-sm"></i>
-                                        </span>
-                                        <span class="flex flex-col text-left">
-                                            <span>{{ $g->nombre }}</span>
-                                            @if (!empty($g->categoria_nombre))
-                                                <span class="text-xs font-medium uppercase tracking-[0.2em] text-white/55">{{ $g->categoria_nombre }}</span>
-                                            @endif
-                                        </span>
-                                        <i class="fa-solid fa-arrow-right text-xs text-white/50 transition group-hover:translate-x-1 group-hover:text-[#f7f280]"></i>
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                    </section>
-                @endif
-
-                @if (!is_null($grupos) && $grupos->isNotEmpty())
                     <div id="fixture-contenido" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+                        @if (filled($equipoBuscado) && $partidos->isEmpty())
+                            <p class="rounded-3xl border border-white/10 bg-white/5 px-6 py-10 text-center text-lg font-semibold text-white/70">
+                                No se encontraron partidos para <span class="text-[#f7f280]">"{{ $equipoBuscado }}"</span>.
+                                Probá con otro nombre o revisá los filtros de estado.
+                            </p>
+                        @endif
                         @foreach ($fechasNavegacion as $fechaNavegacion)
                             @php
                                 $partidosFecha = $partidos->where('idFechas', $fechaNavegacion->id);
@@ -529,36 +566,36 @@
             observer.observe(barraFechasSentinel);
         }
 
-        window.scrollTo(0, 0);
-        setTimeout(function() {
-            window.scrollTo(0, 0);
-            sincronizarAlturaSpacer();
-        }, 100);
+
 
         inicializarBarraFechasPersistente();
         window.addEventListener('resize', sincronizarAlturaSpacer);
 
-        // Scroll automático al próximo partido pendiente
-        try {
-            const now = new Date();
-            const cards = Array.from(document.querySelectorAll('.partido-card'));
-            const proximos = cards
-                .filter(c => c.dataset.jugado === '0')
-                .map(c => ({ el: c, dt: new Date(c.dataset.horario) }))
-                .filter(x => x.dt.toString() !== 'Invalid Date' && x.dt >= now)
-                .sort((a, b) => a.dt - b.dt);
-            const objetivo = proximos.length ? proximos[0].el : (cards.find(c => c.dataset.jugado === '0') || null);
-            if (objetivo) {
-                objetivo.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                objetivo.classList.add('ring-2','ring-blue-400','ring-offset-2','ring-offset-white');
-                setTimeout(() => objetivo.classList.remove('ring-2','ring-blue-400','ring-offset-2','ring-offset-white'), 3000);
-            }
-        } catch (e) {}
-    });
-        window.addEventListener('pageshow', function(event) {
-            if (event.persisted) {
+        // Con hash #fecha-N el browser salta solo al anchor tras el reload del self-heal.
+        if (!window.location.hash) {
+            window.scrollTo(0, 0);
+            setTimeout(function() {
                 window.scrollTo(0, 0);
+                sincronizarAlturaSpacer();
+            }, 100);
+        } else {
+            setTimeout(sincronizarAlturaSpacer, 100);
+        }
+    });
+        // Self-heal de anchors legacy #fecha-N sin idFecha en la URL: completa el
+        // parametro y recarga una sola vez para renderizar esa fecha server-side.
+        (function () {
+            const coincidencia = window.location.hash.match(/^#fecha-(\d+)$/);
+            if (!coincidencia) {
+                return;
             }
-        });
+            const parametros = new URLSearchParams(window.location.search);
+            if (parametros.has('idFecha')) {
+                return;
+            }
+            parametros.set('idFecha', coincidencia[1]);
+            window.history.replaceState(window.history.state, '', window.location.pathname + '?' + parametros.toString() + window.location.hash);
+            window.location.reload();
+        })();
     </script>
 </body>
