@@ -1,8 +1,8 @@
 @include('head')
 
 <body class="bg-[--color-primary] text-white">
-    <div class="relative isolate min-h-screen overflow-hidden">
-        <div class="absolute inset-0">
+    <div class="relative isolate min-h-screen">
+        <div class="absolute inset-0 overflow-hidden">
             <img src="{{ asset('fotos/fondo_en_cancha.webp') }}" alt="Cancha de fútbol"
                 class="h-full w-full object-cover object-center">
             <div class="absolute inset-0 bg-gradient-to-b from-black/85 via-black/80 to-black/90"></div>
@@ -22,14 +22,33 @@
                             <h1 class="text-3xl sm:text-4xl font-bold text-white">Tabla de posiciones · {{ $nombreCategoria }}</h1>
                             <p class="max-w-2xl text-sm sm:text-base text-white/70">Resumen actualizado de puntos, victorias y diferencia de gol para cada equipo del grupo. El orden prioriza puntaje y, en caso de empate, ubica primero a los equipos que ya jugaron.</p>
                         </div>
-                        @if ($EdicionSeleccionada && $idCategoria)
-                            <a href="{{ route('fixture', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria]) }}"
-                                class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/75 transition hover:border-[#f7f280]/40 hover:bg-[#f7f280]/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
-                                <i class="fa-solid fa-arrow-left text-[11px]"></i>
-                                Volver al fixture
-                            </a>
-                        @endif
                     </div>
+
+                    @if ($EdicionSeleccionada && $categorias->isNotEmpty())
+                        <div class="mt-8 space-y-3">
+                            <div class="flex flex-nowrap gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-x-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Cambiar categoría">
+                                @foreach ($categorias as $c)
+                                    <a href="{{ route('tabla-posiciones', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $c->id]) }}"
+                                        @if ($c->id == $idCategoria) aria-current="page" @endif
+                                        class="whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 {{ $c->id == $idCategoria ? 'border-[#f7f280] bg-[#f7f280]/20 text-[#f7f280]' : 'border-white/20 bg-white/5 text-white/70 hover:border-[#f7f280]/40 hover:bg-[#f7f280]/10 hover:text-white' }}">
+                                        {{ $c->nombreCategoria }}
+                                    </a>
+                                @endforeach
+                            </div>
+
+                            @if ($grupos->count() > 1)
+                                <div class="flex flex-nowrap gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-x-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Cambiar grupo">
+                                    @foreach ($grupos as $g)
+                                        <a href="{{ route('tabla-posiciones', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria, 'idGrupo' => $g->id]) }}"
+                                            @if ($g->id == $idGrupo) aria-current="page" @endif
+                                            class="whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 {{ $g->id == $idGrupo ? 'border-[#f7f280] bg-[#f7f280]/20 text-[#f7f280]' : 'border-white/20 bg-white/5 text-white/70 hover:border-[#f7f280]/40 hover:bg-[#f7f280]/10 hover:text-white' }}">
+                                            {{ $g->nombre }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endif
 
                     @if ($EdicionSeleccionada)
                         <div class="mt-6 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.25em] text-white/60">

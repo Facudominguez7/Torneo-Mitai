@@ -1,4 +1,14 @@
-<nav class="relative z-50 border-b border-white/10 bg-black/40 backdrop-blur">
+<nav aria-label="Navegación principal" class="sticky top-0 z-50 border-b border-white/10 bg-black/40 backdrop-blur">
+    @php
+        $itemsSeccion = [
+            ['label' => 'Inicio', 'ruta' => 'home', 'patterns' => ['home']],
+            ['label' => 'Partidos', 'ruta' => 'fixture', 'patterns' => ['fixture']],
+            ['label' => 'Posiciones', 'ruta' => 'tabla-posiciones', 'patterns' => ['tabla-posiciones']],
+            ['label' => 'Goleadores', 'ruta' => 'tabla-goleadores', 'patterns' => ['tabla-goleadores']],
+            ['label' => 'Finales', 'ruta' => 'instancias-finales', 'patterns' => ['instancias-finales']],
+        ];
+    @endphp
+
     <div
         class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 lg:px-8">
         @php
@@ -8,7 +18,8 @@
         @php
             $homeUrl = optional($edicionActiva)->id ? route('home', ['idEdicion' => $edicionActiva->id]) : route('home');
         @endphp
-        <a href="{{ $homeUrl }}" class="flex items-center gap-3 text-white transition hover:opacity-90 sm:self-auto">
+        <a href="{{ $homeUrl }}"
+            class="flex items-center gap-3 rounded-lg text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 sm:self-auto">
             <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" class="h-10 w-10" alt="MITAI Logo">
             <div class="flex flex-col text-center sm:text-left">
                 <span class="text-sm font-semibold uppercase tracking-[0.3em] text-white/60">Torneo Mitai</span>
@@ -17,12 +28,24 @@
             </div>
         </a>
 
+        <div class="hidden lg:flex flex-1 items-center justify-center gap-8">
+            @foreach ($itemsSeccion as $item)
+                <a href="{{ route($item['ruta'], ['idEdicion' => optional($edicionActiva)->id]) }}"
+                    @if (request()->routeIs($item['patterns']))
+                        aria-current="page"
+                    @endif
+                    class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 {{ request()->routeIs($item['patterns']) ? 'border-[#f7f280] text-white' : 'border-transparent text-white/70 hover:text-[#f7f280]' }}">
+                    {{ $item['label'] }}
+                </a>
+            @endforeach
+        </div>
+
         <div
             class="flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:justify-end sm:gap-4">
             @auth
                 @if (Auth::user()->rol === 'admin')
                     <a href="{{ route('admin', ['idEdicion' => optional($edicionActiva)->id]) }}"
-                        class="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70 transition hover:border-yellow-300 hover:bg-yellow-300/10">
+                        class="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70 transition hover:border-yellow-300 hover:bg-yellow-300/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40">
                         Panel de administración
                     </a>
                 @endif
@@ -91,4 +114,28 @@
             @endauth
         </div>
     </div>
+
+    <div id="nav-secciones-mobile"
+        class="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-6 gap-y-2 overflow-x-auto border-t border-white/10 px-4 pt-3 pb-4 sm:flex-nowrap sm:px-6 lg:hidden lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        @foreach ($itemsSeccion as $item)
+            <a href="{{ route($item['ruta'], ['idEdicion' => optional($edicionActiva)->id]) }}"
+                @if (request()->routeIs($item['patterns']))
+                    aria-current="page"
+                @endif
+                class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 {{ request()->routeIs($item['patterns']) ? 'border-[#f7f280] text-white' : 'border-transparent text-white/70 hover:text-[#f7f280]' }}">
+                {{ $item['label'] }}
+            </a>
+        @endforeach
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var fila = document.getElementById('nav-secciones-mobile');
+            if (fila && fila.scrollWidth > fila.clientWidth) {
+                var activo = fila.querySelector('a[aria-current="page"]');
+                if (activo) {
+                    activo.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            }
+        });
+    </script>
 </nav>

@@ -522,6 +522,45 @@ class ControladorHome extends Controller
         $idGrupo = $request->query('idGrupo');
         $idEdicion = $request->query('idEdicion');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
+        // Defaults determinísticos para la navegación pública: primera categoría
+        // de la edición y su primer grupo, igual que elegirlos a mano.
+        if ($EdicionSeleccionada && (! $idCategoria || ! $idGrupo)) {
+            $categoriaDefault = $idCategoria
+                ? Categoria::find($idCategoria)
+                : Categoria::where('idEdicion', $EdicionSeleccionada->id)
+                    ->orderBy('nombreCategoria', 'desc')
+                    ->first();
+
+            if ($categoriaDefault) {
+                $idCategoria = $categoriaDefault->id;
+
+                if (! $idGrupo) {
+                    $idGrupo = Grupo::where('idCategoria', $categoriaDefault->id)
+                        ->where('idEdicion', $EdicionSeleccionada->id)
+                        ->orderBy('id')
+                        ->first()
+                        ?->id;
+                }
+            }
+        }
+
+        $categorias = collect();
+        $grupos = collect();
+
+        if ($EdicionSeleccionada) {
+            $categorias = Categoria::where('idEdicion', $EdicionSeleccionada->id)
+                ->orderBy('nombreCategoria', 'desc')
+                ->get();
+
+            if ($idCategoria) {
+                $grupos = Grupo::where('idCategoria', $idCategoria)
+                    ->where('idEdicion', $EdicionSeleccionada->id)
+                    ->orderBy('id')
+                    ->get();
+            }
+        }
+
         $GrupoSeleccionado = $idGrupo ? Grupo::find($idGrupo) : null;
 
         // Obtener el nombre de la categoría
@@ -543,7 +582,7 @@ class ControladorHome extends Controller
             ->orderBy('equipos.nombre', 'ASC')
             ->get();
 
-        return view('layouts.tabla-posiciones', compact('tablaPosiciones', 'EdicionSeleccionada', 'nombreCategoria', 'ediciones', 'idCategoria', 'idGrupo', 'GrupoSeleccionado'));
+        return view('layouts.tabla-posiciones', compact('tablaPosiciones', 'EdicionSeleccionada', 'nombreCategoria', 'ediciones', 'idCategoria', 'idGrupo', 'GrupoSeleccionado', 'categorias', 'grupos'));
     }
 
     public function tablaGoleadores(Request $request)

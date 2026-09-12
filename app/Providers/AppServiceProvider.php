@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Edicion;
 use App\Services\EmailDeliverabilityHeaders;
+use App\View\Composers\NavigationComposer;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Event as FacadesEvent;
@@ -72,6 +73,13 @@ class AppServiceProvider extends ServiceProvider
          * Evita que cada controlador tenga que enviar siempre `ediciones`
          * y `EdicionSeleccionada` manualmente.
          */
+        /**
+         * Aportar la edición más reciente a la navegación pública cuando la
+         * vista que incluye el partial no la provee. Nunca pisa
+         * `EdicionSeleccionada` ni un `ultimaEdicion` ya presente.
+         */
+        View::composer('layouts.navigation', NavigationComposer::class);
+
         View::composer('Panel.admin', function (ViewContract $view): void {
             $ediciones = Edicion::orderByDesc('id')->get();
 
