@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Campeon;
 use App\Models\Categoria;
 use App\Models\Edicion;
+use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\Fase;
 use App\Models\Fecha;
@@ -43,7 +44,13 @@ class ControladorHome extends Controller
             $categorias = Categoria::where('idEdicion', $ultimaEdicion->id)->orderBy('nombreCategoria', 'desc')->get();
         }
 
-        return view('welcome', compact('ediciones', 'ultimaEdicion', 'EdicionSeleccionada', 'categorias', 'idEdicion', 'idCategoria', 'roles'));
+        $edicionActual = $EdicionSeleccionada ?? $ultimaEdicion;
+        $equiposDeLaEdicion = Equipo::query()
+            ->where('idEdicion', $edicionActual?->id)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'idCategoria']);
+
+        return view('welcome', compact('ediciones', 'ultimaEdicion', 'EdicionSeleccionada', 'categorias', 'idEdicion', 'idCategoria', 'roles', 'equiposDeLaEdicion'));
     }
 
     /**
