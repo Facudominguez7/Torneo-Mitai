@@ -61,35 +61,6 @@ class ControladorHome extends Controller
                 ]);
         }
 
-        // Bloque vivo de la home: la misma fecha relevante que fixture(),
-        // resuelta por el servicio sin duplicar el predicado de vigencia.
-        $fixtureExplorador = new FixtureExploradorService();
-        $idFechaRelevante = $edicionActual
-            ? $fixtureExplorador->resolverFechaRelevante((int) $edicionActual->id)
-            : null;
-        $partidosFechaRelevante = collect();
-        $fechaRelevante = null;
-        if ($idFechaRelevante !== null) {
-            $partidosFechaRelevante = Partido::select('partidos.*', 'el.nombre as nombre_local', 'ev.nombre as nombre_visitante', 'el.foto as foto_local', 'ev.foto as foto_visitante')
-                ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
-                ->join('equipos as ev', 'partidos.idEquipoVisitante', '=', 'ev.id')
-                ->where('partidos.idFechas', $idFechaRelevante)
-                ->where('partidos.idEdicion', $edicionActual->id)
-                ->orderBy('partidos.horario_datetime')
-                ->orderBy('partidos.id')
-                ->with('fecha')
-                ->get();
-            $fechaRelevante = Fecha::find($idFechaRelevante);
-        }
-        $hayPartidosFuturos = $partidosFechaRelevante->contains(
-            fn ($partido) => ! $partido->jugado
-                && $partido->horario_datetime
-                && Carbon::parse($partido->horario_datetime)->isFuture()
-        );
-
-        // La home muestra un adelanto de la fecha; el listado completo
-        // vive en el fixture.
-        $partidosFechaRelevante = $partidosFechaRelevante->take(3);
 
         return view('welcome', compact(
             'ediciones',
@@ -98,10 +69,6 @@ class ControladorHome extends Controller
             'categorias',
             'idEdicion',
             'equiposDeLaEdicion',
-            'idFechaRelevante',
-            'fechaRelevante',
-            'partidosFechaRelevante',
-            'hayPartidosFuturos',
         ));
     }
 

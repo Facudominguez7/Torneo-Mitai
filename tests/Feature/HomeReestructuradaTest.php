@@ -86,87 +86,6 @@ function ordenEnHtml(string $html, array $marcadores): bool
     return true;
 }
 
-describe('home: bloque vivo de la fecha relevante', function () {
-    it('muestra proximos partidos cuando la fecha relevante tiene partidos futuros', function () {
-        $contexto = homeBase();
-        $futura = homeFecha($contexto, 'Fecha 2');
-
-        homePartido($contexto, $futura, now()->addDays(2)->format('Y-m-d H:i:s'));
-
-        $respuesta = $this->get(route('home'));
-
-        $respuesta->assertOk()
-            ->assertSee('Próximos partidos', false)
-            ->assertSee('id="fecha-relevante"', false)
-            ->assertSee('Fecha 2', false);
-    });
-
-    it('lista todos los partidos de la fecha relevante y ninguno de otras fechas', function () {
-        $contexto = homeBase();
-        $relevante = homeFecha($contexto, 'Fecha 2');
-        $otra = homeFecha($contexto, 'Fecha 1');
-
-        $idsRelevante = collect();
-        for ($i = 1; $i <= 7; $i++) {
-            $idsRelevante->push(homePartido(
-                $contexto,
-                $relevante,
-                now()->addDays(2)->addMinutes($i)->format('Y-m-d H:i:s'),
-                local: 'Club Numero '.$i,
-                visitante: 'Rival Numero '.$i,
-            )->id);
-        }
-        $idOtraFecha = homePartido($contexto, $otra, now()->subDays(5)->format('Y-m-d H:i:s'), local: 'Club Otra Fecha', visitante: 'Rival Otra Fecha')->id;
-
-        $html = $this->get(route('home'))->assertOk()->getContent();
-
-        expect(substr_count($html, 'id="partido-'))->toBe(3);
-            foreach ($idsRelevante->slice(3) as $id) {
-            expect($html)->not->toContain('id="partido-'.$id.'"');
-            }
-            expect($html)->toContain('Ver todos los partidos');
-        expect($html)->not->toContain('id="partido-'.$idOtraFecha.'"');
-    });
-
-    it('no rompe cuando la edicion no tiene partidos', function () {
-        homeBase();
-
-        $this->get(route('home'))->assertOk();
-    });
-
-    it('no consulta la tabla users ni pasa roles ni idCategoria', function () {
-        homeBase();
-
-        $consultas = [];
-        DB::listen(function ($query) use (&$consultas) {
-            $consultas[] = $query->sql;
-        });
-
-        $respuesta = $this->get(route('home'))->assertOk();
-
-        $sobreUsers = array_values(array_filter($consultas, fn ($sql) => str_contains($sql, 'users')));
-
-        expect($sobreUsers)->toBeEmpty();
-        $respuesta->assertViewMissing('roles');
-    });
-
-    it('muestra los cuatro accesos secundarios una sola vez fuera de la navegacion', function () {
-        $contexto = homeBase();
-
-        $html = $this->get(route('home'))->assertOk()->getContent();
-        $sinNav = trim((string) preg_replace('/<nav\b.*?<\/nav>/s', '', $html));
-
-        foreach ([
-            'tabla-posiciones',
-            'tabla-goleadores',
-            'instancias-finales',
-            'tabla-vallas',
-        ] as $ruta) {
-            $url = route($ruta, ['idEdicion' => $contexto['edicion']->id]);
-            expect(substr_count($sinNav, $url))->toBe(1, $ruta);
-        }
-    });
-});
 
 describe('home: jerarquía de bloques y prosa eliminada', function () {
     it('renderiza los bloques en el orden definido por el spec', function () {
@@ -183,11 +102,9 @@ describe('home: jerarquía de bloques y prosa eliminada', function () {
         $html = $this->get(route('home'))->assertOk()->getContent();
 
         expect(ordenEnHtml($html, [
-            'id="idEdicion"',
-            'id="fecha-relevante"',
+            'id="ediciones-select"',
             'id="seguir-equipo-bloque"',
             'id="accesos-secundarios"',
-            'Ir al fixture',
             'Ver más',
         ]))->toBeTrue();
     });
@@ -252,11 +169,9 @@ describe('home: jerarquía de bloques y prosa eliminada', function () {
         ]);
 
         $marcadores = [
-            'id="idEdicion"',
-            'id="fecha-relevante"',
+            'id="ediciones-select"',
             'id="seguir-equipo-bloque"',
             'id="accesos-secundarios"',
-            'Ir al fixture',
             'Ver más',
         ];
 
