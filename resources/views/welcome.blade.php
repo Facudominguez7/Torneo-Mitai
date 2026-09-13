@@ -128,11 +128,6 @@
                             <i class="fa-solid fa-calendar-days text-base"></i>
                             Ver partidos
                         </a>
-                        <a href="#seguir-equipo-bloque"
-                            class="group flex items-center gap-2 rounded-full border border-white/40 bg-black/20 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-1 hover:border-white hover:bg-white/10">
-                            <i class="fa-solid fa-star text-base"></i>
-                            Seguir mi equipo
-                        </a>
                     </div>
                 @endif
             </div>
