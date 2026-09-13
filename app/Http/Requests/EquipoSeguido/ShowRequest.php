@@ -25,6 +25,8 @@ class ShowRequest extends FormRequest
         return [
             'nombre' => 'required|string|max:50',
             'idEdicion' => 'required|integer|exists:ediciones,id',
+            // Enmienda #100: categoría opcional para desambiguar homónimos.
+            'idCategoria' => 'nullable|integer|exists:categorias,id',
         ];
     }
 }

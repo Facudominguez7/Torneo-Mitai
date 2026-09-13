@@ -20,6 +20,9 @@ class ControladorEquipoSeguido extends Controller
             $payload = $this->equipoSeguidoService->resolver(
                 $request->string('nombre')->toString(),
                 (int) $request->integer('idEdicion'),
+                $request->validated('idCategoria') !== null
+                    ? (int) $request->validated('idCategoria')
+                    : null,
             );
 
             return response()->json($payload);
