@@ -123,11 +123,13 @@
                 </form>
                 @if ($edicionActual)
                     <div class="flex flex-wrap justify-center gap-3 lg:justify-start">
+                        @if (! $hayPartidosFuturos)
                         <a href="{{ route('fixture', ['idEdicion' => $edicionActual->id]) }}"
                             class="group flex items-center gap-2 rounded-full bg-yellow-300 px-5 py-2.5 text-sm font-semibold text-black shadow-lg shadow-yellow-500/35 ring-1 ring-yellow-200/80 transition-transform hover:-translate-y-1 hover:bg-yellow-200">
                             <i class="fa-solid fa-calendar-days text-base"></i>
                             Ver partidos
                         </a>
+                        @endif
                     </div>
                 @endif
             </div>
