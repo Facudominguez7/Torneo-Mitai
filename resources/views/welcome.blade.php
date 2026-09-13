@@ -104,72 +104,36 @@
                 <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight">
                     {{ optional($edicionActual)->nombre ?? "Torneos Mita'í" }}
                 </h1>
-                <form method="GET" action="{{ route('home') }}" class="mx-auto w-full max-w-sm lg:mx-0">
-                    <label for="idEdicion" class="text-sm font-semibold text-white/80">Edición</label>
-                    <div class="relative mt-2">
-                        <select id="idEdicion" name="idEdicion" onchange="this.form.submit()"
-                            class="w-full appearance-none rounded-2xl border border-white/20 bg-slate-950/70 px-4 py-3 text-sm font-medium text-white shadow-inner shadow-black/40 focus:border-yellow-300 focus:outline-none focus:ring focus:ring-yellow-300/30">
-                            <option value="">Seleccione una edición</option>
-                            @foreach ($ediciones as $edicion)
-                                <option value="{{ $edicion->id }}" {{ optional($edicionActual)->id === $edicion->id ? 'selected' : '' }}>
-                                    {{ $edicion->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-white/60">
-                            <i class="fa-solid fa-chevron-down text-xs"></i>
-                        </span>
-                    </div>
-                </form>
+                    <form method="GET" action="{{ route('home') }}" class="mx-auto w-full max-w-sm lg:mx-0">
+                        <label for="idEdicion" class="text-sm font-semibold text-white/80">Edición</label>
+                        <div class="relative mt-2">
+                            <select id="ediciones-select" name="idEdicion" onchange="this.form.submit()"
+                                class="w-full appearance-none rounded-2xl border border-[#f7f280]/40 bg-slate-950/90 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-black/30 transition hover:border-[#f7f280] focus:border-[#f7f280] focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+                                <option value="" class="bg-slate-950">Seleccione una edición</option>
+                                @foreach ($ediciones as $edicion)
+                                    <option value="{{ $edicion->id }}" class="bg-slate-950" {{ optional($edicionActual)->id === $edicion->id ? 'selected' : '' }}>
+                                        {{ $edicion->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                <i class="fa-solid fa-chevron-down text-xs"></i>
+                            </span>
+                        </div>
+                    </form>
                 @if ($edicionActual)
                     <div class="flex flex-wrap justify-center gap-3 lg:justify-start">
-                        @if (! $hayPartidosFuturos)
                         <a href="{{ route('fixture', ['idEdicion' => $edicionActual->id]) }}"
                             class="group flex items-center gap-2 rounded-full bg-yellow-300 px-5 py-2.5 text-sm font-semibold text-black shadow-lg shadow-yellow-500/35 ring-1 ring-yellow-200/80 transition-transform hover:-translate-y-1 hover:bg-yellow-200">
                             <i class="fa-solid fa-calendar-days text-base"></i>
                             Ver partidos
                         </a>
-                        @endif
                     </div>
                 @endif
             </div>
         </section>
 
-        {{-- Bloque de información viva: la fecha relevante con todos sus partidos --}}
-        @if ($edicionActual)
-                @if ($hayPartidosFuturos)
-            <section id="fecha-relevante" x-data="crearPlanillaPublica()"
-                class="bg-gradient-to-b from-slate-950 via-black to-slate-900 py-14 sm:py-16">
-                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                        <div class="space-y-2">
-                            <p class="inline-flex items-center gap-2 rounded-full border border-[#f7f280]/30 bg-[#f7f280]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#f7f280]">
-                                <i class="fa-regular fa-futbol"></i>
-                                {{ $hayPartidosFuturos ? 'Próximos partidos' : 'Fecha pendiente' }}
-                            </p>
-                            <h2 class="text-2xl sm:text-3xl font-bold text-white">{{ $fechaRelevante?->nombre ?? 'Sin fechas cargadas' }}</h2>
-                        </div>
-                        <a href="{{ route('fixture', ['idEdicion' => $edicionActual->id]) }}"
-                            class="inline-flex items-center gap-2 rounded-full border border-white/30 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white/70 transition hover:border-white hover:bg-white/10">
-                            Ver todos los partidos
-                            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
-                        </a>
-                    </div>
-                    <div class="mt-8 space-y-6">
-                        @forelse ($partidosFechaRelevante as $p)
-                            <x-tarjeta-partido :partido="$p" :interzonal="$p->idGrupo === null" />
-                        @empty
-                            <p class="rounded-3xl border border-white/10 bg-white/5 px-6 py-10 text-center text-lg font-semibold text-white/70">
-                                Todavía no hay partidos cargados para esta fecha.
-                            </p>
-                        @endforelse
-                    </div>
-                </div>
-                <x-planilla-publica-modal />
-            </section>
-                @endif
-        @endif
-
+        
         @if (isset($equiposDeLaEdicion) && $edicionActual && $equiposDeLaEdicion->isNotEmpty())
             <section id="seguir-equipo-bloque" data-id-edicion="{{ $edicionActual->id }}"
                 class="bg-gradient-to-b from-slate-950 via-black to-slate-900 py-14 sm:py-16">
