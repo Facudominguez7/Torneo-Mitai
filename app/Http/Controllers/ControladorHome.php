@@ -16,11 +16,11 @@ use App\Models\Partido;
 use App\Models\Subcampeon;
 use App\Models\TablaGoleador;
 use App\Models\TablaPosicion;
-use App\Models\User;
 use App\Models\VallaMenosVencida;
 use App\Services\EstadisticasService;
 use App\Services\FixtureExploradorService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ControladorHome extends Controller
@@ -34,10 +34,8 @@ class ControladorHome extends Controller
         if (is_null($idEdicion)) {
             $ultimaEdicion = Edicion::latest('id')->first();
         }
-        $idCategoria = $request->query('idCategoria');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $categorias = collect();
-        $roles = User::pluck('rol');
         if ($EdicionSeleccionada) {
             $categorias = Categoria::where('idEdicion', $idEdicion)->orderBy('nombreCategoria', 'desc')->get();
         } elseif ($ultimaEdicion) {
@@ -45,12 +43,66 @@ class ControladorHome extends Controller
         }
 
         $edicionActual = $EdicionSeleccionada ?? $ultimaEdicion;
-        $equiposDeLaEdicion = Equipo::query()
-            ->where('idEdicion', $edicionActual?->id)
-            ->orderBy('nombre')
-            ->get(['id', 'nombre', 'idCategoria']);
 
-        return view('welcome', compact('ediciones', 'ultimaEdicion', 'EdicionSeleccionada', 'categorias', 'idEdicion', 'idCategoria', 'roles', 'equiposDeLaEdicion'));
+        // Enmienda de categoría (#100): cada opción del selector lleva su
+        // categoría para desambiguar equipos homónimos de la misma edición.
+        $equiposDeLaEdicion = collect();
+        if ($edicionActual) {
+            $equiposDeLaEdicion = Equipo::query()
+                ->where('idEdicion', $edicionActual->id)
+                ->orderBy('nombre')
+                ->with('categoria:id,nombreCategoria')
+                ->get(['id', 'nombre', 'idCategoria'])
+                ->map(fn (Equipo $equipo): array => [
+                    'id' => $equipo->id,
+                    'nombre' => $equipo->nombre,
+                    'idCategoria' => $equipo->idCategoria,
+                    'nombreCategoria' => $equipo->categoria?->nombreCategoria,
+                ]);
+        }
+
+        // Bloque vivo de la home: la misma fecha relevante que fixture(),
+        // resuelta por el servicio sin duplicar el predicado de vigencia.
+        $fixtureExplorador = new FixtureExploradorService();
+        $idFechaRelevante = $edicionActual
+            ? $fixtureExplorador->resolverFechaRelevante((int) $edicionActual->id)
+            : null;
+        $partidosFechaRelevante = collect();
+        $fechaRelevante = null;
+        if ($idFechaRelevante !== null) {
+            $partidosFechaRelevante = Partido::select('partidos.*', 'el.nombre as nombre_local', 'ev.nombre as nombre_visitante', 'el.foto as foto_local', 'ev.foto as foto_visitante')
+                ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
+                ->join('equipos as ev', 'partidos.idEquipoVisitante', '=', 'ev.id')
+                ->where('partidos.idFechas', $idFechaRelevante)
+                ->where('partidos.idEdicion', $edicionActual->id)
+                ->orderBy('partidos.horario_datetime')
+                ->orderBy('partidos.id')
+                ->with('fecha')
+                ->get();
+            $fechaRelevante = Fecha::find($idFechaRelevante);
+        }
+        $hayPartidosFuturos = $partidosFechaRelevante->contains(
+            fn ($partido) => ! $partido->jugado
+                && $partido->horario_datetime
+                && Carbon::parse($partido->horario_datetime)->isFuture()
+        );
+
+        // La home muestra un adelanto de la fecha; el listado completo
+        // vive en el fixture.
+        $partidosFechaRelevante = $partidosFechaRelevante->take(3);
+
+        return view('welcome', compact(
+            'ediciones',
+            'ultimaEdicion',
+            'EdicionSeleccionada',
+            'categorias',
+            'idEdicion',
+            'equiposDeLaEdicion',
+            'idFechaRelevante',
+            'fechaRelevante',
+            'partidosFechaRelevante',
+            'hayPartidosFuturos',
+        ));
     }
 
     /**

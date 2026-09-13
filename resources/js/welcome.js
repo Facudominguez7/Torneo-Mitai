@@ -72,14 +72,16 @@ function descargarPDF() {
     function leerFavorito() {
         try {
             const guardado = JSON.parse(localStorage.getItem(CLAVE_FAVORITO) || 'null');
-            return guardado && guardado.nombre ? guardado.nombre : null;
+            // Enmienda #100: el favorito persiste {nombre, idCategoria}. Los
+            // guardados viejos solo tienen nombre y siguen funcionando.
+            return guardado && guardado.nombre ? guardado : null;
         } catch {
             return null;
         }
     }
 
-    function guardarFavorito(nombre) {
-        localStorage.setItem(CLAVE_FAVORITO, JSON.stringify({ nombre: nombre }));
+    function guardarFavorito(nombre, idCategoria) {
+        localStorage.setItem(CLAVE_FAVORITO, JSON.stringify({ nombre: nombre, idCategoria: idCategoria ?? null }));
     }
 
     function crearBotonAccion(texto, accion) {
@@ -215,10 +217,15 @@ function descargarPDF() {
             const boton = document.createElement('button');
             boton.type = 'button';
             boton.dataset.elegir = equipo.nombre;
-            boton.textContent = equipo.nombre;
+            // Enmienda #100: cada opción muestra "Nombre — Categoría" para
+            // distinguir equipos homónimos de la misma edición.
+            boton.dataset.idCategoria = equipo.idCategoria ?? '';
+            boton.textContent = equipo.nombreCategoria
+                ? equipo.nombre + ' — ' + equipo.nombreCategoria
+                : equipo.nombre;
             boton.className = 'w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-medium text-white transition hover:border-emerald-300/70 hover:bg-emerald-400/10';
             boton.addEventListener('click', function () {
-                guardarFavorito(equipo.nombre);
+                guardarFavorito(equipo.nombre, equipo.idCategoria);
                 cargarCard();
             });
             item.appendChild(boton);
@@ -229,8 +236,8 @@ function descargarPDF() {
     }
 
     async function cargarCard() {
-        const nombre = leerFavorito();
-        if (!nombre) {
+        const favorito = leerFavorito();
+        if (!favorito) {
             mostrarSelector();
             return;
         }
@@ -240,13 +247,16 @@ function descargarPDF() {
         card.classList.add('hidden');
 
         try {
-            const consulta = '?nombre=' + encodeURIComponent(nombre) + '&idEdicion=' + encodeURIComponent(idEdicion);
-            const respuesta = await fetch('/equipo-seguido' + consulta);
+            const parametros = new URLSearchParams({ nombre: favorito.nombre, idEdicion: idEdicion });
+            if (favorito.idCategoria) {
+                parametros.set('idCategoria', favorito.idCategoria);
+            }
+            const respuesta = await fetch('/equipo-seguido?' + parametros.toString());
             if (!respuesta.ok) {
                 mostrarSelector();
                 return;
             }
-            renderCard(nombre, await respuesta.json());
+            renderCard(favorito.nombre, await respuesta.json());
         } catch {
             mostrarSelector();
         }
