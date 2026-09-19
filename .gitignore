@@ -58,3 +58,9 @@ phpunit.xml
 coverage/
 *.coverage
 EMAIL_CONFIG.md
+# Local AI tooling runtime state
+.atl/
+.codegraph/
+.pi/
+odd/
+.gentle-ai-default-agent.json
