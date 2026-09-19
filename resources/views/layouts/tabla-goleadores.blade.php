@@ -112,7 +112,32 @@
                         </div>
                     </div>
 
-                    <div id="resultados-goleadores">
+                    <div id="estado-goleadores" class="fixed inset-x-4 top-4 z-50 md:static md:inset-auto md:mt-6">
+                        <span id="estado-carga-anuncio" role="status" aria-live="polite" aria-atomic="true"
+                            class="sr-only"></span>
+                        <p id="estado-carga-goleadores" class="hidden">
+                            <span
+                                class="flex items-center gap-3 rounded-2xl border border-[#f7f280]/30 bg-black/90 px-4 py-3 text-sm font-semibold text-white/80 shadow-xl backdrop-blur-md">
+                                <i class="fa-solid fa-spinner fa-spin text-[#f7f280]"></i>
+                                Actualizando goleadores…
+                            </span>
+                        </p>
+                        <div id="estado-error-goleadores" role="alert"
+                            class="hidden rounded-2xl border border-red-400/40 bg-red-950/95 px-4 py-4 text-sm text-red-100 shadow-xl backdrop-blur-md">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <span class="font-semibold">
+                                    No pudimos actualizar el listado. Verificá tu conexión e intentá nuevamente.
+                                </span>
+                                <button type="button" id="reintentar-goleadores"
+                                    class="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500/30">
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                    Reintentar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="resultados-goleadores" aria-busy="false">
                         @include('partials.goleadores-resultados')
                     </div>
                 </section>
@@ -131,31 +156,39 @@
             const contenedor = document.getElementById('resultados-goleadores');
             const formBusqueda = document.getElementById('form-busqueda-goleadores');
             const triggerCategoria = document.getElementById('label-categoria');
+            const estadoCarga = document.getElementById('estado-carga-goleadores');
+            const estadoCargaAnuncio = document.getElementById('estado-carga-anuncio');
+            const estadoError = document.getElementById('estado-error-goleadores');
+            const botonReintentar = document.getElementById('reintentar-goleadores');
             let secuenciaCargas = 0;
+            let ultimoIntento = null;
 
-            // Pide los resultados por AJAX y reemplaza solo el contenedor. El
-            // estado vive en la URL: se parte de los filtros actuales y se aplican
-            // encima solo los que cambian. Cada cambio apila una entrada de
-            // historial, salvo que la navegación venga de popstate.
-            async function loadResults(params, opciones = {}) {
-                const miTurno = ++secuenciaCargas;
-
-                if (!contenedor) {
-                    return;
+            function establecerEstado(estado) {
+                if (contenedor) {
+                    contenedor.setAttribute('aria-busy', estado === 'cargando' ? 'true' : 'false');
                 }
 
-                const search = new URLSearchParams(window.location.search);
+                if (estadoCarga) {
+                    estadoCarga.classList.toggle('hidden', estado !== 'cargando');
+                }
 
-                Object.entries(params).forEach(function ([clave, valor]) {
-                    if (valor === undefined || valor === null || valor === '') {
-                        search.delete(clave);
-                    } else {
-                        search.set(clave, valor);
-                    }
-                });
+                if (estadoError) {
+                    estadoError.classList.toggle('hidden', estado !== 'error');
+                }
 
-                const qs = search.toString();
-                const destino = url + (qs ? '?' + qs : '');
+                // La región viva vive siempre en el árbol (sr-only, sin display:none) y el
+                // texto se inserta recién al iniciar cada carga: alternar display con texto
+                // estático no anuncia de forma confiable.
+                if (estadoCargaAnuncio) {
+                    estadoCargaAnuncio.textContent = estado === 'cargando' ? 'Actualizando goleadores…' : '';
+                }
+            }
+
+            async function fetchResultados(destino, desdeHistorial, focoPosterior) {
+                const miTurno = ++secuenciaCargas;
+
+                ultimoIntento = { destino, desdeHistorial };
+                establecerEstado('cargando');
 
                 try {
                     const response = await fetch(destino, {
@@ -165,28 +198,89 @@
                         },
                     });
 
+                    // Si una carga más nueva empezó mientras esta esperaba, esta respuesta
+                    // llegó tarde: se descarta entera para no pisar tabla, estados ni historial.
+                    if (miTurno !== secuenciaCargas) {
+                        return;
+                    }
+
                     if (!response.ok) {
+                        establecerEstado('error');
                         return;
                     }
 
                     const html = await response.text();
 
-                    // Si una carga más nueva empezó mientras esta esperaba, esta respuesta
-                    // llegó tarde: se descarta entera para no pisar tabla ni historial.
                     if (miTurno !== secuenciaCargas) {
                         return;
                     }
 
                     contenedor.innerHTML = html;
+                    establecerEstado('inactivo');
 
-                    if (opciones.desdeHistorial) {
+                    if (focoPosterior) {
+                        focoPosterior.focus();
+                    }
+
+                    if (desdeHistorial) {
                         history.replaceState(null, '', destino);
                     } else {
                         history.pushState(null, '', destino);
                     }
                 } catch (error) {
-                    // Ante un fallo de red se deja el contenido actual intacto.
+                    if (miTurno !== secuenciaCargas) {
+                        return;
+                    }
+
+                    establecerEstado('error');
                 }
+            }
+
+            // Pide los resultados por AJAX y reemplaza solo el contenedor. El
+            // estado vive en la URL: se parte de los filtros actuales y se aplican
+            // encima solo los que cambian. Cada cambio apila una entrada de
+            // historial, salvo que la navegación venga de popstate.
+            async function loadResults(params, opciones = {}) {
+                if (!contenedor) {
+                    return;
+                }
+
+                let destino = opciones.destinoHref || null;
+
+                if (!destino) {
+                    const search = new URLSearchParams(window.location.search);
+
+                    Object.entries(params ?? {}).forEach(function ([clave, valor]) {
+                        if (valor === undefined || valor === null || valor === '') {
+                            search.delete(clave);
+                        } else {
+                            search.set(clave, valor);
+                        }
+                    });
+
+                    const qs = search.toString();
+                    destino = url + (qs ? '?' + qs : '');
+                }
+
+                await fetchResultados(destino, opciones.desdeHistorial ?? false, opciones.focoPosterior ?? null);
+            }
+
+            // El reintento repite el destino exacto del intento fallido; la entrada de
+            // historial se apila una sola vez, cuando la carga finalmente tiene éxito.
+            if (botonReintentar) {
+                botonReintentar.addEventListener('click', function () {
+                    if (!ultimoIntento) {
+                        return;
+                    }
+
+                    // El foco pasa a un control externo estable antes de reintentar: ocultar
+                    // el error no debe dejar el foco caído en body.
+                    if (buscador) {
+                        buscador.focus();
+                    }
+
+                    fetchResultados(ultimoIntento.destino, ultimoIntento.desdeHistorial);
+                });
             }
 
             if (buscador && formBusqueda) {
@@ -220,7 +314,7 @@
             // parcial que se reemplaza, así que se interceptan desde el padre.
             if (contenedor) {
                 contenedor.addEventListener('click', function (event) {
-                    const link = event.target.closest('a.orden-goleadores, .pagination a, nav a');
+                    const link = event.target.closest('a.orden-goleadores, a.limpiar-busqueda-goleadores, .pagination a, nav a');
 
                     if (!link || !contenedor.contains(link)) {
                         return;
@@ -228,8 +322,18 @@
 
                     event.preventDefault();
 
-                    const params = Object.fromEntries(new URL(link.href).searchParams.entries());
-                    loadResults(params);
+                    const esLimpieza = link.classList.contains('limpiar-busqueda-goleadores');
+
+                    // El input vive fuera del parcial reemplazado: se sincroniza su valor
+                    // al destino antes del AJAX y se le devuelve el foco tras el reemplazo.
+                    if (esLimpieza && buscador) {
+                        buscador.value = '';
+                    }
+
+                    loadResults(null, {
+                        destinoHref: link.href,
+                        focoPosterior: esLimpieza ? buscador : null,
+                    });
                 });
             }
 
