@@ -10,14 +10,43 @@
         'search_value' => $searchValue ?? null,
     ]);
     $urlOrden = fn($k) => route('tabla-goleadores', array_merge($queryBase, ['sort' => $k, 'dir' => $toggle($k), 'page' => 1]));
+    $urlLimpiarBusqueda = route('tabla-goleadores', array_filter([
+        'idEdicion' => $idEdicion ?? null,
+        'idCategoria' => $idCategoria ?? null,
+        'sort' => $sort,
+        'dir' => $dir,
+        'page' => 1,
+    ]));
+
+    // El podio real solo existe en el ranking canónico (goles desc) de la
+    // primera página; cualquier otro orden o página lista filas compactas.
+    $esRankingCanonica = $sort === 'goles' && $dir === 'desc' && $goleadores_t->currentPage() === 1;
+    $itemsGoleadores = collect($goleadores_t->items());
+    $podio = $esRankingCanonica ? $itemsGoleadores->take(3) : collect();
+    $resto = $esRankingCanonica ? $itemsGoleadores->slice(3)->values() : $itemsGoleadores;
+    $cantidadPodio = $podio->count();
 @endphp
 
 <div class="mt-10 space-y-6">
     @if ($goleadores_t->isEmpty())
-        <div
-            class="rounded-3xl border border-[#f7f280]/25 bg-black/30 px-6 py-10 text-center text-lg font-semibold text-white/70">
-            No existen registros para la combinación seleccionada.
-        </div>
+        @if ($searchValue !== '')
+            <div data-estado-vacio="busqueda"
+                class="rounded-3xl border border-[#f7f280]/25 bg-black/30 px-6 py-10 text-center">
+                <p class="text-lg font-semibold text-white/70">
+                    No encontramos goleadores para «{{ $searchValue }}».
+                </p>
+                <a href="{{ $urlLimpiarBusqueda }}"
+                    class="limpiar-busqueda-goleadores mt-6 inline-flex items-center gap-2 rounded-2xl border border-[#f7f280]/40 bg-gradient-to-r from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/85 px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110">
+                    <i class="fa-solid fa-eraser"></i>
+                    Limpiar búsqueda
+                </a>
+            </div>
+        @else
+            <div data-estado-vacio="filtros"
+                class="rounded-3xl border border-[#f7f280]/25 bg-black/30 px-6 py-10 text-center text-lg font-semibold text-white/70">
+                No existen registros para la combinación seleccionada.
+            </div>
+        @endif
     @else
         <div class="hidden lg:block">
             <div
@@ -83,27 +112,57 @@
             </div>
         </div>
 
-        <div class="grid gap-5 lg:hidden">
-            @foreach ($goleadores_t as $index => $g)
+        <div class="grid gap-5 lg:hidden" data-seccion="ranking-movil">
+            @if ($podio->isNotEmpty())
+                <div class="grid gap-4 sm:grid-cols-2" data-zona="podio">
+                    @foreach ($podio as $index => $g)
+                        @php
+                            $posicion = $index + 1;
+                            $esPrimerPuesto = $posicion === 1;
+                        @endphp
+                        <article
+                            data-variante="podio" data-posicion="{{ $posicion }}"
+                            data-destacado="{{ $esPrimerPuesto ? 'principal' : 'secundario' }}"
+                            class="rounded-3xl border p-5 {{ $esPrimerPuesto ? 'sm:col-span-2 border-[#f7f280]/70 bg-gradient-to-br from-[#f7f280]/15 via-[#0e4b5e]/90 to-[#2a6d81]/90 shadow-[0_28px_70px_-40px_rgba(247,242,128,0.45)]' : 'border-white/20 bg-gradient-to-br from-[#0e4b5e]/85 to-[#2a6d81]/85' }}">
+                            <div
+                                class="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.35em] {{ $esPrimerPuesto ? 'text-[#f7f280]' : 'text-white/60' }}">
+                                <span class="inline-flex items-center gap-2">
+                                    <i class="fa-solid fa-medal"></i>
+                                    {{ $posicion }}° puesto
+                                </span>
+                                <span class="truncate">{{ $g->nombreCategoria }}</span>
+                            </div>
+                            <div class="mt-4 flex items-end justify-between gap-4">
+                                <div class="min-w-0 space-y-1">
+                                    <h3
+                                        class="{{ $esPrimerPuesto ? 'text-2xl' : 'text-lg' }} font-bold text-white">
+                                        {{ $g->nombreJugador }}
+                                    </h3>
+                                    <p class="text-sm text-white/70">{{ $g->nombreEquipo }}</p>
+                                </div>
+                                <div class="shrink-0 text-right">
+                                    <span class="block text-3xl font-bold text-[#f7f280]">{{ $g->cantidadGoles }}</span>
+                                    <span class="text-[10px] uppercase tracking-[0.3em] text-white/60">Goles</span>
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            @endif
+
+            @foreach ($resto as $index => $g)
+                @php $posicionCompacta = $posOffset + $cantidadPodio + $index + 1; @endphp
                 <article
-                    class="card-goleador-movil rounded-3xl border border-[#f7f280]/25 bg-gradient-to-br from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/90 p-5 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.85)]">
-                    <div
-                        class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
-                        <span>#{{ str_pad($posOffset + $index + 1, 2, '0', STR_PAD_LEFT) }}</span>
-                        <span>{{ $g->nombreCategoria }}</span>
+                    data-variante="compacta" data-posicion="{{ $posicionCompacta }}"
+                    class="card-goleador-movil flex items-center justify-between gap-4 rounded-2xl border border-[#f7f280]/20 bg-black/30 px-4 py-3">
+                    <div class="flex min-w-0 items-center gap-3">
+                        <span class="w-6 shrink-0 text-center text-sm font-bold text-white/60">{{ $posicionCompacta }}</span>
+                        <div class="min-w-0">
+                            <h3 class="truncate text-sm font-bold text-white">{{ $g->nombreJugador }}</h3>
+                            <p class="truncate text-xs text-white/60">{{ $g->nombreEquipo }} · {{ $g->nombreCategoria }}</p>
+                        </div>
                     </div>
-                    <div class="mt-4 space-y-2">
-                        <h3 class="text-lg font-bold text-white">{{ $g->nombreJugador }}</h3>
-                        <p class="text-sm text-white/70">{{ $g->nombreEquipo }}</p>
-                    </div>
-                    <div class="mt-6 flex items-center justify-between">
-                        <span
-                            class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
-                            <i class="fa-solid fa-medal text-[#f7f280]"></i>
-                            Goles
-                        </span>
-                        <span class="text-2xl font-bold text-[#f7f280]">{{ $g->cantidadGoles }}</span>
-                    </div>
+                    <span class="shrink-0 text-lg font-bold text-[#f7f280]">{{ $g->cantidadGoles }}</span>
                 </article>
             @endforeach
         </div>
