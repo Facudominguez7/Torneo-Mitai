@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Campeon;
 use App\Models\Categoria;
 use App\Models\Edicion;
-use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\Fase;
 use App\Models\Fecha;
@@ -17,6 +16,7 @@ use App\Models\Subcampeon;
 use App\Models\TablaGoleador;
 use App\Models\TablaPosicion;
 use App\Models\VallaMenosVencida;
+use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use App\Services\FixtureExploradorService;
 use Illuminate\Http\Request;
@@ -25,6 +25,10 @@ use Illuminate\Support\Facades\DB;
 
 class ControladorHome extends Controller
 {
+    public function __construct(
+        private readonly EquiposDeEdicionService $equiposDeEdicion,
+    ) {}
+
     public function index(Request $request)
     {
         // Recuperar todas las ediciones de la base de datos
@@ -46,19 +50,10 @@ class ControladorHome extends Controller
 
         // Enmienda de categoría (#100): cada opción del selector lleva su
         // categoría para desambiguar equipos homónimos de la misma edición.
+        // El padrón incluye también los equipos heredados vía equipo_ediciones.
         $equiposDeLaEdicion = collect();
         if ($edicionActual) {
-            $equiposDeLaEdicion = Equipo::query()
-                ->where('idEdicion', $edicionActual->id)
-                ->orderBy('nombre')
-                ->with('categoria:id,nombreCategoria')
-                ->get(['id', 'nombre', 'idCategoria'])
-                ->map(fn (Equipo $equipo): array => [
-                    'id' => $equipo->id,
-                    'nombre' => $equipo->nombre,
-                    'idCategoria' => $equipo->idCategoria,
-                    'nombreCategoria' => $equipo->categoria?->nombreCategoria,
-                ]);
+            $equiposDeLaEdicion = $this->equiposDeEdicion->participantes((int) $edicionActual->id);
         }
 
 

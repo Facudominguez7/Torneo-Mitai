@@ -9,46 +9,75 @@ use Illuminate\Support\Collection;
 
 class EquipoSeguidoService
 {
+    public function __construct(
+        private readonly EquiposDeEdicionService $equiposDeEdicion,
+    ) {}
+
     /**
      * Resuelve el equipo por nombre dentro de una edición y arma el payload
      * del endpoint público: próximo partido, último resultado y accesos a
      * fixture y tabla de posiciones. Nunca falla por falta de partidos.
      *
+     * La resolución usa el padrón de participantes de la edición (unión de
+     * equipo_ediciones y equipos.idEdicion), así un equipo heredado de otra
+     * edición también resuelve. La edición pedida gobierna partidos, links y
+     * la categoría devuelta: los atributos del modelo pueden apuntar a la
+     * edición de origen del equipo.
+     *
      * Enmienda #100: si llega idCategoria, la resolución se restringe a esa
-     * categoría; sin ella se conserva el primer match por id (retrocompatible).
+     * categoría de la edición; sin ella se conserva el primer match por id
+     * (retrocompatible).
      */
     public function resolver(string $nombre, int $idEdicion, ?int $idCategoria = null): array
     {
-        $equipo = $this->resolverEquipo($nombre, $idEdicion, $idCategoria);
+        $participante = $this->resolverParticipante($nombre, $idEdicion, $idCategoria);
 
-        if ($equipo === null) {
+        if ($participante === null) {
             return ['disponible' => false];
         }
 
-        $proximo = $this->resolverPartido($equipo, jugado: false);
-        $ultimo = $this->resolverPartido($equipo, jugado: true);
+        [$equipo, $idCategoriaEdicion] = $participante;
+
+        $proximo = $this->resolverPartido($equipo, $idEdicion, jugado: false);
+        $ultimo = $this->resolverPartido($equipo, $idEdicion, jugado: true);
         $rivales = $this->resolverRivales($equipo, $proximo, $ultimo);
 
         return [
             'disponible' => true,
             'equipo' => [
                 'nombre' => $equipo->nombre,
-                'idCategoria' => $equipo->idCategoria,
+                'idCategoria' => $idCategoriaEdicion,
             ],
             'proximo' => $proximo !== null ? $this->armarProximo($proximo, $equipo, $rivales) : null,
             'ultimo' => $ultimo !== null ? $this->armarUltimo($ultimo, $equipo, $rivales) : null,
-            'links' => $this->armarLinks($equipo, $proximo, $ultimo),
+            'links' => $this->armarLinks($equipo, $idEdicion, $idCategoriaEdicion, $proximo, $ultimo),
         ];
     }
 
-    private function resolverEquipo(string $nombre, int $idEdicion, ?int $idCategoria): ?Equipo
+    /**
+     * Devuelve el equipo resuelto y su categoría de la edición pedida.
+     *
+     * @return array{0: Equipo, 1: int|null}|null
+     */
+    private function resolverParticipante(string $nombre, int $idEdicion, ?int $idCategoria): ?array
     {
-        return Equipo::query()
-            ->where('idEdicion', $idEdicion)
+        $inscripto = $this->equiposDeEdicion
+            ->participantes($idEdicion)
             ->where('nombre', self::normalizarNombre($nombre))
-            ->when($idCategoria !== null, fn ($query) => $query->where('idCategoria', $idCategoria))
-            ->orderBy('id')
+            ->when(
+                $idCategoria !== null,
+                fn (Collection $inscriptos) => $inscriptos->where('idCategoria', $idCategoria)
+            )
+            ->sortBy('id')
             ->first();
+
+        if ($inscripto === null) {
+            return null;
+        }
+
+        $equipo = Equipo::find($inscripto['id']);
+
+        return $equipo === null ? null : [$equipo, $inscripto['idCategoria']];
     }
 
     /**
@@ -85,10 +114,10 @@ class EquipoSeguidoService
         return $titulo;
     }
 
-    private function resolverPartido(Equipo $equipo, bool $jugado): ?Partido
+    private function resolverPartido(Equipo $equipo, int $idEdicion, bool $jugado): ?Partido
     {
         return Partido::query()
-            ->where('idEdicion', $equipo->idEdicion)
+            ->where('idEdicion', $idEdicion)
             ->where(fn ($query) => $query
                 ->where('idEquipoLocal', $equipo->id)
                 ->orWhere('idEquipoVisitante', $equipo->id))
@@ -148,7 +177,7 @@ class EquipoSeguidoService
         ];
     }
 
-    private function armarLinks(Equipo $equipo, ?Partido $proximo, ?Partido $ultimo): array
+    private function armarLinks(Equipo $equipo, int $idEdicion, ?int $idCategoria, ?Partido $proximo, ?Partido $ultimo): array
     {
         $idGrupo = $proximo?->idGrupo ?? $ultimo?->idGrupo;
 
@@ -157,10 +186,10 @@ class EquipoSeguidoService
         }
 
         return [
-            'fixture' => route('fixture', ['idEdicion' => $equipo->idEdicion, 'equipo' => $equipo->nombre]),
+            'fixture' => route('fixture', ['idEdicion' => $idEdicion, 'equipo' => $equipo->nombre]),
             'tabla' => route('tabla-posiciones', array_filter([
-                'idEdicion' => $equipo->idEdicion,
-                'idCategoria' => $equipo->idCategoria,
+                'idEdicion' => $idEdicion,
+                'idCategoria' => $idCategoria,
                 'idGrupo' => $idGrupo,
             ])),
         ];
