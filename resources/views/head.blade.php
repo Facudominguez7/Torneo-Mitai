@@ -10,8 +10,10 @@
     <link rel="preconnect" href="https://kit.fontawesome.com" crossorigin>
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
 
-    {{-- Preload de imagen LCP (la más grande visible al cargar) --}}
-    <link rel="preload" as="image" href="{{ asset('fotos/fondo_en_cancha.webp') }}" fetchpriority="high">
+    {{-- Preload de imagen LCP solo en home y fixture (la más grande visible al cargar) --}}
+    @if (request()->routeIs('home', 'fixture'))
+        <link rel="preload" as="image" href="{{ asset('fotos/fondo_en_cancha.webp') }}" fetchpriority="high">
+    @endif
 
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1a365d">
@@ -35,19 +37,22 @@
         $esRutaPanel = request()->is('Panel*');
         $assetsVite = [
             'resources/css/app.css',
-            'resources/js/welcome.js',
             'resources/js/app.js',
         ];
 
         if ($esRutaPanel) {
             $assetsVite[] = 'resources/js/admin/admin.js';
+        } else {
+            $assetsVite[] = 'resources/js/welcome.js';
         }
     @endphp
 
     @vite($assetsVite)
 
-    {{-- SweetAlert2 para diálogos y notificaciones --}}
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    @if ($esRutaPanel)
+        {{-- SweetAlert2 para diálogos y notificaciones --}}
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    @endif
 
     {{-- FontAwesome con carga diferida para no bloquear renderizado --}}
     <script src="https://kit.fontawesome.com/05291cba44.js" crossorigin="anonymous" defer></script>
@@ -71,12 +76,14 @@
         });
     </script>
 
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => { });
-            });
-        }
-    </script>
+    @if (! $esRutaPanel)
+        <!-- Service Worker Registration -->
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => { });
+                });
+            }
+        </script>
+    @endif
 </head>
