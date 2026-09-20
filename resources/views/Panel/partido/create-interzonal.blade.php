@@ -7,13 +7,8 @@
             'idEdicion' => $EdicionSeleccionada->id ?? request('idEdicion'),
             'idCategoria' => $idCategoria ?? request('idCategoria'),
         ];
-        $fechaPorDefecto = old('idFechas', optional($fechas->last())->id);
-        $horarioPorDefecto = old(
-            'horario_datetime',
-            $partido->horario_datetime
-                ? \Carbon\Carbon::parse($partido->horario_datetime)->format('Y-m-d\TH:i')
-                : \Carbon\Carbon::now()->next(\Carbon\Carbon::SUNDAY)->startOfDay()->format('Y-m-d\TH:i')
-        );
+        $fechaPorDefecto = old('idFechas', $fechaPorDefecto);
+        $horarioPorDefecto = old('horario_datetime', $horarioPorDefecto);
     @endphp
 
     <div class="mb-4 px-4 md:px-0">

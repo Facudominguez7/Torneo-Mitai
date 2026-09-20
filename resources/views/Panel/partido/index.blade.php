@@ -7,43 +7,41 @@
                 'idEdicion' => $EdicionSeleccionada->id,
                 'horario' => request('horario'),
             ]);
+
+            // Acción primaria única: con categoría y grupo crea directo conservando
+            // los filtros activos; sin contexto completo deriva al selector.
+            $urlNuevoPartido = isset($idCategoria, $idGrupo) && $idCategoria && $idGrupo
+                ? route('partido.create', array_filter([
+                    'idEdicion' => $EdicionSeleccionada->id,
+                    'idCategoria' => $idCategoria,
+                    'idGrupo' => $idGrupo,
+                    'idFecha' => request('idFecha'),
+                    'horario' => request('horario'),
+                    'busqueda' => request('busqueda'),
+                ], static fn ($valor) => $valor !== null && $valor !== ''))
+                : route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'partido', 'forzarSeleccion' => 1]);
         @endphp
-        <div class="mb-2 grid grid-cols-1 gap-2 px-2 sm:grid-cols-2 xl:grid-cols-4">
-            <div>
-                <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'partido', 'forzarSeleccion' => 1]) }}">
-                    <button
-                        class="mt-2 mb-2 w-full rounded-lg bg-gray-800 px-4 py-2 text-sm text-white transition-all duration-300 hover:bg-gray-900 sm:text-base md:py-3 md:px-6">
-                        Agregar Partido
-                    </button>
-                </a>
-            </div>
-            @if (isset($idCategoria, $idGrupo) && $idCategoria && $idGrupo)
-                <div>
-                    <a href="{{ route('partido.create', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria, 'idGrupo' => $idGrupo, 'idFecha' => request('idFecha')]) }}">
-                        <button
-                            class="mt-2 mb-2 w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white transition-all duration-300 hover:bg-emerald-700 sm:text-base md:py-3 md:px-6">
-                            Agregar en este contexto
-                        </button>
+        <div class="mb-2 flex flex-col gap-2 px-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <a href="{{ $urlNuevoPartido }}"
+                class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold bg-emerald-600 text-white shadow-md transition hover:bg-emerald-500 sm:w-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Nuevo partido
+            </a>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                @if (isset($idCategoria) && $idCategoria)
+                    <a href="{{ route('partido.create-interzonal', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria]) }}"
+                        class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold border border-amber-300 bg-amber-100 text-amber-900 transition hover:bg-amber-200 sm:w-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Partido Interzonal
                     </a>
-                </div>
-            @endif
-            @if (isset($idCategoria) && $idCategoria)
-                <div>
-                    <a href="{{ route('partido.create-interzonal', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria]) }}">
-                        <button
-                            class="mt-2 mb-2 flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm text-white transition-all duration-300 hover:bg-amber-600 sm:text-base md:py-3 md:px-6">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            Partido Interzonal
-                        </button>
-                    </a>
-                </div>
-            @endif
-            <div>
-                <button onclick="imprimirEnIframe('{{ $urlImprimirArbitros }}')"
-                    class="mt-2 mb-2 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition-all duration-300 hover:bg-blue-700 sm:text-base md:py-3 md:px-6">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                @endif
+                <button type="button" onclick="imprimirEnIframe('{{ $urlImprimirArbitros }}')"
+                    class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold border border-gray-300 bg-white text-gray-600 transition hover:bg-gray-100 sm:w-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                     </svg>
                     Imprimir Planilla Árbitros
@@ -128,7 +126,7 @@
             </div>
             {{-- Buscador por nombre de equipo --}}
             <div class="relative mt-2 inline-block w-full items-center md:ml-2 md:mt-0 md:w-auto">
-                <input type="text" id="buscar-equipo" placeholder="Buscar equipo..."
+                <input type="text" id="buscar-equipo" name="busqueda" value="{{ request('busqueda') }}" placeholder="Buscar equipo..."
                     class="w-full md:w-64 rounded-full border border-gray-300 bg-white py-2 px-4 pl-10 text-sm text-gray-700 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-gray-400">
                 <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -192,6 +190,9 @@
             </div>
         @endif
 
+        <p id="contador-partidos" class="mt-4 text-center text-sm text-gray-500">
+            Mostrando {{ $partidos->count() }} {{ $partidos->count() === 1 ? 'partido' : 'partidos' }}
+        </p>
     </div>
     <div class="mt-2 rounded-lg bg-white p-3 sm:p-4 md:p-6">
         @foreach ($partidos as $p)
@@ -398,50 +399,71 @@
                     idEdicion,
                     idFecha: '',
                     idGrupo: '',
-                    horario: ''
+                    horario: '',
+                    busqueda: ''
                 });
             });
 
             // Inicializar el estado de visibilidad de los filtros
             toggleFiltersVisibility();
 
-            // Buscador de equipos en tiempo real
             const buscadorInput = document.getElementById('buscar-equipo');
             const btnLimpiar = document.getElementById('limpiar-busqueda');
-            
+            const contadorPartidos = document.getElementById('contador-partidos');
+
+            // Sincroniza el término de búsqueda en la URL sin recargar la página,
+            // conservando el resto de los filtros activos.
+            function actualizarBusquedaEnUrl(termino) {
+                var params = new URLSearchParams(window.location.search);
+                var valor = termino.trim();
+
+                if (valor === '') {
+                    params.delete('busqueda');
+                } else {
+                    params.set('busqueda', valor);
+                }
+
+                var queryString = params.toString();
+                window.history.replaceState({}, '', window.location.pathname + (queryString ? '?' + queryString : ''));
+            }
+
+            function filtrarPorEquipo(termino) {
+                const busqueda = termino.toLowerCase().trim();
+                let partidosVisibles = 0;
+
+                document.querySelectorAll('.partido-card').forEach(card => {
+                    const local = card.dataset.local || '';
+                    const visitante = card.dataset.visitante || '';
+                    const coincide = busqueda === '' || local.includes(busqueda) || visitante.includes(busqueda);
+                    card.classList.toggle('hidden', !coincide);
+                    if (coincide) partidosVisibles++;
+                });
+
+                if (contadorPartidos) {
+                    contadorPartidos.textContent = 'Mostrando ' + partidosVisibles + (partidosVisibles === 1 ? ' partido' : ' partidos');
+                }
+
+                if (btnLimpiar) {
+                    btnLimpiar.classList.toggle('hidden', busqueda === '');
+                }
+            }
+
             if (buscadorInput) {
                 buscadorInput.addEventListener('input', function() {
-                    const termino = this.value.toLowerCase().trim();
-                    const cards = document.querySelectorAll('.partido-card');
-                    
-                    // Mostrar/ocultar botón limpiar
-                    if (btnLimpiar) {
-                        btnLimpiar.classList.toggle('hidden', termino === '');
-                    }
-                    
-                    if (termino === '') {
-                        // Mostrar todo si no hay búsqueda
-                        cards.forEach(card => card.classList.remove('hidden'));
-                        return;
-                    }
-                    
-                    // Filtrar tarjetas por nombre de equipo
-                    cards.forEach(card => {
-                        const local = card.dataset.local || '';
-                        const visitante = card.dataset.visitante || '';
-                        const coincide = local.includes(termino) || visitante.includes(termino);
-                        card.classList.toggle('hidden', !coincide);
-                    });
+                    filtrarPorEquipo(this.value);
+                    actualizarBusquedaEnUrl(this.value);
                 });
-                
-                // Botón para limpiar búsqueda
+
                 if (btnLimpiar) {
                     btnLimpiar.addEventListener('click', function() {
                         buscadorInput.value = '';
-                        buscadorInput.dispatchEvent(new Event('input'));
+                        filtrarPorEquipo('');
+                        actualizarBusquedaEnUrl('');
                         buscadorInput.focus();
                     });
                 }
+
+                filtrarPorEquipo(buscadorInput.value);
             }
         });
     </script>

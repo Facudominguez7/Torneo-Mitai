@@ -15,6 +15,7 @@ use App\Models\Partido;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -224,13 +225,15 @@ class ControladorPartidos extends Controller
         }
         $grupo = Grupo::where('id', $idGrupo)->select('id', 'nombre')->get();
         $partido = new Partido;
+        $fechaPorDefecto = $this->resolverFechaPorDefecto($fechas, $request->input('idFecha'));
+        $horarioPorDefecto = $this->resolverHorarioPorDefecto($request->input('horario'));
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $idEdicion,
             'idCategoria' => $idCategoria,
             'idGrupo' => $idGrupo,
         ]);
 
-        return view('Panel.partido.create', compact('ediciones', 'partido', 'EdicionSeleccionada', 'GrupoSeleccionado', 'fechas', 'equipos', 'grupo', 'idGrupo', 'idCategoria', 'CategoriaSeleccionada', 'parametrosRegreso'));
+        return view('Panel.partido.create', compact('ediciones', 'partido', 'EdicionSeleccionada', 'GrupoSeleccionado', 'fechas', 'equipos', 'grupo', 'idGrupo', 'idCategoria', 'CategoriaSeleccionada', 'fechaPorDefecto', 'horarioPorDefecto', 'parametrosRegreso'));
     }
 
     /**
@@ -289,6 +292,8 @@ class ControladorPartidos extends Controller
         }
 
         $partido = new Partido;
+        $fechaPorDefecto = $this->resolverFechaPorDefecto($fechas, $request->input('idFecha'));
+        $horarioPorDefecto = $this->resolverHorarioPorDefecto($request->input('horario'));
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $idEdicion,
             'idCategoria' => $idCategoria,
@@ -303,6 +308,8 @@ class ControladorPartidos extends Controller
             'equipos',
             'grupos',
             'idCategoria',
+            'fechaPorDefecto',
+            'horarioPorDefecto',
             'parametrosRegreso'
         ));
     }
@@ -527,6 +534,50 @@ class ControladorPartidos extends Controller
         }
 
         return route('partido.index', $parametrosRegreso);
+    }
+
+    /**
+     * Resuelve la fecha preseleccionada en las altas a partir del filtro de
+     * fecha del listado; si el filtro no pertenece a la edición se usa la
+     * última fecha cargada.
+     *
+     * @param  Collection<int, Fecha>  $fechas
+     */
+    private function resolverFechaPorDefecto(Collection $fechas, mixed $idFechaSolicitada): ?int
+    {
+        return $fechas->firstWhere('id', $idFechaSolicitada)?->id ?? $fechas->last()?->id;
+    }
+
+    /**
+     * Resuelve el horario por defecto de las altas a partir del filtro de
+     * horario del listado, situado sobre el próximo domingo. Los formatos
+     * inválidos o fuera de rango caen a las 00:00 de ese domingo.
+     */
+    private function resolverHorarioPorDefecto(mixed $horario): string
+    {
+        $proximoDomingo = static fn (): string => Carbon::now()
+            ->next(Carbon::SUNDAY)
+            ->startOfDay()
+            ->format('Y-m-d\TH:i');
+
+        if (! is_string($horario)
+            || preg_match('/^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?$/', trim($horario), $partes) !== 1) {
+            return $proximoDomingo();
+        }
+
+        $horas = (int) $partes[1];
+        $minutos = (int) ($partes[2] ?? 0);
+        $segundos = (int) ($partes[3] ?? 0);
+
+        if ($horas > 23 || $minutos > 59 || $segundos > 59) {
+            return $proximoDomingo();
+        }
+
+        return Carbon::now()
+            ->next(Carbon::SUNDAY)
+            ->startOfDay()
+            ->setTime($horas, $minutos, $segundos)
+            ->format('Y-m-d\TH:i');
     }
 
     /**

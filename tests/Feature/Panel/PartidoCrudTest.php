@@ -38,6 +38,47 @@ function cabecerasCsrf(): array
     return ['X-CSRF-TOKEN' => tokenDePrueba()];
 }
 
+/**
+ * Extrae todos los href del HTML renderizado para inspeccionar enlaces por
+ * destino semantico en lugar de contar clases CSS fragiles.
+ *
+ * @return list<string>
+ */
+function hrefsDelContenido(string $contenido): array
+{
+    preg_match_all('/href="([^"]+)"/', $contenido, $coincidencias);
+
+    return array_map(
+        fn (string $href): string => html_entity_decode($href, ENT_QUOTES | ENT_HTML5),
+        $coincidencias[1],
+    );
+}
+
+/**
+ * Devuelve el primer href cuyo camino contiene el fragmento indicado, o null.
+ */
+function hrefQueContenga(string $contenido, string $fragmento): ?string
+{
+    return collect(hrefsDelContenido($contenido))->first(
+        fn (string $href): bool => str_contains($href, $fragmento),
+    );
+}
+
+/**
+ * Devuelve el bloque HTML completo (apertura a cierre) del primer enlace o
+ * boton que contiene el texto indicado, o null si no existe.
+ */
+function bloqueDeAccion(string $contenido, string $texto): ?string
+{
+    preg_match_all('/<(a|button)\b[^>]*>.*?<\/\1>/s', $contenido, $bloques);
+
+    $bloqueEncontrado = collect($bloques[0] ?? [])->first(
+        fn (string $bloque): bool => str_contains($bloque, $texto),
+    );
+
+    return is_string($bloqueEncontrado) ? $bloqueEncontrado : null;
+}
+
 function crearContextoPartidos(): array
 {
     $edicion = Edicion::create(['nombre' => 'Edicion Partidos']);
@@ -643,4 +684,328 @@ it('la vista edit deshabilita los equipos solo cuando el partido tiene actividad
 
     $respuestaNuevo->assertOk();
     $respuestaNuevo->assertDontSee('Los equipos no pueden modificarse', false);
+});
+
+it('muestra una unica accion primaria para crear partidos que preserva los filtros activos', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+
+    $respuesta = $this->actingAs($admin)->get(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'idFecha' => $contexto['fecha']->id,
+        'horario' => '10:00',
+        'busqueda' => 'Rio',
+    ]));
+
+    $respuesta->assertOk();
+    $contenido = $respuesta->getContent();
+
+    expect(substr_count($contenido, 'Nuevo partido'))->toBe(1);
+
+    $hrefCreacion = hrefQueContenga($contenido, '/partido/create');
+
+    expect($hrefCreacion)->not->toBeNull();
+
+    parse_str(parse_url((string) $hrefCreacion, PHP_URL_QUERY) ?? '', $queryCreacion);
+
+    expect($queryCreacion)->toMatchArray([
+        'idEdicion' => (string) $contexto['edicion']->id,
+        'idCategoria' => (string) $contexto['categoria']->id,
+        'idGrupo' => (string) $contexto['grupo']->id,
+        'idFecha' => (string) $contexto['fecha']->id,
+        'horario' => '10:00',
+        'busqueda' => 'Rio',
+    ]);
+});
+
+it('recurre a la seleccion de categoria para la accion primaria sin contexto de categoria y grupo', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+
+    $respuesta = $this->actingAs($admin)->get(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+    ]));
+
+    $respuesta->assertOk();
+    $contenido = $respuesta->getContent();
+
+    expect(substr_count($contenido, 'Nuevo partido'))->toBe(1);
+    expect(hrefQueContenga($contenido, '/partido/create'))->toBeNull();
+
+    $urlSeleccion = route('seleccionar-categoria', [
+        'idEdicion' => $contexto['edicion']->id,
+        'tipo' => 'partido',
+        'forzarSeleccion' => 1,
+    ]);
+
+    expect(hrefsDelContenido($contenido))->toContain($urlSeleccion);
+});
+
+it('mantiene la creacion interzonal como accion secundaria disponible solo con contexto de categoria', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+
+    $respuestaConCategoria = $this->actingAs($admin)->get(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+    ]));
+
+    $respuestaConCategoria->assertOk();
+    $contenidoConCategoria = $respuestaConCategoria->getContent();
+
+    expect(substr_count($contenidoConCategoria, 'Nuevo partido'))->toBe(1);
+
+    $hrefsInterzonal = collect(hrefsDelContenido($contenidoConCategoria))
+        ->filter(fn (string $href): bool => str_contains($href, '/partido-interzonal/create'))
+        ->values();
+
+    expect($hrefsInterzonal)->toHaveCount(1);
+
+    parse_str(parse_url((string) $hrefsInterzonal[0], PHP_URL_QUERY) ?? '', $queryInterzonal);
+
+    expect($queryInterzonal)->toMatchArray([
+        'idEdicion' => (string) $contexto['edicion']->id,
+        'idCategoria' => (string) $contexto['categoria']->id,
+    ]);
+
+    $respuestaSinCategoria = $this->actingAs($admin)->get(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+    ]));
+
+    $respuestaSinCategoria->assertOk();
+
+    $hrefsSinCategoria = collect(hrefsDelContenido($respuestaSinCategoria->getContent()))
+        ->filter(fn (string $href): bool => str_contains($href, '/partido-interzonal/create'));
+
+    expect($hrefsSinCategoria)->toBeEmpty();
+});
+
+it('la barra de acciones muestra un unico signo mas y controles compactos equivalentes', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+
+    $respuesta = $this->actingAs($admin)->get(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+    ]));
+
+    $respuesta->assertOk();
+    $contenido = $respuesta->getContent();
+
+    // El icono SVG ya comunica el alta: el texto visible no debe repetir el signo +.
+    expect($contenido)->not->toContain('+ Nuevo partido');
+    expect(substr_count($contenido, 'Nuevo partido'))->toBe(1);
+
+    // Los tres controles comparten una unica firma compacta (altura, escala,
+    // padding y radio); la identidad visual de cada accion queda fuera del contrato.
+    $firmaCompactaCompartida = 'inline-flex h-9 w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold';
+    expect(substr_count($contenido, $firmaCompactaCompartida))->toBe(3);
+
+    foreach (['Nuevo partido', 'Partido Interzonal', 'Imprimir Planilla Árbitros'] as $accion) {
+        $bloque = bloqueDeAccion($contenido, $accion);
+
+        expect($bloque)->not->toBeNull();
+        expect($bloque)->toContain('aria-hidden="true"');
+    }
+
+    // Interzonal: secundario pero legible sobre el panel oscuro (superficie ambar clara).
+    $bloqueInterzonal = bloqueDeAccion($contenido, 'Partido Interzonal');
+
+    expect($bloqueInterzonal)->toContain('bg-amber-100');
+    expect($bloqueInterzonal)->toContain('text-amber-900');
+    expect($bloqueInterzonal)->not->toContain('bg-emerald-600');
+});
+
+it('muestra la cantidad de partidos que devuelve el filtro aplicado', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+    $local = crearEquipoPartido($contexto, 'Rio Grande');
+    $visitante = crearEquipoPartido($contexto, 'Yerba Buena');
+    crearPartidoRegular($contexto, $local, $visitante, ['horario_datetime' => '2026-04-05 10:00:00']);
+    crearPartidoRegular($contexto, $visitante, $local, ['horario_datetime' => '2026-04-05 11:00:00']);
+
+    $respuestaFiltrada = $this->actingAs($admin)->get(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'horario' => '10:00',
+    ]));
+
+    $respuestaFiltrada->assertOk();
+    $contenidoFiltrado = $respuestaFiltrada->getContent();
+
+    expect(preg_match('/id="contador-partidos"[^>]*>\s*Mostrando 1 partido\s*</', $contenidoFiltrado))->toBe(1);
+    expect(preg_match('/id="contador-partidos"[^>]*>\s*Mostrando 2 partidos\s*</', $contenidoFiltrado))->toBe(0);
+
+    $respuestaCompleta = $this->actingAs($admin)->get(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+    ]));
+
+    $respuestaCompleta->assertOk();
+    expect(preg_match('/id="contador-partidos"[^>]*>\s*Mostrando 2 partidos\s*</', $respuestaCompleta->getContent()))->toBe(1);
+});
+
+it('repopula el buscador del listado con la busqueda activa', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+    $local = crearEquipoPartido($contexto, 'Rio Grande');
+    $visitante = crearEquipoPartido($contexto, 'Yerba Buena');
+    crearPartidoRegular($contexto, $local, $visitante);
+
+    $respuesta = $this->actingAs($admin)->get(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'busqueda' => 'Rio Grande',
+    ]));
+
+    $respuesta->assertOk();
+    $contenido = $respuesta->getContent();
+
+    expect(preg_match('/id="buscar-equipo"[^>]*value="Rio Grande"/', $contenido))->toBe(1);
+    expect(preg_match('/id="contador-partidos"[^>]*>\s*Mostrando 1 partido\s*</', $contenido))->toBe(1);
+});
+
+it('declara la sincronizacion de busqueda en la url sin recargar el listado', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+    $local = crearEquipoPartido($contexto, 'Rio Grande');
+    $visitante = crearEquipoPartido($contexto, 'Yerba Buena');
+    crearPartidoRegular($contexto, $local, $visitante);
+
+    $respuesta = $this->actingAs($admin)->get(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'busqueda' => 'Rio',
+    ]));
+
+    $respuesta->assertOk();
+    $contenido = $respuesta->getContent();
+
+    // Contrato estatico del script servido: la busqueda se actualiza con
+    // replaceState sin navegacion y eliminar filtros la limpia de la URL.
+    // El comportamiento DOM en vivo se verifica con Playwright (T3).
+    expect($contenido)->toContain('history.replaceState');
+    expect($contenido)->toContain("busqueda: ''");
+});
+
+it('prefija la fecha y el horario del contexto al crear un partido regular', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+    $fecha2 = Fecha::create(['idEdicion' => $contexto['edicion']->id, 'idCategoria' => $contexto['categoria']->id, 'nombre' => 'Fecha 2']);
+
+    $respuesta = $this->actingAs($admin)->get(route('partido.create', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'idFecha' => $contexto['fecha']->id,
+        'horario' => '16:30',
+    ]));
+
+    $respuesta->assertOk();
+    $contenido = $respuesta->getContent();
+
+    expect(preg_match('/<option value="'.$contexto['fecha']->id.'"[^>]*selected/', $contenido))->toBe(1);
+    expect(preg_match('/<option value="'.$fecha2->id.'"[^>]*selected/', $contenido))->toBe(0);
+
+    expect(preg_match('/name="horario_datetime"[^>]*value="([^"]+)"/', $contenido, $coincidencias))->toBe(1);
+    expect($coincidencias[1] ?? '')->toMatch('/T16:30(:00)?$/');
+});
+
+it('prefija la fecha y el horario del contexto al crear un partido interzonal', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoInterzonal();
+    $fecha2 = Fecha::create(['idEdicion' => $contexto['edicion']->id, 'idCategoria' => $contexto['categoria']->id, 'nombre' => 'Fecha 2']);
+
+    $respuesta = $this->actingAs($admin)->get(route('partido.create-interzonal', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idFecha' => $contexto['fecha']->id,
+        'horario' => '16:30',
+    ]));
+
+    $respuesta->assertOk();
+    $contenido = $respuesta->getContent();
+
+    expect(preg_match('/<option value="'.$contexto['fecha']->id.'"[^>]*selected/', $contenido))->toBe(1);
+    expect(preg_match('/<option value="'.$fecha2->id.'"[^>]*selected/', $contenido))->toBe(0);
+
+    expect(preg_match('/name="horario_datetime"[^>]*value="([^"]+)"/', $contenido, $coincidencias))->toBe(1);
+    expect($coincidencias[1] ?? '')->toMatch('/T16:30(:00)?$/');
+});
+
+it('usa el proximo domingo como respaldo cuando el horario del contexto es invalido', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+
+    $respuesta = $this->actingAs($admin)->get(route('partido.create', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'idFecha' => $contexto['fecha']->id,
+        'horario' => '25:99',
+    ]));
+
+    $respuesta->assertOk();
+
+    expect(preg_match('/name="horario_datetime"[^>]*value="([^"]+)"/', $respuesta->getContent(), $coincidencias))->toBe(1);
+    expect($coincidencias[1] ?? '')->toMatch('/T00:00$/');
+});
+
+it('usa el proximo domingo como respaldo en el interzonal cuando el horario del contexto es invalido', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoInterzonal();
+
+    $respuesta = $this->actingAs($admin)->get(route('partido.create-interzonal', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idFecha' => $contexto['fecha']->id,
+        'horario' => 'sin-horario',
+    ]));
+
+    $respuesta->assertOk();
+
+    expect(preg_match('/name="horario_datetime"[^>]*value="([^"]+)"/', $respuesta->getContent(), $coincidencias))->toBe(1);
+    expect($coincidencias[1] ?? '')->toMatch('/T00:00$/');
+});
+
+it('conserva los parametros de retorno al crear un partido regular', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+
+    $respuesta = $this->actingAs($admin)->get(route('partido.create', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'idFecha' => $contexto['fecha']->id,
+        'horario' => '16:30',
+        'busqueda' => 'Rio',
+    ]));
+
+    $respuesta->assertOk();
+    $contenido = $respuesta->getContent();
+
+    expect($contenido)->toContain('name="retorno_idCategoria" value="'.$contexto['categoria']->id.'"');
+    expect($contenido)->toContain('name="retorno_idGrupo" value="'.$contexto['grupo']->id.'"');
+    expect($contenido)->toContain('name="retorno_idFecha" value="'.$contexto['fecha']->id.'"');
+    expect($contenido)->toContain('name="retorno_horario" value="16:30"');
+    expect($contenido)->toContain('name="retorno_busqueda" value="Rio"');
+
+    $urlRegreso = route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'idFecha' => $contexto['fecha']->id,
+        'horario' => '16:30',
+        'busqueda' => 'Rio',
+    ]);
+
+    expect(hrefsDelContenido($contenido))->toContain($urlRegreso);
 });

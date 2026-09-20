@@ -1,11 +1,12 @@
 @csrf
 @php
-    $fechaPorDefecto = old('idFechas', $partido->idFechas ?? optional($fechas->last())->id);
+    $fechaPorDefecto = old('idFechas', $partido->idFechas ?? ($fechaPorDefecto ?? optional($fechas->last())->id));
+
     $horarioPorDefecto = old(
         'horario_datetime',
         $partido->horario_datetime
             ? \Carbon\Carbon::parse($partido->horario_datetime)->format('Y-m-d\TH:i')
-            : \Carbon\Carbon::now()->next(\Carbon\Carbon::SUNDAY)->startOfDay()->format('Y-m-d\TH:i')
+            : ($horarioPorDefecto ?? \Carbon\Carbon::now()->next(\Carbon\Carbon::SUNDAY)->startOfDay()->format('Y-m-d\TH:i'))
     );
 @endphp
 <div class="mb-6">
