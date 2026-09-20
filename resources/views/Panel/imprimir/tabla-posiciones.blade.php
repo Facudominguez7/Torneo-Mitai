@@ -44,6 +44,12 @@
             color: #666;
             font-size: 14px;
         }
+        .header-text .header-fecha-resultados {
+            color: #0e4b5e;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
         .categoria-section {
             margin-bottom: 30px;
             page-break-inside: avoid;
@@ -150,6 +156,9 @@
             <h1>Tablas de Posiciones</h1>
             @if($EdicionSeleccionada)
                 <p>{{ $EdicionSeleccionada->nombre }}</p>
+            @endif
+            @if(! empty($fechaResultados))
+                <p class="header-fecha-resultados">Fecha de resultados: {{ $fechaResultados->nombre }}</p>
             @endif
         </div>
         <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="Logo" class="header-logo">

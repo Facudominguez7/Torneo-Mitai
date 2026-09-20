@@ -27,6 +27,7 @@ class ControladorHome extends Controller
 {
     public function __construct(
         private readonly EquiposDeEdicionService $equiposDeEdicion,
+        private readonly FixtureExploradorService $fixtureExplorador,
     ) {}
 
     public function index(Request $request)
@@ -436,7 +437,7 @@ class ControladorHome extends Controller
             ? strtolower($ordenParam)
             : ($estado === 'proximos' ? 'asc' : 'desc');
         $equipo = trim((string) $request->query('equipo', ''));
-        $fixtureExplorador = new FixtureExploradorService();
+        $fixtureExplorador = $this->fixtureExplorador;
 
         $categorias = collect();
         if (isset($EdicionSeleccionada)) {
@@ -853,6 +854,13 @@ class ControladorHome extends Controller
             return redirect()->back()->with('error', 'Debe seleccionar una edición');
         }
 
+        // Impresión global por edición: una única fecha con resultados para
+        // contextualizar las tablas; sin ella no se etiqueta con fecha alguna.
+        $idFechaResultados = $this->fixtureExplorador->resolverUltimaFechaConResultados((int) $idEdicion);
+        $fechaResultados = $idFechaResultados !== null
+            ? Fecha::query()->select('id', 'nombre')->find($idFechaResultados)
+            : null;
+
         // Obtener todas las categorías de la edición, ordenadas de mayor a menor
         $categorias = Categoria::where('idEdicion', $idEdicion)
             ->orderBy('nombreCategoria', 'desc')
@@ -907,7 +915,7 @@ class ControladorHome extends Controller
             }
         }
 
-        return view('Panel.imprimir.tabla-posiciones', compact('tablasPorCategoria', 'EdicionSeleccionada'));
+        return view('Panel.imprimir.tabla-posiciones', compact('tablasPorCategoria', 'EdicionSeleccionada', 'fechaResultados'));
     }
 
     /**

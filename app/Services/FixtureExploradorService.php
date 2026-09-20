@@ -54,6 +54,24 @@ class FixtureExploradorService
     }
 
     /**
+     * Resuelve la última fecha con resultados cargados de una edición, sin
+     * filtro de categoría (impresión global): la dueña del partido jugado con
+     * mayor horario_datetime; desempata por idFechas descendente para filas
+     * legacy sin horario. Devuelve null si la edición no tiene jugados.
+     */
+    public function resolverUltimaFechaConResultados(int $idEdicion): ?int
+    {
+        $idFecha = Partido::query()
+            ->where('idEdicion', $idEdicion)
+            ->where('jugado', 1)
+            ->orderByDesc('horario_datetime')
+            ->orderByDesc('idFechas')
+            ->value('idFechas');
+
+        return $idFecha !== null ? (int) $idFecha : null;
+    }
+
+    /**
      * Ordena fechas en orden calendario: por el primer horario de partido de
      * cada fecha (MIN asc). Las fechas sin partidos van al final por id y dos
      * fechas con el mismo primer horario quedan en orden determinista por id.
