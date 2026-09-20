@@ -4,6 +4,7 @@
     <div class="relative isolate min-h-screen">
         <div class="absolute inset-0 overflow-hidden">
             <img src="{{ asset('fotos/fondo_en_cancha.webp') }}" alt="Cancha de fútbol"
+                fetchpriority="high" decoding="async"
                 class="h-full w-full object-cover object-center">
             <div class="absolute inset-0 bg-gradient-to-b from-black/85 via-black/80 to-black/90"></div>
         </div>
