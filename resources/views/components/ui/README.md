@@ -150,6 +150,105 @@ never a control, so it carries no focus-visible state.
 An unknown `variant` or `tone` falls back to `neutral` / `panel`, same
 reasoning as `x-ui.button`.
 
+## `x-ui.select`
+
+Labeled `<select>`, extracted from the 79 hand-styled `<select>` elements
+across `resources/views/Panel/**/_form.blade.php` (e.g.
+`Panel/equipogrupo/_form.blade.php`, `Panel/valla/_form.blade.php`), each
+retyping the same border/rounded/focus classes. `@tailwindcss/forms` is
+active and already resets native `<select>` styling — this component layers
+the design-system border/focus treatment on top of that reset rather than
+fighting it. The caller still owns the `<option>` list through the default
+slot (its own `@foreach`, `old()`/`selected` logic, etc.).
+
+```blade
+<x-ui.select label="Categoría" name="idCategoria" id="idCategoria">
+    <option value="">Todas las Categorías</option>
+    @foreach ($categorias as $categoria)
+        <option value="{{ $categoria->id }}">{{ $categoria->nombreCategoria }}</option>
+    @endforeach
+</x-ui.select>
+
+<x-ui.select tone="portal" label="Equipo" name="idEquipo" required>
+    ...
+</x-ui.select>
+```
+
+| Prop       | Values             | Default | Notes |
+|------------|--------------------|---------|-------|
+| `label`    | string, or omitted | `null`  | Renders a real `<label for="...">`. Omitted entirely when not given — pass an `aria-label` via the attribute bag instead if a visible label is not wanted. |
+| `name`     | string, or omitted | `null`  | Also used to derive `id` when `id` is not given. |
+| `id`       | string, or omitted | `name`  | Explicit override; otherwise derived from `name` so the label stays associated. |
+| `tone`     | `panel` \| `portal` | `panel` | Surface treatment. |
+| `required` | boolean            | `false` | Renders the real `required` attribute plus `aria-required="true"`. |
+
+Known limitation: native `<option>` elements render with the browser's own
+color scheme regardless of the select's classes — the dark-glass options in
+`Panel/valla/_form.blade.php` work around this today with inline
+`style="background-color: ...; color: ...;"` on each `<option>`. This
+component does not attempt to solve that; callers on the `portal` tone that
+need styled options still set that inline style themselves.
+
+## `x-ui.search`
+
+Labeled search input. Only ~10 occurrences exist and they are stylistically
+split: the Panel uses plain gray inputs
+(`Panel/equipo/index.blade.php`, `Panel/tabla_goleador/index.blade.php`),
+the portal uses pill-shaped dark-glass inputs
+(`layouts/fixture.blade.php`, `layouts/tabla-vallas.blade.php`) — exactly
+what `tone` is for.
+
+```blade
+<x-ui.search label="Buscar equipo" name="nombreEquipo" placeholder="Buscar equipo por nombre" tone="panel" />
+
+<x-ui.search label="Buscar equipo" labelHidden name="equipo" placeholder="Buscar equipo..." tone="portal" />
+```
+
+| Prop          | Values              | Default | Notes |
+|---------------|----------------------|---------|-------|
+| `label`       | string, or omitted   | `null`  | Renders a real `<label for="...">`. |
+| `labelHidden` | boolean              | `false` | Keeps the label for accessibility but visually hides it (`sr-only`) — for the icon-only search boxes like `layouts/tabla-vallas.blade.php`. |
+| `name`        | string, or omitted   | `null`  | Also used to derive `id`. |
+| `id`          | string, or omitted   | `name`  | Explicit override. |
+| `tone`        | `panel` \| `portal`  | `panel` | Surface treatment. |
+| `placeholder` | string, or omitted   | `null`  | Also used as the `aria-label` fallback (see below). |
+| `value`       | string, or omitted   | `null`  | Keeps the input populated after a GET round-trip. |
+
+**Accessible name, in priority order**: a `label` prop (visible, or
+visually-hidden via `labelHidden`), otherwise `aria-label` built from
+`placeholder`, so the control is never left without an accessible name —
+issue #103 is explicit about not adding to that debt.
+
+## `x-ui.page-header`
+
+**HONEST NOTE**: unlike the other `ui.*` components, there is no existing
+shared pattern here. The codebase has 50 raw `<h1>` tags with inconsistent
+styling (`text-3xl font-bold text-white` on the portal vs. `text-2xl
+font-bold text-gray-800` on the Panel vs. unstyled elsewhere), and zero
+`Panel/**` views use a header component — only `dashboard.blade.php` uses
+Breeze's `<x-slot name="header">`. This component **creates** the
+convention rather than extracting one, kept deliberately minimal.
+
+```blade
+<x-ui.page-header title="Gestión de Instituciones" />
+
+<x-ui.page-header title="Equipos" subtitle="Listado de equipos inscriptos" tone="panel">
+    <x-slot name="actions">
+        <x-ui.button variant="primary">Nuevo equipo</x-ui.button>
+    </x-slot>
+</x-ui.page-header>
+```
+
+| Prop       | Values              | Default  | Notes |
+|------------|----------------------|----------|-------|
+| `title`    | string (required)    | —        | Rendered inside a real `<h1>`. |
+| `subtitle` | string, or omitted   | `null`   | Optional secondary line. |
+| `tone`     | `panel` \| `portal`  | `panel`  | Surface treatment. |
+
+Deliberately left out: breadcrumbs, back links, tabs, and icon slots — none
+of the audited views use them consistently enough to justify a prop yet.
+Add them when a real call site needs one, not speculatively.
+
 ## `x-ui.empty-state`
 
 **HONEST NOTE**: same as `x-ui.page-header`, no existing shared pattern.
