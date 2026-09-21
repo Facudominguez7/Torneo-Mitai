@@ -125,3 +125,92 @@ portal's gradient identity or adding a border/pill shape to every Panel
 button, both of which are explicitly out of scope (no visual redesign,
 Option A). The two sides are not merged into two separate components: it
 stays one `x-ui.button`, one prop, one contract.
+
+## `x-ui.badge`
+
+Non-interactive status pill, extracted from the repeated `rounded-full ...
+text-xs font-semibold` markup hand-typed across the Panel
+(`Panel/jugador/consulta.blade.php`, `Panel/admin.blade.php`,
+`Panel/suscriptores-email.blade.php`) and the portal's match-status span
+(`layouts/instancias-finales.blade.php:185`). Always renders a `<span>` —
+never a control, so it carries no focus-visible state.
+
+```blade
+<x-ui.badge variant="success">Verificado</x-ui.badge>
+<x-ui.badge variant="danger">No computa para ese equipo</x-ui.badge>
+<x-ui.badge tone="portal" variant="info">Próximo</x-ui.badge>
+<x-ui.badge :variant="$estadoGolesClase">{{ $estadoGolesLabel }}</x-ui.badge>
+```
+
+| Prop      | Values                                              | Default   | Notes |
+|-----------|------------------------------------------------------|-----------|-------|
+| `variant` | `neutral` \| `success` \| `warning` \| `danger` \| `info` | `neutral` | Semantic status, not a color name. |
+| `tone`    | `panel` \| `portal`                                  | `panel`   | Surface treatment, same decision as `x-ui.button`. |
+
+An unknown `variant` or `tone` falls back to `neutral` / `panel`, same
+reasoning as `x-ui.button`.
+
+## `x-ui.empty-state`
+
+**HONEST NOTE**: same as `x-ui.page-header`, no existing shared pattern.
+~15 scattered "no results" messages exist, each a bare `<p>` with different
+classes (`Panel/estadisticas-jugadores/index.blade.php`,
+`Panel/suscriptores-email.blade.php`, `Panel/institucion/index.blade.php`).
+This component **creates** the convention, modeled on the closest existing
+example (`Panel/suscriptores-email.blade.php:182` — a centered icon, dashed
+border, muted message).
+
+```blade
+<x-ui.empty-state message="No se encontraron usuarios con esos filtros" />
+
+<x-ui.empty-state
+    message="No hay jugadores registrados"
+    description="Probá cambiar la edición seleccionada."
+    tone="panel"
+>
+    <x-slot name="actions">
+        <x-ui.button size="sm" variant="secondary">Limpiar filtros</x-ui.button>
+    </x-slot>
+</x-ui.empty-state>
+```
+
+| Prop          | Values              | Default | Notes |
+|---------------|----------------------|---------|-------|
+| `message`     | string (required)    | —       | Primary message. |
+| `description` | string, or omitted   | `null`  | Optional secondary line. |
+| `tone`        | `panel` \| `portal`  | `panel` | Surface treatment. |
+
+A default magnifying-glass-style icon renders unless the caller overrides
+the `icon` slot. Deliberately left out: illustrations, multiple icon
+variants — kept to the minimum that the audited call sites actually need.
+
+## `x-ui.filter-chip`
+
+Toggle-style filter pill, extracted from the real `$clasesChip` closure at
+`layouts/fixture.blade.php:71-77`, reused at lines 102, 115 and 132 for the
+date/category filter bars. The `portal` tone below is that closure verbatim
+(in terms of resolved brand tokens).
+
+```blade
+<x-ui.filter-chip href="{{ $armarUrlFixture($parametrosChipTodas) }}" :active="$esVistaTodas" tone="portal">
+    Todas
+</x-ui.filter-chip>
+
+<x-ui.filter-chip tone="panel" :active="$categoriaActiva" wire:click="filtrar({{ $categoria->id }})">
+    {{ $categoria->nombre }}
+</x-ui.filter-chip>
+```
+
+| Prop     | Values              | Default | Notes |
+|----------|----------------------|---------|-------|
+| `active` | boolean              | `false` | Sets `aria-current="page"` plus the active-state classes. |
+| `tone`   | `panel` \| `portal`  | `panel` | Surface treatment. |
+| `href`   | string, or omitted   | `null`  | When present, renders `<a>`; otherwise `<button type="button">`. Same real-element-only rule as `x-ui.button`. |
+
+**Evidence gap, disclosed**: the `panel` tone has no direct one-to-one
+precedent — the Panel's closest equivalent
+(`Panel/instancia_final/index.blade.php:51,87`) is a `<select>`-based
+filter group, not a toggle chip, so there was nothing to extract 1:1 there.
+The `panel`-tone classes follow the same tone-split convention established
+by `x-ui.button` (flat solid Panel look vs. bordered/gradient portal pill)
+rather than inventing an unrelated shape.
