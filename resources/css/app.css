@@ -8,6 +8,27 @@
     :root {
         --color-primary: rgb(14, 75, 94);
         --color-secondary: rgb(42, 109, 129);
+        --color-gold: rgb(247, 242, 128);
+
+        /*
+         * Alpha-capable channel variables (space-separated raw RGB, no
+         * rgb() wrapper). Tailwind v3's <alpha-value> opacity modifier
+         * (e.g. bg-brand-navy/50) only works against this format — it
+         * cannot apply an alpha channel on top of a variable that already
+         * holds a complete rgb(...) value, which is what --color-primary,
+         * --color-secondary and --color-gold hold above.
+         *
+         * These are intentionally separate from --color-primary/-secondary
+         * /-gold rather than a reformat of them: those three are consumed
+         * directly via Tailwind arbitrary-value syntax
+         * (bg-[--color-primary], text-[--color-secondary]) in Panel Blade
+         * views that expect a complete color value, so they must keep
+         * their current format. Same brand colors, same values, different
+         * representation for a different consumption path.
+         */
+        --brand-navy: 14 75 94;
+        --brand-teal: 42 109 129;
+        --brand-gold: 247 242 128;
     }
 }
 

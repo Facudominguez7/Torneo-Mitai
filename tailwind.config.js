@@ -13,12 +13,11 @@ export default {
     "./resources/**/*.vue",
   ],
   safelist: [
-    // Genera SIEMPRE emerald aunque aparezca solo en strings (arrays PHP, config, etc.)
-    {
-      pattern:
-        /(bg|text|border|ring|from|via|to)-emerald-(50|100|200|300|400|500|600|700|800|900|950)(\/(5|10|15|20|25|30|40|45|50|60|70|80|90|95))?/,
-      variants: ["hover", "group-hover", "focus-visible"],
-    },
+    // emerald is a real Tailwind default-palette color (see theme.extend.colors
+    // below); the ad-hoc regex safelist that used to guard it was removed
+    // because every emerald-* usage in the codebase is a literal class name
+    // inside a file already matched by `content` above (Blade views and JS),
+    // so Tailwind's own content scanning already keeps them.
 
     // utilidades exactas que estás usando en tus cards
     "bg-gradient-to-br",
@@ -35,8 +34,29 @@ export default {
         sans: ['Figtree', ...defaultTheme.fontFamily.sans],
       },
       colors: {
-        primary: "rgb(var(--color-primary)",
-        secondary: "rgb(var(--color-secondary)",
+        // `primary`/`secondary`/`brand.*` are wired to the channel-only
+        // `--brand-*` variables (resources/css/app.css) using the
+        // `<alpha-value>` placeholder, so opacity modifiers like
+        // `bg-brand-navy/50` or `bg-primary/40` compile to a real rule.
+        // Tailwind v3 can only apply an alpha channel this way when the
+        // variable holds space-separated raw RGB channels, not a complete
+        // `rgb(r, g, b)` value.
+        //
+        // `--color-primary` / `--color-secondary` / `--color-gold` are a
+        // separate set of variables that keep their complete `rgb(r, g, b)`
+        // form untouched, because they are also consumed directly via
+        // Tailwind's arbitrary-value syntax (`bg-[--color-primary]`,
+        // `text-[--color-secondary]`) across the Panel layouts, which
+        // expects a complete color value and cannot take an alpha modifier
+        // either way. Same brand colors (navy === primary, teal ===
+        // secondary), two representations for two different consumers.
+        primary: "rgb(var(--brand-navy) / <alpha-value>)",
+        secondary: "rgb(var(--brand-teal) / <alpha-value>)",
+        brand: {
+          navy: "rgb(var(--brand-navy) / <alpha-value>)",
+          teal: "rgb(var(--brand-teal) / <alpha-value>)",
+          gold: "rgb(var(--brand-gold) / <alpha-value>)",
+        },
         oro: {
           DEFAULT: '#FFD700',
           '50': '#FFF9E6',
