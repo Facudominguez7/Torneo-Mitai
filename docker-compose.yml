@@ -22,7 +22,7 @@ services:
     networks:
       - mitai-network
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 5s
       retries: 10
 
@@ -61,12 +61,14 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    # APP_ENV y DB_DATABASE salen del .env montado; no se inyectan aca.
+    # Inyectadas quedan en la superglobal SERVER, que Laravel resuelve
+    # antes que putenv, anulando los <env> de phpunit.xml: los tests
+    # corrian con APP_ENV=local y el CSRF activo devolvia 419.
     environment:
-      - APP_ENV=${APP_ENV}
       - APP_DEBUG=${APP_DEBUG}
       - DB_HOST=mysql
       - DB_PORT=3306
-      - DB_DATABASE=${DB_DATABASE}
       - DB_TEST_DATABASE=${DB_TEST_DATABASE:-mitai_testing}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
