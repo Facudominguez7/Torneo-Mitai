@@ -7,19 +7,19 @@
     $esFuturo = optional(\Carbon\Carbon::parse($partido->horario_datetime))->isFuture();
 
     if ($interzonal) {
-        $clasesTarjeta = 'partido-card rounded-3xl border border-amber-400/40 bg-gradient-to-br from-[#0e4b5e] via-amber-900/30 to-[#0e4b5e] px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(245,158,11,0.5)] transition hover:border-amber-400/60 md:shadow-[0_32px_80px_-48px_rgba(245,158,11,0.6)]';
+        $clasesTarjeta = 'partido-card rounded-3xl border border-amber-400/40 bg-gradient-to-br from-brand-navy via-amber-900/30 to-brand-navy px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(245,158,11,0.5)] transition hover:border-amber-400/60 md:shadow-[0_32px_80px_-48px_rgba(245,158,11,0.6)]';
         $clasesEstado = 'bg-amber-500/20 text-amber-300 border border-amber-400/50';
         $clasesPunto = 'bg-amber-400';
         $bordeEscudo = 'border-amber-400/30';
         $clasesIconoReloj = 'text-amber-300';
         $clasesBotonPlanilla = 'border border-amber-400/45 bg-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-amber-300 transition hover:bg-amber-400/10 focus:outline-none focus:ring-2 focus:ring-amber-400/40';
     } else {
-        $clasesTarjeta = 'partido-card rounded-3xl border border-[#f7f280]/30 bg-gradient-to-br from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(14,75,94,0.75)] transition hover:border-[#f7f280]/45 md:shadow-[0_32px_80px_-48px_rgba(14,75,94,0.9)]';
-        $clasesEstado = 'bg-[#f7f280]/15 text-[#f7f280] border border-[#f7f280]/40';
-        $clasesPunto = 'bg-[#f7f280]';
+        $clasesTarjeta = 'partido-card rounded-3xl border border-brand-gold/30 bg-gradient-to-br from-brand-navy via-brand-teal to-brand-navy px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(var(--brand-navy)_/_0.75)] transition hover:border-brand-gold/45 md:shadow-[0_32px_80px_-48px_rgba(var(--brand-navy)_/_0.9)]';
+        $clasesEstado = 'bg-brand-gold/15 text-brand-gold border border-brand-gold/40';
+        $clasesPunto = 'bg-brand-gold';
         $bordeEscudo = 'border-white/20';
         $clasesIconoReloj = 'text-yellow-300';
-        $clasesBotonPlanilla = 'border border-[#f7f280]/40 bg-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-[#f7f280] transition hover:bg-[#f7f280]/10 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40';
+        $clasesBotonPlanilla = 'border border-brand-gold/40 bg-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold transition hover:bg-brand-gold/10 focus:outline-none focus:ring-2 focus:ring-brand-gold/40';
     }
 
     $statusLabel = 'Pendiente';
@@ -27,12 +27,12 @@
         $statusLabel = 'Finalizado';
         $clasesEstado = $interzonal
             ? 'bg-gradient-to-r from-amber-600/30 to-amber-700/30 text-amber-200 border border-amber-400/60'
-            : 'bg-gradient-to-r from-[#2a6d81]/90 to-[#0e4b5e]/90 text-[#f7f280] border border-[#f7f280]/45';
+            : 'bg-gradient-to-r from-brand-teal/90 to-brand-navy/90 text-brand-gold border border-brand-gold/45';
     } elseif ($esFuturo) {
         $statusLabel = 'Próximo';
         $clasesEstado = $interzonal
             ? 'bg-gradient-to-r from-amber-500/15 to-amber-600/15 text-white border border-amber-400/40'
-            : 'bg-gradient-to-r from-[#0e4b5e]/70 to-[#2a6d81]/70 text-white border border-[#f7f280]/35';
+            : 'bg-gradient-to-r from-brand-navy/70 to-brand-teal/70 text-white border border-brand-gold/35';
     }
 
     $publicToken = data_get($partido, 'public_token');

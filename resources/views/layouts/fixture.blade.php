@@ -70,11 +70,11 @@
                         };
 
                         $clasesChip = function (bool $activa): string {
-                            $clasesBase = 'inline-flex min-w-max items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40';
+                            $clasesBase = 'inline-flex min-w-max items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40';
 
                             return $activa
-                                ? $clasesBase.' border-[#f7f280] bg-[#f7f280]/20 text-[#f7f280]'
-                                : $clasesBase.' border-white/20 bg-white/5 text-white/70 hover:border-[#f7f280]/40 hover:bg-[#f7f280]/10 hover:text-white';
+                                ? $clasesBase.' border-brand-gold bg-brand-gold/20 text-brand-gold'
+                                : $clasesBase.' border-white/20 bg-white/5 text-white/70 hover:border-brand-gold/40 hover:bg-brand-gold/10 hover:text-white';
                         };
 
                         $fechaEsActiva = function ($fecha) use ($idFechaSolicitada, $idFechaRelevanteVista): bool {
@@ -95,7 +95,7 @@
 
                         $parametrosChipTodas = $parametrosBase + ['estado' => $estadoFiltro, 'idFecha' => 'todas'];
                     @endphp
-                    <div class="mt-8 rounded-3xl border border-[#f7f280]/25 bg-black/30 p-4 sm:p-5 space-y-3">
+                    <div class="mt-8 rounded-3xl border border-brand-gold/25 bg-black/30 p-4 sm:p-5 space-y-3">
                         <div role="group" aria-label="Cambiar fecha" class="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-x-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             <a href="{{ $armarUrlFixture($parametrosChipTodas) }}"
                                 @if ($esVistaTodas) aria-current="page" @endif
@@ -140,7 +140,7 @@
                                     <input type="hidden" name="idCategoria" value="{{ $idCategoria }}">
                                 @endif
                                 <input type="hidden" name="estado" value="{{ $estadoFiltro }}">
-                                <input type="search" name="equipo" value="{{ $equipoBuscado }}" placeholder="Buscar equipo..." aria-label="Buscar equipo por nombre" class="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-[#f7f280]/60 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40 w-full lg:w-48">
+                                <input type="search" name="equipo" value="{{ $equipoBuscado }}" placeholder="Buscar equipo..." aria-label="Buscar equipo por nombre" class="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-brand-gold/60 focus:outline-none focus:ring-2 focus:ring-brand-gold/40 w-full lg:w-48">
                             </form>
                         </div>
                     </div>
@@ -154,12 +154,12 @@
                         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                             <div class="flex items-center justify-between gap-3">
                                 <div>
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#f7f280]/75">Fechas</p>
+                                    <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-brand-gold/75">Fechas</p>
                                     <p class="mt-1 text-sm text-white/65">Saltá rápido entre jornadas sin recorrer todo el fixture.</p>
                                 </div>
                                 @if ($nombreFecha)
                                     <span class="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/55">
-                                        <i class="fa-regular fa-calendar-days text-[#f7f280]"></i>
+                                        <i class="fa-regular fa-calendar-days text-brand-gold"></i>
                                         {{ $nombreFecha }}
                                     </span>
                                 @endif
@@ -169,7 +169,7 @@
                                 <div class="flex w-max gap-3 pb-1">
                                     <a href="{{ $armarUrlFixture($parametrosChipTodas) }}"
                                         @if ($esVistaTodas) aria-current="page" @endif
-                                        class="inline-flex min-w-max items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40 {{ $esVistaTodas ? 'border-[#f7f280]/45 bg-[#f7f280]/10 text-[#f7f280]' : 'border-white/15 bg-black/15 text-white/70 hover:border-[#f7f280]/40 hover:text-white' }}">
+                                        class="inline-flex min-w-max items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-brand-gold/40 {{ $esVistaTodas ? 'border-brand-gold/45 bg-brand-gold/10 text-brand-gold' : 'border-white/15 bg-black/15 text-white/70 hover:border-brand-gold/40 hover:text-white' }}">
                                         <i class="fa-solid fa-layer-group text-xs"></i>
                                         Todas
                                     </a>
@@ -178,7 +178,7 @@
                                         @php $activaChipBarra = $fechaEsActiva($f); @endphp
                                         <a href="#fecha-{{ $f->id }}"
                                             @if ($activaChipBarra) aria-current="page" @endif
-                                            class="inline-flex min-w-max items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40 {{ $activaChipBarra ? 'border-[#f7f280]/45 bg-[#f7f280]/10 text-[#f7f280]' : 'border-white/15 bg-black/15 text-white/70 hover:border-[#f7f280]/40 hover:text-white' }}">
+                                            class="inline-flex min-w-max items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-brand-gold/40 {{ $activaChipBarra ? 'border-brand-gold/45 bg-brand-gold/10 text-brand-gold' : 'border-white/15 bg-black/15 text-white/70 hover:border-brand-gold/40 hover:text-white' }}">
                                             <i class="fa-regular fa-calendar text-xs"></i>
                                             {{ $f->nombre }}
                                         </a>
@@ -193,7 +193,7 @@
                     <div id="fixture-contenido" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
                         @if (filled($equipoBuscado) && $partidos->isEmpty())
                             <p class="rounded-3xl border border-white/10 bg-white/5 px-6 py-10 text-center text-lg font-semibold text-white/70">
-                                No se encontraron partidos para <span class="text-[#f7f280]">"{{ $equipoBuscado }}"</span>.
+                                No se encontraron partidos para <span class="text-brand-gold">"{{ $equipoBuscado }}"</span>.
                                 Probá con otro nombre o revisá los filtros de estado.
                             </p>
                         @endif
@@ -207,11 +207,11 @@
                                 <section id="fecha-{{ $fechaNavegacion->id }}" class="scroll-mt-28 space-y-8">
                                     <div class="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 px-6 py-5 shadow-[0_24px_60px_-40px_rgba(0,0,0,0.65)] sm:flex-row sm:items-center sm:justify-between">
                                         <div class="space-y-2">
-                                            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-[#f7f280]/75">Jornada</p>
+                                            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-gold/75">Jornada</p>
                                             <h2 class="text-2xl font-bold text-white sm:text-3xl">{{ $fechaNavegacion->nombre }}</h2>
                                         </div>
                                         <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/55">
-                                            <i class="fa-regular fa-futbol text-[#f7f280]"></i>
+                                            <i class="fa-regular fa-futbol text-brand-gold"></i>
                                             {{ $partidosFecha->count() }} {{ $partidosFecha->count() === 1 ? 'partido' : 'partidos' }}
                                         </span>
                                     </div>

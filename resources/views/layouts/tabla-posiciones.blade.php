@@ -15,8 +15,8 @@
                 <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
                     <div class="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
                         <div class="space-y-3">
-                            <span class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-[#f7f280]/80">
-                                <span class="h-2 w-2 rounded-full bg-[#f7f280]"></span>
+                            <span class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-brand-gold/80">
+                                <span class="h-2 w-2 rounded-full bg-brand-gold"></span>
                                 Tabla general
                             </span>
                             <h1 class="text-3xl sm:text-4xl font-bold text-white">Tabla de posiciones · {{ $nombreCategoria }}</h1>
@@ -30,7 +30,7 @@
                                 @foreach ($categorias as $c)
                                     <a href="{{ route('tabla-posiciones', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $c->id]) }}"
                                         @if ($c->id == $idCategoria) aria-current="page" @endif
-                                        class="whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 {{ $c->id == $idCategoria ? 'border-[#f7f280] bg-[#f7f280]/20 text-[#f7f280]' : 'border-white/20 bg-white/5 text-white/70 hover:border-[#f7f280]/40 hover:bg-[#f7f280]/10 hover:text-white' }}">
+                                        class="whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40 {{ $c->id == $idCategoria ? 'border-brand-gold bg-brand-gold/20 text-brand-gold' : 'border-white/20 bg-white/5 text-white/70 hover:border-brand-gold/40 hover:bg-brand-gold/10 hover:text-white' }}">
                                         {{ $c->nombreCategoria }}
                                     </a>
                                 @endforeach
@@ -41,7 +41,7 @@
                                     @foreach ($grupos as $g)
                                         <a href="{{ route('tabla-posiciones', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria, 'idGrupo' => $g->id]) }}"
                                             @if ($g->id == $idGrupo) aria-current="page" @endif
-                                            class="whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 {{ $g->id == $idGrupo ? 'border-[#f7f280] bg-[#f7f280]/20 text-[#f7f280]' : 'border-white/20 bg-white/5 text-white/70 hover:border-[#f7f280]/40 hover:bg-[#f7f280]/10 hover:text-white' }}">
+                                            class="whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40 {{ $g->id == $idGrupo ? 'border-brand-gold bg-brand-gold/20 text-brand-gold' : 'border-white/20 bg-white/5 text-white/70 hover:border-brand-gold/40 hover:bg-brand-gold/10 hover:text-white' }}">
                                             {{ $g->nombre }}
                                         </a>
                                     @endforeach
@@ -53,22 +53,22 @@
                     @if ($EdicionSeleccionada)
                         <div class="mt-6 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.25em] text-white/60">
                             <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2">
-                                <i class="fa-regular fa-calendar-days text-[#f7f280]"></i>
+                                <i class="fa-regular fa-calendar-days text-brand-gold"></i>
                                 {{ $EdicionSeleccionada->nombre }}
                             </span>
                             @if ($GrupoSeleccionado)
                                 <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2">
-                                    <i class="fa-solid fa-layer-group text-[#f7f280]"></i>
+                                    <i class="fa-solid fa-layer-group text-brand-gold"></i>
                                     {{ $GrupoSeleccionado->nombre }}
                                 </span>
                             @endif
                         </div>
                     @endif
 
-                    <div class="mt-10 rounded-3xl border border-[#f7f280]/25 bg-black/35 px-4 py-5 shadow-[0_28px_70px_-45px_rgba(14,75,94,0.9)] sm:px-6 sm:py-6">
+                    <div class="mt-10 rounded-3xl border border-brand-gold/25 bg-black/35 px-4 py-5 shadow-[0_28px_70px_-45px_rgba(var(--brand-navy)_/_0.9)] sm:px-6 sm:py-6">
                         <div class="overflow-hidden rounded-2xl border border-white/5 bg-black/40">
                             <table class="hidden w-full border-collapse text-sm text-white/80 md:table">
-                                <thead class="bg-gradient-to-r from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/90 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
+                                <thead class="bg-gradient-to-r from-brand-navy/90 via-brand-teal/85 to-brand-navy/90 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
                                     <tr>
                                         <th class="hidden md:table-cell px-4 py-4 text-left">Puesto</th>
                                         <th class="px-4 py-4 text-left">Equipo</th>
@@ -96,7 +96,7 @@
                                                     </div>
                                                     <div class="flex flex-col">
                                                         <div class="flex items-center gap-2">
-                                                            <span class="md:hidden rounded-full border border-[#f7f280]/40 bg-[#f7f280]/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#f7f280]">{{ $posicion }}°</span>
+                                                            <span class="md:hidden rounded-full border border-brand-gold/40 bg-brand-gold/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-gold">{{ $posicion }}°</span>
                                                             <h3 class="text-base font-bold text-white">{{ $filaTabla->nombreEquipo }}</h3>
                                                         </div>
                                                         <div class="mt-1 grid grid-cols-4 gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50 md:hidden">
@@ -108,7 +108,7 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="hidden md:table-cell px-4 py-4 text-center font-semibold text-[#f7f280]">
+                                            <td class="hidden md:table-cell px-4 py-4 text-center font-semibold text-brand-gold">
                                                 {{ $filaTabla->puntos }}
                                             </td>
                                             <td class="hidden md:table-cell px-4 py-4 text-center text-white/80">
@@ -141,7 +141,7 @@
 
                         <div class="md:hidden">
                             <table class="w-full border-collapse text-sm text-white/80">
-                                <thead class="bg-gradient-to-r from-[#0e4b5e]/95 via-[#2a6d81]/90 to-[#0e4b5e]/95 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
+                                <thead class="bg-gradient-to-r from-brand-navy/95 via-brand-teal/90 to-brand-navy/95 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
                                     <tr>
                                         <th class="px-3 py-3 text-left">#</th>
                                         <th class="px-3 py-3 text-left">Equipo</th>
@@ -169,7 +169,7 @@
                                             <td class="px-3 py-3 text-center text-sm font-semibold text-white">
                                                 {{ $filaTabla->diferenciaGoles >= 0 ? '+' : '' }}{{ $filaTabla->diferenciaGoles }}
                                             </td>
-                                            <td class="px-3 py-3 text-center text-base font-bold text-[#f7f280]">
+                                            <td class="px-3 py-3 text-center text-base font-bold text-brand-gold">
                                                 {{ $filaTabla->puntos }}
                                             </td>
                                         </tr>

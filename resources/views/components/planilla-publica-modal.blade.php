@@ -20,7 +20,7 @@
             x-transition:leave="ease-in duration-150"
             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            class="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-[#f7f280]/25 bg-[#071d24]/95 text-white shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]"
+            class="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-brand-gold/25 bg-[#071d24]/95 text-white shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]"
             x-on:click.stop
             role="dialog"
             aria-modal="true"
@@ -29,7 +29,7 @@
             <div class="border-b border-white/10 bg-white/5 px-5 py-4 sm:px-6">
                 <div class="flex items-start justify-between gap-4">
                     <div class="space-y-1">
-                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-[#f7f280]/80">Planilla publica</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-gold/80">Planilla publica</p>
                         <h2 id="planilla-publica-titulo" class="text-xl font-bold text-white" x-text="planillaPayload?.data?.partido?.categoria || 'Ver planilla'"></h2>
                         <template x-if="planillaPayload?.data?.partido">
                             <p class="text-sm text-white/65">
@@ -54,7 +54,7 @@
             <div class="max-h-[80vh] overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
                 <template x-if="planillaCargando">
                     <div class="flex min-h-56 flex-col items-center justify-center gap-4 text-center text-white/70">
-                        <span class="inline-flex h-12 w-12 animate-spin rounded-full border-2 border-[#f7f280]/25 border-t-[#f7f280]"></span>
+                        <span class="inline-flex h-12 w-12 animate-spin rounded-full border-2 border-brand-gold/25 border-t-brand-gold"></span>
                         <div>
                             <p class="text-base font-semibold text-white">Cargando planilla...</p>
                             <p class="text-sm text-white/55">Estamos buscando la informacion mas reciente del partido.</p>
@@ -87,7 +87,7 @@
                                 </div>
                                 <p class="font-semibold text-white/85">
                                 Ultima actualizacion:
-                                <span class="text-[#f7f280]" x-text="planillaPayload.data.ultima_actualizacion || 'Sin registros todavia'"></span>
+                                <span class="text-brand-gold" x-text="planillaPayload.data.ultima_actualizacion || 'Sin registros todavia'"></span>
                                 </p>
                             </div>
                             <p class="text-xs uppercase tracking-[0.25em] text-white/45">Solo lectura</p>
@@ -136,7 +136,7 @@
                                                         </p>
                                                     </div>
                                                     <div class="flex flex-wrap gap-2 text-xs font-semibold">
-                                                        <span class="inline-flex items-center rounded-full border border-[#f7f280]/30 bg-[#f7f280]/10 px-3 py-1 text-[#f7f280]">
+                                                        <span class="inline-flex items-center rounded-full border border-brand-gold/30 bg-brand-gold/10 px-3 py-1 text-brand-gold">
                                                             Goles: <span class="ml-1" x-text="jugador.goles"></span>
                                                         </span>
                                                         <span
@@ -152,8 +152,8 @@
 
                                     <div class="mt-4 border-t border-white/10 pt-4">
                                         <div class="mb-3 flex items-center justify-between gap-3">
-                                            <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#f7f280]/75">Reportado por arbitros</p>
-                                            <span class="inline-flex items-center rounded-full border border-[#f7f280]/30 bg-[#f7f280]/10 px-3 py-1 text-xs font-semibold text-[#f7f280]" x-text="`${planillaPayload.data.goles_arbitros?.local?.length || 0} registros`"></span>
+                                            <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-brand-gold/75">Reportado por arbitros</p>
+                                            <span class="inline-flex items-center rounded-full border border-brand-gold/30 bg-brand-gold/10 px-3 py-1 text-xs font-semibold text-brand-gold" x-text="`${planillaPayload.data.goles_arbitros?.local?.length || 0} registros`"></span>
                                         </div>
 
                                         <div class="space-y-2">
@@ -162,7 +162,7 @@
                                             </template>
 
                                             <template x-for="(reporte, index) in (planillaPayload.data.goles_arbitros?.local || [])" :key="`arbitro-local-${index}`">
-                                                <article class="rounded-2xl border px-4 py-3" :class="reporte.es_inconsistencia ? 'border-red-400/30 bg-red-500/10' : 'border-[#f7f280]/20 bg-[#f7f280]/5'">
+                                                <article class="rounded-2xl border px-4 py-3" :class="reporte.es_inconsistencia ? 'border-red-400/30 bg-red-500/10' : 'border-brand-gold/20 bg-brand-gold/5'">
                                                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                                         <div>
                                                             <p class="font-semibold text-white" x-text="`Camiseta ${reporte.numero_camiseta ?? '-'} · ${reporte.goles_reportados} gol(es)`"></p>
@@ -209,7 +209,7 @@
                                                         </p>
                                                     </div>
                                                     <div class="flex flex-wrap gap-2 text-xs font-semibold">
-                                                        <span class="inline-flex items-center rounded-full border border-[#f7f280]/30 bg-[#f7f280]/10 px-3 py-1 text-[#f7f280]">
+                                                        <span class="inline-flex items-center rounded-full border border-brand-gold/30 bg-brand-gold/10 px-3 py-1 text-brand-gold">
                                                             Goles: <span class="ml-1" x-text="jugador.goles"></span>
                                                         </span>
                                                         <span
@@ -225,8 +225,8 @@
 
                                     <div class="mt-4 border-t border-white/10 pt-4">
                                         <div class="mb-3 flex items-center justify-between gap-3">
-                                            <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#f7f280]/75">Reportado por arbitros</p>
-                                            <span class="inline-flex items-center rounded-full border border-[#f7f280]/30 bg-[#f7f280]/10 px-3 py-1 text-xs font-semibold text-[#f7f280]" x-text="`${planillaPayload.data.goles_arbitros?.visitante?.length || 0} registros`"></span>
+                                            <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-brand-gold/75">Reportado por arbitros</p>
+                                            <span class="inline-flex items-center rounded-full border border-brand-gold/30 bg-brand-gold/10 px-3 py-1 text-xs font-semibold text-brand-gold" x-text="`${planillaPayload.data.goles_arbitros?.visitante?.length || 0} registros`"></span>
                                         </div>
 
                                         <div class="space-y-2">
@@ -235,7 +235,7 @@
                                             </template>
 
                                             <template x-for="(reporte, index) in (planillaPayload.data.goles_arbitros?.visitante || [])" :key="`arbitro-visitante-${index}`">
-                                                <article class="rounded-2xl border px-4 py-3" :class="reporte.es_inconsistencia ? 'border-red-400/30 bg-red-500/10' : 'border-[#f7f280]/20 bg-[#f7f280]/5'">
+                                                <article class="rounded-2xl border px-4 py-3" :class="reporte.es_inconsistencia ? 'border-red-400/30 bg-red-500/10' : 'border-brand-gold/20 bg-brand-gold/5'">
                                                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                                         <div>
                                                             <p class="font-semibold text-white" x-text="`Camiseta ${reporte.numero_camiseta ?? '-'} · ${reporte.goles_reportados} gol(es)`"></p>

@@ -5,14 +5,14 @@
             💡 Seleccionar de la tabla de goleadores (ordenados por goles)
         </label>
         <select id="selectGoleador"
-            class="w-full rounded-md border border-emerald-400/50 bg-[#0e4b5e] py-3 px-6 text-base font-medium text-white outline-none focus:border-emerald-400 focus:shadow-md"
+            class="w-full rounded-md border border-emerald-400/50 bg-brand-navy py-3 px-6 text-base font-medium text-white outline-none focus:border-emerald-400 focus:shadow-md"
             style="color-scheme: dark;"
             onchange="if(this.value) { document.getElementById('nombre').value = this.selectedOptions[0].dataset.nombre; document.getElementById('idEquipo').value = this.selectedOptions[0].dataset.equipo; }">
-            <option value="" style="background-color: #0e4b5e; color: white;">-- Seleccionar jugador --</option>
+            <option value="" style="background-color: var(--color-primary); color: white;">-- Seleccionar jugador --</option>
             @foreach ($listaGoleadores as $g)
                 <option value="{{ $g->id }}"
                     data-nombre="{{ $g->jugador ? $g->jugador->apellido . ' ' . $g->jugador->nombre : 'Desconocido' }}"
-                    data-equipo="{{ $g->idEquipo }}" style="background-color: #0e4b5e; color: white;">
+                    data-equipo="{{ $g->idEquipo }}" style="background-color: var(--color-primary); color: white;">
                     {{ $g->jugador ? $g->jugador->apellido . ' ' . $g->jugador->nombre : 'Desconocido' }}
                     ({{ $g->equipo->nombre ?? 'Equipo' }}) - {{ $g->cantidadGoles }} goles
                 </option>

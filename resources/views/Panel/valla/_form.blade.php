@@ -5,11 +5,11 @@
             💡 Equipos ordenados por goles en contra (menor a mayor)
         </label>
         <select id="selectValla"
-            class="w-full rounded-md border border-blue-400/50 bg-[#0e4b5e] py-3 px-6 text-base font-medium text-white outline-none focus:border-blue-400 focus:shadow-md"
+            class="w-full rounded-md border border-blue-400/50 bg-brand-navy py-3 px-6 text-base font-medium text-white outline-none focus:border-blue-400 focus:shadow-md"
             style="color-scheme: dark;" onchange="if(this.value) document.getElementById('idEquipo').value = this.value;">
-            <option value="" style="background-color: #0e4b5e; color: white;">-- Seleccionar equipo --</option>
+            <option value="" style="background-color: var(--color-primary); color: white;">-- Seleccionar equipo --</option>
             @foreach ($listaEquiposVallas as $eq)
-                <option value="{{ $eq->idEquipo }}" style="background-color: #0e4b5e; color: white;">
+                <option value="{{ $eq->idEquipo }}" style="background-color: var(--color-primary); color: white;">
                     {{ $eq->nombreEquipo }} - {{ $eq->golesContra ?? 0 }} goles en contra
                 </option>
             @endforeach

@@ -21,7 +21,7 @@
             $homeUrl = optional($edicionActiva)->id ? route('home', ['idEdicion' => $edicionActiva->id]) : route('home');
         @endphp
         <a href="{{ $homeUrl }}"
-            class="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 sm:self-auto [.nav-compacta_&]:hidden">
+            class="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40 sm:self-auto [.nav-compacta_&]:hidden">
             <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" class="h-10 w-10" alt="MITAI Logo">
             <div class="flex flex-col text-center sm:text-left">
                 <span class="text-sm font-semibold uppercase tracking-[0.3em] text-white/60">Torneo Mitai</span>
@@ -36,7 +36,7 @@
                     @if (request()->routeIs($item['patterns']))
                         aria-current="page"
                     @endif
-                    class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 {{ request()->routeIs($item['patterns']) ? 'border-[#f7f280] text-white' : 'border-transparent text-white/70 hover:text-[#f7f280]' }}">
+                    class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40 {{ request()->routeIs($item['patterns']) ? 'border-brand-gold text-white' : 'border-transparent text-white/70 hover:text-brand-gold' }}">
                     {{ $item['label'] }}
                 </a>
             @endforeach
@@ -47,7 +47,7 @@
             @auth
                 @if (Auth::user()->rol === 'admin')
                     <a href="{{ route('admin', ['idEdicion' => optional($edicionActiva)->id]) }}"
-                        class="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70 transition hover:border-yellow-300 hover:bg-yellow-300/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40">
+                        class="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70 transition hover:border-yellow-300 hover:bg-yellow-300/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40">
                         Panel de administración
                     </a>
                 @endif
@@ -61,7 +61,7 @@
                     <x-dropdown align="right" width="56">
                         <x-slot name="trigger">
                             <button
-                                class="inline-flex items-center gap-3 rounded-full border border-[#f7f280]/40 bg-gradient-to-r from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/85 px-3 py-2 text-sm font-semibold text-white transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+                                class="inline-flex items-center gap-3 rounded-full border border-brand-gold/40 bg-gradient-to-r from-brand-navy/90 via-brand-teal/85 to-brand-navy/85 px-3 py-2 text-sm font-semibold text-white transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-brand-gold/40">
                                 <div class="flex items-center gap-2">
                                     @if (!empty(Auth::user()->google_avatar))
                                         <img class="h-9 w-9 rounded-2xl border border-white/20 object-cover"
@@ -74,7 +74,7 @@
                                     @endif
                                     <span class="text-sm font-semibold text-white">{{ $nombreUsuario }}</span>
                                 </div>
-                                <svg class="ml-1 h-4 w-4 text-[#f7f280]" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                <svg class="ml-1 h-4 w-4 text-brand-gold" xmlns="http://www.w3.org/2000/svg" fill="none"
                                     viewBox="0 0 20 20">
                                     <path fill="currentColor" fill-rule="evenodd"
                                         d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -100,7 +100,7 @@
                             <form method="POST" action="{{ route('logout') }}" class="border-t border-white/10">
                                 @csrf
                                 <button type="submit"
-                                    class="block w-full px-4 py-2 text-start text-sm font-semibold text-white/80 transition duration-150 ease-in-out hover:bg-[#f7f280]/15 hover:text-white focus:outline-none focus:bg-[#f7f280]/20 focus:text-white">
+                                    class="block w-full px-4 py-2 text-start text-sm font-semibold text-white/80 transition duration-150 ease-in-out hover:bg-brand-gold/15 hover:text-white focus:outline-none focus:bg-brand-gold/20 focus:text-white">
                                     {{ __('Cerrar sesión') }}
                                 </button>
                             </form>
@@ -109,7 +109,7 @@
                 </div>
             @else
                 <a href="{{ route('login') }}"
-                    class="inline-flex items-center justify-center gap-2 rounded-full border border-[#f7f280]/40 bg-gradient-to-r from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/85 px-5 py-2 text-sm font-semibold text-white shadow-[0_12px_28px_-18px_rgba(14,75,94,0.7)] transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+                    class="inline-flex items-center justify-center gap-2 rounded-full border border-brand-gold/40 bg-gradient-to-r from-brand-navy/90 via-brand-teal/85 to-brand-navy/85 px-5 py-2 text-sm font-semibold text-white shadow-[0_12px_28px_-18px_rgba(var(--brand-navy)_/_0.7)] transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-brand-gold/40">
                     Iniciar sesión
                     <i class="fa-solid fa-arrow-right text-xs"></i>
                 </a>
@@ -124,7 +124,7 @@
                 @if (request()->routeIs($item['patterns']))
                     aria-current="page"
                 @endif
-                class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f7f280]/40 {{ request()->routeIs($item['patterns']) ? 'border-[#f7f280] text-white' : 'border-transparent text-white/70 hover:text-[#f7f280]' }}">
+                class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40 {{ request()->routeIs($item['patterns']) ? 'border-brand-gold text-white' : 'border-transparent text-white/70 hover:text-brand-gold' }}">
                 {{ $item['label'] }}
             </a>
         @endforeach

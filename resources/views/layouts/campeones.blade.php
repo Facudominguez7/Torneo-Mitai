@@ -30,23 +30,23 @@
                                 class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Edición</label>
                             <div class="relative">
                                 <div
-                                    class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
-                                    <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
+                                    class="group rounded-2xl bg-gradient-to-r from-brand-navy via-brand-teal to-brand-navy p-[1px] transition focus-within:ring-2 focus-within:ring-brand-gold/50">
+                                    <div class="relative rounded-[1.1rem] bg-brand-navy/80">
                                         <select id="idEdicion" name="idEdicion" onchange="this.form.submit()"
                                             class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
                                             style="color-scheme: dark;">
-                                            <option value="" style="background-color: #0e4b5e; color: white;">Seleccioná
+                                            <option value="" style="background-color: var(--color-primary); color: white;">Seleccioná
                                                 una edición
                                             </option>
                                             @foreach ($ediciones as $edicion)
                                                 <option value="{{ $edicion->id }}"
-                                                    style="background-color: #0e4b5e; color: white;" {{ optional($EdicionSeleccionada)->id == $edicion->id ? 'selected' : '' }}>
+                                                    style="background-color: var(--color-primary); color: white;" {{ optional($EdicionSeleccionada)->id == $edicion->id ? 'selected' : '' }}>
                                                     {{ $edicion->nombre }}
                                                 </option>
                                             @endforeach
                                         </select>
                                         <span
-                                            class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                            class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-brand-gold">
                                             <i class="fa-solid fa-chevron-down text-xs"></i>
                                         </span>
                                     </div>

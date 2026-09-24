@@ -16,8 +16,8 @@
                     <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                         <div class="space-y-3 max-w-3xl">
                             <span
-                                class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-[#f7f280]/80">
-                                <span class="h-2 w-2 rounded-full bg-[#f7f280]"></span>
+                                class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-brand-gold/80">
+                                <span class="h-2 w-2 rounded-full bg-brand-gold"></span>
                                 Ranking oficial
                             </span>
                             <h1 class="text-3xl sm:text-4xl font-bold text-white">Tabla de goleadores</h1>
@@ -29,7 +29,7 @@
                             @if ($EdicionSeleccionada)
                                 <div
                                     class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
-                                    <i class="fa-solid fa-trophy text-[#f7f280]"></i>
+                                    <i class="fa-solid fa-trophy text-brand-gold"></i>
                                     {{ $EdicionSeleccionada->nombre }}
                                 </div>
                             @endif
@@ -48,7 +48,7 @@
                                     $diaAbreviado = $diasAbreviados[$ultimaActualizacion->copy()->locale('en')->translatedFormat('D')] ?? $ultimaActualizacion->format('D').'.';
                                 @endphp
                                 <div class="inline-flex items-center gap-2 text-xs text-white/50">
-                                    <i class="fa-solid fa-clock text-[#f7f280]/60"></i>
+                                    <i class="fa-solid fa-clock text-brand-gold/60"></i>
                                     Última actualización: {{ $diaAbreviado }} {{ $ultimaActualizacion->format('d/m/Y H:i') }}
                                 </div>
                             @endif
@@ -56,13 +56,13 @@
                     </div>
 
                     <div
-                        class="mt-10 rounded-3xl border border-[#f7f280]/25 bg-black/30 px-5 py-6 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.85)] sm:px-6 sm:py-7">
+                        class="mt-10 rounded-3xl border border-brand-gold/25 bg-black/30 px-5 py-6 shadow-[0_24px_60px_-40px_rgba(var(--brand-navy)_/_0.85)] sm:px-6 sm:py-7">
                         <div class="grid gap-4 md:grid-cols-[minmax(0,260px)_auto] md:items-center">
                             <div class="filtro-categoria">
                                 <x-dropdown align="right" width="52">
                                     <x-slot name="trigger">
                                         <button
-                                            class="inline-flex w-full items-center justify-between gap-2 rounded-2xl border border-[#f7f280]/40 bg-gradient-to-r from-[#0e4b5e]/90 via-[#2a6d81]/85 to-[#0e4b5e]/85 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+                                            class="inline-flex w-full items-center justify-between gap-2 rounded-2xl border border-brand-gold/40 bg-gradient-to-r from-brand-navy/90 via-brand-teal/85 to-brand-navy/85 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-brand-gold/40">
                                             <span id="label-categoria" class="truncate">
                                                 {{ optional($categorias->firstWhere('id', $idCategoria))->nombreCategoria ?? 'Filtrar por categoría' }}
                                             </span>
@@ -71,12 +71,12 @@
                                     </x-slot>
                                     <x-slot name="content">
                                         <div class="max-h-72 overflow-y-auto">
-                                            <div class="cursor-pointer px-4 py-2 text-sm text-white/80 transition hover:bg-[#f7f280]/15"
+                                            <div class="cursor-pointer px-4 py-2 text-sm text-white/80 transition hover:bg-brand-gold/15"
                                                 data-id="" data-nombre="Todas las categorías">
                                                 Todas las categorías
                                             </div>
                                             @foreach ($categorias as $c)
-                                                <div class="cursor-pointer px-4 py-2 text-sm text-white/90 transition hover:bg-[#f7f280]/15"
+                                                <div class="cursor-pointer px-4 py-2 text-sm text-white/90 transition hover:bg-brand-gold/15"
                                                     data-id="{{ $c->id }}" data-nombre="{{ $c->nombreCategoria }}">
                                                     {{ $c->nombreCategoria }}
                                                 </div>
@@ -101,12 +101,12 @@
                                 <input type="hidden" name="dir" value="{{ $dir }}">
                                 <label for="buscador-goleadores" class="relative block">
                                     <span
-                                        class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#f7f280]">
+                                        class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-brand-gold">
                                         <i class="fa-solid fa-magnifying-glass text-sm"></i>
                                     </span>
                                     <input id="buscador-goleadores" name="search_value" type="text"
                                         value="{{ $searchValue }}" placeholder="Buscar por nombre..."
-                                        class="w-full rounded-2xl border border-[#f7f280]/35 bg-white/5 px-4 py-3 pl-11 text-sm font-semibold text-white placeholder:text-white/45 focus:border-[#f7f280]/60 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+                                        class="w-full rounded-2xl border border-brand-gold/35 bg-white/5 px-4 py-3 pl-11 text-sm font-semibold text-white placeholder:text-white/45 focus:border-brand-gold/60 focus:outline-none focus:ring-2 focus:ring-brand-gold/40">
                                 </label>
                             </form>
                         </div>
@@ -117,8 +117,8 @@
                             class="sr-only"></span>
                         <p id="estado-carga-goleadores" class="hidden">
                             <span
-                                class="flex items-center gap-3 rounded-2xl border border-[#f7f280]/30 bg-black/90 px-4 py-3 text-sm font-semibold text-white/80 shadow-xl backdrop-blur-md">
-                                <i class="fa-solid fa-spinner fa-spin text-[#f7f280]"></i>
+                                class="flex items-center gap-3 rounded-2xl border border-brand-gold/30 bg-black/90 px-4 py-3 text-sm font-semibold text-white/80 shadow-xl backdrop-blur-md">
+                                <i class="fa-solid fa-spinner fa-spin text-brand-gold"></i>
                                 Actualizando goleadores…
                             </span>
                         </p>

@@ -29,18 +29,18 @@
                             <div class="grid gap-2">
                                 <label for="idEdicion" class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Edición</label>
                                 <div class="relative">
-                                    <div class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
-                                        <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
+                                    <div class="group rounded-2xl bg-gradient-to-r from-brand-navy via-brand-teal to-brand-navy p-[1px] transition focus-within:ring-2 focus-within:ring-brand-gold/50">
+                                        <div class="relative rounded-[1.1rem] bg-brand-navy/80">
                                             <select name="idEdicion" id="idEdicion" onchange="this.form.submit()"
                                                 class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
                                                 style="color-scheme: dark;">
                                                 @foreach ($ediciones as $edicion)
-                                                    <option value="{{ $edicion->id }}" style="background-color: #0e4b5e; color: white;" {{ $EdicionSeleccionada->id == $edicion->id ? 'selected' : '' }}>
+                                                    <option value="{{ $edicion->id }}" style="background-color: var(--color-primary); color: white;" {{ $EdicionSeleccionada->id == $edicion->id ? 'selected' : '' }}>
                                                         {{ $edicion->nombre }}
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                            <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-brand-gold">
                                                 <i class="fa-solid fa-chevron-down text-xs"></i>
                                             </span>
                                         </div>
@@ -54,19 +54,19 @@
                                 <div class="grid gap-2">
                                     <label for="categoria" class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Categoría</label>
                                     <div class="relative">
-                                        <div class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
-                                            <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
+                                        <div class="group rounded-2xl bg-gradient-to-r from-brand-navy via-brand-teal to-brand-navy p-[1px] transition focus-within:ring-2 focus-within:ring-brand-gold/50">
+                                            <div class="relative rounded-[1.1rem] bg-brand-navy/80">
                                                 <select name="categoria" id="categoria" onchange="this.form.submit()"
                                                     class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
                                                     style="color-scheme: dark;">
-                                                    <option value="" style="background-color: #0e4b5e; color: white;">Todas</option>
+                                                    <option value="" style="background-color: var(--color-primary); color: white;">Todas</option>
                                                     @foreach ($categorias as $categoria)
-                                                        <option value="{{ $categoria->id }}" style="background-color: #0e4b5e; color: white;" {{ $selectedCategoria == $categoria->id ? 'selected' : '' }}>
+                                                        <option value="{{ $categoria->id }}" style="background-color: var(--color-primary); color: white;" {{ $selectedCategoria == $categoria->id ? 'selected' : '' }}>
                                                             {{ $categoria->nombreCategoria }}
                                                         </option>
                                                     @endforeach
                                                 </select>
-                                                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-brand-gold">
                                                     <i class="fa-solid fa-chevron-down text-xs"></i>
                                                 </span>
                                             </div>
@@ -78,19 +78,19 @@
                                 <div class="grid gap-2">
                                     <label for="copa" class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Copa</label>
                                     <div class="relative">
-                                        <div class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
-                                            <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
+                                        <div class="group rounded-2xl bg-gradient-to-r from-brand-navy via-brand-teal to-brand-navy p-[1px] transition focus-within:ring-2 focus-within:ring-brand-gold/50">
+                                            <div class="relative rounded-[1.1rem] bg-brand-navy/80">
                                                 <select name="copa" id="copa" onchange="this.form.submit()"
                                                     class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
                                                     style="color-scheme: dark;">
-                                                    <option value="" style="background-color: #0e4b5e; color: white;">Todas</option>
+                                                    <option value="" style="background-color: var(--color-primary); color: white;">Todas</option>
                                                     @foreach ($copas as $copa)
-                                                        <option value="{{ $copa->id }}" style="background-color: #0e4b5e; color: white;" {{ $selectedCopa == $copa->id ? 'selected' : '' }}>
+                                                        <option value="{{ $copa->id }}" style="background-color: var(--color-primary); color: white;" {{ $selectedCopa == $copa->id ? 'selected' : '' }}>
                                                             {{ $copa->nombre }}
                                                         </option>
                                                     @endforeach
                                                 </select>
-                                                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-brand-gold">
                                                     <i class="fa-solid fa-chevron-down text-xs"></i>
                                                 </span>
                                             </div>
@@ -102,19 +102,19 @@
                                 <div class="grid gap-2">
                                     <label for="fase" class="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Fase</label>
                                     <div class="relative">
-                                        <div class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
-                                            <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
+                                        <div class="group rounded-2xl bg-gradient-to-r from-brand-navy via-brand-teal to-brand-navy p-[1px] transition focus-within:ring-2 focus-within:ring-brand-gold/50">
+                                            <div class="relative rounded-[1.1rem] bg-brand-navy/80">
                                                 <select name="fase" id="fase" onchange="this.form.submit()"
                                                     class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
                                                     style="color-scheme: dark;">
-                                                    <option value="" style="background-color: #0e4b5e; color: white;">Todas</option>
+                                                    <option value="" style="background-color: var(--color-primary); color: white;">Todas</option>
                                                     @foreach ($fases as $fase)
-                                                        <option value="{{ $fase->id }}" style="background-color: #0e4b5e; color: white;" {{ $selectedFase == $fase->id ? 'selected' : '' }}>
+                                                        <option value="{{ $fase->id }}" style="background-color: var(--color-primary); color: white;" {{ $selectedFase == $fase->id ? 'selected' : '' }}>
                                                             {{ $fase->nombre }}
                                                         </option>
                                                     @endforeach
                                                 </select>
-                                                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                                <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-brand-gold">
                                                     <i class="fa-solid fa-chevron-down text-xs"></i>
                                                 </span>
                                             </div>
@@ -166,24 +166,24 @@
                                                         $jugado = data_get($p, 'jugado');
 
                                                         $statusLabel = 'Pendiente';
-                                                        $statusClasses = 'bg-[#f7f280]/15 text-[#f7f280] border border-[#f7f280]/40';
+                                                        $statusClasses = 'bg-brand-gold/15 text-brand-gold border border-brand-gold/40';
 
                                                         if ($jugado || $hayMarcador) {
                                                             $statusLabel = 'Finalizado';
-                                                            $statusClasses = 'bg-gradient-to-r from-[#2a6d81]/90 to-[#0e4b5e]/90 text-[#f7f280] border border-[#f7f280]/45';
+                                                            $statusClasses = 'bg-gradient-to-r from-brand-teal/90 to-brand-navy/90 text-brand-gold border border-brand-gold/45';
                                                         } elseif ($esFuturo) {
                                                             $statusLabel = 'Próximo';
-                                                            $statusClasses = 'bg-gradient-to-r from-[#0e4b5e]/70 to-[#2a6d81]/70 text-white border border-[#f7f280]/35';
+                                                            $statusClasses = 'bg-gradient-to-r from-brand-navy/70 to-brand-teal/70 text-white border border-brand-gold/35';
                                                         }
                                                     @endphp
 
-                                                    <article class="partido-card rounded-3xl border border-[#f7f280]/30 bg-gradient-to-br from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(14,75,94,0.75)] transition hover:border-[#f7f280]/45">
+                                                    <article class="partido-card rounded-3xl border border-brand-gold/30 bg-gradient-to-br from-brand-navy via-brand-teal to-brand-navy px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(var(--brand-navy)_/_0.75)] transition hover:border-brand-gold/45">
                                                         <div class="flex flex-wrap items-center justify-between gap-3">
                                                             <div class="text-sm font-semibold uppercase tracking-[0.3em] text-white/65">
                                                                 {{ optional($fechaPartido)->format('d/m/Y') ?? 'Sin fecha' }}
                                                             </div>
                                                             <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold {{ $statusClasses }}">
-                                                                <span class="inline-flex h-2 w-2 rounded-full bg-[#f7f280]"></span>
+                                                                <span class="inline-flex h-2 w-2 rounded-full bg-brand-gold"></span>
                                                                 {{ $statusLabel }}
                                                             </span>
                                                         </div>
@@ -274,7 +274,7 @@
                                                               @if ($planillaPublicaDisponible)
                                                                   <button
                                                                       type="button"
-                                                                      class="inline-flex items-center gap-2 rounded-full border border-[#f7f280]/40 bg-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-[#f7f280] transition hover:bg-[#f7f280]/10 focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40"
+                                                                      class="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 bg-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold transition hover:bg-brand-gold/10 focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
                                                                       x-on:click='abrirPlanilla(@json($planillaPublicaUrl))'
                                                                   >
                                                                       <i class="fa-regular fa-rectangle-list"></i>
