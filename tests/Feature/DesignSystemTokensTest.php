@@ -49,13 +49,16 @@ it('defines navy, teal and gold brand tokens that resolve to the documented bran
         ->and($css)->toMatch('/--color-gold:\s*rgb\(247,\s*242,\s*128\)/');
 });
 
-it('keeps the legacy button and panel-admin-content rules that are still load-bearing', function () {
+it('removes the legacy button rules migrated to x-ui.button in Phase 2.A and keeps panel-admin-content', function () {
+    // Phase 2.A (T2.A) replaced every .btn/.btn-editar/.btn-eliminar/
+    // .btn-detalle usage across resources/views/** with x-ui.button and
+    // deleted the now-dead rules. .panel-admin-content stays load-bearing.
     $css = file_get_contents(base_path('resources/css/app.css'));
 
-    expect($css)->toContain('.btn {')
-        ->and($css)->toContain('.btn-editar {')
-        ->and($css)->toContain('.btn-eliminar {')
-        ->and($css)->toContain('.btn-detalle {')
+    expect($css)->not->toContain('.btn {')
+        ->and($css)->not->toContain('.btn-editar')
+        ->and($css)->not->toContain('.btn-eliminar')
+        ->and($css)->not->toContain('.btn-detalle')
         ->and($css)->toContain('.panel-admin-content');
 });
 

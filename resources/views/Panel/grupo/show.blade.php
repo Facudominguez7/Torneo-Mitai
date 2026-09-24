@@ -27,18 +27,17 @@
                         <td
                             class="w-full lg:w-auto p-0 lg:p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
                             <div class="lg:flex lg:justify-center lg:space-x-4 lg:flex-row flex justify-center flex-col">
-                                <button class="mb-1 lg:mb-0">
-                                    <a href="{{ route('equipogrupo.edit', ['equipogrupo' => $eg->idEquipoGrupo, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria, 'idGrupo' => $idGrupo]) }}"
-                                        class="btn btn-editar">
-                                        Editar
-                                    </a>
-                                </button>
+                                <x-ui.button
+                                    href="{{ route('equipogrupo.edit', ['equipogrupo' => $eg->idEquipoGrupo, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria, 'idGrupo' => $idGrupo]) }}"
+                                    variant="success" class="mb-1 lg:mb-0">
+                                    Editar
+                                </x-ui.button>
                                 <form action="{{ route('equipogrupo.destroy', $eg->idEquipoGrupo) }}" method="post">
                                     @method('DELETE')
                                     @csrf
                                     <input type="number" id="idEdicion" name="idEdicion" class="hidden"
                                         value="{{ $EdicionSeleccionada->id }}">
-                                    <button class="btn btn-eliminar" type="submit">Eliminar</button>
+                                    <x-ui.button type="submit" variant="danger">Eliminar</x-ui.button>
                                 </form>
                             </div>
                         </td>

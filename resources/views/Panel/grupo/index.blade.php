@@ -71,23 +71,22 @@
                     <span class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Accion
                     </span>
                     <div class="lg:flex lg:justify-center lg:space-x-4 lg:flex-row flex justify-center flex-col">
-                        <button class="mb-1 lg:mb-0">
-                            <a href="{{ route('grupos.edit', ['grupo' => $g, 'idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada]) }}" class="btn btn-editar">
-                                Editar
-                            </a>
-                        </button>
-                        <button class="mb-1 lg:mb-0">
-                            <a href="{{ route('grupos.show', ['grupo' => $g, 'idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada]) }}"
-                                class="btn btn-detalle">
-                                Detalle
-                            </a>
-                        </button>
+                        <x-ui.button
+                            href="{{ route('grupos.edit', ['grupo' => $g, 'idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada]) }}"
+                            variant="success" class="mb-1 lg:mb-0">
+                            Editar
+                        </x-ui.button>
+                        <x-ui.button
+                            href="{{ route('grupos.show', ['grupo' => $g, 'idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada]) }}"
+                            variant="primary" class="mb-1 lg:mb-0">
+                            Detalle
+                        </x-ui.button>
                         <form class="mb-0" action="{{ route('grupos.destroy', $g) }}" method="post">
                             @method('DELETE')
                             @csrf
                             <input type="number" id="idEdicion" name="idEdicion" class="hidden"
                                         value="{{ $EdicionSeleccionada->id }}">
-                            <button class="btn btn-eliminar" type="submit">Eliminar</button>
+                            <x-ui.button type="submit" variant="danger">Eliminar</x-ui.button>
                         </form>
                     </div>
                 </td>

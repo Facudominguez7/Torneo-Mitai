@@ -17,7 +17,7 @@
         $nombreJugadorMostrar = 'Sin jugador asociado';
     }
 @endphp
-<div class="card bg-gray-800 text-white mb-5">
+<div class="p-6 rounded shadow-sm bg-gray-800 text-white mb-5">
     <div class="card-body">
         @if ($esEdicionGoleador)
         <p class="text-lg font-semibold">

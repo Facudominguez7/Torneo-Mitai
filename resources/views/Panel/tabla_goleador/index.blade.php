@@ -113,17 +113,16 @@
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Accion
                             </span>
                             <div class="lg:flex lg:justify-center lg:space-x-4 lg:flex-row flex justify-center flex-col">
-                                <button class="mb-1 lg:mb-0">
-                                    <a href="{{ route('tabla_goleador.edit', $g) }}" class="btn btn-editar">
-                                        Editar
-                                    </a>
-                                </button>
+                                <x-ui.button href="{{ route('tabla_goleador.edit', $g) }}" variant="success"
+                                    class="mb-1 lg:mb-0">
+                                    Editar
+                                </x-ui.button>
                                 <form class="mb-0" action="{{ route('tabla_goleador.destroy', $g) }}" method="post">
                                     @method('DELETE')
                                     @csrf
                                     <input type="number" id="idEdicion" name="idEdicion" class="hidden"
                                         value="{{ $g->idEdicion }}">
-                                    <button class="btn btn-eliminar" type="submit">Eliminar</button>
+                                    <x-ui.button type="submit" variant="danger">Eliminar</x-ui.button>
                                 </form>
                             </div>
                         </td>
