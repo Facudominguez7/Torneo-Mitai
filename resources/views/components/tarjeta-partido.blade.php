@@ -1,10 +1,33 @@
-@props(['partido', 'interzonal' => false])
+@props([
+    'partido',
+    'interzonal' => false,
+    // T2.D (issue #110): props opcionales que permiten a
+    // layouts/instancias-finales.blade.php reusar esta tarjeta pese a tener
+    // datos ligeramente distintos (horario nullable, sin relacion `fecha`,
+    // penales/resultado global). Ningun llamador existente (fixture) las
+    // pasa, asi que su salida no cambia.
+    'tipoPartido' => 'partido',
+    'fechaLabel' => null,
+    'resultadoLabelDesktop' => 'vs',
+    'horarioVacio' => 'Horario a confirmar',
+    'canchaVacia' => 'Cancha a confirmar',
+    'penales' => null,
+    'resultadoGlobal' => null,
+    // Una instancia final ya se considera Finalizada con marcador cargado,
+    // incluso si el flag `jugado` no fue tildado explicitamente.
+    'marcadorCuentaComoFinalizado' => false,
+])
 
 @php
-    // Tarjeta de partido compartida por fixture y home. La variante interzonal
-    // (gradiente ámbar + badge) solo cambia clases de acento: los data-attributes
-    // y el id son idénticos porque los filtros JS de fixture dependen de ellos.
-    $esFuturo = optional(\Carbon\Carbon::parse($partido->horario_datetime))->isFuture();
+    // Tarjeta de partido compartida por fixture, home e instancias finales.
+    // La variante interzonal (gradiente ámbar + badge) solo cambia clases de
+    // acento: los data-attributes y el id son idénticos porque los filtros
+    // JS de fixture dependen de ellos.
+    $hayHorario = ! is_null($partido->horario_datetime) && $partido->horario_datetime !== '';
+    $esFuturo = $hayHorario ? optional(\Carbon\Carbon::parse($partido->horario_datetime))->isFuture() : false;
+    $hayMarcador = ! is_null($partido->golesEquipoLocal) && ! is_null($partido->golesEquipoVisitante);
+    $estaFinalizado = $partido->jugado || ($marcadorCuentaComoFinalizado && $hayMarcador);
+    $hayCancha = ! is_null($partido->cancha) && $partido->cancha !== '';
 
     if ($interzonal) {
         $clasesTarjeta = 'partido-card rounded-3xl border border-amber-400/40 bg-gradient-to-br from-brand-navy via-amber-900/30 to-brand-navy px-6 py-6 text-white shadow-[0_24px_60px_-40px_rgba(245,158,11,0.5)] transition hover:border-amber-400/60 md:shadow-[0_32px_80px_-48px_rgba(245,158,11,0.6)]';
@@ -23,7 +46,7 @@
     }
 
     $statusLabel = 'Pendiente';
-    if ($partido->jugado) {
+    if ($estaFinalizado) {
         $statusLabel = 'Finalizado';
         $clasesEstado = $interzonal
             ? 'bg-gradient-to-r from-amber-600/30 to-amber-700/30 text-amber-200 border border-amber-400/60'
@@ -39,13 +62,13 @@
     $planillaPublicaDisponible = filled($publicToken);
     $planillaPublicaUrl = $planillaPublicaDisponible
         ? route('planillas-publicas.show', [
-            'tipoPartido' => 'partido',
+            'tipoPartido' => $tipoPartido,
             'publicToken' => $publicToken,
         ])
         : null;
 @endphp
 
-<article class="{{ $clasesTarjeta }}" data-jugado="{{ (int) $partido->jugado }}" data-horario="{{ \Carbon\Carbon::parse($partido->horario_datetime)->toIso8601String() }}" data-local="{{ strtolower($partido->nombre_local) }}" data-visitante="{{ strtolower($partido->nombre_visitante) }}" id="partido-{{ $partido->id }}">
+<article class="{{ $clasesTarjeta }}" data-jugado="{{ (int) $estaFinalizado }}" data-horario="{{ $hayHorario ? \Carbon\Carbon::parse($partido->horario_datetime)->toIso8601String() : '' }}" data-local="{{ strtolower($partido->nombre_local) }}" data-visitante="{{ strtolower($partido->nombre_visitante) }}" id="partido-{{ $partido->id }}">
     <div class="flex flex-wrap items-center justify-between gap-3">
         @if ($interzonal)
             <div class="flex items-center gap-2">
@@ -56,12 +79,12 @@
                     Interzonal
                 </span>
                 <span class="text-sm font-semibold uppercase tracking-[0.3em] text-white/65">
-                    {{ $partido->fecha->nombre }}
+                    {{ $fechaLabel ?? $partido->fecha->nombre }}
                 </span>
             </div>
         @else
             <div class="text-sm font-semibold uppercase tracking-[0.3em] text-white/65">
-                {{ $partido->fecha->nombre }}
+                {{ $fechaLabel ?? $partido->fecha->nombre }}
             </div>
         @endif
         <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold {{ $clasesEstado }}">
@@ -80,6 +103,12 @@
         <div class="flex min-w-[80px] flex-col items-center gap-1 text-center">
             <span class="text-[11px] font-semibold uppercase tracking-[0.35em] text-white/60">vs</span>
             <span class="text-2xl font-bold text-white">{{ $partido->golesEquipoLocal }} - {{ $partido->golesEquipoVisitante }}</span>
+            @if ($penales)
+                <span class="text-[11px] font-semibold text-white/70">Penales: {{ $penales }}</span>
+            @endif
+            @if ($resultadoGlobal)
+                <span class="mt-1 inline-block rounded-full bg-yellow-400/20 px-2 py-0.5 text-[11px] font-bold text-yellow-300 ring-1 ring-yellow-400/40">Global: {{ $resultadoGlobal }}</span>
+            @endif
         </div>
         <div class="flex flex-col items-center gap-3 text-center">
             <div class="h-16 w-16 overflow-hidden rounded-full border {{ $bordeEscudo }} bg-black/25 p-2.5">
@@ -99,8 +128,14 @@
         </div>
 
         <div class="flex flex-col items-center justify-center gap-1 text-center">
-            <span class="text-xs font-semibold uppercase tracking-[0.35em] text-white/40">vs</span>
+            <span class="text-xs font-semibold uppercase tracking-[0.35em] text-white/40">{{ $resultadoLabelDesktop }}</span>
             <span class="text-3xl font-bold text-white md:text-4xl">{{ $partido->golesEquipoLocal }} - {{ $partido->golesEquipoVisitante }}</span>
+            @if ($penales)
+                <span class="text-xs font-semibold text-white/70">Penales: {{ $penales }}</span>
+            @endif
+            @if ($resultadoGlobal)
+                <span class="mt-1 inline-block rounded-full bg-yellow-400/20 px-3 py-0.5 text-xs font-bold text-yellow-300 ring-1 ring-yellow-400/40">Global: {{ $resultadoGlobal }}</span>
+            @endif
         </div>
 
         <div class="flex flex-col items-center gap-3 text-center">
@@ -115,11 +150,11 @@
     <div class="mt-6 flex flex-col gap-3 text-sm text-white/70 md:flex-row md:items-center md:justify-between md:text-white/60">
         <div class="inline-flex items-center gap-2">
             <i class="fa-regular fa-clock {{ $clasesIconoReloj }}"></i>
-            <span>{{ \Carbon\Carbon::parse($partido->horario_datetime)->format('d/m/Y · H:i') }}</span>
+            <span>{{ $hayHorario ? \Carbon\Carbon::parse($partido->horario_datetime)->format('d/m/Y · H:i') : $horarioVacio }}</span>
         </div>
         <div class="inline-flex items-center gap-2">
             <i class="fa-solid fa-location-dot text-emerald-300"></i>
-            <span>Cancha {{ $partido->cancha }}</span>
+            <span>{{ $hayCancha ? 'Cancha ' . $partido->cancha : $canchaVacia }}</span>
         </div>
     </div>
 
