@@ -4,51 +4,41 @@
     <div class="flex justify-center">
         @if (isset($EdicionSeleccionada))
             <div class="flex flex-row justify-center mb-2 mr-5">
-                <div>
-                    <a href="{{ route('equipo.create', ['idEdicion' => $EdicionSeleccionada]) }}">
-                        <button
-                            class="bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg">
-                            Agregar Equipo
-                        </button>
-                    </a>
-                </div>
+                <x-ui.button href="{{ route('equipo.create', ['idEdicion' => $EdicionSeleccionada]) }}"
+                    variant="primary" class="mt-2 mb-2">
+                    Agregar Equipo
+                </x-ui.button>
             </div>
             <div class="flex flex-row justify-center mb-2">
-                <div>
-                    <a
-                        href="{{ route('seleccionar-edicion', ['idEdicion' => $EdicionSeleccionada, 'tipo' => 'equipoedicion']) }}">
-                        <button
-                            class="bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg">
-                            Agregar Equipo de una Edicion Anterior
-                        </button>
-                    </a>
-                </div>
+                <x-ui.button
+                    href="{{ route('seleccionar-edicion', ['idEdicion' => $EdicionSeleccionada, 'tipo' => 'equipoedicion']) }}"
+                    variant="secondary" class="mt-2 mb-2">
+                    Agregar Equipo de una Edicion Anterior
+                </x-ui.button>
             </div>
         @endif
     </div>
     <div class="flex justify-center mb-4">
-        <form action="{{ route('equipo.index') }}" method="GET" class="flex flex-wrap justify-center gap-3">
+        <form action="{{ route('equipo.index') }}" method="GET"
+            class="flex flex-wrap items-end justify-center gap-3">
             <input type="hidden" name="idEdicion" value="{{ $idEdicion }}">
-            <input type="text" name="nombreEquipo" value="{{ $nombreEquipo ?? '' }}"
-                placeholder="Buscar equipo por nombre"
-                class="border border-gray-300 rounded-lg px-4 py-2 w-64"
-                autocomplete="off">
-            <select name="idCategoria" class="border border-gray-300 rounded-lg px-4 py-2">
+            <x-ui.search name="nombreEquipo" :value="$nombreEquipo ?? ''" placeholder="Buscar equipo por nombre"
+                class="w-64" />
+            <x-ui.select name="idCategoria">
                 <option value="">Todas las Categorías</option>
                 @foreach ($categorias as $categoria)
                     <option value="{{ $categoria->id }}" {{ $idCategoria == $categoria->id ? 'selected' : '' }}>
                         {{ $categoria->nombreCategoria }}
                     </option>
                 @endforeach
-            </select>
-            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+            </x-ui.select>
+            <x-ui.button type="submit" variant="primary">
                 Filtrar
-            </button>
+            </x-ui.button>
             @if (!empty($nombreEquipo) || !empty($idCategoria))
-                <a href="{{ route('equipo.index', ['idEdicion' => $idEdicion]) }}"
-                    class="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+                <x-ui.button href="{{ route('equipo.index', ['idEdicion' => $idEdicion]) }}" variant="secondary">
                     Limpiar
-                </a>
+                </x-ui.button>
             @endif
         </form>
     </div>
@@ -84,11 +74,9 @@
             </thead>
             <tbody>
                 @if ($equipos->isempty())
-                    <tr
-                        class="bg-white lg:hover:bg-gray-100 flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
-                        <td colspan="5"
-                            class="w-full lg:w-auto p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                            No existen registros
+                    <tr>
+                        <td colspan="5" class="p-3">
+                            <x-ui.empty-state message="No existen registros" />
                         </td>
                     </tr>
                 @endif
@@ -133,23 +121,21 @@
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Accion
                             </span>
                             <div class="lg:flex lg:justify-center lg:space-x-4 lg:flex-row flex justify-center flex-col">
-                                <button class="mb-1 lg:mb-0">
-                                    <a href="{{ route('equipo.edit', $e->id) }}" class="btn btn-editar">
-                                        Editar
-                                    </a>
-                                </button>
-                                <button class="mb-1 lg:mb-0">
-                                    <a href="{{ route('equipo.show', ['equipo' => $e, 'idEdicion' => $e->idEdicion]) }}"
-                                        class="btn btn-detalle">
-                                        Detalle
-                                    </a>
-                                </button>
+                                <x-ui.button href="{{ route('equipo.edit', $e->id) }}" variant="success"
+                                    class="mb-1 lg:mb-0">
+                                    Editar
+                                </x-ui.button>
+                                <x-ui.button
+                                    href="{{ route('equipo.show', ['equipo' => $e, 'idEdicion' => $e->idEdicion]) }}"
+                                    variant="primary" class="mb-1 lg:mb-0">
+                                    Detalle
+                                </x-ui.button>
                                 <form class="mb-0" action="{{ route('equipo.destroy', $e->id) }}" method="post">
                                     @method('DELETE')
                                     @csrf
                                     <input type="number" id="idEdicion" name="idEdicion" class="hidden"
                                         value="{{ $EdicionSeleccionada->id }}">
-                                    <button class="btn btn-eliminar" type="submit">Eliminar</button>
+                                    <x-ui.button type="submit" variant="danger">Eliminar</x-ui.button>
                                 </form>
                             </div>
                         </td>
