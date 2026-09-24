@@ -57,6 +57,15 @@ export default {
           teal: "rgb(var(--brand-teal) / <alpha-value>)",
           gold: "rgb(var(--brand-gold) / <alpha-value>)",
         },
+        // Panel form accent/border tokens (issue #110, Phase 2.B): the
+        // ~48 Panel/**/_form|create|edit.blade.php files hardcoded these two
+        // hex values directly (never with an opacity modifier), so a plain
+        // hex value is enough here — no CSS-variable/<alpha-value> indirection
+        // needed, unlike the portal brand.* tokens above.
+        panel: {
+          border: '#e0e0e0',
+          accent: '#6A64F1',
+        },
         oro: {
           DEFAULT: '#FFD700',
           '50': '#FFF9E6',

@@ -32,6 +32,34 @@
     }
 }
 
+/*
+ * Shared Panel form field styles (issue #110, Phase 2.B). Collapses the
+ * identical Tailwind class string repeated across ~48
+ * Panel/**\/_form|create|edit.blade.php files (#6A64F1/#6B7280/#e0e0e0
+ * hardcoded on every <input>/<select>/submit button) into one definition,
+ * backed by the panel-border/panel-accent tokens above instead of raw hex.
+ *
+ * panel-form-input-static omits the focus state for the one read-only field
+ * (tabla_goleador/_form.blade.php) that never had a focus style in the
+ * original markup — panel-form-input would add a focus effect that changes
+ * that field's visual result.
+ *
+ * `hover:shadow-form` from the original submit-button markup is dropped: it
+ * is not a real Tailwind utility (no `shadow.form` is defined anywhere in
+ * tailwind.config.js) and never compiled to any rule, so this is a
+ * dead-code removal, not a visual change.
+ */
+.panel-form-input,
+.panel-form-input-static {
+    @apply w-full rounded-md border border-panel-border bg-white py-3 px-6 text-base font-medium text-gray-500 outline-none
+}
+.panel-form-input {
+    @apply focus:border-panel-accent focus:shadow-md
+}
+.panel-form-submit {
+    @apply rounded-md bg-panel-accent py-3 px-8 text-base font-semibold text-white outline-none
+}
+
 .panel-admin-content {
     width: 100%;
     max-width: 100%;

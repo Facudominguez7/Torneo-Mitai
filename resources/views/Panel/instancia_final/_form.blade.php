@@ -15,7 +15,7 @@
             Categoría
         </label>
         <select id="idCategoria" name="idCategoria"
-            class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+            class="panel-form-input">
 
             <option value="{{ $CategoriaSeleccionada->id }}" selected>{{ $CategoriaSeleccionada->nombreCategoria }}
             </option>
@@ -29,7 +29,7 @@
         Seleccionar Equipo Local
     </label>
     <select name="idEquipoLocal" id="idEquipoLocal"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
         @foreach ($equipos as $equipo)
             <option value="{{ $equipo->id }}"
                 {{ old('idEquipoLocal', $partido->idEquipoLocal) == $equipo->id ? 'selected' : '' }}>
@@ -43,7 +43,7 @@
         Seleccionar Equipo Visitante
     </label>
     <select name="idEquipoVisitante" id="idEquipoVisitante"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
         @foreach ($equipos as $equipo)
             <option value="{{ $equipo->id }}"
                 {{ old('idEquipoVisitante', $partido->idEquipoVisitante) == $equipo->id ? 'selected' : '' }}>
@@ -57,7 +57,7 @@
         Seleccionar Fase
     </label>
     <select name="idFase" id="idFase"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
         @foreach ($fases as $f)
             <option value="{{ $f->id }}"
                 {{ old('idFase', $partido->idFase) == $f->id ? 'selected' : '' }}>
@@ -71,7 +71,7 @@
         Seleccionar Copa
     </label>
     <select name="idCopa" id="idCopa"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
         <option value="">Ninguna copa</option> <!-- Opción para ninguna copa -->
         @foreach ($copas as $copa)
             <option value="{{ $copa->id }}"
@@ -86,7 +86,7 @@
         Fecha y Hora del partido
     </label>
     <input type="datetime-local" name="horario" id="horario"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
+        class="panel-form-input"
         value="{{ $horarioPorDefecto }}">
 </div>
 <div class="mb-5">
@@ -94,7 +94,7 @@
         Cancha
     </label>
     <input type="text" name="cancha" id="cancha" value="{{old('cancha', $partido->cancha)}}"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
+        class="panel-form-input"
          />
 </div>
 <input class="hidden" type="number" name="idEdicion" id="idEdicion" value="{{ $EdicionSeleccionada->id }}">

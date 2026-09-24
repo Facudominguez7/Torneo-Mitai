@@ -26,7 +26,7 @@
                 <input type="hidden" name="retorno_busqueda" value="{{ $parametrosRegreso['busqueda'] ?? '' }}">
                 <div>
                     <button type="submit"
-                        class="hover:shadow-form rounded-md bg-[#6A64F1] py-3 px-8 text-base font-semibold text-white outline-none w-full md:w-auto">
+                        class="panel-form-submit w-full md:w-auto">
                         Agregar
                     </button>
                 </div>
