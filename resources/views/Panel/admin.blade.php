@@ -354,11 +354,11 @@
         $authUserHeader = auth()->user();
     @endphp
     <header data-panel-edicion-header
-        class="fixed inset-x-0 top-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/15 bg-slate-900/95 px-3 py-2 text-white shadow-md backdrop-blur sm:px-4 lg:h-14 lg:left-64 lg:flex-nowrap lg:py-0">
-        <span class="order-2 whitespace-nowrap text-sm font-bold tracking-wide text-white lg:order-none">Mitaí Admin</span>
+        class="fixed inset-x-0 top-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-slate-200 bg-white px-3 py-1.5 text-slate-700 shadow-sm sm:px-4 lg:h-14 lg:left-64 lg:flex-nowrap lg:py-0">
+        <span class="order-2 whitespace-nowrap text-sm font-bold tracking-wide text-slate-800 lg:order-none">Mitaí Admin</span>
         <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
             aria-controls="sidebar-multi-level-sidebar" type="button" aria-expanded="false"
-            class="order-1 inline-flex items-center rounded-lg p-2 text-sm text-gray-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-gray-400 lg:order-none lg:hidden">
+            class="order-1 inline-flex items-center rounded-lg p-2 text-sm text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 lg:order-none lg:hidden">
             <span class="sr-only">Abrir menú</span>
             <svg class="h-6 w-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
                 xmlns="http://www.w3.org/2000/svg">
@@ -369,9 +369,9 @@
         </button>
         <form data-panel-edicion-form action="{{ route('admin') }}" method="GET"
             class="order-last flex w-full min-w-0 items-center gap-2 lg:order-none lg:ml-4 lg:w-auto">
-            <label for="panel-edicion-select" class="sr-only">Edición activa</label>
+            <label for="panel-edicion-select" class="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-500">Edición</label>
             <select name="idEdicion" id="panel-edicion-select"
-                class="h-9 min-w-0 max-w-full flex-1 rounded-lg border border-white/30 bg-white/95 px-2 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 lg:w-72 lg:flex-none">
+                class="h-9 min-w-0 max-w-full flex-1 rounded-lg border border-slate-300 bg-white px-2 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 lg:w-72 lg:flex-none">
                 @if (! $edicionActivaHeader)
                     <option value="" selected>Sin edición seleccionada</option>
                 @endif
@@ -382,15 +382,15 @@
                 @endforeach
             </select>
             <button type="submit"
-                class="inline-flex h-9 flex-shrink-0 items-center rounded-lg bg-cyan-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-300">
+                class="inline-flex h-9 flex-shrink-0 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300">
                 Cambiar edición
             </button>
         </form>
         <nav aria-label="Cuenta" class="order-3 ml-auto flex flex-shrink-0 items-center gap-2 lg:order-none">
             <a href="{{ route('profile.edit') }}"
-                class="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-gray-200 hover:bg-white/10"
+                class="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
                 aria-label="Perfil de {{ $authUserHeader->name }}">
-                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold uppercase">
+                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-xs font-bold uppercase text-slate-700">
                     {{ mb_substr($authUserHeader->name, 0, 1) }}
                 </span>
                 <span class="hidden max-w-[140px] truncate sm:inline">{{ $authUserHeader->name }}</span>
@@ -398,13 +398,13 @@
             <form method="POST" action="{{ route('logout') }}" class="inline-flex">
                 @csrf
                 <button type="submit"
-                    class="inline-flex h-9 items-center rounded-lg border border-white/25 px-3 text-sm font-semibold text-gray-100 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    class="inline-flex h-9 items-center rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300">
                     Salir
                 </button>
             </form>
         </nav>
     </header>
-    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pt-36 pb-6 lg:pl-64 lg:pt-20">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pt-28 pb-6 lg:pl-64 lg:pt-20">
         @php
             $nombreRutaActual = request()->route()?->getName() ?? '';
             $rutaActualPath = request()->path();

@@ -198,10 +198,49 @@ it('separa el contenido del header con padding mobile mayor al desktop', functio
     // El wrapper principal reserva espacio bajo el header fixed en ambos breakpoints.
     expect(preg_match('/class="[^"]*\bpt-(?<mobile>\d+)[^"]*\blg:pt-(?<desktop>\d+)[^"]*"/', $html, $wrapper))->toBe(1);
 
-    // Tailwind: 1 unidad = 0.25rem. Desktop cubre el header de h-14 (56px) más aire; mobile cubre el header envuelto en dos filas (~129px) más aire.
+    // Tailwind: 1 unidad = 0.25rem. Desktop cubre el header de h-14 (56px) más aire; mobile cubre el header claro y compacto en dos filas (~94px) más aire.
     expect((int) $wrapper['desktop'])->toBeGreaterThanOrEqual(14);
     expect((int) $wrapper['mobile'])->toBeGreaterThan((int) $wrapper['desktop']);
-    expect((int) $wrapper['mobile'])->toBeGreaterThanOrEqual(36);
+    expect((int) $wrapper['mobile'])->toBeGreaterThanOrEqual(24);
+    expect((int) $wrapper['mobile'])->toBeLessThanOrEqual(30);
+});
+
+it('usa una superficie blanca y discreta para el header del panel', function () {
+    [$activa, $otra] = crearEdicionesHeaderEdicion();
+    $admin = crearAdminHeaderEdicion();
+
+    $html = $this->actingAs($admin)
+        ->get('/Panel/admin?idEdicion='.$activa->id)
+        ->assertSuccessful()
+        ->getContent();
+
+    expect(preg_match('/<header[^>]*data-panel-edicion-header.*?<\/header>/s', $html, $header))->toBe(1);
+
+    $bloqueHeader = $header[0];
+    expect($bloqueHeader)->toContain('bg-white');
+    expect($bloqueHeader)->toContain('border-slate-200');
+    expect($bloqueHeader)->not->toContain('bg-slate-900');
+    expect($bloqueHeader)->not->toContain('text-white');
+});
+
+it('reemplaza el acento saturado por uno neutro y etiqueta la edición de forma visible', function () {
+    [$activa, $otra] = crearEdicionesHeaderEdicion();
+    $admin = crearAdminHeaderEdicion();
+
+    $html = $this->actingAs($admin)
+        ->get('/Panel/admin?idEdicion='.$activa->id)
+        ->assertSuccessful()
+        ->getContent();
+
+    expect(preg_match('/<header[^>]*data-panel-edicion-header.*?<\/header>/s', $html, $header))->toBe(1);
+    expect($header[0])->not->toContain('cyan');
+
+    expect(preg_match('/<form[^>]*data-panel-edicion-form[^>]*>(.*?)<\/form>/s', $html, $matches))->toBe(1);
+
+    $formulario = $matches[0];
+    expect($formulario)->toContain('bg-slate-100');
+    expect(preg_match('/<label[^>]*>Edición<\/label>/', $formulario))->toBe(1);
+    expect($formulario)->not->toContain('sr-only');
 });
 
 it('usa una familia tipográfica con fallback sans cuando Poppins no carga', function () {
