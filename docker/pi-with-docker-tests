@@ -1,0 +1,44 @@
+#!/bin/sh
+# Launcher: starts a Pi session with the repository's docker/phpunit shim
+# first in PATH, so pi-lens's PHPUnit runner executes Pest inside the app
+# container. Requires restarting Pi through this launcher; an already-running
+# session is not affected.
+set -u
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 1
+ROOT=$(dirname -- "$SCRIPT_DIR")
+
+[ -f "$ROOT/docker-compose.yml" ] || {
+  printf 'pi-with-docker-tests: %s is not the expected repository (docker-compose.yml missing)\n' "$ROOT" >&2
+  exit 1
+}
+
+current_dir=$(pwd -P)
+case $current_dir in
+  "$ROOT"|"$ROOT"/*) ;;
+  *)
+    printf 'pi-with-docker-tests: must be invoked from inside %s (cwd: %s)\n' "$ROOT" "$current_dir" >&2
+    exit 1
+    ;;
+esac
+
+# Drop host vendor/bin directories so no host phpunit can shadow the repo
+# shim, and dedupe the repo docker dir before putting the shim first.
+cleaned_path=$(
+  printf '%s' "$PATH" | tr ':' '\n' | while IFS= read -r path_entry; do
+    case $path_entry in
+      ''|*/vendor/bin|"$ROOT"/docker) ;;
+      *) printf '%s\n' "$path_entry" ;;
+    esac
+  done | paste -sd: -
+)
+PATH="$ROOT/docker${cleaned_path:+:$cleaned_path}"
+export PATH
+
+command -v pi >/dev/null 2>&1 || {
+  printf 'pi-with-docker-tests: pi executable not found in PATH\n' >&2
+  exit 127
+}
+
+cd "$ROOT" || exit 1
+exec pi "$@"
