@@ -1,26 +1,13 @@
 @include('head')
 @include('components.loader')
 
-<body class="bg-[--color-primary]  font-[Poppins]">
+<body class="bg-[--color-primary]  font-[Poppins,sans-serif]">
     @php
         /**
          * Contexto de edición activo para mantener la navegación consistente.
          */
-        $idEdicionActual = $idEdicionActual ?? ($EdicionSeleccionada->id ?? request()->query('idEdicion'));
         $parametrosEdicionActual = $idEdicionActual ? ['idEdicion' => $idEdicionActual] : [];
     @endphp
-    <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
-        aria-controls="sidebar-multi-level-sidebar" type="button"
-        aria-expanded="false"
-        class="fixed left-3 top-3 z-50 inline-flex items-center rounded-lg bg-white/95 p-2 text-sm text-gray-600 shadow-md backdrop-blur lg:hidden hover:bg-white focus:outline-none focus:ring-2 focus:ring-gray-200">
-        <span class="sr-only">Open sidebar</span>
-        <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg">
-            <path clip-rule="evenodd" fill-rule="evenodd"
-                d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
-            </path>
-        </svg>
-    </button>
     <div id="sidebar-backdrop" class="pointer-events-none fixed inset-0 z-30 bg-slate-900/50 opacity-0 transition-opacity duration-200 lg:hidden"></div>
     <aside id="sidebar-multi-level-sidebar"
         class="fixed top-0 left-0 z-40 h-screen w-64 -translate-x-full overflow-y-auto shadow-xl transition-transform lg:translate-x-0 lg:shadow-none"
@@ -61,34 +48,6 @@
                     <span class="px-2 text-xs font-semibold text-gray-500 uppercase">Gestión</span>
                 </li>
 
-                <li>
-                    <button type="button"
-                        class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100"
-                        aria-controls="dropdown-example" data-collapse-toggle="dropdown-example">
-                        <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 192 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                            <path
-                                d="M48 80a48 48 0 1 1 96 0A48 48 0 1 1 48 80zM0 224c0-17.7 14.3-32 32-32l64 0c17.7 0 32 14.3 32 32l0 224 32 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 512c-17.7 0-32-14.3-32-32s14.3-32 32-32l32 0 0-192-32 0c-17.7 0-32-14.3-32-32z" />
-                        </svg>
-                        <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Seleccionar Edición</span>
-                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 10 6">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 1 4 4 4-4" />
-                        </svg>
-                    </button>
-                    <ul id="dropdown-example" class="hidden py-2 space-y-2">
-                        @foreach ($ediciones as $edicion)
-                            <li>
-                                <a href="{{ route('admin', ['idEdicion' => $edicion->id]) }}"
-                                    class="block px-4 py-2 hover:bg-gray-100">
-                                    {{ $edicion->nombre }}
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </li>
                 <li>
                     <a href="{{ route('edicion.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
@@ -386,12 +345,71 @@
             @endif
         </div>
     </aside>
-    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pt-14 pb-6 lg:pl-64 lg:pt-0">
+    @php
+        /**
+         * Header persistente: muestra la edición activa o un estado vacío accesible.
+         * El selector navega a `admin?idEdicion` exclusivamente para reiniciar filtros.
+         */
+        $edicionActivaHeader = $EdicionSeleccionada ?? null;
+        $authUserHeader = auth()->user();
+    @endphp
+    <header data-panel-edicion-header
+        class="fixed inset-x-0 top-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/15 bg-slate-900/95 px-3 py-2 text-white shadow-md backdrop-blur sm:px-4 lg:h-14 lg:left-64 lg:flex-nowrap lg:py-0">
+        <span class="order-2 whitespace-nowrap text-sm font-bold tracking-wide text-white lg:order-none">Mitaí Admin</span>
+        <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
+            aria-controls="sidebar-multi-level-sidebar" type="button" aria-expanded="false"
+            class="order-1 inline-flex items-center rounded-lg p-2 text-sm text-gray-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-gray-400 lg:order-none lg:hidden">
+            <span class="sr-only">Abrir menú</span>
+            <svg class="h-6 w-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg">
+                <path clip-rule="evenodd" fill-rule="evenodd"
+                    d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
+                </path>
+            </svg>
+        </button>
+        <form data-panel-edicion-form action="{{ route('admin') }}" method="GET"
+            class="order-last flex w-full min-w-0 items-center gap-2 lg:order-none lg:ml-4 lg:w-auto">
+            <label for="panel-edicion-select" class="sr-only">Edición activa</label>
+            <select name="idEdicion" id="panel-edicion-select"
+                class="h-9 min-w-0 max-w-full flex-1 rounded-lg border border-white/30 bg-white/95 px-2 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 lg:w-72 lg:flex-none">
+                @if (! $edicionActivaHeader)
+                    <option value="" selected>Sin edición seleccionada</option>
+                @endif
+                @foreach ($ediciones as $edicionHeader)
+                    <option value="{{ $edicionHeader->id }}" {{ $edicionActivaHeader?->id === $edicionHeader->id ? 'selected' : '' }}>
+                        {{ $edicionHeader->nombre }}
+                    </option>
+                @endforeach
+            </select>
+            <button type="submit"
+                class="inline-flex h-9 flex-shrink-0 items-center rounded-lg bg-cyan-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-300">
+                Cambiar edición
+            </button>
+        </form>
+        <nav aria-label="Cuenta" class="order-3 ml-auto flex flex-shrink-0 items-center gap-2 lg:order-none">
+            <a href="{{ route('profile.edit') }}"
+                class="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-gray-200 hover:bg-white/10"
+                aria-label="Perfil de {{ $authUserHeader->name }}">
+                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold uppercase">
+                    {{ mb_substr($authUserHeader->name, 0, 1) }}
+                </span>
+                <span class="hidden max-w-[140px] truncate sm:inline">{{ $authUserHeader->name }}</span>
+            </a>
+            <form method="POST" action="{{ route('logout') }}" class="inline-flex">
+                @csrf
+                <button type="submit"
+                    class="inline-flex h-9 items-center rounded-lg border border-white/25 px-3 text-sm font-semibold text-gray-100 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    Salir
+                </button>
+            </form>
+        </nav>
+    </header>
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pt-36 pb-6 lg:pl-64 lg:pt-20">
         @php
             $nombreRutaActual = request()->route()?->getName() ?? '';
             $rutaActualPath = request()->path();
 
-            $idEdicionContexto = $idEdicionActual ?? ($EdicionSeleccionada->id ?? request('idEdicion'));
+            $idEdicionContexto = $idEdicionActual;
             $modulosContexto = [
                 'admin' => [
                     'label' => 'Panel admin',
@@ -653,19 +671,6 @@
                 'Copa' => $nombreCopaContexto ?: ($idCopaContexto ? 'ID '.$idCopaContexto : null),
             ], static fn ($valor) => $valor !== null && $valor !== '');
         @endphp
-        @if (isset($EdicionSeleccionada))
-            <div class="mb-2 flex justify-center px-3 sm:px-4 lg:justify-end">
-                <div
-                    class="flex w-full max-w-xs items-center rounded-lg border-l-4 border-[--color-secondary] bg-white p-3 shadow-md sm:p-4">
-                    <div class="min-w-0">
-                        <h2 class="overflow-hidden text-ellipsis whitespace-nowrap text-base font-semibold text-gray-800 sm:text-lg">
-                            {{ $EdicionSeleccionada->nombre }}
-                        </h2>
-                    </div>
-                </div>
-            </div>
-        @endif
-
         @if ($mostrarSelectorGlobal)
             <div class="mb-3 px-3 sm:px-4">
                 <div class="rounded-xl border border-white/20 bg-white/10 p-3 shadow-sm backdrop-blur-sm sm:p-4">
