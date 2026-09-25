@@ -43,7 +43,7 @@ switch ((string) $width) {
             class="absolute z-50 mt-1 {{ $width }} rounded-2xl shadow-xl {{ $alignmentClasses }}"
             style="display: none;"
             @click="open = false">
-            <div class="origin-top-right absolute right-0 {{ $width }} overflow-hidden rounded-2xl border border-[#f7f280]/50 bg-gradient-to-br from-[#0e4b5e]/95 via-[#2a6d81]/95 to-[#0e4b5e]/90 py-2 text-white shadow-[0_18px_45px_-20px_rgba(14,75,94,0.65)] ring-1 ring-[#f7f280]/30 focus:outline-none transition ease-out duration-100">
+            <div class="origin-top-right absolute right-0 {{ $width }} overflow-hidden rounded-2xl border border-brand-gold/50 bg-gradient-to-br from-brand-navy/95 via-brand-teal/95 to-brand-navy/90 py-2 text-white shadow-[0_18px_45px_-20px_rgba(var(--brand-navy)_/_0.65)] ring-1 ring-brand-gold/30 focus:outline-none transition ease-out duration-100">
             {{ $content }}
         </div>
     </div>

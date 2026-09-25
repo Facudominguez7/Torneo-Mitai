@@ -4,7 +4,7 @@
         Seleccionar Equipo
     </label>
     <select name="idEquipo" id="idEquipo"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
         @foreach ($equipos as $equipo)
             <option value="{{ $equipo->idEquipo }}"
                 {{ old('idEquipo', $subcampeon->idEquipo) == $equipo->idEquipo ? 'selected' : '' }}>
@@ -18,7 +18,7 @@
         Seleccionar Copa
     </label>
     <select name="idCopa" id="idCopa"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
         @foreach ($copas as $copa)
             <option value="{{ $copa->id }}" {{ old('idCopa', $subcampeon->idCopa) == $copa->id ? 'selected' : '' }}>
                 {{ $copa->nombre }}
@@ -31,7 +31,7 @@
         Edicion
     </label>
     <select name="idEdicion" id="idEdicion"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
 
         <option value="{{ $EdicionSeleccionada->id }}" selected>{{ $EdicionSeleccionada->nombre }}</option>
     </select>
@@ -42,7 +42,7 @@
             Categoria
         </label>
         <select name="idCategoria" id="idCategoria"
-            class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+            class="panel-form-input">
 
             <option value="{{ $CategoriaSeleccionada->id }}" selected>{{ $CategoriaSeleccionada->nombreCategoria }}
             </option>

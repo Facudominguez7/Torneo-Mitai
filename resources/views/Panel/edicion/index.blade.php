@@ -59,15 +59,13 @@
                     <span class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Accion
                     </span>
                     <div class="lg:flex lg:justify-center lg:space-x-4 lg:flex-row flex justify-center flex-col">
-                        <button class="mb-1 lg:mb-0">
-                            <a href="{{ route('edicion.edit', $e) }}" class="btn btn-editar">
-                                Editar
-                            </a>
-                        </button>
+                        <x-ui.button href="{{ route('edicion.edit', $e) }}" variant="success" class="mb-1 lg:mb-0">
+                            Editar
+                        </x-ui.button>
                         <form class="mb-0" action="{{ route('edicion.destroy', $e) }}" method="post">
                             @method('DELETE')
                             @csrf
-                            <button class="btn btn-eliminar" type="submit">Eliminar</button>
+                            <x-ui.button type="submit" variant="danger">Eliminar</x-ui.button>
                         </form>
                     </div>
                 </td>

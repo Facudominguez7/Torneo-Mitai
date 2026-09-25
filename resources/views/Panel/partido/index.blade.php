@@ -120,9 +120,9 @@
                 </svg>
             </div>
             <div class="mt-2 inline-block w-full items-center md:ml-2 md:mt-0 md:w-auto">
-                <button id="reset-filters" class="btn btn-eliminar w-full md:w-auto">
+                <x-ui.button id="reset-filters" variant="danger" class="w-full md:w-auto">
                     Eliminar Filtros
-                </button>
+                </x-ui.button>
             </div>
             {{-- Buscador por nombre de equipo --}}
             <div class="relative mt-2 inline-block w-full items-center md:ml-2 md:mt-0 md:w-auto">

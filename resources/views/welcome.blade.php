@@ -108,7 +108,7 @@
                         <label for="idEdicion" class="text-sm font-semibold text-white/80">Edición</label>
                         <div class="relative mt-2">
                             <select id="ediciones-select" name="idEdicion" onchange="this.form.submit()"
-                                class="w-full appearance-none rounded-2xl border border-[#f7f280]/40 bg-slate-950/90 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-black/30 transition hover:border-[#f7f280] focus:border-[#f7f280] focus:outline-none focus:ring-2 focus:ring-[#f7f280]/40">
+                                class="w-full appearance-none rounded-2xl border border-brand-gold/40 bg-slate-950/90 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-black/30 transition hover:border-brand-gold focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/40">
                                 <option value="" class="bg-slate-950">Seleccione una edición</option>
                                 @foreach ($ediciones as $edicion)
                                     <option value="{{ $edicion->id }}" class="bg-slate-950" {{ optional($edicionActual)->id === $edicion->id ? 'selected' : '' }}>
@@ -116,7 +116,7 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                            <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-brand-gold">
                                 <i class="fa-solid fa-chevron-down text-xs"></i>
                             </span>
                         </div>

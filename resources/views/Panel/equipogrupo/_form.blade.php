@@ -4,7 +4,7 @@
         Seleccionar Equipo
     </label>
     <select name="idEquipo" id="idEquipo"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
         @foreach ($equipos as $equipo)
             <option value="{{ $equipo->id }}"
                 {{ old('idEquipo', $equipo->id) == $equipo->id ? 'selected' : '' }}>
@@ -18,7 +18,7 @@
         Edicion
     </label>
     <select name="idEdicion" id="idEdicion"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
 
         <option value="{{ $EdicionSeleccionada->id }}" selected>{{ $EdicionSeleccionada->nombre }}</option>
     </select>
@@ -29,7 +29,7 @@
             Grupo
         </label>
         <select name="idGrupo" id="idGrupo"
-            class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+            class="panel-form-input">
 
             <option value="{{ $GrupoSeleccionado->id }}" selected>{{ $GrupoSeleccionado->nombre }}</option>
         </select>
@@ -43,7 +43,7 @@
             Categoria
         </label>
         <select name="idCategoria" id="idCategoria"
-            class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+            class="panel-form-input">
 
             <option value="{{ $CategoriaSeleccionada->id }}" selected>{{ $CategoriaSeleccionada->nombreCategoria }}
             </option>

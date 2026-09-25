@@ -116,14 +116,16 @@
                                 </td>
                                 <td class="p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static whitespace-nowrap">
                                     <div class="lg:flex lg:justify-center lg:space-x-4 lg:flex-row flex justify-center flex-col">
-                                        <a href="{{ route('tabla_posicion.edit', array_merge(['tabla_posicion' => $fila], $parametrosRegreso)) }}" class="btn btn-editar mb-1 lg:mb-0">Editar</a>
+                                        <x-ui.button
+                                            href="{{ route('tabla_posicion.edit', array_merge(['tabla_posicion' => $fila], $parametrosRegreso)) }}"
+                                            variant="success" class="mb-1 lg:mb-0">Editar</x-ui.button>
                                         <form class="mb-0" action="{{ route('tabla_posicion.destroy', $fila) }}" method="post">
                                             @method('DELETE')
                                             @csrf
                                             <input type="hidden" name="idEdicion" value="{{ $fila->idEdicion }}">
                                             <input type="hidden" name="idCategoria" value="{{ $fila->grupo?->idCategoria }}">
                                             <input type="hidden" name="idGrupo" value="{{ $fila->idGrupo }}">
-                                            <button class="btn btn-eliminar" type="submit">Eliminar</button>
+                                            <x-ui.button type="submit" variant="danger">Eliminar</x-ui.button>
                                         </form>
                                     </div>
                                 </td>

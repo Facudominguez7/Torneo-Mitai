@@ -32,7 +32,7 @@
                 Grupo
             </label>
             <select name="idGrupo" id="idGrupo"
-                class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+                class="panel-form-input">
 
                 <option value="{{ $partido->idGrupo }}" selected>{{ $partido->grupo->nombre }}</option>
                 </option>
@@ -111,7 +111,7 @@
             </label>
             <input type="number" name="golesEquipoLocal" id="golesEquipoLocal" min="0"
                 value="{{ old('golesEquipoLocal', $partido->golesEquipoLocal) }}"
-                class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md" />
+                class="panel-form-input" />
         </div>
         <div class="mb-5">
             <label for="golesEquipoVisitante" class="mb-3 block text-base font-medium text-white">
@@ -119,7 +119,7 @@
             </label>
             <input type="number" name="golesEquipoVisitante" id="golesEquipoVisitante" min="0"
                 value="{{ old('golesEquipoVisitante', $partido->golesEquipoVisitante) }}"
-                class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md" />
+                class="panel-form-input" />
         </div>
         @if (isset($tipo) && $tipo === 'instancia_final')
             <div class="mb-5">
@@ -129,7 +129,7 @@
                 <input type="text" name="resultadoGlobal" id="resultadoGlobal"
                     placeholder="Ej: 3-2"
                     value="{{ old('resultadoGlobal', $partido->resultadoGlobal) }}"
-                    class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md" />
+                    class="panel-form-input" />
             </div>
             <div id="containerPenales" style="display: none;">
                 <div class="mb-5">
@@ -138,7 +138,7 @@
                     </label>
                     <input type="number" name="penalesEquipoLocal" id="penalesEquipoLocal"
                         value="{{ old('penalesEquipoLocal', $partido->penalesEquipoLocal) }}"
-                        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md" />
+                        class="panel-form-input" />
                 </div>
                 <div class="mb-5">
                     <label for="penalesEquipoVisitante" class="mb-3 block text-base font-medium text-white">
@@ -146,7 +146,7 @@
                     </label>
                     <input type="number" name="penalesEquipoVisitante" id="penalesEquipoVisitante"
                         value="{{ old('penalesEquipoVisitante', $partido->penalesEquipoVisitante) }}"
-                        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md" />
+                        class="panel-form-input" />
                 </div>
             </div>
 

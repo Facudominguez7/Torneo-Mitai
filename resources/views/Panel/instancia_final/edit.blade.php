@@ -30,7 +30,7 @@
                 <input type="hidden" name="retorno_horario" value="{{ $parametrosRegreso['horario'] ?? '' }}">
                 <div>
                     <button type="submit"
-                        class="hover:shadow-form rounded-md bg-[#6A64F1] py-3 px-8 text-base font-semibold text-white outline-none">
+                        class="panel-form-submit">
                         Actualizar
                     </button>
                 </div>

@@ -16,8 +16,8 @@
                     <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                         <div class="space-y-3 max-w-2xl">
                             <span
-                                class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-[#f7f280]/80">
-                                <span class="h-2 w-2 rounded-full bg-[#f7f280]"></span>
+                                class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-brand-gold/80">
+                                <span class="h-2 w-2 rounded-full bg-brand-gold"></span>
                                 Muralla del torneo
                             </span>
                             <h1 class="text-3xl sm:text-4xl font-bold text-white">Vallas menos vencidas</h1>
@@ -25,28 +25,28 @@
                                 jornada tras jornada. Filtrá por edición y descubrí quién lidera la tabla defensiva.</p>
                         </div>
                         <form method="GET" action="{{ route('vallas') }}"
-                            class="grid gap-3 rounded-3xl border border-[#f7f280]/30 bg-gradient-to-br from-[#0e4b5e]/70 via-[#2a6d81]/70 to-[#0e4b5e]/70 px-4 py-4 text-sm text-white/80 shadow-[0_24px_60px_-40px_rgba(14,75,94,0.9)] sm:px-6 sm:py-5">
+                            class="grid gap-3 rounded-3xl border border-brand-gold/30 bg-gradient-to-br from-brand-navy/70 via-brand-teal/70 to-brand-navy/70 px-4 py-4 text-sm text-white/80 shadow-[0_24px_60px_-40px_rgba(var(--brand-navy)_/_0.9)] sm:px-6 sm:py-5">
                             <label for="idEdicion"
-                                class="text-xs font-semibold uppercase tracking-[0.3em] text-[#f7f280]/80">Edición</label>
+                                class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-gold/80">Edición</label>
                             <div class="relative">
                                 <div
-                                    class="group rounded-2xl bg-gradient-to-r from-[#0e4b5e] via-[#2a6d81] to-[#0e4b5e] p-[1px] transition focus-within:ring-2 focus-within:ring-[#f7f280]/50">
-                                    <div class="relative rounded-[1.1rem] bg-[#0e4b5e]/80">
+                                    class="group rounded-2xl bg-gradient-to-r from-brand-navy via-brand-teal to-brand-navy p-[1px] transition focus-within:ring-2 focus-within:ring-brand-gold/50">
+                                    <div class="relative rounded-[1.1rem] bg-brand-navy/80">
                                         <select id="idEdicion" name="idEdicion" onchange="this.form.submit()"
                                             class="w-full appearance-none rounded-[1.1rem] border-0 bg-transparent px-4 py-3 text-sm font-semibold text-white focus:outline-none"
                                             style="color-scheme: dark;">
-                                            <option value="" style="background-color: #0e4b5e; color: white;">Seleccioná
+                                            <option value="" style="background-color: var(--color-primary); color: white;">Seleccioná
                                                 una edición
                                             </option>
                                             @foreach ($ediciones as $edicion)
                                                 <option value="{{ $edicion->id }}"
-                                                    style="background-color: #0e4b5e; color: white;" {{ optional($EdicionSeleccionada)->id == $edicion->id ? 'selected' : '' }}>
+                                                    style="background-color: var(--color-primary); color: white;" {{ optional($EdicionSeleccionada)->id == $edicion->id ? 'selected' : '' }}>
                                                     {{ $edicion->nombre }}
                                                 </option>
                                             @endforeach
                                         </select>
                                         <span
-                                            class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#f7f280]">
+                                            class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-brand-gold">
                                             <i class="fa-solid fa-chevron-down text-xs"></i>
                                         </span>
                                     </div>
@@ -59,19 +59,19 @@
                         <div class="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                             @foreach ($vallas as $valla)
                                 <article
-                                    class="group relative overflow-hidden rounded-3xl border border-[#f7f280]/30 bg-gradient-to-br from-[#0e4b5e]/95 via-[#2a6d81]/92 to-[#0e4b5e]/95 p-6 text-white shadow-[0_28px_70px_-40px_rgba(14,75,94,0.85)] transition-transform duration-300 hover:-translate-y-1">
+                                    class="group relative overflow-hidden rounded-3xl border border-brand-gold/30 bg-gradient-to-br from-brand-navy/95 via-brand-teal/92 to-brand-navy/95 p-6 text-white shadow-[0_28px_70px_-40px_rgba(var(--brand-navy)_/_0.85)] transition-transform duration-300 hover:-translate-y-1">
                                     <div
-                                        class="absolute -right-14 -top-16 h-36 w-36 rounded-full bg-[#f7f280]/20 blur-3xl opacity-40 transition-opacity duration-300 group-hover:opacity-70">
+                                        class="absolute -right-14 -top-16 h-36 w-36 rounded-full bg-brand-gold/20 blur-3xl opacity-40 transition-opacity duration-300 group-hover:opacity-70">
                                     </div>
                                     <div class="relative flex h-full flex-col justify-between">
                                         <div
-                                            class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-[#f7f280]/80">
+                                            class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-brand-gold/80">
                                             <span>{{ $valla['categoria_nombre'] }}</span>
                                             <i class="fa-solid fa-shield-halved text-lg"></i>
                                         </div>
                                         <div class="mt-6 flex flex-col items-center text-center">
                                             <div
-                                                class="h-24 w-24 overflow-hidden rounded-full border border-[#f7f280]/40 bg-[#0e4b5e]/60 p-2 shadow-inner shadow-[#0e4b5e]/50">
+                                                class="h-24 w-24 overflow-hidden rounded-full border border-brand-gold/40 bg-brand-navy/60 p-2 shadow-inner shadow-brand-navy/50">
                                                 <img src="{{ asset('fotos/equipos/' . ($valla['foto_equipo'] ?? 'Logo_Mitai_SinFondo.png')) }}"
                                                     alt="{{ $valla['nombre_equipo'] }}" class="h-full w-full object-contain"
                                                     onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';">
@@ -82,7 +82,7 @@
                                             <p class="mt-1 text-sm text-white/70">{{ $valla['nombre_equipo'] }}</p>
                                         </div>
                                         <p
-                                            class="mt-5 text-center text-xs font-semibold uppercase tracking-[0.3em] text-[#f7f280]/90">
+                                            class="mt-5 text-center text-xs font-semibold uppercase tracking-[0.3em] text-brand-gold/90">
                                             {{ $valla['goles_recibidos'] ?? 0 }} goles recibidos
                                         </p>
                                     </div>
@@ -91,7 +91,7 @@
                         </div>
                     @else
                         <p
-                            class="mt-10 rounded-3xl border border-[#f7f280]/30 bg-gradient-to-br from-[#0e4b5e]/70 via-[#2a6d81]/70 to-[#0e4b5e]/70 px-6 py-10 text-center text-lg font-semibold text-white/80">
+                            class="mt-10 rounded-3xl border border-brand-gold/30 bg-gradient-to-br from-brand-navy/70 via-brand-teal/70 to-brand-navy/70 px-6 py-10 text-center text-lg font-semibold text-white/80">
                             Sin registros para la edición seleccionada.
                         </p>
                     @endif

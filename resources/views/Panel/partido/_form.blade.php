@@ -55,7 +55,7 @@
         Seleccionar Equipo Local
     </label>
     <select name="idEquipoLocal" id="idEquipoLocal"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
     <option value="" disabled {{ (string) old('idEquipoLocal', $partido->idEquipoLocal ?? '') === '' ? 'selected' : '' }}>-- Seleccionar equipo local --</option>
         @foreach ($equipos as $equipo)
             <option value="{{ $equipo->id }}"
@@ -73,7 +73,7 @@
         Seleccionar Equipo Visitante
     </label>
     <select name="idEquipoVisitante" id="idEquipoVisitante"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
     <option value="" disabled {{ (string) old('idEquipoVisitante', $partido->idEquipoVisitante ?? '') === '' ? 'selected' : '' }}>-- Seleccionar equipo visitante --</option>
         @foreach ($equipos as $equipo)
             <option value="{{ $equipo->id }}"
@@ -91,7 +91,7 @@
         Seleccionar Fecha
     </label>
     <select name="idFechas" id="idFechas"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
         @foreach ($fechas as $f)
             <option value="{{ $f->id }}"
                 {{ (string) $fechaPorDefecto === (string) $f->id ? 'selected' : '' }}>
@@ -108,7 +108,7 @@
         Seleccionar Horario
     </label>
     <input type="datetime-local" name="horario_datetime" id="horario_datetime"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
+        class="panel-form-input"
         value="{{ $horarioPorDefecto }}">
     @error('horario_datetime')
         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
@@ -119,7 +119,7 @@
         Cancha
     </label>
     <input type="text" name="cancha" id="cancha" value="{{ old('cancha', $partido->cancha) }}"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
+        class="panel-form-input"
          />
     @error('cancha')
         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>

@@ -5,14 +5,14 @@
             💡 Seleccionar de la tabla de goleadores (ordenados por goles)
         </label>
         <select id="selectGoleador"
-            class="w-full rounded-md border border-emerald-400/50 bg-[#0e4b5e] py-3 px-6 text-base font-medium text-white outline-none focus:border-emerald-400 focus:shadow-md"
+            class="w-full rounded-md border border-emerald-400/50 bg-brand-navy py-3 px-6 text-base font-medium text-white outline-none focus:border-emerald-400 focus:shadow-md"
             style="color-scheme: dark;"
             onchange="if(this.value) { document.getElementById('nombre').value = this.selectedOptions[0].dataset.nombre; document.getElementById('idEquipo').value = this.selectedOptions[0].dataset.equipo; }">
-            <option value="" style="background-color: #0e4b5e; color: white;">-- Seleccionar jugador --</option>
+            <option value="" style="background-color: var(--color-primary); color: white;">-- Seleccionar jugador --</option>
             @foreach ($listaGoleadores as $g)
                 <option value="{{ $g->id }}"
                     data-nombre="{{ $g->jugador ? $g->jugador->apellido . ' ' . $g->jugador->nombre : 'Desconocido' }}"
-                    data-equipo="{{ $g->idEquipo }}" style="background-color: #0e4b5e; color: white;">
+                    data-equipo="{{ $g->idEquipo }}" style="background-color: var(--color-primary); color: white;">
                     {{ $g->jugador ? $g->jugador->apellido . ' ' . $g->jugador->nombre : 'Desconocido' }}
                     ({{ $g->equipo->nombre ?? 'Equipo' }}) - {{ $g->cantidadGoles }} goles
                 </option>
@@ -27,7 +27,7 @@
         Nombre del Jugador
     </label>
     <input type="text" name="nombre" id="nombre" value="{{old('nombre', $goleador->nombre)}}"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md" />
+        class="panel-form-input" />
 </div>
 @if (!isset($listaGoleadores) || $listaGoleadores->count() == 0)
     <div class="mb-5">
@@ -35,7 +35,7 @@
             Seleccionar Equipo
         </label>
         <select name="idEquipo" id="idEquipo"
-            class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+            class="panel-form-input">
             @foreach ($equipos as $equipo)
                 <option value="{{ $equipo->idEquipo }}" {{ old('idEquipo', $goleador->idEquipo) == $equipo->idEquipo ? 'selected' : '' }}>
                     {{ $equipo->nombreEquipo }}
@@ -49,7 +49,7 @@
         Edicion
     </label>
     <select name="idEdicion" id="idEdicion"
-        class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+        class="panel-form-input">
 
         <option value="{{ $EdicionSeleccionada->id }}" selected>{{ $EdicionSeleccionada->nombre }}</option>
     </select>
@@ -60,7 +60,7 @@
             Categoria
         </label>
         <select name="idCategoria" id="idCategoria"
-            class="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+            class="panel-form-input">
 
             <option value="{{ $CategoriaSeleccionada->id }}" selected>{{ $CategoriaSeleccionada->nombreCategoria }}
             </option>
