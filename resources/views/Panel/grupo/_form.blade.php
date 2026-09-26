@@ -1,37 +1,23 @@
 @csrf
-<div class="mb-5">
-    <label for="nombre" class="mb-3 block text-base font-medium text-white">
-        Nombre del Grupo
-    </label>
-    <input type="text" name="nombre" id="nombre" value="{{old('nombre', $grupo->nombre)}}"
-        class="panel-form-input"
-         />
-</div>
-<div class="mb-5">
-    <label for="nombre" class="mb-3 block text-base font-medium text-white">
-        Edicion
-    </label>
-    <select name="idEdicion" id="idEdicion"
-        class="panel-form-input">
-
-        <option value="{{ $EdicionSeleccionada->id }}" selected>{{ $EdicionSeleccionada->nombre }}</option>
-    </select>
-</div>
-@if (isset($CategoriaSeleccionada))
-    <div class="mb-5">
-        <label for="nombre" class="mb-3 block text-base font-medium text-white">
-            Categoria
+<div class="space-y-5">
+    <div>
+        <label for="nombre" class="mb-1 block text-sm font-medium text-gray-700">
+            Nombre del Grupo
         </label>
-        <select name="idCategoria" id="idCategoria"
-            class="panel-form-input">
+        <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $grupo->nombre) }}"
+            class="panel-form-input" />
+    </div>
 
+    <x-ui.select label="Edición" name="idEdicion" id="idEdicion">
+        <option value="{{ $EdicionSeleccionada->id }}" selected>{{ $EdicionSeleccionada->nombre }}</option>
+    </x-ui.select>
+
+    @if (isset($CategoriaSeleccionada))
+        <x-ui.select label="Categoría" name="idCategoria" id="idCategoria">
             <option value="{{ $CategoriaSeleccionada->id }}" selected>{{ $CategoriaSeleccionada->nombreCategoria }}
             </option>
-        </select>
-    </div>
-@else
-    <input class="hidden" type="number" name="idCategoria" id="idCategoria" value="{{ $idCategoria }}">
-@endif
-
-
-
+        </x-ui.select>
+    @else
+        <input class="hidden" type="number" name="idCategoria" id="idCategoria" value="{{ $idCategoria }}">
+    @endif
+</div>
