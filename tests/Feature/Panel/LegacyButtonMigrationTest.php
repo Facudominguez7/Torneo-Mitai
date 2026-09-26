@@ -46,7 +46,10 @@ it('renderiza el boton de limpiar filtros de partidos con x-ui.button', function
 
     $response->assertOk();
     $response->assertSee('id="reset-filters"', false);
-    $response->assertSee('bg-red-600', false);
+    // Rediseño del panel (T5): limpiar filtros no es destructivo, así que el
+    // botón deja de ser rojo y pasa a ser un link de texto.
+    preg_match('/<button[^>]*id="reset-filters"[^>]*>/', $response->getContent(), $botonLimpiar);
+    expect($botonLimpiar[0] ?? '')->not->toContain('bg-red-600');
     $response->assertDontSee('btn-eliminar', false);
 });
 
