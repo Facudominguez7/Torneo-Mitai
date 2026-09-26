@@ -95,7 +95,7 @@
             method="POST">
             @csrf
             <div class="mb-6 grid grid-cols-2 gap-4">
-                <div>
+                <div class="flex flex-col justify-end">
                     <label for="golesEquipoLocal" class="mb-2 block text-center text-sm font-medium text-gray-700">
                         Goles de <span class="font-semibold text-gray-900">{{ $partido->equipoLocal->nombre }}</span>
                     </label>
@@ -103,7 +103,7 @@
                         value="{{ old('golesEquipoLocal', $partido->golesEquipoLocal) }}"
                         class="w-full rounded-md border-gray-300 text-center text-2xl font-bold text-gray-900 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30" />
                 </div>
-                <div>
+                <div class="flex flex-col justify-end">
                     <label for="golesEquipoVisitante" class="mb-2 block text-center text-sm font-medium text-gray-700">
                         Goles de <span class="font-semibold text-gray-900">{{ $partido->equipoVisitante->nombre }}</span>
                     </label>
