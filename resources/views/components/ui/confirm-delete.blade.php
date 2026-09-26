@@ -36,9 +36,11 @@
 
 <form
     method="POST"
-    action="{{ $action }}"
+    {{-- Attributes echoed with "{{ }}" arrive already escaped: e($valor, false)
+         escapes without double-encoding (same rule as x-ui.button). --}}
+    action="{!! e($action, false) !!}"
     data-confirm-delete
-    data-confirm-message="{{ $resolvedMessage }}"
+    data-confirm-message="{!! e($resolvedMessage, false) !!}"
     {{ $attributes->merge(['class' => 'inline-flex']) }}
 >
     @csrf

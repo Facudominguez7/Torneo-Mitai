@@ -30,12 +30,17 @@ function confirmarBorrado(mensaje) {
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: '#dc2626',
             })
-            .then((resultado) => resultado.isConfirmed);
+            .then((resultado) => resultado.isConfirmed)
+            // Si SweetAlert falla, el borrado no puede quedar mudo: se pregunta con confirm().
+            .catch(() => window.confirm(mensaje));
     }
 
     return Promise.resolve(window.confirm(mensaje));
 }
 
+// Fase de captura: cancela el envío antes de que el listener por formulario
+// del loader global (components/loader) lo vea y deje la pantalla bloqueada
+// cuando el usuario cancela.
 document.addEventListener('submit', (evento) => {
     const formulario = evento.target;
 
@@ -49,7 +54,9 @@ document.addEventListener('submit', (evento) => {
 
     confirmarBorrado(mensaje).then((confirmado) => {
         if (confirmado) {
+            // form.submit() no dispara "submit", así que el loader global se muestra acá.
+            document.getElementById('loader')?.classList.remove('hidden');
             formulario.submit();
         }
     });
-});
+}, true);

@@ -91,3 +91,14 @@ it('forwards a size to its button so it lines up with other row actions', functi
     expect($pequeno)->toContain('px-3 py-1.5 text-xs')
         ->and($normal)->not->toContain('px-3 py-1.5 text-xs');
 });
+
+it('does not double-escape an echoed action or entity', function () {
+    $html = Blade::render(
+        '<x-ui.confirm-delete action="{{ $accion }}" entity="{{ $entidad }}" />',
+        ['accion' => '/Panel/equipo/1?idEdicion=10&tipo=x', 'entidad' => 'el equipo Ñandú & Cía']
+    );
+
+    expect($html)->toContain('action="/Panel/equipo/1?idEdicion=10&amp;tipo=x"')
+        ->and($html)->toContain('¿Eliminar el equipo Ñandú &amp; Cía?')
+        ->and($html)->not->toContain('&amp;amp;');
+});
