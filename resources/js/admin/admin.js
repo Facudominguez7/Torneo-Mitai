@@ -6,37 +6,6 @@
  * la orientación del usuario dentro del módulo actual.
  */
 document.addEventListener('DOMContentLoaded', () => {
-    const selectorContextoForm = document.getElementById('selector-contexto-form');
-    const selectorContextoTipo = document.getElementById('selector-contexto-tipo');
-
-    /**
-     * Redirige al índice correspondiente del módulo seleccionado.
-     *
-     * Usa el destino precalculado en cada opción para conservar `idEdicion`
-     * y evitar pasar por flujos intermedios cuando el usuario cambia de módulo.
-     */
-    const redirigirSegunContexto = () => {
-        if (!selectorContextoTipo) {
-            return false;
-        }
-
-        const opcionSeleccionada = selectorContextoTipo.options[selectorContextoTipo.selectedIndex];
-        const destino = opcionSeleccionada?.dataset?.destino;
-
-        if (!destino) {
-            return false;
-        }
-
-        window.location.assign(destino);
-
-        return true;
-    };
-
-    selectorContextoForm?.addEventListener('submit', (event) => {
-        event.preventDefault();
-        redirigirSegunContexto();
-    });
-
     const dropdownBtn = document.querySelector('[data-collapse-toggle="dropdown-example"]');
     const dropdown = document.getElementById('dropdown-example');
 

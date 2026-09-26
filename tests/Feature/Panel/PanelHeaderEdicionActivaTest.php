@@ -183,10 +183,9 @@ it('muestra un único selector de edición sin duplicados en sidebar ni tarjeta'
     expect($html)->not->toContain('dropdown-example');
     expect(substr_count($html, 'Edicion Activa 2024'))->toBe(1);
     expect($html)->toContain('lg:ml-64');
-    expect($html)->toContain('flex-wrap');
 });
 
-it('mantiene el header en flujo normal y el contenido sin padding compensatorio', function () {
+it('mantiene el header en flujo normal y un respiro vertical modesto bajo el header', function () {
     [$activa, $otra] = crearEdicionesHeaderEdicion();
     $admin = crearAdminHeaderEdicion();
 
@@ -204,7 +203,11 @@ it('mantiene el header en flujo normal y el contenido sin padding compensatorio'
     expect($header[0])->toContain('w-full');
     expect(preg_match('/<div class="(?<classes>relative flex min-h-screen[^"]*)">/', $html, $wrapper))->toBe(1);
     expect($wrapper['classes'])->toContain('lg:pl-64');
-    expect($wrapper['classes'])->not->toMatch('/(?:^|\s)(?:pt-|lg:pt-)/');
+    // Respiro normal-flow: gap chico para que las acciones no toquen el header translúcido,
+    // sin volver a la compensación grande del header fijo (pt-16+ o variantes responsivas).
+    expect($wrapper['classes'])->toContain('pt-4');
+    expect($wrapper['classes'])->toContain('sm:pt-6');
+    expect($wrapper['classes'])->not->toMatch('/(?:^|\s)(?:pt-(?:16|20|24|28|32|36|40|48)|md:pt-|lg:pt-|xl:pt-|2xl:pt-)/');
 });
 
 it('usa una superficie blanca y discreta para el header del panel', function () {
@@ -260,7 +263,7 @@ it('usa una familia tipográfica con fallback sans cuando Poppins no carga', fun
     expect($html)->not->toMatch('/font-\[Poppins\]/');
 });
 
-it('presenta un header espacioso y una barra de módulo compacta', function () {
+it('presenta un header espacioso sin una barra global de módulos', function () {
     [$activa, $otra] = crearEdicionesHeaderEdicion();
     $admin = crearAdminHeaderEdicion();
 
@@ -273,16 +276,16 @@ it('presenta un header espacioso y una barra de módulo compacta', function () {
     expect($html)->toContain('data-panel-header-edition-row');
     expect($html)->toContain('lg:h-16');
     expect(preg_match('/<div class="(?<classes>relative flex min-h-screen[^"]*)">/', $html, $wrapper))->toBe(1);
-    expect($wrapper['classes'])->not->toMatch('/(?:^|\s)(?:pt-|lg:pt-)/');
-    expect(preg_match('/<div[^>]*data-panel-context-toolbar[^>]*>(.*?)<\/div>\s*<\/div>\s*<\/div>/s', $html, $toolbar))->toBe(1);
-    expect($toolbar[0])->toContain('id="selector-contexto-form"');
-    expect($toolbar[0])->toContain('name="idCategoria"');
-    expect($toolbar[0])->toContain('name="idGrupo"');
-    expect($toolbar[0])->not->toContain('bg-white/10 p-3');
-    expect($toolbar[0])->not->toContain('backdrop-blur-sm');
+    expect($wrapper['classes'])->toContain('pt-4');
+    expect($wrapper['classes'])->toContain('sm:pt-6');
+    expect($wrapper['classes'])->not->toMatch('/(?:^|\s)(?:pt-(?:16|20|24|28|32|36|40|48)|md:pt-|lg:pt-|xl:pt-|2xl:pt-)/');
+    expect($html)->not->toContain('Seleccionar contexto');
+    expect($html)->not->toContain('data-panel-context-toolbar');
+    expect($html)->not->toContain('selector-contexto-form');
+    expect($html)->not->toContain('selector-contexto-tipo');
 });
 
-it('elimina la tarjeta de estadísticas sin quitar navegación ni selector de módulo', function () {
+it('elimina el toolbar global y conserva la navegación lateral y el contexto de edición', function () {
     [$activa, $otra] = crearEdicionesHeaderEdicion();
     $admin = crearAdminHeaderEdicion();
 
@@ -297,8 +300,13 @@ it('elimina la tarjeta de estadísticas sin quitar navegación ni selector de m�
     expect($plantilla)->not->toContain('Jugadores Totales');
     expect($plantilla)->not->toContain('Por Categoría:');
     expect($html)->toContain('Estadísticas de Jugadores');
-    expect($html)->toContain('data-panel-context-toolbar');
-    expect($html)->toContain('id="selector-contexto-form"');
+    expect($html)->toContain('href="'.route('equipo.index', ['idEdicion' => $activa->id]).'"');
+    expect($html)->toContain('href="'.route('tabla_goleador.index', ['idEdicion' => $activa->id]).'"');
+    expect($html)->toContain('href="'.route('partido.index', ['idEdicion' => $activa->id]).'"');
+    expect($html)->not->toContain('Seleccionar contexto');
+    expect($html)->not->toContain('data-panel-context-toolbar');
+    expect($html)->not->toContain('selector-contexto-form');
+    expect(file_get_contents(resource_path('js/admin/admin.js')))->not->toContain('selector-contexto-form');
 });
 
 it('el header del panel no aparece en el portal público', function () {
