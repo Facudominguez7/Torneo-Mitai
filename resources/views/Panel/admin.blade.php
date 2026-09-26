@@ -196,7 +196,7 @@
 
                     <div class="flex flex-col gap-3">
                         @if ($resumenDashboard['proximaFecha'])
-                            <div class="rounded-xl bg-brand-navy p-5 text-white">
+                            <div data-dashboard-proxima-fecha class="rounded-xl bg-brand-navy p-5 text-white">
                                 <p class="text-xs font-semibold uppercase tracking-wide text-white/70">Próxima fecha</p>
                                 <span class="mt-2 inline-flex items-center rounded-full bg-brand-gold px-3 py-1 text-xs font-bold text-brand-navy">
                                     {{ $resumenDashboard['proximaFecha']['nombre'] }}

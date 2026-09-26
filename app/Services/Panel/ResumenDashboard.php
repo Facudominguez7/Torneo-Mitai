@@ -5,10 +5,12 @@ namespace App\Services\Panel;
 use App\Models\Fecha;
 use App\Models\ListaBuenaFe;
 use App\Models\Partido;
+use App\Models\PlanillaJugador;
 use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Calcula los datos del nuevo dashboard admin (KPIs, partidos que requieren
@@ -45,30 +47,13 @@ class ResumenDashboard
         $partidosJugados = Partido::where('idEdicion', $idEdicion)->where('jugado', 1)->count();
         $partidosTotales = Partido::where('idEdicion', $idEdicion)->count();
 
-        $ultimaFecha = Fecha::where('idEdicion', $idEdicion)->orderByDesc('id')->first();
+        $partidosEnCurso = $this->partidosDeFechasEnCurso($idEdicion);
+        $partidosConAsistenciaPendiente = $this->partidosConAsistenciaPendiente($idEdicion, $partidosEnCurso);
 
-        $partidosPendientes = collect();
-        $proximaFecha = null;
-
-        if ($ultimaFecha) {
-            $partidosUltimaFecha = Partido::query()
-                ->with(['equipoLocal:id,nombre', 'equipoVisitante:id,nombre', 'categoria:id,nombreCategoria'])
-                ->where('idEdicion', $idEdicion)
-                ->where('idFechas', $ultimaFecha->id)
-                ->orderBy('horario_datetime')
-                ->orderBy('id')
-                ->get();
-
-            $equiposSinAsistencia = $this->estadisticas->obtenerEquiposSinAsistenciaUltimaFecha($idEdicion);
-            $partidosConAsistenciaPendiente = collect($equiposSinAsistencia['equipos'] ?? [])
-                ->pluck('partido_id')
-                ->unique();
-
-            $partidosPendientes = $partidosUltimaFecha
-                ->map(fn (Partido $partido): ?array => $this->normalizarPartidoPendiente($partido, $idEdicion, $partidosConAsistenciaPendiente))
-                ->filter()
-                ->values();
-        }
+        $partidosPendientes = $partidosEnCurso
+            ->map(fn (Partido $partido): ?array => $this->normalizarPartidoPendiente($partido, $idEdicion, $partidosConAsistenciaPendiente))
+            ->filter()
+            ->values();
 
         $proximaFecha = $this->resolverProximaFecha($idEdicion);
 
@@ -82,6 +67,72 @@ class ResumenDashboard
             'proximaFecha' => $proximaFecha,
             'jugadoresPorCategoria' => $this->estadisticas->obtenerJugadoresPorCategoriaDosUltimasFechas($idEdicion),
         ];
+    }
+
+    /**
+     * Partidos ya disputados de la fecha en curso de cada categoría. Las
+     * fechas son por categoría, así que la "última fecha" de la edición no
+     * alcanza: cada categoría aporta su fecha más reciente con partidos jugados.
+     *
+     * @return Collection<int, Partido>
+     */
+    private function partidosDeFechasEnCurso(int $idEdicion): Collection
+    {
+        $fechaEnCursoPorCategoria = Partido::query()
+            ->where('idEdicion', $idEdicion)
+            ->whereNotNull('idFechas')
+            ->where('horario_datetime', '<=', now())
+            ->groupBy('idCategoria')
+            ->selectRaw('idCategoria, MAX(idFechas) as idFecha')
+            ->pluck('idFecha')
+            ->filter();
+
+        if ($fechaEnCursoPorCategoria->isEmpty()) {
+            return collect();
+        }
+
+        return Partido::query()
+            ->with(['equipoLocal:id,nombre', 'equipoVisitante:id,nombre', 'categoria:id,nombreCategoria'])
+            ->where('idEdicion', $idEdicion)
+            ->whereIn('idFechas', $fechaEnCursoPorCategoria)
+            ->where('horario_datetime', '<=', now())
+            ->orderBy('horario_datetime')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * Misma regla que EstadisticasService: un equipo tiene la asistencia
+     * pendiente si no tiene planilla o no marcó ninguna asistencia.
+     *
+     * @param  Collection<int, Partido>  $partidos
+     * @return Collection<int, int>
+     */
+    private function partidosConAsistenciaPendiente(int $idEdicion, Collection $partidos): Collection
+    {
+        if ($partidos->isEmpty()) {
+            return collect();
+        }
+
+        $asistenciasPorEquipo = PlanillaJugador::query()
+            ->select('partido_id', 'idEquipo', DB::raw('SUM(CASE WHEN asistio = 1 THEN 1 ELSE 0 END) as total_asistencias'))
+            ->where('partido_type', Partido::class)
+            ->where('idEdicion', $idEdicion)
+            ->whereIn('partido_id', $partidos->pluck('id'))
+            ->groupBy('partido_id', 'idEquipo')
+            ->get()
+            ->keyBy(fn ($fila): string => $fila->partido_id.'-'.$fila->idEquipo);
+
+        $sinAsistencia = function (Partido $partido, ?int $idEquipo) use ($asistenciasPorEquipo): bool {
+            $fila = $asistenciasPorEquipo->get($partido->id.'-'.$idEquipo);
+
+            return $fila === null || (int) $fila->total_asistencias === 0;
+        };
+
+        return $partidos
+            ->filter(fn (Partido $partido): bool => $sinAsistencia($partido, $partido->idEquipoLocal) || $sinAsistencia($partido, $partido->idEquipoVisitante))
+            ->pluck('id')
+            ->values();
     }
 
     /**

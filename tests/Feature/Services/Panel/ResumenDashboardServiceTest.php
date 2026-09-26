@@ -278,3 +278,44 @@ it('ignora partidos futuros que ya tienen resultado y resume solo los que faltan
         ->and($resumen['proximaFecha']['cantidadPartidos'])->toBe(2)
         ->and($resumen['proximaFecha']['primerHorario'])->toBe('09:00');
 });
+
+it('toma la fecha en curso de cada categoria y no solo la ultima fecha creada', function () {
+    $this->travelTo(Carbon::parse('2026-05-05 12:00:00'));
+    $contexto = crearContextoServicioResumen();
+    $pendienteCategoriaA = crearPartidoServicioResumen($contexto, $contexto['fecha'], '2026-05-03 09:00:00');
+
+    $categoriaB = Categoria::create(['idEdicion' => $contexto['edicion']->id, 'nombreCategoria' => 'Sub 12']);
+    $contextoB = ['categoria' => $categoriaB] + $contexto;
+    $fechaB = Fecha::create(['idCategoria' => $categoriaB->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Fecha B']);
+    $pendienteCategoriaB = crearPartidoServicioResumen($contextoB, $fechaB, '2026-05-04 09:00:00');
+
+    $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
+
+    expect($resumen['partidosPendientes']->pluck('id')->all())
+        ->toContain($pendienteCategoriaA->id, $pendienteCategoriaB->id);
+});
+
+it('sigue mostrando pendientes jugados aunque la ultima fecha creada sea futura', function () {
+    $this->travelTo(Carbon::parse('2026-05-05 12:00:00'));
+    $contexto = crearContextoServicioResumen();
+    $pendienteJugado = crearPartidoServicioResumen($contexto, $contexto['fecha'], '2026-05-03 09:00:00');
+    $fechaFutura = Fecha::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Fecha Futura']);
+    crearPartidoServicioResumen($contexto, $fechaFutura, '2026-05-12 09:00:00');
+
+    $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
+
+    expect($resumen['partidosPendientes']->pluck('id')->all())->toBe([$pendienteJugado->id]);
+});
+
+it('marca sin asistencia a un partido con goles confirmados y sin planilla, con accion a la planilla', function () {
+    $this->travelTo(Carbon::parse('2026-05-05 12:00:00'));
+    $contexto = crearContextoServicioResumen();
+    $partido = crearPartidoServicioResumen($contexto, $contexto['fecha'], '2026-05-03 09:00:00', 2, 1);
+    $partido->update(['goles_confirmados_at' => now()]);
+
+    $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
+    $pendiente = $resumen['partidosPendientes']->firstWhere('id', $partido->id);
+
+    expect($pendiente['estado']['tipo'])->toBe('sin_asistencia')
+        ->and($pendiente['accionUrl'])->toBe(route('planilla.show', ['partidoId' => $partido->id, 'idEdicion' => $contexto['edicion']->id, 'tipoPartido' => 'partido', 'horario' => 0]));
+});

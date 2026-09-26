@@ -128,6 +128,7 @@ it('calcula las tarjetas KPI del dashboard con datos de la edicion', function ()
 });
 
 it('lista los partidos que requieren atencion con su badge y accion', function () {
+    $this->travelTo(Carbon::parse('2026-04-03 12:00:00'));
     $admin = crearAdminDashboard();
     $contexto = crearContextoDashboard();
     $local = crearEquipoDashboard($contexto, 'Mitai Sin Resultado');
@@ -214,10 +215,14 @@ it('muestra la proxima fecha con cantidad de partidos canchas y primer horario',
     $response = $this->actingAs($admin)
         ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]));
 
-    $response->assertOk()
-        ->assertSee('Próxima fecha')
-        ->assertSee('Fecha 3')
-        ->assertSee('09:30')
+    $response->assertOk();
+    preg_match('/data-dashboard-proxima-fecha(.*?)Ver fixture de la fecha/s', $response->getContent(), $tarjeta);
+    expect($tarjeta)->not->toBeEmpty()
+        ->and($tarjeta[1])->toContain('Fecha 3')
+        ->toContain('09:30')
+        ->toMatch('/<dt>Partidos<\/dt><dd>2<\/dd>/')
+        ->toMatch('/<dt>Canchas<\/dt><dd>2<\/dd>/');
+    $response
         ->assertSee(e(route('partido.index', ['idEdicion' => $contexto['edicion']->id, 'idFecha' => $contexto['fecha']->id])), false);
 });
 
