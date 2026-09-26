@@ -52,7 +52,7 @@ it('marca aria-current en el item activo de un modulo', function () {
     $html = $response->getContent();
 
     // El enlace a Categorias debe tener aria-current="page".
-    expect($html)->toMatch('/href="'.preg_quote(route('categoria.index'), '/').'"[^>]*aria-current="page"/');
+    expect($html)->toMatch('/href="'.preg_quote(route('categoria.index'), '/').'(\?[^"]*)?"[^>]*aria-current="page"/');
 });
 
 it('abre por defecto el grupo que contiene la ruta activa', function () {
@@ -136,5 +136,39 @@ it('conserva categoria y grupo actuales en el enlace a la tabla de posiciones', 
     $response = $this->actingAs($admin)->get(route('tabla_posicion.index', ['idCategoria' => 5, 'idGrupo' => 7]));
 
     $response->assertOk();
-    expect($response->getContent())->toMatch('/href="[^"]*tabla_posicion[^"]*idCategoria=5[^"]*idGrupo=7[^"]*"/');
+    preg_match_all('/href="('.preg_quote(route('tabla_posicion.index'), '/').'[^"]*)"/', $response->getContent(), $coincidencias);
+    $enlaceConFiltros = collect($coincidencias[1])->first(function (string $href): bool {
+        parse_str((string) parse_url(html_entity_decode($href), PHP_URL_QUERY), $query);
+
+        return ($query['idCategoria'] ?? null) === '5' && ($query['idGrupo'] ?? null) === '7';
+    });
+
+    expect($enlaceConFiltros)->not->toBeNull();
+});
+
+it('renderiza el drawer cerrado desde el servidor, antes de que cargue Alpine', function () {
+    $admin = crearAdminPanelShell();
+
+    $response = $this->actingAs($admin)->get(route('admin'));
+
+    $response->assertOk();
+    expect($response->getContent())->toMatch('/<aside id="sidebar-multi-level-sidebar"[^>]*\sclass="[^"]*(?<![:\w-])-translate-x-full\b/');
+});
+
+it('libera el drawer y el bloqueo de scroll al pasar a desktop', function () {
+    $admin = crearAdminPanelShell();
+
+    $response = $this->actingAs($admin)->get(route('admin'));
+
+    $response->assertOk();
+    expect($response->getContent())->toMatch('/<body[^>]*@resize\.window="[^"]*sidebarAbierto = false/');
+});
+
+it('solo oculta con x-cloak los grupos que el servidor renderiza cerrados', function () {
+    $admin = crearAdminPanelShell();
+
+    $html = $this->actingAs($admin)->get(route('categoria.index'))->getContent();
+
+    expect($html)->toMatch('/<ul id="grupo-nav-torneo"(?![^>]*x-cloak)[^>]*>/')
+        ->and($html)->toMatch('/<ul id="grupo-nav-estadisticas"[^>]*x-cloak/');
 });

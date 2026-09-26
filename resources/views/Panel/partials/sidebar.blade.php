@@ -191,7 +191,7 @@
                     class="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
                     <span>{{ $grupoNav['label'] }}</span>
                     <span class="flex items-center gap-1.5">
-                        <span x-cloak x-show="!open"
+                        <span x-show="!open" @if ($grupoNav['abierto']) x-cloak @endif
                             class="rounded-full bg-gray-200 px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-gray-600">
                             {{ count($grupoNav['items']) }}
                         </span>
@@ -201,7 +201,8 @@
                         </svg>
                     </span>
                 </button>
-                <ul id="grupo-nav-{{ $grupoNav['id'] }}" x-show="open" x-cloak class="mt-1 space-y-0.5">
+                <ul id="grupo-nav-{{ $grupoNav['id'] }}" x-show="open" @unless ($grupoNav['abierto']) x-cloak @endunless
+                    class="mt-1 space-y-0.5">
                     @foreach ($grupoNav['items'] as $item)
                         <li>
                             <a href="{{ $item['route'] }}" @click="sidebarAbierto = false"

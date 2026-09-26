@@ -2,7 +2,9 @@
 @include('components.loader')
 
 <body x-data="{ sidebarAbierto: false }" :class="{ 'overflow-hidden': sidebarAbierto }"
-    @keydown.escape.window="sidebarAbierto = false" class="bg-gray-100 text-gray-900 font-sans">
+    @keydown.escape.window="sidebarAbierto = false"
+    @resize.window="if (window.matchMedia('(min-width: 1024px)').matches) sidebarAbierto = false"
+    class="bg-gray-100 text-gray-900 font-sans">
     @php
         /**
          * Contexto de edición activo para mantener la navegación consistente.
@@ -13,8 +15,8 @@
         @click="sidebarAbierto = false" aria-hidden="true"
         class="fixed inset-0 z-30 bg-slate-900/50 lg:hidden"></div>
     <aside id="sidebar-multi-level-sidebar"
-        class="fixed inset-y-0 left-0 z-40 flex w-80 flex-col overflow-y-auto bg-white shadow-xl transition-transform duration-200 lg:w-64 lg:shadow-none lg:translate-x-0"
-        :class="sidebarAbierto ? 'translate-x-0' : '-translate-x-full'"
+        class="fixed inset-y-0 left-0 z-40 flex w-80 -translate-x-full flex-col overflow-y-auto bg-white shadow-xl transition-transform duration-200 lg:w-64 lg:shadow-none lg:translate-x-0"
+        :class="{ 'translate-x-0': sidebarAbierto, '-translate-x-full': !sidebarAbierto }"
         aria-label="Navegación del panel de administración">
         @include('Panel.partials.sidebar')
     </aside>
