@@ -141,3 +141,27 @@ it('alinea los filtros de equipos a la izquierda con el buscador ocupando el esp
     expect($formulario[1] ?? '')->not->toContain('justify-center')
         ->and($html)->toMatch('/<div class="[^"]*flex-1[^"]*">\s*<div>\s*<label for="nombreEquipo"/');
 });
+
+it('filtra el listado por categoria y conserva el filtro en la paginacion', function () {
+    $admin = crearAdminEquipoDataTable();
+    ['edicion' => $edicion, 'categoria' => $categoria] = crearEquipoConEdicionYCategoria('Edicion Filtro Cat', 'Categoria Elegida', 'Equipo Elegido');
+    $otraCategoria = Categoria::create(['idEdicion' => $edicion->id, 'nombreCategoria' => 'Categoria Otra']);
+    $otroEquipo = Equipo::create(['idCategoria' => $otraCategoria->id, 'idEdicion' => $edicion->id, 'nombre' => 'Equipo Excluido', 'foto' => 'escudo.png']);
+    EquipoEdicion::create(['idEquipo' => $otroEquipo->id, 'idEdicion' => $edicion->id, 'idCategoria' => $otraCategoria->id]);
+
+    $response = $this->actingAs($admin)->get(route('equipo.index', ['idEdicion' => $edicion->id, 'idCategoria' => $categoria->id]));
+
+    $response->assertOk()
+        ->assertSee('Equipo Elegido')
+        ->assertDontSee('Equipo Excluido');
+});
+
+it('muestra el detalle de un equipo sin error', function () {
+    $admin = crearAdminEquipoDataTable();
+    ['edicion' => $edicion, 'categoria' => $categoria, 'equipo' => $equipo] = crearEquipoConEdicionYCategoria('Edicion Detalle', 'Categoria Detalle', 'Equipo Detalle');
+
+    $this->actingAs($admin)
+        ->get(route('equipo.show', ['equipo' => $equipo, 'idEdicion' => $edicion->id, 'idCategoria' => $categoria->id]))
+        ->assertOk()
+        ->assertSee('Equipo Detalle');
+});
