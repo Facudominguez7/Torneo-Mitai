@@ -138,3 +138,23 @@ it('sigue permitiendo actualizar un equipo de grupo con el mismo contrato de dat
     $response->assertRedirect();
     expect($equipoGrupo->fresh()->idEquipo)->toBe($otroEquipo->id);
 });
+
+it('preselecciona solo el equipo actual al editar un equipo de grupo', function () {
+    $admin = crearAdminEquipoGrupoMigration();
+    $edicion = Edicion::create(['nombre' => 'Edicion Seleccion Actual']);
+    $categoria = Categoria::create(['idEdicion' => $edicion->id, 'nombreCategoria' => 'Sub 16 Seleccion']);
+    $grupo = Grupo::create(['nombre' => 'Grupo Seleccion', 'idEdicion' => $edicion->id, 'idCategoria' => $categoria->id]);
+    $actual = Equipo::create(['nombre' => 'Equipo Actual', 'foto' => 'e.png', 'idCategoria' => $categoria->id, 'idEdicion' => $edicion->id]);
+    $otro = Equipo::create(['nombre' => 'Equipo Otro', 'foto' => 'e.png', 'idCategoria' => $categoria->id, 'idEdicion' => $edicion->id]);
+    $equipoGrupo = EquipoGrupo::create(['idEquipo' => $actual->id, 'idGrupo' => $grupo->id]);
+
+    $html = $this->actingAs($admin)->get(route('equipogrupo.edit', [
+        'equipogrupo' => $equipoGrupo->id,
+        'idEdicion' => $edicion->id,
+        'idCategoria' => $categoria->id,
+        'idGrupo' => $grupo->id,
+    ]))->assertOk()->getContent();
+
+    expect($html)->toMatch('/<option value="'.$actual->id.'"\s+selected>/')
+        ->and($html)->not->toMatch('/<option value="'.$otro->id.'"\s+selected>/');
+});

@@ -63,7 +63,7 @@ it('mantiene los accesos a Agregar grupo y Agregar equipo a grupo hacia seleccio
         ->assertSee(e(route('seleccionar-categoria', ['idEdicion' => $edicion->id, 'tipo' => 'equipogrupo'])), false)
         ->assertSee('Agregar grupo')
         ->assertSee('Agregar equipo a grupo')
-        ->assertDontSee('bg-gray-800 hover:bg-gray-900', false);
+        ->assertDontSee('rounded-lg bg-gray-800 px-4', false);
 });
 
 it('reemplaza el borrado directo de grupo por x-ui.confirm-delete con el campo idEdicion', function () {

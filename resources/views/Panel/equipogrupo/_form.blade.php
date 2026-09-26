@@ -3,7 +3,7 @@
     <x-ui.select label="Seleccionar Equipo" name="idEquipo" id="idEquipo">
         @foreach ($equipos as $equipo)
             <option value="{{ $equipo->id }}"
-                {{ old('idEquipo', $equipo->id) == $equipo->id ? 'selected' : '' }}>
+                {{ old('idEquipo', $equipogrupo->idEquipo ?? null) == $equipo->id ? 'selected' : '' }}>
                 {{ $equipo->nombre }}
             </option>
         @endforeach
