@@ -95,7 +95,7 @@ it('el selector del header navega a admin solo con idEdicion', function () {
     expect($formulario)->not->toContain('name="horario"');
 });
 
-it('mantiene usuario, perfil y logout en el header del panel', function () {
+it('omite perfil y logout del header del panel', function () {
     [$activa, $otra] = crearEdicionesHeaderEdicion();
     $admin = crearAdminHeaderEdicion();
 
@@ -104,9 +104,11 @@ it('mantiene usuario, perfil y logout en el header del panel', function () {
         ->assertSuccessful()
         ->getContent();
 
-    expect($html)->toContain('action="'.route('logout').'"');
-    expect($html)->toContain(route('profile.edit'));
-    expect($html)->toContain($admin->name);
+    expect(preg_match('/<header[^>]*data-panel-edicion-header.*?<\/header>/s', $html, $header))->toBe(1);
+
+    expect($header[0])->not->toContain(route('profile.edit'));
+    expect($header[0])->not->toContain('action="'.route('logout').'"');
+    expect($header[0])->not->toContain('aria-label="Cuenta"');
 });
 
 it('un invitado no puede ver el header del panel', function () {
@@ -125,7 +127,7 @@ it('muestra exactamente un botón para abrir el menú lateral', function () {
     expect(substr_count($html, 'data-drawer-toggle="sidebar-multi-level-sidebar"'))->toBe(1);
 });
 
-it('muestra el enlace de perfil visible y accesible en mobile', function () {
+it('mantiene el drawer mobile sin controles de cuenta en el header', function () {
     [$activa, $otra] = crearEdicionesHeaderEdicion();
     $admin = crearAdminHeaderEdicion();
 
@@ -134,12 +136,10 @@ it('muestra el enlace de perfil visible y accesible en mobile', function () {
         ->assertSuccessful()
         ->getContent();
 
-    expect(preg_match('/<a[^>]*href="'.preg_quote(route('profile.edit'), '/').'"[^>]*>/', $html, $matches))->toBe(1);
-
-    $etiquetaApertura = $matches[0];
-    expect($etiquetaApertura)->not->toContain('hidden');
-    expect(preg_match('/<a[^>]*href="'.preg_quote(route('profile.edit'), '/').'"[^>]*>(.*?)<\/a>/s', $html, $contenido))->toBe(1);
-    expect(str_contains($contenido[1], 'aria-label=') || str_contains($contenido[1], $admin->name))->toBeTrue();
+    expect(preg_match('/<header[^>]*data-panel-edicion-header.*?<\/header>/s', $html, $header))->toBe(1);
+    expect(substr_count($header[0], 'data-drawer-toggle="sidebar-multi-level-sidebar"'))->toBe(1);
+    expect($header[0])->not->toContain(route('profile.edit'));
+    expect($header[0])->not->toContain('action="'.route('logout').'"');
 });
 
 it('identifica el panel como Mitaí Admin en el header', function () {
@@ -198,11 +198,11 @@ it('separa el contenido del header con padding mobile mayor al desktop', functio
     // El wrapper principal reserva espacio bajo el header fixed en ambos breakpoints.
     expect(preg_match('/class="[^"]*\bpt-(?<mobile>\d+)[^"]*\blg:pt-(?<desktop>\d+)[^"]*"/', $html, $wrapper))->toBe(1);
 
-    // Tailwind: 1 unidad = 0.25rem. Desktop cubre el header de h-14 (56px) más aire; mobile cubre el header claro y compacto en dos filas (~94px) más aire.
+    // Tailwind: 1 unidad = 0.25rem. El wrapper deja espacio para el header móvil en dos filas y para el header desktop de h-16.
     expect((int) $wrapper['desktop'])->toBeGreaterThanOrEqual(14);
     expect((int) $wrapper['mobile'])->toBeGreaterThan((int) $wrapper['desktop']);
-    expect((int) $wrapper['mobile'])->toBeGreaterThanOrEqual(24);
-    expect((int) $wrapper['mobile'])->toBeLessThanOrEqual(30);
+    expect((int) $wrapper['mobile'])->toBeGreaterThanOrEqual(32);
+    expect((int) $wrapper['mobile'])->toBeLessThanOrEqual(36);
 });
 
 it('usa una superficie blanca y discreta para el header del panel', function () {
@@ -217,7 +217,8 @@ it('usa una superficie blanca y discreta para el header del panel', function () 
     expect(preg_match('/<header[^>]*data-panel-edicion-header.*?<\/header>/s', $html, $header))->toBe(1);
 
     $bloqueHeader = $header[0];
-    expect($bloqueHeader)->toContain('bg-white');
+    expect($bloqueHeader)->toContain('bg-white/90');
+    expect($bloqueHeader)->toContain('backdrop-blur-sm');
     expect($bloqueHeader)->toContain('border-slate-200');
     expect($bloqueHeader)->not->toContain('bg-slate-900');
     expect($bloqueHeader)->not->toContain('text-white');
@@ -255,6 +256,46 @@ it('usa una familia tipográfica con fallback sans cuando Poppins no carga', fun
     // La declaración de fuente debe incluir un fallback genérico, no solo el nombre de la fuente.
     expect(preg_match('/font-\[Poppins,\s*(serif|sans-serif|system-ui[\w,-]*)\]/', $html))->toBe(1);
     expect($html)->not->toMatch('/font-\[Poppins\]/');
+});
+
+it('presenta un header espacioso y una barra de módulo compacta', function () {
+    [$activa, $otra] = crearEdicionesHeaderEdicion();
+    $admin = crearAdminHeaderEdicion();
+
+    $html = $this->actingAs($admin)
+        ->get('/Panel/admin?idEdicion='.$activa->id)
+        ->assertSuccessful()
+        ->getContent();
+
+    expect($html)->toContain('data-panel-header-primary-row');
+    expect($html)->toContain('data-panel-header-edition-row');
+    expect($html)->toContain('lg:h-16');
+    expect($html)->toContain('pt-32');
+    expect(preg_match('/<div[^>]*data-panel-context-toolbar[^>]*>(.*?)<\/div>\s*<\/div>\s*<\/div>/s', $html, $toolbar))->toBe(1);
+    expect($toolbar[0])->toContain('id="selector-contexto-form"');
+    expect($toolbar[0])->toContain('name="idCategoria"');
+    expect($toolbar[0])->toContain('name="idGrupo"');
+    expect($toolbar[0])->not->toContain('bg-white/10 p-3');
+    expect($toolbar[0])->not->toContain('backdrop-blur-sm');
+});
+
+it('elimina la tarjeta de estadísticas sin quitar navegación ni selector de módulo', function () {
+    [$activa, $otra] = crearEdicionesHeaderEdicion();
+    $admin = crearAdminHeaderEdicion();
+
+    $html = $this->actingAs($admin)
+        ->get('/Panel/admin?idEdicion='.$activa->id)
+        ->assertSuccessful()
+        ->getContent();
+
+    $plantilla = file_get_contents(resource_path('views/Panel/admin.blade.php'));
+
+    expect($plantilla)->not->toContain('Tarjeta de Estadísticas de Jugadores en Sidebar');
+    expect($plantilla)->not->toContain('Jugadores Totales');
+    expect($plantilla)->not->toContain('Por Categoría:');
+    expect($html)->toContain('Estadísticas de Jugadores');
+    expect($html)->toContain('data-panel-context-toolbar');
+    expect($html)->toContain('id="selector-contexto-form"');
 });
 
 it('el header del panel no aparece en el portal público', function () {

@@ -303,46 +303,6 @@
                 </p>
             </div>
 
-            <!-- Tarjeta de Estadísticas de Jugadores en Sidebar -->
-            @if (Route::is('admin') && isset($estadisticasJugadores) && $estadisticasJugadores['total_jugadores'] > 0)
-                <div class="px-3 py-4 border-t border-gray-300">
-                    <div class="bg-white rounded-lg shadow-md p-4">
-                        <div class="flex items-center mb-3">
-                            <svg class="w-6 h-6 text-blue-600 mr-2" xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 640 512">
-                                <path fill="currentColor"
-                                    d="M144 0a80 80 0 1 1 0 160A80 80 0 1 1 144 0zM512 0a80 80 0 1 1 0 160A80 80 0 1 1 512 0zM0 298.7C0 239.8 47.8 192 106.7 192l42.7 0c15.9 0 31 3.5 44.6 9.7c-1.3 7.2-1.9 14.7-1.9 22.3c0 38.2 16.8 72.5 43.3 96c-.2 0-.4 0-.7 0L21.3 320C9.6 320 0 310.4 0 298.7zM405.3 320c-.2 0-.4 0-.7 0c26.6-23.5 43.3-57.8 43.3-96c0-7.6-.7-15-1.9-22.3c13.6-6.3 28.7-9.7 44.6-9.7l42.7 0C592.2 192 640 239.8 640 298.7c0 11.8-9.6 21.3-21.3 21.3l-213.3 0zM224 224a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zM128 485.3C128 411.7 187.7 352 261.3 352l117.3 0C452.3 352 512 411.7 512 485.3c0 14.7-11.9 26.7-26.7 26.7l-330.7 0c-14.7 0-26.7-11.9-26.7-26.7z" />
-                            </svg>
-                            <h3 class="text-sm font-bold text-gray-800">Estadísticas</h3>
-                        </div>
-
-                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-3 text-white text-center mb-3">
-                            <p class="text-xs font-semibold mb-1">Jugadores Totales</p>
-                            @if(isset($estadisticasJugadores['nombre_fecha']))
-                                <p class="text-xs text-gray-100 mb-1">{{ $estadisticasJugadores['nombre_fecha'] }}</p>
-                            @endif
-                            <p class="text-3xl font-bold">{{ $estadisticasJugadores['total_jugadores'] }}</p>
-                            <p class="text-xs mt-1 opacity-90">en planilla</p>
-                        </div>
-
-                        @if(isset($jugadoresPorCategoria) && count($jugadoresPorCategoria) > 0)
-                            <div class="border-t border-gray-200 pt-3">
-                                <p class="text-xs font-semibold text-gray-600 mb-2">Por Categoría:</p>
-                                <div class="space-y-1">
-                                    @foreach($jugadoresPorCategoria as $categoria)
-                                        <div class="flex justify-between items-center bg-gray-50 rounded p-2">
-                                            <span class="text-xs font-medium text-gray-700">{{ $categoria['categoria'] }}</span>
-                                            <span class="bg-blue-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                                                {{ $categoria['total_jugadores'] }}
-                                            </span>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endif
         </div>
     </aside>
     @php
@@ -351,27 +311,30 @@
          * El selector navega a `admin?idEdicion` exclusivamente para reiniciar filtros.
          */
         $edicionActivaHeader = $EdicionSeleccionada ?? null;
-        $authUserHeader = auth()->user();
     @endphp
     <header data-panel-edicion-header
-        class="fixed inset-x-0 top-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-slate-200 bg-white px-3 py-1.5 text-slate-700 shadow-sm sm:px-4 lg:h-14 lg:left-64 lg:flex-nowrap lg:py-0">
-        <span class="order-2 whitespace-nowrap text-sm font-bold tracking-wide text-slate-800 lg:order-none">Mitaí Admin</span>
-        <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
-            aria-controls="sidebar-multi-level-sidebar" type="button" aria-expanded="false"
-            class="order-1 inline-flex items-center rounded-lg p-2 text-sm text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 lg:order-none lg:hidden">
-            <span class="sr-only">Abrir menú</span>
-            <svg class="h-6 w-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg">
-                <path clip-rule="evenodd" fill-rule="evenodd"
-                    d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
-                </path>
-            </svg>
-        </button>
-        <form data-panel-edicion-form action="{{ route('admin') }}" method="GET"
-            class="order-last flex w-full min-w-0 items-center gap-2 lg:order-none lg:ml-4 lg:w-auto">
+        class="fixed inset-x-0 top-0 z-30 flex flex-col justify-center gap-2 border-b border-slate-200 bg-white/90 px-3 py-2 text-slate-700 shadow-sm backdrop-blur-sm sm:px-4 lg:left-64 lg:h-16 lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
+        <div data-panel-header-primary-row class="flex w-full min-w-0 items-center justify-between gap-2 lg:w-auto lg:flex-1">
+            <div class="flex min-w-0 items-center gap-2">
+                <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
+                    aria-controls="sidebar-multi-level-sidebar" type="button" aria-expanded="false"
+                    class="inline-flex flex-shrink-0 items-center rounded-lg p-2 text-sm text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 lg:hidden">
+                    <span class="sr-only">Abrir menú</span>
+                    <svg class="h-6 w-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path clip-rule="evenodd" fill-rule="evenodd"
+                            d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
+                        </path>
+                    </svg>
+                </button>
+                <span class="whitespace-nowrap text-sm font-bold tracking-wide text-slate-800 sm:text-base">Mitaí Admin</span>
+            </div>
+        </div>
+        <form data-panel-header-edition-row data-panel-edicion-form action="{{ route('admin') }}" method="GET"
+            class="flex w-full min-w-0 items-center gap-2 lg:w-auto lg:flex-shrink-0">
             <label for="panel-edicion-select" class="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-500">Edición</label>
             <select name="idEdicion" id="panel-edicion-select"
-                class="h-9 min-w-0 max-w-full flex-1 rounded-lg border border-slate-300 bg-white px-2 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 lg:w-72 lg:flex-none">
+                class="h-10 min-w-0 max-w-full flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 lg:w-72 lg:flex-none">
                 @if (! $edicionActivaHeader)
                     <option value="" selected>Sin edición seleccionada</option>
                 @endif
@@ -382,29 +345,12 @@
                 @endforeach
             </select>
             <button type="submit"
-                class="inline-flex h-9 flex-shrink-0 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300">
-                Cambiar edición
+                class="inline-flex h-10 flex-shrink-0 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:text-sm">
+                Cambiar
             </button>
         </form>
-        <nav aria-label="Cuenta" class="order-3 ml-auto flex flex-shrink-0 items-center gap-2 lg:order-none">
-            <a href="{{ route('profile.edit') }}"
-                class="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
-                aria-label="Perfil de {{ $authUserHeader->name }}">
-                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-xs font-bold uppercase text-slate-700">
-                    {{ mb_substr($authUserHeader->name, 0, 1) }}
-                </span>
-                <span class="hidden max-w-[140px] truncate sm:inline">{{ $authUserHeader->name }}</span>
-            </a>
-            <form method="POST" action="{{ route('logout') }}" class="inline-flex">
-                @csrf
-                <button type="submit"
-                    class="inline-flex h-9 items-center rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300">
-                    Salir
-                </button>
-            </form>
-        </nav>
     </header>
-    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pt-28 pb-6 lg:pl-64 lg:pt-20">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pt-32 pb-6 lg:pl-64 lg:pt-20">
         @php
             $nombreRutaActual = request()->route()?->getName() ?? '';
             $rutaActualPath = request()->path();
@@ -673,16 +619,15 @@
         @endphp
         @if ($mostrarSelectorGlobal)
             <div class="mb-3 px-3 sm:px-4">
-                <div class="rounded-xl border border-white/20 bg-white/10 p-3 shadow-sm backdrop-blur-sm sm:p-4">
-                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div class="min-w-0">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100">Seleccionar contexto</p>
-                            <p class="text-sm font-semibold text-white sm:text-base">Módulo actual: {{ $labelContextoActual }}</p>
-                            <p class="mt-1 text-xs text-cyan-100">Opciones disponibles según este módulo</p>
+                <div data-panel-context-toolbar class="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                    <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                            <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Seleccionar contexto</p>
+                            <p class="text-sm font-semibold text-slate-800">Módulo actual: {{ $labelContextoActual }}</p>
                             @if (! empty($resumenContexto))
-                                <div class="mt-2 flex flex-wrap gap-2">
+                                <div class="flex flex-wrap gap-1.5">
                                     @foreach ($resumenContexto as $clave => $valor)
-                                        <span class="rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-cyan-50">
+                                        <span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
                                             {{ $clave }}: {{ $valor }}
                                         </span>
                                     @endforeach
@@ -691,7 +636,7 @@
                         </div>
 
                         <form action="{{ route('admin', ['idEdicion' => $idEdicionContexto]) }}" method="GET" id="selector-contexto-form"
-                            class="grid w-full grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-[480px]">
+                            class="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-[480px] lg:flex-shrink-0">
                             <select name="tipo" id="selector-contexto-tipo"
                                 class="h-10 w-full rounded-lg border border-white/30 bg-white/95 px-3 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
                                 @foreach ($opcionesContextoSelector as $opcionContexto)
