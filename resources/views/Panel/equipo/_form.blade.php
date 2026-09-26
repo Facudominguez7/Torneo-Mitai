@@ -1,41 +1,29 @@
 @csrf
-<div class="mb-5">
-    <label for="nombre" class="mb-3 block text-base font-medium text-white">
-        Nombre del Equipo
-    </label>
-    <input type="text" name="nombre" id="nombre" value="{{old('nombre', $equipo->nombre)}}"
-        class="panel-form-input"
-         />
-</div>
-<div class="mb-5">
-    <label for="idEdicion" class="mb-3 block text-base font-medium text-white">
-        Edicion
-    </label>
-    <select name="idEdicion" id="idEdicion"
-        class="panel-form-input"
-        >
-        
-            <option value="{{ $EdicionSeleccionada->id }}" selected>{{$EdicionSeleccionada->nombre}}</option>
-       
-    </select>
-</div>
-<div class="mb-5">
-    <label for="category" class="mb-3 block text-base font-medium text-white">
-        Categoría del Equipo
-    </label>
-    <select name="idCategoria" id="idCategoria"
-        class="panel-form-input"
-        >
+<div class="space-y-5">
+    <div>
+        <label for="nombre" class="mb-1 block text-sm font-medium text-gray-700">
+            Nombre del Equipo
+        </label>
+        <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $equipo->nombre) }}"
+            class="panel-form-input" />
+    </div>
+
+    <x-ui.select label="Edición" name="idEdicion" id="idEdicion">
+        <option value="{{ $EdicionSeleccionada->id }}" selected>{{ $EdicionSeleccionada->nombre }}</option>
+    </x-ui.select>
+
+    <x-ui.select label="Categoría del Equipo" name="idCategoria" id="idCategoria">
         @foreach ($categorias as $id => $nombreCategoria)
-            <option {{old('idCategoria', $equipo->idCategoria) == $id ? 'selected' : ''}} value="{{$id}}">{{$nombreCategoria}}</option>
+            <option {{ old('idCategoria', $equipo->idCategoria) == $id ? 'selected' : '' }} value="{{ $id }}">
+                {{ $nombreCategoria }}
+            </option>
         @endforeach
-    </select>
-</div>
-<div class="mb-5">
-    <label for="foto" class="mb-3 block text-base font-medium text-white">
-        Agregar Logo
-    </label>
-    <input type="file"
-        class="panel-form-input"
-        id="foto" name="foto">
+    </x-ui.select>
+
+    <div>
+        <label for="foto" class="mb-1 block text-sm font-medium text-gray-700">
+            Agregar Logo
+        </label>
+        <input type="file" id="foto" name="foto" class="panel-form-input">
+    </div>
 </div>

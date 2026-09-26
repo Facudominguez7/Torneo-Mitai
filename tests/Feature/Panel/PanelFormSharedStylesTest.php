@@ -76,7 +76,12 @@ it('renderiza tabla_goleador/edit con las clases compartidas panel-form-input y 
     $response->assertDontSee('#e0e0e0', false);
 });
 
-it('renderiza categoria/create con la clase compartida panel-form-submit', function () {
+it('renderiza categoria/create con el boton de envio de x-ui.button (T3: form-card)', function () {
+    // T3 (panel-admin-redesign) migró categoria/create a x-ui.form-card, cuya
+    // barra de acciones usa x-ui.button en vez del <button class="panel-form-submit">
+    // legado — el mismo botón brand-tokenizado que ya usan Editar/Detalle/Eliminar
+    // en el listado. panel-form-submit sigue vigente para los ~45 formularios del
+    // Panel que T3 no tocó (ver el resto de este archivo).
     $admin = User::factory()->create([
         'rol' => 'admin',
         'email_verified_at' => now(),
@@ -86,7 +91,8 @@ it('renderiza categoria/create con la clase compartida panel-form-submit', funct
     $response = $this->actingAs($admin)->get(route('categoria.create', ['idEdicion' => $edicion->id]));
 
     $response->assertOk();
-    $response->assertSee('panel-form-submit', false);
+    $response->assertSee('bg-brand-navy', false);
+    $response->assertSee('>Agregar<', false);
     $response->assertDontSee('#6A64F1', false);
 });
 

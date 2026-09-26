@@ -62,7 +62,7 @@ class ControladorEquipo extends Controller
     public function create(Request $request)
     {
         $ediciones = Edicion::all();
-        $equipo = new Equipo();
+        $equipo = new Equipo;
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $categorias = Categoria::where('idEdicion', $idEdicion)
@@ -108,11 +108,12 @@ class ControladorEquipo extends Controller
 
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
 
-        // Filtrar equipos por categoría si se selecciona una
+        // Filtrar equipos por categoría y edición. EquipoEdicion ya guarda
+        // idEdicion en la propia fila, así que se filtra directamente en
+        // lugar de un whereHas contra una relación inexistente (bug
+        // preexistente: EquipoEdicion no define ediciones(), solo edicion()).
         $equipos = EquipoEdicion::where('idCategoria', $idCategoria)
-            ->whereHas('ediciones', function ($query) use ($idEdicion) {
-                $query->where('idEdicion', $idEdicion);
-            })
+            ->where('idEdicion', $idEdicion)
             ->get();
 
         $categorias = Categoria::where('idEdicion', $idEdicion)->get();
