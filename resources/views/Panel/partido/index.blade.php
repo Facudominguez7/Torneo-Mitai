@@ -19,12 +19,18 @@
 
         $gruposPorHorario = $agruparPorHorario
             ? $partidos->groupBy(function ($p) {
-                if ($p->horario_datetime) {
-                    return \Carbon\Carbon::parse($p->horario_datetime)->format('H:i');
+                // Misma prioridad que la tarjeta: el horario legacy (texto en
+                // 24 h, como "17:30" o "19.30") gana sobre horario_datetime.
+                if ($p->horario !== null && $p->horario !== '') {
+                    if (preg_match('/^(\d{1,2})(?:[:.](\d{2}))?$/', trim((string) $p->horario), $partes)) {
+                        return sprintf('%02d:%s', (int) $partes[1], $partes[2] ?? '00');
+                    }
+
+                    return 'sin-horario';
                 }
 
-                if ($p->horario !== null && $p->horario !== '') {
-                    return str_pad((string) $p->horario, 2, '0', STR_PAD_LEFT) . ':00';
+                if ($p->horario_datetime) {
+                    return \Carbon\Carbon::parse($p->horario_datetime)->format('H:i');
                 }
 
                 return 'sin-horario';

@@ -273,3 +273,28 @@ it('no agrupa por horario cuando el listado no esta filtrado a una unica fecha',
     $response->assertOk();
     expect(preg_match('/<h2[^>]*>\s*10:00 hs\s*<\/h2>/', $response->getContent()))->toBe(0);
 });
+
+it('agrupa con el mismo horario que muestra cada tarjeta y deja los partidos sin horario al final', function () {
+    $admin = crearAdminPartidoMigration();
+    $contexto = crearContextoPartidoMigration();
+    crearPartidoParaMigration($contexto, 'Sin Hora Local', 'Sin Hora Visita', ['horario_datetime' => null]);
+    // horario (texto legacy en 24 h) no es fillable: se carga como en las ediciones viejas.
+    crearPartidoParaMigration($contexto, 'Legacy Local', 'Legacy Visita', ['horario_datetime' => '2026-04-05 09:00:00'])
+        ->forceFill(['horario' => '17.30'])->save();
+    crearPartidoParaMigration($contexto, 'Manana Local', 'Manana Visita', ['horario_datetime' => '2026-04-05 10:00:00']);
+
+    $response = $this->actingAs($admin)->get(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'idFecha' => $contexto['fecha']->id,
+    ]));
+
+    $response->assertOk();
+    // Solo la sección agrupada: el filtro de horario también lista "10:00 hs".
+    $html = $response->getContent();
+    $grupos = substr($html, (int) strpos($html, '<h2 class="mb-3 text-sm font-semibold uppercase'));
+
+    expect($grupos)->toMatch('/10:00 hs.*Manana Local.*17:30 hs.*Legacy Local.*Sin horario asignado.*Sin Hora Local/s')
+        ->and($grupos)->not->toContain('09:00 hs');
+});
