@@ -182,11 +182,11 @@ it('muestra un único selector de edición sin duplicados en sidebar ni tarjeta'
     expect($html)->not->toContain('Seleccionar Edición');
     expect($html)->not->toContain('dropdown-example');
     expect(substr_count($html, 'Edicion Activa 2024'))->toBe(1);
-    expect($html)->toContain('lg:left-64');
+    expect($html)->toContain('lg:ml-64');
     expect($html)->toContain('flex-wrap');
 });
 
-it('separa el contenido del header con padding mobile mayor al desktop', function () {
+it('mantiene el header en flujo normal y el contenido sin padding compensatorio', function () {
     [$activa, $otra] = crearEdicionesHeaderEdicion();
     $admin = crearAdminHeaderEdicion();
 
@@ -195,14 +195,16 @@ it('separa el contenido del header con padding mobile mayor al desktop', functio
         ->assertSuccessful()
         ->getContent();
 
-    // El wrapper principal reserva espacio bajo el header fixed en ambos breakpoints.
-    expect(preg_match('/class="[^"]*\bpt-(?<mobile>\d+)[^"]*\blg:pt-(?<desktop>\d+)[^"]*"/', $html, $wrapper))->toBe(1);
+    expect(preg_match('/<header[^>]*data-panel-edicion-header.*?<\/header>/s', $html, $header))->toBe(1);
+    expect($header[0])->toContain('lg:ml-64');
+    expect($header[0])->not->toContain('fixed');
+    expect($header[0])->not->toContain('sticky');
+    expect($header[0])->not->toMatch('/(?:^|\s)(?:top-|inset-y-|lg:left-)/');
 
-    // Tailwind: 1 unidad = 0.25rem. El wrapper deja espacio para el header móvil en dos filas y para el header desktop de h-16.
-    expect((int) $wrapper['desktop'])->toBeGreaterThanOrEqual(14);
-    expect((int) $wrapper['mobile'])->toBeGreaterThan((int) $wrapper['desktop']);
-    expect((int) $wrapper['mobile'])->toBeGreaterThanOrEqual(32);
-    expect((int) $wrapper['mobile'])->toBeLessThanOrEqual(36);
+    expect($header[0])->toContain('w-full');
+    expect(preg_match('/<div class="(?<classes>relative flex min-h-screen[^"]*)">/', $html, $wrapper))->toBe(1);
+    expect($wrapper['classes'])->toContain('lg:pl-64');
+    expect($wrapper['classes'])->not->toMatch('/(?:^|\s)(?:pt-|lg:pt-)/');
 });
 
 it('usa una superficie blanca y discreta para el header del panel', function () {
@@ -270,7 +272,8 @@ it('presenta un header espacioso y una barra de módulo compacta', function () {
     expect($html)->toContain('data-panel-header-primary-row');
     expect($html)->toContain('data-panel-header-edition-row');
     expect($html)->toContain('lg:h-16');
-    expect($html)->toContain('pt-32');
+    expect(preg_match('/<div class="(?<classes>relative flex min-h-screen[^"]*)">/', $html, $wrapper))->toBe(1);
+    expect($wrapper['classes'])->not->toMatch('/(?:^|\s)(?:pt-|lg:pt-)/');
     expect(preg_match('/<div[^>]*data-panel-context-toolbar[^>]*>(.*?)<\/div>\s*<\/div>\s*<\/div>/s', $html, $toolbar))->toBe(1);
     expect($toolbar[0])->toContain('id="selector-contexto-form"');
     expect($toolbar[0])->toContain('name="idCategoria"');

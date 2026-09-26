@@ -313,7 +313,7 @@
         $edicionActivaHeader = $EdicionSeleccionada ?? null;
     @endphp
     <header data-panel-edicion-header
-        class="fixed inset-x-0 top-0 z-30 flex flex-col justify-center gap-2 border-b border-slate-200 bg-white/90 px-3 py-2 text-slate-700 shadow-sm backdrop-blur-sm sm:px-4 lg:left-64 lg:h-16 lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
+        class="z-30 flex w-full flex-col justify-center gap-2 border-b border-slate-200 bg-white/90 px-3 py-2 text-slate-700 shadow-sm backdrop-blur-sm sm:px-4 lg:ml-64 lg:h-16 lg:w-auto lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
         <div data-panel-header-primary-row class="flex w-full min-w-0 items-center justify-between gap-2 lg:w-auto lg:flex-1">
             <div class="flex min-w-0 items-center gap-2">
                 <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
@@ -350,7 +350,7 @@
             </button>
         </form>
     </header>
-    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pt-32 pb-6 lg:pl-64 lg:pt-20">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-6 lg:pl-64">
         @php
             $nombreRutaActual = request()->route()?->getName() ?? '';
             $rutaActualPath = request()->path();
