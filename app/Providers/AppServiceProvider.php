@@ -83,10 +83,14 @@ class AppServiceProvider extends ServiceProvider
         View::composer('Panel.admin', function (ViewContract $view): void {
             $ediciones = Edicion::orderByDesc('id')->get();
 
-            $idEdicionActual = request()->attributes->get('panel.idEdicion');
-            if (!$idEdicionActual) {
-                $idEdicionActual = request()->query('idEdicion') ?: request()->session()->get('panel.idEdicion');
-            }
+            $request = request();
+
+            // Si el middleware ya resolvió el contexto (atributo presente,
+            // incluso null), se confía en él; el fallback a query/sesión
+            // aplica solo para render directo de la vista sin middleware.
+            $idEdicionActual = $request->attributes->has('panel.idEdicion')
+                ? $request->attributes->get('panel.idEdicion')
+                : ($request->query('idEdicion') ?: $request->session()->get('panel.idEdicion'));
 
             $edicionSeleccionada = request()->attributes->get('panel.edicion');
             if (!$edicionSeleccionada && $idEdicionActual) {

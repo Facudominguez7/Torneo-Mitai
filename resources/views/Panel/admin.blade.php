@@ -1,26 +1,13 @@
 @include('head')
 @include('components.loader')
 
-<body class="bg-[--color-primary]  font-[Poppins]">
+<body class="bg-[--color-primary]  font-[Poppins,sans-serif]">
     @php
         /**
          * Contexto de edición activo para mantener la navegación consistente.
          */
-        $idEdicionActual = $idEdicionActual ?? ($EdicionSeleccionada->id ?? request()->query('idEdicion'));
         $parametrosEdicionActual = $idEdicionActual ? ['idEdicion' => $idEdicionActual] : [];
     @endphp
-    <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
-        aria-controls="sidebar-multi-level-sidebar" type="button"
-        aria-expanded="false"
-        class="fixed left-3 top-3 z-50 inline-flex items-center rounded-lg bg-white/95 p-2 text-sm text-gray-600 shadow-md backdrop-blur lg:hidden hover:bg-white focus:outline-none focus:ring-2 focus:ring-gray-200">
-        <span class="sr-only">Open sidebar</span>
-        <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg">
-            <path clip-rule="evenodd" fill-rule="evenodd"
-                d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
-            </path>
-        </svg>
-    </button>
     <div id="sidebar-backdrop" class="pointer-events-none fixed inset-0 z-30 bg-slate-900/50 opacity-0 transition-opacity duration-200 lg:hidden"></div>
     <aside id="sidebar-multi-level-sidebar"
         class="fixed top-0 left-0 z-40 h-screen w-64 -translate-x-full overflow-y-auto shadow-xl transition-transform lg:translate-x-0 lg:shadow-none"
@@ -61,34 +48,6 @@
                     <span class="px-2 text-xs font-semibold text-gray-500 uppercase">Gestión</span>
                 </li>
 
-                <li>
-                    <button type="button"
-                        class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100"
-                        aria-controls="dropdown-example" data-collapse-toggle="dropdown-example">
-                        <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 192 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                            <path
-                                d="M48 80a48 48 0 1 1 96 0A48 48 0 1 1 48 80zM0 224c0-17.7 14.3-32 32-32l64 0c17.7 0 32 14.3 32 32l0 224 32 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 512c-17.7 0-32-14.3-32-32s14.3-32 32-32l32 0 0-192-32 0c-17.7 0-32-14.3-32-32z" />
-                        </svg>
-                        <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Seleccionar Edición</span>
-                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 10 6">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="m1 1 4 4 4-4" />
-                        </svg>
-                    </button>
-                    <ul id="dropdown-example" class="hidden py-2 space-y-2">
-                        @foreach ($ediciones as $edicion)
-                            <li>
-                                <a href="{{ route('admin', ['idEdicion' => $edicion->id]) }}"
-                                    class="block px-4 py-2 hover:bg-gray-100">
-                                    {{ $edicion->nombre }}
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </li>
                 <li>
                     <a href="{{ route('edicion.index', $parametrosEdicionActual) }}"
                         class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
@@ -344,373 +303,58 @@
                 </p>
             </div>
 
-            <!-- Tarjeta de Estadísticas de Jugadores en Sidebar -->
-            @if (Route::is('admin') && isset($estadisticasJugadores) && $estadisticasJugadores['total_jugadores'] > 0)
-                <div class="px-3 py-4 border-t border-gray-300">
-                    <div class="bg-white rounded-lg shadow-md p-4">
-                        <div class="flex items-center mb-3">
-                            <svg class="w-6 h-6 text-blue-600 mr-2" xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 640 512">
-                                <path fill="currentColor"
-                                    d="M144 0a80 80 0 1 1 0 160A80 80 0 1 1 144 0zM512 0a80 80 0 1 1 0 160A80 80 0 1 1 512 0zM0 298.7C0 239.8 47.8 192 106.7 192l42.7 0c15.9 0 31 3.5 44.6 9.7c-1.3 7.2-1.9 14.7-1.9 22.3c0 38.2 16.8 72.5 43.3 96c-.2 0-.4 0-.7 0L21.3 320C9.6 320 0 310.4 0 298.7zM405.3 320c-.2 0-.4 0-.7 0c26.6-23.5 43.3-57.8 43.3-96c0-7.6-.7-15-1.9-22.3c13.6-6.3 28.7-9.7 44.6-9.7l42.7 0C592.2 192 640 239.8 640 298.7c0 11.8-9.6 21.3-21.3 21.3l-213.3 0zM224 224a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zM128 485.3C128 411.7 187.7 352 261.3 352l117.3 0C452.3 352 512 411.7 512 485.3c0 14.7-11.9 26.7-26.7 26.7l-330.7 0c-14.7 0-26.7-11.9-26.7-26.7z" />
-                            </svg>
-                            <h3 class="text-sm font-bold text-gray-800">Estadísticas</h3>
-                        </div>
-
-                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-3 text-white text-center mb-3">
-                            <p class="text-xs font-semibold mb-1">Jugadores Totales</p>
-                            @if(isset($estadisticasJugadores['nombre_fecha']))
-                                <p class="text-xs text-gray-100 mb-1">{{ $estadisticasJugadores['nombre_fecha'] }}</p>
-                            @endif
-                            <p class="text-3xl font-bold">{{ $estadisticasJugadores['total_jugadores'] }}</p>
-                            <p class="text-xs mt-1 opacity-90">en planilla</p>
-                        </div>
-
-                        @if(isset($jugadoresPorCategoria) && count($jugadoresPorCategoria) > 0)
-                            <div class="border-t border-gray-200 pt-3">
-                                <p class="text-xs font-semibold text-gray-600 mb-2">Por Categoría:</p>
-                                <div class="space-y-1">
-                                    @foreach($jugadoresPorCategoria as $categoria)
-                                        <div class="flex justify-between items-center bg-gray-50 rounded p-2">
-                                            <span class="text-xs font-medium text-gray-700">{{ $categoria['categoria'] }}</span>
-                                            <span class="bg-blue-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                                                {{ $categoria['total_jugadores'] }}
-                                            </span>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endif
         </div>
     </aside>
-    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pt-14 pb-6 lg:pl-64 lg:pt-0">
+    @php
+        /**
+         * Header persistente: muestra la edición activa o un estado vacío accesible.
+         * El selector navega a `admin?idEdicion` exclusivamente para reiniciar filtros.
+         */
+        $edicionActivaHeader = $EdicionSeleccionada ?? null;
+    @endphp
+    <header data-panel-edicion-header
+        class="z-30 flex w-full flex-col justify-center gap-2 border-b border-slate-200 bg-white/90 px-3 py-2 text-slate-700 shadow-sm backdrop-blur-sm sm:px-4 lg:ml-64 lg:h-16 lg:w-auto lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
+        <div data-panel-header-primary-row class="flex w-full min-w-0 items-center justify-between gap-2 lg:w-auto lg:flex-1">
+            <div class="flex min-w-0 items-center gap-2">
+                <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
+                    aria-controls="sidebar-multi-level-sidebar" type="button" aria-expanded="false"
+                    class="inline-flex flex-shrink-0 items-center rounded-lg p-2 text-sm text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 lg:hidden">
+                    <span class="sr-only">Abrir menú</span>
+                    <svg class="h-6 w-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path clip-rule="evenodd" fill-rule="evenodd"
+                            d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
+                        </path>
+                    </svg>
+                </button>
+                <span class="whitespace-nowrap text-sm font-bold tracking-wide text-slate-800 sm:text-base">Mitaí Admin</span>
+            </div>
+        </div>
+        <form data-panel-header-edition-row data-panel-edicion-form action="{{ route('admin') }}" method="GET"
+            class="flex w-full min-w-0 items-center gap-2 lg:w-auto lg:flex-shrink-0">
+            <label for="panel-edicion-select" class="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-500">Edición</label>
+            <select name="idEdicion" id="panel-edicion-select"
+                class="h-10 min-w-0 max-w-full flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 lg:w-72 lg:flex-none">
+                @if (! $edicionActivaHeader)
+                    <option value="" selected>Sin edición seleccionada</option>
+                @endif
+                @foreach ($ediciones as $edicionHeader)
+                    <option value="{{ $edicionHeader->id }}" {{ $edicionActivaHeader?->id === $edicionHeader->id ? 'selected' : '' }}>
+                        {{ $edicionHeader->nombre }}
+                    </option>
+                @endforeach
+            </select>
+            <button type="submit"
+                class="inline-flex h-10 flex-shrink-0 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:text-sm">
+                Cambiar
+            </button>
+        </form>
+    </header>
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-6 pt-4 sm:pt-6 lg:pl-64">
         @php
-            $nombreRutaActual = request()->route()?->getName() ?? '';
-            $rutaActualPath = request()->path();
+            $idEdicionContexto = $idEdicionActual;
 
-            $idEdicionContexto = $idEdicionActual ?? ($EdicionSeleccionada->id ?? request('idEdicion'));
-            $modulosContexto = [
-                'admin' => [
-                    'label' => 'Panel admin',
-                    'route' => route('admin', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'panel',
-                ],
-                'partido' => [
-                    'label' => 'Partidos',
-                    'route' => route('partido.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'competencia',
-                ],
-                'grupos' => [
-                    'label' => 'Grupos',
-                    'route' => route('grupos.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'competencia',
-                ],
-                'instancia_final' => [
-                    'label' => 'Instancias finales',
-                    'route' => route('instancia_final.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'competencia',
-                ],
-                'fecha' => [
-                    'label' => 'Fechas',
-                    'route' => route('fecha.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'competencia',
-                ],
-                'edicion' => [
-                    'label' => 'Ediciones',
-                    'route' => route('edicion.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'gestion',
-                ],
-                'categoria' => [
-                    'label' => 'Categorias',
-                    'route' => route('categoria.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'gestion',
-                ],
-                'equipo' => [
-                    'label' => 'Equipos',
-                    'route' => route('equipo.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'gestion',
-                ],
-                'equipoedicion' => [
-                    'label' => 'Equipos por edicion',
-                    'route' => route('equipoedicion.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'gestion',
-                ],
-                'notificaciones' => [
-                    'label' => 'Notificaciones',
-                     'route' => route('notificaciones.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'gestion',
-                ],
-                'lista_buena_fe' => [
-                    'label' => 'Lista de Buena Fe',
-                    'route' => route('lista-buena-fe.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'gestion',
-                ],
-                'jugador_consulta' => [
-                    'label' => 'Consulta de Jugador',
-                    'route' => route('jugador.consulta', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'gestion',
-                ],
-                'institucion' => [
-                    'label' => 'Instituciones',
-                    'route' => route('institucion.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'gestion',
-                ],
-                'copa' => [
-                    'label' => 'Copas',
-                    'route' => route('copa.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'gestion',
-                ],
-                'fase' => [
-                    'label' => 'Fases',
-                    'route' => route('fase.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'gestion',
-                ],
-                'campeon' => [
-                    'label' => 'Campeones',
-                    'route' => route('campeon.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'estadisticas',
-                ],
-                'subcampeon' => [
-                    'label' => 'Subcampeones',
-                    'route' => route('subcampeon.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'estadisticas',
-                ],
-                'goleador' => [
-                    'label' => 'Goleadores',
-                    'route' => route('goleador.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'estadisticas',
-                ],
-                'tabla_posicion' => [
-                    'label' => 'Tabla de Posiciones',
-                    'route' => route('tabla_posicion.index', array_filter([
-                        'idEdicion' => $idEdicionContexto,
-                        'idCategoria' => request('idCategoria'),
-                        'idGrupo' => request('idGrupo'),
-                    ], static fn ($valor) => $valor !== null && $valor !== '')),
-                    'grupo' => 'estadisticas',
-                ],
-                'valla' => [
-                    'label' => 'Vallas',
-                    'route' => route('valla.index', ['idEdicion' => $idEdicionContexto]),
-                    'grupo' => 'estadisticas',
-                ],
-            ];
-
-            $tipoSolicitado = request('tipo');
-            $aliasTipo = [
-                'equipogrupo' => 'grupos',
-                 'notificaciones.index' => 'notificaciones',
-                'lista-buena-fe' => 'lista_buena_fe',
-                'jugador.consulta' => 'jugador_consulta',
-            ];
-            $tipoSolicitado = $aliasTipo[$tipoSolicitado] ?? $tipoSolicitado;
-
-            $tipoContextoActual = null;
-            $deteccionesRuta = [
-                ['patterns' => ['admin', 'admin.*'], 'modulo' => 'admin'],
-                ['patterns' => ['partido.*', 'planilla.*', 'cargar-resultado'], 'modulo' => 'partido'],
-                ['patterns' => ['instancia_final', 'instancia_final.*', 'cargar-resultado-instancia'], 'modulo' => 'instancia_final'],
-                ['patterns' => ['grupos.*', 'equipogrupo.*'], 'modulo' => 'grupos'],
-                ['patterns' => ['fecha.*'], 'modulo' => 'fecha'],
-                ['patterns' => ['edicion.*'], 'modulo' => 'edicion'],
-                ['patterns' => ['categoria.*'], 'modulo' => 'categoria'],
-                ['patterns' => ['equipo.*'], 'modulo' => 'equipo'],
-                ['patterns' => ['equipoedicion.*'], 'modulo' => 'equipoedicion'],
-                 ['patterns' => ['notificaciones.*'], 'modulo' => 'notificaciones'],
-                ['patterns' => ['lista-buena-fe.*'], 'modulo' => 'lista_buena_fe'],
-                ['patterns' => ['jugador.*'], 'modulo' => 'jugador_consulta'],
-                ['patterns' => ['institucion.*'], 'modulo' => 'institucion'],
-                ['patterns' => ['copa.*'], 'modulo' => 'copa'],
-                ['patterns' => ['fase.*'], 'modulo' => 'fase'],
-                ['patterns' => ['campeon.*'], 'modulo' => 'campeon'],
-                ['patterns' => ['subcampeon.*'], 'modulo' => 'subcampeon'],
-                ['patterns' => ['goleador.*'], 'modulo' => 'goleador'],
-                ['patterns' => ['tabla_posicion.*'], 'modulo' => 'tabla_posicion'],
-                ['patterns' => ['valla.*'], 'modulo' => 'valla'],
-            ];
-
-            foreach ($deteccionesRuta as $deteccion) {
-                foreach ($deteccion['patterns'] as $pattern) {
-                    if (request()->routeIs($pattern)) {
-                        $tipoContextoActual = $deteccion['modulo'];
-                        break 2;
-                    }
-                }
-            }
-
-            if (! $tipoContextoActual && Str::startsWith($rutaActualPath, 'Panel/planilla/')) {
-                $tipoContextoActual = 'partido';
-            }
-
-            if (! $tipoContextoActual && isset($modulosContexto[$tipoSolicitado])) {
-                $tipoContextoActual = $tipoSolicitado;
-            }
-
-            if (! $tipoContextoActual || ! isset($modulosContexto[$tipoContextoActual])) {
-                $tipoContextoActual = 'admin';
-            }
-
-            $opcionesPorGrupo = [
-                'panel' => ['admin', 'partido', 'grupos', 'instancia_final', 'notificaciones', 'lista_buena_fe', 'categoria', 'campeon', 'jugador_consulta'],
-                'competencia' => ['admin', 'partido', 'grupos', 'instancia_final', 'fecha', 'notificaciones', 'lista_buena_fe', 'jugador_consulta'],
-                'gestion' => ['admin', 'edicion', 'categoria', 'equipo', 'equipoedicion', 'notificaciones', 'institucion', 'lista_buena_fe', 'jugador_consulta', 'copa', 'fase'],
-                'estadisticas' => ['admin', 'campeon', 'subcampeon', 'goleador', 'tabla_posicion', 'valla', 'notificaciones', 'lista_buena_fe', 'jugador_consulta'],
-            ];
-
-            $grupoContextoActual = $modulosContexto[$tipoContextoActual]['grupo'] ?? 'panel';
-            $tiposContextoDisponibles = $opcionesPorGrupo[$grupoContextoActual] ?? $opcionesPorGrupo['panel'];
-
-            if (! in_array($tipoContextoActual, $tiposContextoDisponibles, true)) {
-                array_unshift($tiposContextoDisponibles, $tipoContextoActual);
-            }
-
-            $opcionesContextoSelector = collect($tiposContextoDisponibles)
-                ->filter(fn ($modulo) => isset($modulosContexto[$modulo]))
-                ->map(fn ($modulo) => array_merge(['tipo' => $modulo], $modulosContexto[$modulo]))
-                ->values();
-
-            $labelContextoActual = $modulosContexto[$tipoContextoActual]['label'] ?? 'Panel admin';
-            $mostrarSelectorGlobal = ! request()->routeIs('seleccionar-categoria');
-
-            $idCategoriaContexto = request('idCategoria');
-            $idGrupoContexto = request('idGrupo');
-            $idFechaContexto = request('idFecha');
-            $idFaseContexto = request('idFase');
-            $idCopaContexto = request('idCopa');
-
-            $nombreCategoriaContexto = null;
-            if ($idCategoriaContexto) {
-                $nombreCategoriaContexto = $nombreCategoria ?? null;
-
-                if (! $nombreCategoriaContexto && isset($CategoriaSeleccionada)) {
-                    $nombreCategoriaContexto = $CategoriaSeleccionada->nombreCategoria ?? null;
-                }
-
-                if (! $nombreCategoriaContexto && isset($categorias)) {
-                    $categoriaEncontrada = collect($categorias)->firstWhere('id', (int) $idCategoriaContexto);
-                    $nombreCategoriaContexto = $categoriaEncontrada->nombreCategoria ?? $categoriaEncontrada->nombre ?? null;
-                }
-
-                if (! $nombreCategoriaContexto) {
-                    $nombreCategoriaContexto = \App\Models\Categoria::query()
-                        ->whereKey((int) $idCategoriaContexto)
-                        ->value('nombreCategoria');
-                }
-            }
-
-            $nombreGrupoContexto = null;
-            if ($idGrupoContexto) {
-                $nombreGrupoContexto = $nombreGrupo ?? null;
-
-                if (! $nombreGrupoContexto && isset($GrupoSeleccionado)) {
-                    $nombreGrupoContexto = $GrupoSeleccionado->nombre ?? null;
-                }
-
-                if (! $nombreGrupoContexto && isset($grupos)) {
-                    $grupoEncontrado = collect($grupos)->firstWhere('id', (int) $idGrupoContexto);
-                    $nombreGrupoContexto = $grupoEncontrado->nombre ?? null;
-                }
-
-                if (! $nombreGrupoContexto) {
-                    $nombreGrupoContexto = \App\Models\Grupo::query()
-                        ->whereKey((int) $idGrupoContexto)
-                        ->value('nombre');
-                }
-            }
-
-            $nombreFechaContexto = null;
-            if ($idFechaContexto) {
-                $nombreFechaContexto = $nombreFecha ?? null;
-
-                if (! $nombreFechaContexto && isset($fechas)) {
-                    $fechaEncontrada = collect($fechas)->firstWhere('id', (int) $idFechaContexto);
-                    $nombreFechaContexto = $fechaEncontrada->nombre ?? null;
-                }
-
-                if (! $nombreFechaContexto) {
-                    $nombreFechaContexto = \App\Models\Fecha::query()
-                        ->whereKey((int) $idFechaContexto)
-                        ->value('nombre');
-                }
-            }
-
-            $nombreFaseContexto = $idFaseContexto
-                ? (\App\Models\Fase::query()->whereKey((int) $idFaseContexto)->value('nombre') ?: null)
-                : null;
-
-            $nombreCopaContexto = $idCopaContexto
-                ? (\App\Models\Copa::query()->whereKey((int) $idCopaContexto)->value('nombre') ?: null)
-                : null;
-
-            $resumenContexto = array_filter([
-                'Categoria' => $nombreCategoriaContexto ?: ($idCategoriaContexto ? 'ID '.$idCategoriaContexto : null),
-                'Grupo' => $nombreGrupoContexto ?: ($idGrupoContexto ? 'ID '.$idGrupoContexto : null),
-                'Fecha' => $nombreFechaContexto ?: ($idFechaContexto ? 'ID '.$idFechaContexto : null),
-                'Fase' => $nombreFaseContexto ?: ($idFaseContexto ? 'ID '.$idFaseContexto : null),
-                'Copa' => $nombreCopaContexto ?: ($idCopaContexto ? 'ID '.$idCopaContexto : null),
-            ], static fn ($valor) => $valor !== null && $valor !== '');
         @endphp
-        @if (isset($EdicionSeleccionada))
-            <div class="mb-2 flex justify-center px-3 sm:px-4 lg:justify-end">
-                <div
-                    class="flex w-full max-w-xs items-center rounded-lg border-l-4 border-[--color-secondary] bg-white p-3 shadow-md sm:p-4">
-                    <div class="min-w-0">
-                        <h2 class="overflow-hidden text-ellipsis whitespace-nowrap text-base font-semibold text-gray-800 sm:text-lg">
-                            {{ $EdicionSeleccionada->nombre }}
-                        </h2>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        @if ($mostrarSelectorGlobal)
-            <div class="mb-3 px-3 sm:px-4">
-                <div class="rounded-xl border border-white/20 bg-white/10 p-3 shadow-sm backdrop-blur-sm sm:p-4">
-                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div class="min-w-0">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100">Seleccionar contexto</p>
-                            <p class="text-sm font-semibold text-white sm:text-base">Módulo actual: {{ $labelContextoActual }}</p>
-                            <p class="mt-1 text-xs text-cyan-100">Opciones disponibles según este módulo</p>
-                            @if (! empty($resumenContexto))
-                                <div class="mt-2 flex flex-wrap gap-2">
-                                    @foreach ($resumenContexto as $clave => $valor)
-                                        <span class="rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-cyan-50">
-                                            {{ $clave }}: {{ $valor }}
-                                        </span>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
-
-                        <form action="{{ route('admin', ['idEdicion' => $idEdicionContexto]) }}" method="GET" id="selector-contexto-form"
-                            class="grid w-full grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-[480px]">
-                            <select name="tipo" id="selector-contexto-tipo"
-                                class="h-10 w-full rounded-lg border border-white/30 bg-white/95 px-3 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
-                                @foreach ($opcionesContextoSelector as $opcionContexto)
-                                    <option value="{{ $opcionContexto['tipo'] }}" data-destino="{{ $opcionContexto['route'] }}" {{ $tipoContextoActual === $opcionContexto['tipo'] ? 'selected' : '' }}>
-                                        {{ $opcionContexto['label'] }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <input type="hidden" name="idCategoria" value="{{ $idCategoriaContexto }}">
-                            <input type="hidden" name="idGrupo" value="{{ $idGrupoContexto }}">
-                            <input type="hidden" name="idFecha" value="{{ $idFechaContexto }}">
-                            <input type="hidden" name="idFase" value="{{ $idFaseContexto }}">
-                            <input type="hidden" name="idCopa" value="{{ $idCopaContexto }}">
-                            <button type="submit"
-                                class="inline-flex h-10 items-center justify-center rounded-lg bg-cyan-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700">
-                                Cambiar
-                            </button>
-                        </form>
-                    </div>
-
-                </div>
-            </div>
-        @endif
-
         @if (Route::is('admin'))
             <div class="mb-3 grid grid-cols-1 gap-3 px-3 sm:grid-cols-2 sm:px-4 xl:grid-cols-4">
                 <div class="min-w-0">
