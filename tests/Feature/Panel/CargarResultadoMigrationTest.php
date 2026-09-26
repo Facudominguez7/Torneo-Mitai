@@ -58,6 +58,12 @@ it('renderiza el formulario de carga de resultado regular con el badge de Grupo'
         ->assertSee('name="golesEquipoVisitante"', false)
         ->assertSee('Local Migration')
         ->assertSee('Visitante Migration')
+        ->assertSee('name="idGrupo" value="'.$grupo->id.'"', false)
+        ->assertSee('name="idEdicion"', false)
+        ->assertSee('name="origen"', false)
+        ->assertSee('name="retorno_idGrupo"', false)
+        ->assertSee('name="retorno_fecha"', false)
+        ->assertSee('action="'.e(route('cargar-resultado', ['idPartido' => $partido->id, 'idEdicion' => $edicion->id])).'"', false)
         ->assertSee('Cancha 3')
         ->assertDontSee('name="resultadoGlobal"', false)
         ->assertDontSee('name="penalesEquipoLocal"', false);
