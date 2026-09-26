@@ -60,12 +60,13 @@ it('usa x-ui.button para el alta de fecha en lugar del botón legado', function 
 it('reemplaza el borrado directo de fecha por x-ui.confirm-delete con el campo idEdicion', function () {
     $admin = crearAdminFechaMigration();
     $edicion = Edicion::create(['nombre' => 'Edicion Fecha Borrado']);
-    Fecha::create(['idEdicion' => $edicion->id, 'nombre' => 'Fecha Migration Borrado']);
+    $fecha = Fecha::create(['idEdicion' => $edicion->id, 'nombre' => 'Fecha Migration Borrado']);
 
     $response = $this->actingAs($admin)->get(route('fecha.index', ['idEdicion' => $edicion->id]));
 
     $response->assertOk()
         ->assertSee('data-confirm-delete', false)
+        ->assertSee('action="'.e(route('fecha.destroy', $fecha)).'"', false)
         ->assertSee('name="_method"', false)
         ->assertSee('value="DELETE"', false)
         ->assertSee('name="idEdicion" value="'.$edicion->id.'"', false);
@@ -150,4 +151,19 @@ it('muestra el resumen de errores accesible al enviar el alta de fecha sin nombr
     $formulario->assertOk()
         ->assertSee('role="alert"', false)
         ->assertSee('Revisá los campos marcados');
+});
+
+it('pagina el listado de fechas en el pie de la tabla', function () {
+    $admin = crearAdminFechaMigration();
+    $edicion = Edicion::create(['nombre' => 'Edicion Fechas Paginadas']);
+    foreach (range(1, 9) as $numero) {
+        Fecha::create(['idEdicion' => $edicion->id, 'nombre' => 'Fecha paginada '.$numero]);
+    }
+
+    $response = $this->actingAs($admin)->get(route('fecha.index', ['idEdicion' => $edicion->id]));
+
+    $response->assertOk()
+        ->assertSee('Fecha paginada 9')
+        ->assertDontSee('Fecha paginada 1<', false)
+        ->assertSee(e(route('fecha.index', ['idEdicion' => $edicion->id, 'page' => 2])), false);
 });

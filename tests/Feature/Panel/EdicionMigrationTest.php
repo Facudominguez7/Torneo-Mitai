@@ -61,6 +61,7 @@ it('reemplaza el borrado directo de edición por x-ui.confirm-delete', function 
 
     $response->assertOk()
         ->assertSee('data-confirm-delete', false)
+        ->assertSee('action="'.e(route('edicion.destroy', $edicion)).'"', false)
         ->assertSee('name="_method"', false)
         ->assertSee('value="DELETE"', false);
 });

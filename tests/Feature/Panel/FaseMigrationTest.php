@@ -62,12 +62,13 @@ it('usa x-ui.button para el alta de fase en lugar del botón legado', function (
 it('reemplaza el borrado directo de fase por x-ui.confirm-delete', function () {
     $admin = crearAdminFaseMigration();
     $edicion = Edicion::create(['nombre' => 'Edicion Fase Borrado']);
-    Fase::create(['nombre' => 'Fase Migration Borrado']);
+    $fase = Fase::create(['nombre' => 'Fase Migration Borrado']);
 
     $response = $this->actingAs($admin)->get(route('fase.index', ['idEdicion' => $edicion->id]));
 
     $response->assertOk()
         ->assertSee('data-confirm-delete', false)
+        ->assertSee('action="'.e(route('fase.destroy', $fase)).'"', false)
         ->assertSee('name="_method"', false)
         ->assertSee('value="DELETE"', false);
 });

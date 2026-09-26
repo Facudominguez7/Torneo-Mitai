@@ -64,12 +64,13 @@ it('usa x-ui.button para el alta de copa en lugar del botón legado', function (
 it('reemplaza el borrado directo de copa por x-ui.confirm-delete', function () {
     $admin = crearAdminCopaMigration();
     $edicion = Edicion::create(['nombre' => 'Edicion Copa Borrado']);
-    Copa::create(['nombre' => 'Copa Migration Borrado']);
+    $copa = Copa::create(['nombre' => 'Copa Migration Borrado']);
 
     $response = $this->actingAs($admin)->get(route('copa.index', ['idEdicion' => $edicion->id]));
 
     $response->assertOk()
         ->assertSee('data-confirm-delete', false)
+        ->assertSee('action="'.e(route('copa.destroy', $copa)).'"', false)
         ->assertSee('name="_method"', false)
         ->assertSee('value="DELETE"', false);
 });
