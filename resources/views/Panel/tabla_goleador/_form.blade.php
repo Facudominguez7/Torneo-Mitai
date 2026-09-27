@@ -17,79 +17,62 @@
         $nombreJugadorMostrar = 'Sin jugador asociado';
     }
 @endphp
-<div class="p-6 rounded shadow-sm bg-gray-800 text-white mb-5">
-    <div class="card-body">
+
+<div class="space-y-5">
+    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
         @if ($esEdicionGoleador)
-        <p class="text-lg font-semibold">
             La información del jugador se va a actualizar en la
-            <span class="text-yellow-300">
-                "{{ isset($CategoriaSeleccionada) ? $CategoriaSeleccionada->nombreCategoria : $idCategoria }}"
-            </span>
+            <span class="font-semibold text-brand-navy">{{ isset($CategoriaSeleccionada) ? $CategoriaSeleccionada->nombreCategoria : $idCategoria }}</span>
             de la
-            <span class="text-yellow-300">
-                "{{ $EdicionSeleccionada->nombre }}"
-            </span>
-        </p>
+            <span class="font-semibold text-brand-navy">{{ $EdicionSeleccionada->nombre }}</span>
         @else
-        <p class="text-lg font-semibold">
             El jugador se va a agregar en la
-            <span class="text-yellow-300">
-                "{{ isset($CategoriaSeleccionada) ? $CategoriaSeleccionada->nombreCategoria : $idCategoria }}"
-            </span>
+            <span class="font-semibold text-brand-navy">{{ isset($CategoriaSeleccionada) ? $CategoriaSeleccionada->nombreCategoria : $idCategoria }}</span>
             de la
-            <span class="text-yellow-300">
-                "{{ $EdicionSeleccionada->nombre }}"
-            </span>
-        </p>
+            <span class="font-semibold text-brand-navy">{{ $EdicionSeleccionada->nombre }}</span>
         @endif
     </div>
-</div>
-<input type="hidden" name="idEdicion" id="idEdicion" value="{{ $EdicionSeleccionada->id }}">
-<input type="hidden" name="idCategoria" id="idCategoria" value="{{ $CategoriaSeleccionada->id}}">
-<div class="mb-5">
-    <label for="nombre" class="mb-3 block text-base font-medium text-white">
-        Nombre del Jugador
-    </label>
-    <input type="text" name="nombre" id="nombre" value="{{ $nombreJugadorMostrar }}"
-        {{ $esEdicionGoleador ? 'readonly' : '' }}
-        class="panel-form-input" />
+
+    <input type="hidden" name="idEdicion" id="idEdicion" value="{{ $EdicionSeleccionada->id }}">
+    <input type="hidden" name="idCategoria" id="idCategoria" value="{{ $CategoriaSeleccionada->id }}">
+
+    <div>
+        <label for="nombre" class="mb-1 block text-sm font-medium text-gray-700">
+            Nombre del Jugador
+        </label>
+        <input type="text" name="nombre" id="nombre" value="{{ $nombreJugadorMostrar }}"
+            {{ $esEdicionGoleador ? 'readonly' : '' }}
+            class="panel-form-input">
+        @if ($esEdicionGoleador)
+            <p class="mt-1 text-xs text-gray-500">
+                El nombre se obtiene desde el jugador asociado por DNI en la tabla de goleadores.
+            </p>
+        @endif
+    </div>
+
+    <div>
+        <label for="cantidadGoles" class="mb-1 block text-sm font-medium text-gray-700">
+            Goles
+        </label>
+        <input type="number" name="cantidadGoles" id="cantidadGoles" value="{{ old('cantidadGoles', $goleador_t->cantidadGoles) }}"
+            class="panel-form-input">
+    </div>
+
     @if ($esEdicionGoleador)
-        <p class="mt-2 text-xs text-white/70">
-            El nombre se obtiene desde el jugador asociado por DNI en la tabla de goleadores.
-        </p>
+        <div>
+            <label class="mb-1 block text-sm font-medium text-gray-700">
+                Equipo (automático según jugador)
+            </label>
+            <input type="text" value="{{ $goleador_t->equipo->nombre ?? 'Sin equipo asociado' }}" readonly class="panel-form-input-static">
+            <input type="hidden" name="idEquipo" id="idEquipo" value="{{ $goleador_t->idEquipo }}">
+        </div>
+    @else
+        <x-ui.select label="Seleccionar Equipo" name="idEquipo" id="idEquipo">
+            @foreach ($equipos as $equipo)
+                <option value="{{ $equipo->id }}" {{ old('idEquipo', $goleador_t->idEquipo) == $equipo->id ? 'selected' : '' }}>
+                    {{ $equipo->nombre }}
+                </option>
+            @endforeach
+        </x-ui.select>
     @endif
 </div>
-<div class="mb-5">
-    <label for="goles" class="mb-3 block text-base font-medium text-white">
-        Goles
-    </label>
-    <input type="number" name="cantidadGoles" id="cantidadGoles" value="{{old('cantidadGoles', $goleador_t->cantidadGoles)}}"
-        class="panel-form-input" />
-</div>
-@if ($esEdicionGoleador)
-    <div class="mb-5">
-        <label class="mb-3 block text-base font-medium text-white">
-            Equipo (automatico segun jugador)
-        </label>
-        <input type="text"
-            value="{{ $goleador_t->equipo->nombre ?? 'Sin equipo asociado' }}"
-            readonly
-            class="panel-form-input-static" />
-        <input type="hidden" name="idEquipo" id="idEquipo" value="{{ $goleador_t->idEquipo }}">
-    </div>
-@else
-    <div class="mb-5">
-        <label for="idEquipo" class="mb-3 block text-base font-medium text-white">
-            Seleccionar Equipo
-        </label>
-        <select name="idEquipo" id="idEquipo"
-            class="panel-form-input">
-            @foreach ($equipos as $equipo)
-            <option value="{{ $equipo->id }}"
-                {{ old('idEquipo', $goleador_t->idEquipo) == $equipo->id ? 'selected' : '' }}>
-                {{ $equipo->nombre }}
-            </option>
-            @endforeach
-        </select>
-    </div>
-@endif
