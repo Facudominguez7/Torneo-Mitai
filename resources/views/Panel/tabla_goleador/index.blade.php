@@ -46,10 +46,14 @@
         // tabla de abajo sigue listando TODAS las filas (incluidas esas
         // mismas tres) para no perder Editar/Eliminar/Ver jugador en ningún
         // puesto. Solo tiene sentido cuando el orden es "todo goles dentro
-        // de una sola categoría" (idCategoria activo) y en la primera
-        // página, igual que el ranking canónico del portal.
+        // de una sola categoría" (idCategoria activo), en la primera
+        // página y SIN búsqueda activa: con search_value el orden deja de
+        // ser el ranking real de goles de la categoría y pasa a ser el
+        // orden relativo a los resultados filtrados (revisión
+        // R3-podio-busqueda).
         $todasLasFilas = collect($goleadores_t->items())->values();
-        $mostrarPodio = isset($EdicionSeleccionada) && !empty($idCategoria) && $goleadores_t->currentPage() === 1 && $todasLasFilas->isNotEmpty();
+        $searchValue = request('search_value');
+        $mostrarPodio = isset($EdicionSeleccionada) && !empty($idCategoria) && empty($searchValue) && $goleadores_t->currentPage() === 1 && $todasLasFilas->isNotEmpty();
         $filasPodio = $mostrarPodio ? $todasLasFilas->slice(0, 3)->values() : collect();
         $rankBase = ($goleadores_t->currentPage() - 1) * $goleadores_t->perPage();
     @endphp
@@ -112,7 +116,17 @@
             @foreach ($todasLasFilas as $index => $g)
                 @php $rank = $rankBase + $index + 1; @endphp
                 <tr>
-                    <td data-posicion="{{ $rank }}" class="font-semibold text-gray-500">{{ $rank }}</td>
+                    {{-- Con búsqueda activa el orden ya no es el ranking real
+                         de goles, sino el orden relativo a los resultados
+                         filtrados: mostrar un número acá sería un puesto
+                         engañoso, así que se muestra un guion neutral y se
+                         omite el atributo data-posicion (revisión
+                         R3-podio-busqueda). --}}
+                    @if (empty($searchValue))
+                        <td data-posicion="{{ $rank }}" class="font-semibold text-gray-500">{{ $rank }}</td>
+                    @else
+                        <td class="font-semibold text-gray-500">—</td>
+                    @endif
                     <td class="font-semibold">{{ $g->nombre }}</td>
                     <td>{{ $g->nombreEquipo }}</td>
                     @if (empty($idCategoria))
