@@ -91,7 +91,6 @@ it('renderiza el encabezado, filtros y tarjetas estadisticas del listado', funct
         ->assertSee('Lista de buena fe')
         ->assertSee('id="idEdicion"', false)
         ->assertSee('id="idCategoria"', false)
-        ->assertSee('text-2xl font-bold text-gray-800', false)
         ->assertSee('Equipos')
         ->assertSee('Sin jugadores')
         ->assertSee('Excedidos')
@@ -114,7 +113,10 @@ it('muestra la alerta de equipos que exceden el limite de jugadores', function (
     $response->assertOk()
         ->assertSee('role="alert"', false)
         ->assertSee('más de 18 jugadores')
-        ->assertSee('Equipo Excedido');
+        ->assertSee('Equipo Excedido')
+        ->assertSee('Excede el tope')
+        ->assertSee('bg-red-500', false)
+        ->assertSee('19/18 jugadores');
 });
 
 it('muestra la busqueda, las acciones de impresion y administracion', function () {
@@ -156,7 +158,11 @@ it('muestra las tarjetas de equipo con badge, barra de progreso y prioridad sin 
 
     $response->assertOk()
         ->assertSee('1 jugadores')
-        ->assertSee('Sin jugadores')
+        ->assertSee('1/18 jugadores')
+        ->assertSee('width: 6%', false)
+        ->assertSee('0/18 jugadores')
+        ->assertSee('bg-amber-400', false)
+        ->assertDontSee('Excede el tope')
         ->assertSee('Prioridad administrativa')
         ->assertSee(e(route('lista-buena-fe.show', [
             'idEquipo' => $equipoConJugadores->idEquipo,
@@ -175,7 +181,20 @@ it('renderiza el estado vacio de equipos cuando el filtro no encuentra resultado
 
     $conFiltroSinResultados->assertOk()
         ->assertSee('No se encontraron equipos')
-        ->assertSee('border-dashed', false);
+        ->assertSee('Probá cambiar la categoría o ajustar el filtro de búsqueda.');
+});
+
+it('selecciona la edicion mas reciente cuando no llega idEdicion', function () {
+    $admin = crearAdminListaBuenaFeMigration();
+    crearContextoListaBuenaFeMigration(['nombreEdicion' => 'Edicion Anterior']);
+    $reciente = crearContextoListaBuenaFeMigration(['nombreEdicion' => 'Edicion Reciente']);
+    crearEquipoEnEdicionListaBuenaFeMigration($reciente, 'Equipo De La Reciente');
+
+    $response = $this->actingAs($admin)->get(route('lista-buena-fe.index'));
+
+    $response->assertOk()
+        ->assertSee('<option value="'.$reciente['edicion']->id.'" selected', false)
+        ->assertSee('Equipo De La Reciente');
 });
 
 it('renderiza el estado sin edicion seleccionada cuando no hay ediciones cargadas', function () {
