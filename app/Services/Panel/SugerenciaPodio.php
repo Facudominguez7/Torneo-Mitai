@@ -1,0 +1,304 @@
+<?php
+
+namespace App\Services\Panel;
+
+use App\Models\Campeon;
+use App\Models\Categoria;
+use App\Models\Copa;
+use App\Models\InstanciaFinal;
+use App\Models\Subcampeon;
+use Illuminate\Support\Collection;
+
+/**
+ * Arma el Podio (campeones y subcampeones fusionados) de una edición: por
+ * categoría y copa, muestra lo ya guardado y, cuando la final ya se jugó y
+ * todavía no hay nada cargado para esa copa, calcula una sugerencia a partir
+ * del resultado. Nunca guarda nada — solo calcula lo que
+ * ControladorPodio::confirmar puede confirmar, siempre recalculando server-side.
+ *
+ * Solo se consideran instancias finales con `idCopa` cargado: una copa es
+ * obligatoria para Campeon/Subcampeon (StoreRequest la exige), así que una
+ * final "Sin copa" no puede convertirse en sugerencia.
+ */
+class SugerenciaPodio
+{
+    /**
+     * @return array{categorias: Collection<int, array<string, mixed>>, tieneContenido: bool}
+     */
+    public function obtenerPodio(int $idEdicion): array
+    {
+        $categorias = Categoria::where('idEdicion', $idEdicion)
+            ->orderByDesc('nombreCategoria')
+            ->get()
+            ->map(fn (Categoria $categoria) => $this->construirCategoria($idEdicion, $categoria))
+            ->filter(fn (array $categoria) => $categoria['copas']->isNotEmpty())
+            ->values();
+
+        return [
+            'categorias' => $categorias,
+            'tieneContenido' => $categorias->isNotEmpty(),
+        ];
+    }
+
+    /**
+     * Recalcula, server-side, la sugerencia de una copa puntual. Se usa desde
+     * ControladorPodio::confirmar para no confiar nunca en equipos que
+     * mande el cliente: si no hay sugerencia vigente, devuelve null.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function sugerenciaParaCopa(int $idEdicion, int $idCategoria, int $idCopa): ?array
+    {
+        $categoria = Categoria::find($idCategoria);
+
+        if (! $categoria || (int) $categoria->idEdicion !== $idEdicion) {
+            return null;
+        }
+
+        $copa = $this->construirCategoria($idEdicion, $categoria)['copas']
+            ->firstWhere('idCopa', $idCopa);
+
+        return $copa['sugerencia'] ?? null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function construirCategoria(int $idEdicion, Categoria $categoria): array
+    {
+        $idsCopasConInstancias = InstanciaFinal::query()
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $categoria->id)
+            ->whereNotNull('idCopa')
+            ->distinct()
+            ->pluck('idCopa')
+            ->map(fn ($id) => (int) $id);
+
+        $campeonesPorCopa = Campeon::with('equipo:id,nombre')
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $categoria->id)
+            ->get()
+            ->groupBy(fn (Campeon $campeon) => (int) $campeon->idCopa);
+
+        $subcampeonesPorCopa = Subcampeon::with('equipo:id,nombre')
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $categoria->id)
+            ->get()
+            ->groupBy(fn (Subcampeon $subcampeon) => (int) $subcampeon->idCopa);
+
+        $idsCopas = $idsCopasConInstancias
+            ->merge($campeonesPorCopa->keys())
+            ->merge($subcampeonesPorCopa->keys())
+            ->unique()
+            ->values();
+
+        $copas = Copa::whereIn('id', $idsCopas)
+            ->orderBy('secuencia')
+            ->orderBy('nombre')
+            ->get()
+            ->map(function (Copa $copa) use ($idEdicion, $categoria, $campeonesPorCopa, $subcampeonesPorCopa) {
+                $campeonesCopa = $campeonesPorCopa->get($copa->id, collect());
+                $subcampeonesCopa = $subcampeonesPorCopa->get($copa->id, collect());
+                $definido = $campeonesCopa->isNotEmpty() && $subcampeonesCopa->isNotEmpty();
+
+                return [
+                    'idCopa' => $copa->id,
+                    'nombreCopa' => $copa->nombre,
+                    'campeones' => $campeonesCopa->values(),
+                    'subcampeones' => $subcampeonesCopa->values(),
+                    'definido' => $definido,
+                    'sugerencia' => $this->calcularSugerencia(
+                        $idEdicion,
+                        $categoria->id,
+                        $copa->id,
+                        $campeonesCopa,
+                        $subcampeonesCopa,
+                    ),
+                ];
+            })
+            ->values();
+
+        return [
+            'idCategoria' => $categoria->id,
+            'nombreCategoria' => $categoria->nombreCategoria,
+            'copas' => $copas,
+            'estado' => $this->resolverEstado($copas),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, Campeon>  $campeonesCopa
+     * @param  Collection<int, Subcampeon>  $subcampeonesCopa
+     * @return array<string, mixed>|null
+     */
+    private function calcularSugerencia(
+        int $idEdicion,
+        int $idCategoria,
+        int $idCopa,
+        Collection $campeonesCopa,
+        Collection $subcampeonesCopa,
+    ): ?array {
+        // Nunca se sugiere encima de algo ya cargado, aunque sea parcial
+        // (solo campeón o solo subcampeón).
+        if ($campeonesCopa->isNotEmpty() || $subcampeonesCopa->isNotEmpty()) {
+            return null;
+        }
+
+        $final = $this->resolverFinal($idEdicion, $idCategoria, $idCopa);
+
+        if (! $final || $final->golesEquipoLocal === null || $final->golesEquipoVisitante === null) {
+            return null;
+        }
+
+        $ganador = $this->resolverGanador($final);
+
+        if ($ganador === null) {
+            return null;
+        }
+
+        $equipoCampeon = $ganador === 'local' ? $final->equipoLocal : $final->equipoVisitante;
+        $equipoSubcampeon = $ganador === 'local' ? $final->equipoVisitante : $final->equipoLocal;
+
+        if (! $equipoCampeon || ! $equipoSubcampeon) {
+            return null;
+        }
+
+        return [
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'idCopa' => $idCopa,
+            'idInstanciaFinal' => $final->id,
+            'idEquipoCampeon' => $equipoCampeon->id,
+            'idEquipoSubcampeon' => $equipoSubcampeon->id,
+            'nombreCampeon' => $equipoCampeon->nombre,
+            'nombreSubcampeon' => $equipoSubcampeon->nombre,
+        ];
+    }
+
+    /**
+     * "La final" de una copa: la instancia de esa edición/categoría/copa cuya
+     * fase, recortada y sin importar mayúsculas, empieza con "Final" (excluye
+     * "Semifinal" y "Cuartos de final", que no empiezan así). Con ida y
+     * vuelta (mismo par de equipos, con o sin localía invertida) se toma la
+     * de horario más reciente; a igual horario, la de mayor id. Si hay
+     * varias finales entre pares distintos, la final es ambigua y no se
+     * sugiere nada.
+     */
+    private function resolverFinal(int $idEdicion, int $idCategoria, int $idCopa): ?InstanciaFinal
+    {
+        $finales = InstanciaFinal::with(['equipoLocal:id,nombre', 'equipoVisitante:id,nombre', 'fase:id,nombre'])
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $idCategoria)
+            ->where('idCopa', $idCopa)
+            ->get()
+            ->filter(fn (InstanciaFinal $instancia) => $this->esFinal($instancia->fase?->nombre));
+
+        $paresDeEquipos = $finales
+            ->map(fn (InstanciaFinal $instancia) => collect([(int) $instancia->idEquipoLocal, (int) $instancia->idEquipoVisitante])->sort()->implode('-'))
+            ->unique();
+
+        if ($paresDeEquipos->count() > 1) {
+            return null;
+        }
+
+        return $finales
+            ->sortBy(fn (InstanciaFinal $instancia) => sprintf('%s|%010d', (string) $instancia->horario, $instancia->id))
+            ->last();
+    }
+
+    private function esFinal(?string $nombreFase): bool
+    {
+        if ($nombreFase === null || trim($nombreFase) === '') {
+            return false;
+        }
+
+        return (bool) preg_match('/^final/i', trim($nombreFase));
+    }
+
+    /**
+     * Ganador de la final: `resultadoGlobal` ("a-b", local-visitante) si está
+     * cargado y es parseable; si no, los goles. Empatado eso, decide penales.
+     * Sin manera de determinarlo, no hay ganador (y por lo tanto no hay
+     * sugerencia): el admin siempre confirma a mano.
+     */
+    private function resolverGanador(InstanciaFinal $final): ?string
+    {
+        $porGlobal = $this->compararPorGlobal($final->resultadoGlobal);
+
+        if ($porGlobal !== null) {
+            if ($porGlobal === 0) {
+                return $this->desempatarPorPenales($final);
+            }
+
+            return $porGlobal > 0 ? 'local' : 'visitante';
+        }
+
+        $diferenciaGoles = (int) $final->golesEquipoLocal - (int) $final->golesEquipoVisitante;
+
+        if ($diferenciaGoles !== 0) {
+            return $diferenciaGoles > 0 ? 'local' : 'visitante';
+        }
+
+        return $this->desempatarPorPenales($final);
+    }
+
+    /**
+     * Compara el resultado global "a-b" (con espacios opcionales). Si no
+     * está cargado o no tiene ese formato, devuelve null para que
+     * resolverGanador recurra a los goles.
+     */
+    private function compararPorGlobal(?string $resultadoGlobal): ?int
+    {
+        if ($resultadoGlobal === null) {
+            return null;
+        }
+
+        if (! preg_match('/^\s*(\d+)\s*-\s*(\d+)\s*$/', $resultadoGlobal, $coincidencias)) {
+            return null;
+        }
+
+        return ((int) $coincidencias[1]) <=> ((int) $coincidencias[2]);
+    }
+
+    private function desempatarPorPenales(InstanciaFinal $final): ?string
+    {
+        if ($final->penalesEquipoLocal === null || $final->penalesEquipoVisitante === null) {
+            return null;
+        }
+
+        if ((int) $final->penalesEquipoLocal === (int) $final->penalesEquipoVisitante) {
+            return null;
+        }
+
+        return (int) $final->penalesEquipoLocal > (int) $final->penalesEquipoVisitante ? 'local' : 'visitante';
+    }
+
+    /**
+     * Estado de la categoría para la tarjeta del Podio:
+     * - "Sin instancias": no hay ninguna copa para listar (ni instancias, ni nada guardado).
+     * - "Definido": todas las copas listadas tienen campeón y subcampeón guardados.
+     * - "Final jugada": alguna copa tiene una sugerencia pendiente de confirmar.
+     * - "En juego": catch-all para el resto (instancias sin definir, o datos
+     *   parciales guardados sin instancias que los respalden) — no hay nada
+     *   más para hacer todavía, pero la categoría ya tiene actividad.
+     *
+     * @param  Collection<int, array<string, mixed>>  $copas
+     * @return array{tipo: string, label: string}
+     */
+    private function resolverEstado(Collection $copas): array
+    {
+        if ($copas->isEmpty()) {
+            return ['tipo' => 'sin_instancias', 'label' => 'Sin instancias'];
+        }
+
+        if ($copas->every(fn (array $copa) => $copa['definido'])) {
+            return ['tipo' => 'definido', 'label' => 'Definido'];
+        }
+
+        if ($copas->contains(fn (array $copa) => $copa['sugerencia'] !== null)) {
+            return ['tipo' => 'final_jugada', 'label' => 'Final jugada'];
+        }
+
+        return ['tipo' => 'en_juego', 'label' => 'En juego'];
+    }
+}
