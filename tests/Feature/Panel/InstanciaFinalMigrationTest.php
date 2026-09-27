@@ -418,10 +418,11 @@ it('rotula los partidos sin copa y ordena copas y fases por su primer partido', 
     $faseVuelta = Fase::create(['nombre' => 'Tumbada Vuelta Migration']);
     $faseFinal = Fase::create(['nombre' => 'Final Tardia Migration']);
 
-    // La final con copa va primero en la consulta (es la única pendiente).
+    // La final con copa es la única pendiente, así que el controlador la trae
+    // primero; las rondas sin copa ya se jugaron y son anteriores.
     crearInstanciaFinalParaMigration($contexto, 'Final Local', 'Final Visita', ['fase' => $faseFinal, 'idCopa' => $copa->id, 'horario' => '2026-07-12 10:00:00']);
-    crearInstanciaFinalParaMigration($contexto, 'Vuelta Local', 'Vuelta Visita', ['fase' => $faseVuelta, 'idCopa' => null, 'horario' => '2026-06-14 10:00:00']);
-    crearInstanciaFinalParaMigration($contexto, 'Ida Local', 'Ida Visita', ['fase' => $faseIda, 'idCopa' => null, 'horario' => '2026-06-07 10:00:00']);
+    crearInstanciaFinalParaMigration($contexto, 'Vuelta Local', 'Vuelta Visita', ['fase' => $faseVuelta, 'idCopa' => null, 'horario' => '2026-06-14 10:00:00', 'golesEquipoLocal' => 1, 'golesEquipoVisitante' => 0]);
+    crearInstanciaFinalParaMigration($contexto, 'Ida Local', 'Ida Visita', ['fase' => $faseIda, 'idCopa' => null, 'horario' => '2026-06-07 10:00:00', 'golesEquipoLocal' => 2, 'golesEquipoVisitante' => 2]);
 
     $html = $this->actingAs($admin)->get(route('instancia_final.index', [
         'idEdicion' => $contexto['edicion']->id,
@@ -429,4 +430,12 @@ it('rotula los partidos sin copa y ordena copas y fases por su primer partido', 
     $cuadro = substr($html, (int) strpos($html, 'data-cuadro-fases') - 600);
 
     expect($cuadro)->toMatch('/Sin copa.*Tumbada Ida Migration.*Tumbada Vuelta Migration.*Copa Tardia Migration.*Final Tardia Migration/s');
+});
+
+it('muestra el listado sin edicion seleccionada aunque lleguen filtros en la query', function () {
+    $admin = crearAdminInstanciaFinalMigration();
+
+    $this->actingAs($admin)
+        ->get(route('instancia_final.index', ['horario' => '10:00', 'fecha' => '2026-06-07']))
+        ->assertOk();
 });

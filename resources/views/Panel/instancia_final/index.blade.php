@@ -82,6 +82,8 @@
         </x-ui.page-header>
     @endif
 
+    {{-- Los filtros y chips leen la edición seleccionada, igual que en main. --}}
+    @if (isset($EdicionSeleccionada))
     <div class="mt-6 rounded-xl border border-gray-200 bg-white p-5">
         <div class="flex flex-wrap items-end gap-3">
             @if ($categorias->count() > 0)
@@ -154,6 +156,7 @@
             </div>
         @endif
     </div>
+    @endif
 
     <div class="mt-6 flex flex-wrap justify-center gap-4">
         <div class="min-w-[140px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
