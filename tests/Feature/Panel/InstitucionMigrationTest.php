@@ -45,13 +45,14 @@ it('renderiza el encabezado con los contadores y el filtro de edicion', function
 
     $response = $this->actingAs($admin)->get(route('institucion.index', ['idEdicion' => $contexto['edicion']->id]));
 
-    $response->assertOk()
-        ->assertSee('Gestión de Instituciones')
-        ->assertSee('Instituciones')
-        ->assertSee('Con equipos')
-        ->assertSee('Sin institución')
-        ->assertSee('name="idEdicion"', false)
-        ->assertSee('text-2xl font-bold text-gray-800', false);
+    $response->assertOk()->assertSee('Gestión de Instituciones');
+
+    $html = $response->getContent();
+    expect($html)
+        ->toMatch('/>\s*1\s*<\/span>\s*<p[^>]*>Instituciones<\/p>/')
+        ->toMatch('/>\s*0\s*<\/span>\s*<p[^>]*>Con equipos<\/p>/')
+        ->toMatch('/>\s*0\s*<\/span>\s*<p[^>]*>Sin institución<\/p>/')
+        ->toMatch('/<select(?=[^>]*name="idEdicion")(?=[^>]*onchange="this\.form\.submit\(\)")[^>]*>/');
 });
 
 it('renderiza el formulario inline de creacion de institucion', function () {
@@ -63,6 +64,9 @@ it('renderiza el formulario inline de creacion de institucion', function () {
         ->assertSee('Crear Nueva Institución')
         ->assertSee(e(route('institucion.store')), false)
         ->assertSee('name="nombre"', false);
+
+    expect($response->getContent())
+        ->toMatch('/<form action="'.preg_quote(e(route('institucion.store')), '/').'" method="POST"[^>]*>.*?<button[^>]*type="submit"[^>]*>\s*Crear Institución/s');
 });
 
 it('muestra los equipos sin institucion con el selector para vincularlos', function () {
