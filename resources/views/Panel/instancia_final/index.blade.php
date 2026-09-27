@@ -1,6 +1,36 @@
 @extends('Panel.admin')
 
 @section('contenido')
+    @php
+        $totalPartidos = $partidos->count();
+        $partidosJugados = $partidos->filter(fn ($p) => $p->golesEquipoLocal !== null && $p->golesEquipoVisitante !== null)->count();
+        $partidosPendientes = $totalPartidos - $partidosJugados;
+        $pendientesPorPartido = collect($equiposSinAsistencia['equipos'] ?? [])->groupBy('partido_key');
+
+        // El isset($idFase) original siempre era falso porque el controlador
+        // nunca pasa $idFase a la vista (solo $nombreFase); el encabezado de
+        // categoría solo dependía, en la práctica, de si hay filtro de
+        // categoría activo. Se preserva ese comportamiento observado.
+        $mostrarEncabezadoCategoria = ! $idCategoria;
+
+        // Cuadro: categoría > copa > fase (columnas), conservando el orden en
+        // que aparecen los partidos ya ordenados por el controlador
+        // (pendientes primero, luego por fecha/horario).
+        // Copas y fases se ordenan por su primer partido para que el cuadro se
+        // lea en el orden en que se juega el torneo (las rondas sin copa, como
+        // las tumbadas, suelen ir antes que las copas).
+        $primerHorario = fn ($grupo) => $grupo->min(fn ($p) => $p->horario ?? '9999-12-31');
+
+        $cuadro = $partidos
+            ->groupBy(fn ($p) => $p->categoria->nombreCategoria ?? 'Sin categoría')
+            ->map(fn ($partidosCategoria) => $partidosCategoria
+                ->groupBy(fn ($p) => $p->copa->nombre ?? '')
+                ->sortBy($primerHorario)
+                ->map(fn ($partidosCopa) => $partidosCopa
+                    ->groupBy(fn ($p) => $p->fase->nombre)
+                    ->sortBy($primerHorario)));
+    @endphp
+
     @if (isset($EdicionSeleccionada))
         @php
             $urlImprimirFixture = route('admin.imprimir-fixture-instancias-finales', ['idEdicion' => $EdicionSeleccionada->id ?? '']);
@@ -9,313 +39,187 @@
                 'horario' => request('horario'),
             ]);
             $urlPlanillaCobro = route('admin.planilla-cobro', ['idEdicion' => $EdicionSeleccionada->id ?? '']);
+
+            $contextoActivo = array_filter([$nombreCategoria ?? null, $nombreFase ?? null]);
+            $subtituloInstancias = $totalPartidos . ' ' . ($totalPartidos === 1 ? 'partido' : 'partidos')
+                . ($contextoActivo ? ' · ' . implode(' · ', $contextoActivo) : '');
         @endphp
-        <div class="flex flex-col items-center gap-3 mb-4">
-            {{-- Fila de botones principales --}}
-            <div class="flex flex-row flex-wrap justify-center gap-2">
-                <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final']) }}">
-                    <button class="bg-cyan-600 hover:bg-cyan-700 text-white py-2 px-4 rounded-lg shadow-sm transition-all duration-300 md:py-3 md:px-6">
-                        + Agregar Partido
-                    </button>
-                </a>
-                @if(request()->filled('idCategoria'))
-                    <a href="{{ route('instancia_final.create', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}">
-                        <button class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-lg transition-all duration-300 md:py-3 md:px-6">
-                            + Agregar en esta categoría
-                        </button>
-                    </a>
+
+        <x-ui.page-header title="Instancias finales" :subtitle="$subtituloInstancias">
+            <x-slot name="actions">
+                <x-ui.button href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final']) }}" variant="primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Agregar partido
+                </x-ui.button>
+                @if (request()->filled('idCategoria'))
+                    <x-ui.button variant="success"
+                        href="{{ route('instancia_final.create', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Agregar en esta categoría
+                    </x-ui.button>
                 @endif
-                <div class="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white shadow-sm backdrop-blur-sm">
+                <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                     <select id="selector-impresion-instancias"
-                        class="min-w-[220px] rounded-lg border border-white/30 bg-white/95 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
-                        <option value="" class="text-slate-900">Seleccionar opción</option>
-                        <option value="fixture" class="text-slate-900">Fixture</option>
-                        <option value="arbitros" class="text-slate-900">Planilla Árbitros</option>
-                        <option value="planilla_cobro" class="text-slate-900">Planilla de Cobro</option>
+                        class="min-w-[200px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/30">
+                        <option value="">Seleccionar opción</option>
+                        <option value="fixture">Fixture</option>
+                        <option value="arbitros">Planilla Árbitros</option>
+                        <option value="planilla_cobro">Planilla de Cobro</option>
                     </select>
-                    <button type="button"
-                        onclick="ejecutarImpresionInstanciasFinales('{{ $urlImprimirFixture }}', '{{ $urlImprimirArbitros }}', '{{ $urlPlanillaCobro }}')"
-                        class="bg-cyan-600 hover:bg-cyan-700 text-white py-2 px-4 rounded-lg shadow-sm transition-all duration-300 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <x-ui.button type="button" variant="secondary"
+                        onclick="ejecutarImpresionInstanciasFinales('{{ $urlImprimirFixture }}', '{{ $urlImprimirArbitros }}', '{{ $urlPlanillaCobro }}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                         Imprimir
-                    </button>
+                    </x-ui.button>
                 </div>
-            </div>
-            
-            {{-- Filtros de la tabla (categoría + horario, uno al lado del otro) --}}
-            <div class="mt-2 flex flex-wrap items-center justify-center gap-3">
-            @if($categorias->count() > 0)
-                    <div class="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
-                        <label for="filtro-categoria" class="text-sm font-medium text-gray-700">Filtrar tabla por categoría:</label>
-                        <select id="filtro-categoria"
-                            class="bg-white border border-gray-300 text-gray-700 py-1 px-3 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
-                            <option value="">Todas</option>
-                            @foreach ($categorias as $categoria)
-                                <option value="{{ $categoria->id }}" {{ request('idCategoria') == $categoria->id ? 'selected' : '' }}>
-                                    {{ $categoria->nombreCategoria }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @if(request('idCategoria'))
-                            <a href="{{ route('instancia_final.index', array_merge(request()->except('idCategoria'), ['idCategoria' => null])) }}"
-                               class="text-red-500 hover:text-red-700 ml-2" title="Quitar filtro">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </a>
-                        @endif
-                    </div>
+            </x-slot>
+        </x-ui.page-header>
+    @endif
+
+    <div class="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+        <div class="flex flex-wrap items-end gap-3">
+            @if ($categorias->count() > 0)
+                <div class="w-full md:w-56">
+                    <x-ui.select label="Categoría" id="filtro-categoria">
+                        <option value="">Todas</option>
+                        @foreach ($categorias as $categoria)
+                            <option value="{{ $categoria->id }}" {{ request('idCategoria') == $categoria->id ? 'selected' : '' }}>
+                                {{ $categoria->nombreCategoria }}
+                            </option>
+                        @endforeach
+                    </x-ui.select>
+                </div>
             @endif
 
-            {{-- Filtro de horario --}}
             @php
                 $horariosInstanciasFinales = \App\Models\InstanciaFinal::where('idEdicion', $EdicionSeleccionada->id ?? 0)
                     ->whereNotNull('horario')
                     ->pluck('horario')
-                    ->map(function ($datetime) {
-                        return \Carbon\Carbon::parse($datetime)->format('H:i');
-                    })
+                    ->map(fn ($datetime) => \Carbon\Carbon::parse($datetime)->format('H:i'))
                     ->unique()
                     ->sort()
                     ->values();
             @endphp
-            
-            @if($horariosInstanciasFinales->count() > 0)
-                    <div class="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
-                        <label for="filtro-horario" class="text-sm font-medium text-gray-700">Filtrar tabla por horario:</label>
-                        <select id="filtro-horario"
-                            class="bg-white border border-gray-300 text-gray-700 py-1 px-3 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
-                            <option value="">Todos</option>
-                            @foreach ($horariosInstanciasFinales as $horario)
-                                <option value="{{ $horario }}" {{ request('horario') == $horario ? 'selected' : '' }}>
-                                    {{ $horario }} hs
-                                </option>
-                            @endforeach
-                        </select>
-                        @if(request('horario'))
-                            <a href="{{ route('instancia_final.index', array_merge(request()->except('horario'), ['horario' => null])) }}" 
-                               class="text-red-500 hover:text-red-700 ml-2" title="Quitar filtro">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </a>
-                        @endif
-                    </div>
-            @endif
-            </div>
-        </div>
-    @endif
-    <div class="bg-white p-6">
-        <h1 class="text-2xl font-bold">Instancias Finales</h1>
-        <div class="flex items-center justify-center flex-row mt-5 mb-0">
-            @if (isset($nombreFase))
-                <div class="mr-5">
-                    <h1 class="text-4xl font-bold">{{ $nombreFase }}</h1>
-                </div>
-            @endif
-            @if (isset($nombreCategoria))
-                <div class="mr-5">
-                    <h1 class="text-4xl font-bold">{{ $nombreCategoria }}</h1>
+
+            @if ($horariosInstanciasFinales->count() > 0)
+                <div class="w-full md:w-48">
+                    <x-ui.select label="Horario" id="filtro-horario">
+                        <option value="">Todos</option>
+                        @foreach ($horariosInstanciasFinales as $horario)
+                            <option value="{{ $horario }}" {{ request('horario') == $horario ? 'selected' : '' }}>
+                                {{ $horario }} hs
+                            </option>
+                        @endforeach
+                    </x-ui.select>
                 </div>
             @endif
         </div>
 
-        @if (request()->filled('idCategoria') || request()->filled('idFase') || request()->filled('idCopa') || request()->filled('estado') || request()->filled('fecha') || request()->filled('horario'))
-            <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+        @if (request()->filled('idCategoria') || request()->filled('idFase') || request()->filled('horario') || request()->filled('fecha'))
+            <div class="mt-4 flex flex-wrap items-center gap-2">
                 @if (request()->filled('idCategoria') && isset($nombreCategoria))
-                    <a href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('idCategoria'), ['idEdicion' => $EdicionSeleccionada->id]))) }}"
-                        class="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800 hover:bg-blue-200">
+                    <x-ui.filter-chip active
+                        href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('idCategoria'), ['idEdicion' => $EdicionSeleccionada->id]))) }}">
                         Categoría: {{ $nombreCategoria }}
-                        <span aria-hidden="true">x</span>
-                    </a>
+                        <span aria-hidden="true">×</span>
+                    </x-ui.filter-chip>
                 @endif
                 @if (request()->filled('idFase') && isset($nombreFase))
-                    <a href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('idFase'), ['idEdicion' => $EdicionSeleccionada->id]))) }}"
-                        class="inline-flex items-center gap-2 rounded-full bg-purple-100 px-3 py-1 text-sm font-semibold text-purple-800 hover:bg-purple-200">
+                    <x-ui.filter-chip active
+                        href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('idFase'), ['idEdicion' => $EdicionSeleccionada->id]))) }}">
                         Fase: {{ $nombreFase }}
-                        <span aria-hidden="true">x</span>
-                    </a>
+                        <span aria-hidden="true">×</span>
+                    </x-ui.filter-chip>
                 @endif
                 @if (request()->filled('horario'))
-                    <a href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('horario'), ['idEdicion' => $EdicionSeleccionada->id]))) }}"
-                        class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 hover:bg-emerald-200">
+                    <x-ui.filter-chip active
+                        href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('horario'), ['idEdicion' => $EdicionSeleccionada->id]))) }}">
                         Horario: {{ request('horario') }}
-                        <span aria-hidden="true">x</span>
-                    </a>
+                        <span aria-hidden="true">×</span>
+                    </x-ui.filter-chip>
                 @endif
                 @if (request()->filled('fecha'))
-                    <a href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('fecha'), ['idEdicion' => $EdicionSeleccionada->id]))) }}"
-                        class="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800 hover:bg-amber-200">
+                    <x-ui.filter-chip active
+                        href="{{ route('instancia_final.index', array_filter(array_merge(request()->except('fecha'), ['idEdicion' => $EdicionSeleccionada->id]))) }}">
                         Fecha: {{ request('fecha') }}
-                        <span aria-hidden="true">x</span>
-                    </a>
+                        <span aria-hidden="true">×</span>
+                    </x-ui.filter-chip>
                 @endif
             </div>
         @endif
+    </div>
 
-        {{-- Estadísticas resumen --}}
-        @php
-            $totalPartidos = $partidos->count();
-            $partidosJugados = $partidos->filter(fn($p) => $p->golesEquipoLocal !== null && $p->golesEquipoVisitante !== null)->count();
-            $partidosPendientes = $totalPartidos - $partidosJugados;
-            $partidosAgrupados = $partidos->groupBy(fn($p) => $p->categoria->nombreCategoria ?? 'Sin categoría');
-            $pendientesPorPartido = collect($equiposSinAsistencia['equipos'] ?? [])->groupBy('partido_key');
-        @endphp
-
-        <div class="bg-white p-6 border-t">
-            <div class="flex flex-wrap gap-4 justify-center mb-4">
-                <div class="bg-blue-100 rounded-lg px-6 py-3 text-center min-w-[120px]">
-                    <span class="text-2xl font-bold text-blue-600">{{ $totalPartidos }}</span>
-                    <p class="text-xs text-blue-600 font-medium">Total Partidos</p>
-                </div>
-                <div class="bg-green-100 rounded-lg px-6 py-3 text-center min-w-[120px]">
-                    <span class="text-2xl font-bold text-green-600">{{ $partidosJugados }}</span>
-                    <p class="text-xs text-green-600 font-medium">Jugados</p>
-                </div>
-                <div class="bg-yellow-100 rounded-lg px-6 py-3 text-center min-w-[120px]">
-                    <span class="text-2xl font-bold text-yellow-600">{{ $partidosPendientes }}</span>
-                    <p class="text-xs text-yellow-600 font-medium">Pendientes</p>
-                </div>
-            </div>
-
-
+    <div class="mt-6 flex flex-wrap justify-center gap-4">
+        <div class="min-w-[140px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
+            <span class="text-2xl font-bold text-gray-900">{{ $totalPartidos }}</span>
+            <p class="text-xs font-medium text-gray-500">Partidos</p>
+        </div>
+        <div class="min-w-[140px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
+            <span class="text-2xl font-bold text-emerald-600">{{ $partidosJugados }}</span>
+            <p class="text-xs font-medium text-gray-500">Jugados</p>
+        </div>
+        <div class="min-w-[140px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
+            <span class="text-2xl font-bold text-amber-600">{{ $partidosPendientes }}</span>
+            <p class="text-xs font-medium text-gray-500">Pendientes</p>
         </div>
     </div>
-    <div class="bg-white p-6">
-        @foreach ($partidos as $p)
-            @php
-                $resultadoCargado = $p->golesEquipoLocal !== null && $p->golesEquipoVisitante !== null;
-                $estadoGolesLabel = null;
-                $estadoGolesClase = '';
-                $partidoKey = \App\Models\InstanciaFinal::class.'-'.$p->id;
 
-                if ($p->goles_confirmados_at !== null) {
-                    $estadoGolesLabel = 'Goles confirmados';
-                    $estadoGolesClase = 'bg-emerald-100 text-emerald-700';
-                } elseif ($resultadoCargado) {
-                    $estadoGolesLabel = 'Goles pendientes de carga';
-                    $estadoGolesClase = 'bg-amber-100 text-amber-700';
-                }
-            @endphp
-            <div class="flex justify-center mb-5">
-                <div class="grid gap-6 p-1 bg-gray-50 w-full md:w-2/3">
-                    <div class="rounded-lg shadow-lg overflow-x-auto md:overflow-x-visible">
-                        {{-- Header con categoría, fase y copa --}}
-                        <div class="bg-gray-100 px-6 py-3 border-b">
-                            <div class="flex flex-wrap items-center justify-between gap-2">
-                                <div class="flex items-center gap-3">
-                                    @if (!$idCategoria || isset($idFase))
-                                        <span class="text-lg font-bold text-gray-800">{{ $p->categoria->nombreCategoria }}</span>
-                                        <span class="text-gray-400">•</span>
-                                    @endif
-                                    <span class="text-lg font-semibold text-[--color-primary]">{{ $p->fase->nombre }}</span>
-                                    @if (isset($p->copa->nombre))
-                                        <span class="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2 py-1 rounded-full">🏆 {{ $p->copa->nombre }}</span>
-                                    @endif
-                                </div>
-                                {{-- Badge de estado --}}
-                                @if ($p->golesEquipoLocal === null && $p->golesEquipoVisitante === null)
-                                    <span class="bg-yellow-100 text-yellow-700 text-xs font-semibold px-3 py-1 rounded-full">🕐 Pendiente</span>
-                                @else
-                                    <span class="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">✅ Jugado</span>
-                                @endif
-                            </div>
-                        </div>
+    @if ($partidos->isEmpty())
+        <x-ui.empty-state class="mt-6" message="No se encontraron partidos de instancias finales con estos filtros"
+            description="Probá cambiar los filtros o agregá un nuevo partido.">
+            @if (isset($EdicionSeleccionada))
+                <x-slot name="actions">
+                    <x-ui.button href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final']) }}" variant="primary" size="sm">
+                        Agregar partido
+                    </x-ui.button>
+                </x-slot>
+            @endif
+        </x-ui.empty-state>
+    @else
+        @foreach ($cuadro as $nombreCategoriaGrupo => $copasEnCategoria)
+            <section class="mt-8">
+                @if ($mostrarEncabezadoCategoria)
+                    <h2 class="mb-3 text-xl font-bold text-gray-800">{{ $nombreCategoriaGrupo }}</h2>
+                @endif
 
-                        {{-- Contenido del partido --}}
-                        <div class="flex flex-col md:flex-row items-center justify-between md:px-6 py-4 border-b">
-                            <div class="flex items-center gap-4">
-                                <img src="{{ asset('fotos/equipos/' . $p->equipoLocal->foto) }}" width="40" height="40"
-                                    alt="{{ $p->equipoLocal->nombre }}" class="object-cover" />
-                                <div class="font-medium text-lg">{{ $p->equipoLocal->nombre }}</div>
-                                <div class="text-gray-500">vs</div>
-                                <div class="font-medium text-lg">{{ $p->equipoVisitante->nombre }}</div>
-                                <img src="{{ asset('fotos/equipos/' . $p->equipoVisitante->foto) }}" width="40" height="40"
-                                    alt="{{ $p->equipoVisitante->nombre }}" class="object-cover" />
-                            </div>
-                            <div class="flex flex-col text-center mt-4 md:mt-0">
-                                <div class="text-2xl font-bold text-[--color-primary]">
-                                    {{ $p->golesEquipoLocal ?? '-' }} - {{ $p->golesEquipoVisitante ?? '-' }}
-                                </div>
-                                @if (
-                                        $p->golesEquipoLocal !== null &&
-                                        $p->golesEquipoVisitante !== null &&
-                                        $p->golesEquipoLocal === $p->golesEquipoVisitante &&
-                                        $p->penalesEquipoLocal !== null &&
-                                        $p->penalesEquipoVisitante !== null
-                                    )
-                                    <span class="text-sm text-gray-600">(Pen: {{ $p->penalesEquipoLocal }} - {{ $p->penalesEquipoVisitante }})</span>
-                                @endif
-                                @if (!is_null($p->resultadoGlobal))
-                                    <span class="text-sm font-semibold text-[--color-primary]">Global: {{ $p->resultadoGlobal }}</span>
-                                @endif
-                            </div>
-                        </div>
-
-                        {{-- Fecha, hora y cancha --}}
-                        <div class="flex flex-col md:flex-row items-center justify-between px-6 py-2 text-muted-foreground">
-                            <div class="flex items-center gap-2 mb-2 md:mb-0">
-                                <span class="text-xl">{{ \Carbon\Carbon::parse($p->horario)->format('d-m-Y H:i') }}</span>
-                            </div>
-                            <div class="flex flex-col items-center gap-2">
-                                <span>Cancha {{ $p->cancha }}</span>
-                            </div>
-                        </div>
-                        @if ($estadoGolesLabel)
-                            <div class="flex justify-center px-6 pb-3">
-                                <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $estadoGolesClase }}">
-                                    {{ $estadoGolesLabel }}
-                                </span>
-                            </div>
-                        @endif
-                        @if($pendientesPorPartido->has($partidoKey))
-                            <div class="flex flex-wrap items-center justify-center gap-2 px-6 pb-3">
-                                @foreach($pendientesPorPartido->get($partidoKey) as $pendiente)
-                                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold {{ $pendiente['estado'] === 'sin_planilla' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700' }}">
-                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        {{ $pendiente['equipo'] }} ({{ $pendiente['condicion'] }}): {{ $pendiente['estado_label'] }}
-                                    </span>
-                                @endforeach
-                            </div>
+                @foreach ($copasEnCategoria as $nombreCopaGrupo => $fasesEnCopa)
+                    <div class="mt-4 first:mt-0">
+                        @if ($nombreCopaGrupo !== '')
+                            <h3 class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-700">
+                                🏆 {{ $nombreCopaGrupo }}
+                            </h3>
+                        @else
+                            {{-- Sin encabezado, estas rondas parecían parte de la copa anterior. --}}
+                            <h3 class="mb-3 inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700">
+                                Sin copa
+                            </h3>
                         @endif
 
-                        {{-- Botones de acción --}}
-                        <div class="flex flex-wrap justify-center gap-2 px-6 py-4 bg-gray-50">
-                            <a href="{{ route('cargar-resultado-instancia', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final', 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}">
-                                <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                                    {{ $resultadoCargado ? 'Editar Resultado' : 'Cargar Resultado' }}
-                                </button>
-                            </a>
-                            <a href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'instanciaFinal', 'horario' => 0, 'origen' => 'instancia-final-index', 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario_filtro' => request('horario')]) }}">
-                                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                    Planillas
-                                </button>
-                            </a>
-                            <a href="{{ route('instancia_final.edit', ['instancia_final' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}">
-                                <button class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
-                                    Editar
-                                </button>
-                            </a>
-                            <form
-                                action="{{ route('instancia_final.destroy', ['instancia_final' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}"
-                                method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este partido?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                                    Eliminar
-                                </button>
-                            </form>
+                        {{-- Una columna de ancho fijo por fase; si no entran, scroll horizontal dentro de la copa. --}}
+                        <div data-cuadro-fases
+                            class="flex flex-col gap-4 lg:grid lg:grid-flow-col lg:auto-cols-[17rem] lg:items-start lg:overflow-x-auto lg:pb-2">
+                            @foreach ($fasesEnCopa as $nombreFaseGrupo => $partidosDeFase)
+                                <div>
+                                    <h4 class="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">{{ $nombreFaseGrupo }}</h4>
+                                    <div class="space-y-4">
+                                        @foreach ($partidosDeFase as $p)
+                                            @include('Panel.instancia_final._card', ['p' => $p])
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
-                </div>
-            </div>
+                @endforeach
+            </section>
         @endforeach
-    </div>
-
+    @endif
 
     <script>
         function ejecutarImpresionInstanciasFinales(urlFixture, urlArbitros, urlPlanillaCobro) {
@@ -348,17 +252,13 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             var idEdicion = "{{ $EdicionSeleccionada->id ?? '' }}";
-            var horario = new URLSearchParams(window.location.search).get('horario') || '';
 
-            var url = "{{ route('instancia_final.index') }}";
-
-            // Actualizar la URL con los filtros seleccionados
+            // Actualizar la URL con los filtros seleccionados, preservando
+            // los que ya están aplicados.
             function updateUrl(params) {
-                // Partimos de la URL actual para preservar los filtros ya aplicados.
                 var newUrl = new URL(window.location.href);
-                // Aseguramos que idEdicion se mantenga
-                if(idEdicion) newUrl.searchParams.set('idEdicion', idEdicion);
-                
+                if (idEdicion) newUrl.searchParams.set('idEdicion', idEdicion);
+
                 Object.keys(params).forEach(function (key) {
                     if (params[key]) {
                         newUrl.searchParams.set(key, params[key]);
@@ -369,16 +269,13 @@
                 window.location.href = newUrl;
             }
 
-            // Filtro por Horario (select)
             var selectHorario = document.getElementById('filtro-horario');
             if (selectHorario) {
                 selectHorario.addEventListener('change', function () {
-                    horario = this.value;
-                    updateUrl({ horario: horario });
+                    updateUrl({ horario: this.value });
                 });
             }
 
-            // Filtro por Categoría (select)
             var selectCategoria = document.getElementById('filtro-categoria');
             if (selectCategoria) {
                 selectCategoria.addEventListener('change', function () {

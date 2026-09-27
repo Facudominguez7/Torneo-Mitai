@@ -9,92 +9,92 @@
                 : \Carbon\Carbon::now()->next(\Carbon\Carbon::SUNDAY)->startOfDay()->format('Y-m-d\TH:i'))
     );
 @endphp
-@if (isset($CategoriaSeleccionada))
-    <div class="mb-5">
-        <label for="categoría" class="mb-3 block text-base font-medium text-white">
-            Categoría
-        </label>
-        <select id="idCategoria" name="idCategoria"
-            class="panel-form-input">
 
-            <option value="{{ $CategoriaSeleccionada->id }}" selected>{{ $CategoriaSeleccionada->nombreCategoria }}
-            </option>
-        </select>
+<div class="space-y-5">
+    @if (isset($CategoriaSeleccionada))
+        <x-ui.select label="Categoría" name="idCategoria" id="idCategoria">
+            <option value="{{ $CategoriaSeleccionada->id }}" selected>{{ $CategoriaSeleccionada->nombreCategoria }}</option>
+        </x-ui.select>
+    @else
+        <input class="hidden" type="number" name="idCategoria" id="idCategoria" value="{{ $idCategoria }}">
+    @endif
+
+    <div>
+        <x-ui.select label="Equipo local" name="idEquipoLocal" id="idEquipoLocal">
+            @foreach ($equipos as $equipo)
+                <option value="{{ $equipo->id }}"
+                    {{ old('idEquipoLocal', $partido->idEquipoLocal) == $equipo->id ? 'selected' : '' }}>
+                    {{ $equipo->nombre }}
+                </option>
+            @endforeach
+        </x-ui.select>
+        @error('idEquipoLocal')
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+        @enderror
     </div>
-@else
-    <input class="hidden" type="number" name="idCategoria" id="idCategoria" value="{{ $idCategoria }}">
-@endif
-<div class="mb-5">
-    <label for="idEquipo" class="mb-3 block text-base font-medium text-white">
-        Seleccionar Equipo Local
-    </label>
-    <select name="idEquipoLocal" id="idEquipoLocal"
-        class="panel-form-input">
-        @foreach ($equipos as $equipo)
-            <option value="{{ $equipo->id }}"
-                {{ old('idEquipoLocal', $partido->idEquipoLocal) == $equipo->id ? 'selected' : '' }}>
-                {{ $equipo->nombre }}
-            </option>
-        @endforeach
-    </select>
+
+    <div>
+        <x-ui.select label="Equipo visitante" name="idEquipoVisitante" id="idEquipoVisitante">
+            @foreach ($equipos as $equipo)
+                <option value="{{ $equipo->id }}"
+                    {{ old('idEquipoVisitante', $partido->idEquipoVisitante) == $equipo->id ? 'selected' : '' }}>
+                    {{ $equipo->nombre }}
+                </option>
+            @endforeach
+        </x-ui.select>
+        @error('idEquipoVisitante')
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+        @enderror
+    </div>
+
+    <div>
+        <x-ui.select label="Fase" name="idFase" id="idFase">
+            @foreach ($fases as $f)
+                <option value="{{ $f->id }}"
+                    {{ old('idFase', $partido->idFase) == $f->id ? 'selected' : '' }}>
+                    {{ $f->nombre }}
+                </option>
+            @endforeach
+        </x-ui.select>
+        @error('idFase')
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+        @enderror
+    </div>
+
+    <div>
+        <x-ui.select label="Copa" name="idCopa" id="idCopa">
+            <option value="">Ninguna copa</option>
+            @foreach ($copas as $copa)
+                <option value="{{ $copa->id }}"
+                    {{ old('idCopa', $partido->idCopa) == $copa->id ? 'selected' : '' }}>
+                    {{ $copa->nombre }}
+                </option>
+            @endforeach
+        </x-ui.select>
+        @error('idCopa')
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+        @enderror
+    </div>
+
+    <div>
+        <label for="horario" class="mb-1 block text-sm font-medium text-gray-700">
+            Fecha y hora del partido
+        </label>
+        <input type="datetime-local" name="horario" id="horario" class="panel-form-input" value="{{ $horarioPorDefecto }}">
+        @error('horario')
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+        @enderror
+    </div>
+
+    <div>
+        <label for="cancha" class="mb-1 block text-sm font-medium text-gray-700">
+            Cancha
+        </label>
+        <input type="text" name="cancha" id="cancha" value="{{ old('cancha', $partido->cancha) }}" class="panel-form-input">
+        @error('cancha')
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+        @enderror
+    </div>
 </div>
-<div class="mb-5">
-    <label for="idEquipo" class="mb-3 block text-base font-medium text-white">
-        Seleccionar Equipo Visitante
-    </label>
-    <select name="idEquipoVisitante" id="idEquipoVisitante"
-        class="panel-form-input">
-        @foreach ($equipos as $equipo)
-            <option value="{{ $equipo->id }}"
-                {{ old('idEquipoVisitante', $partido->idEquipoVisitante) == $equipo->id ? 'selected' : '' }}>
-                {{ $equipo->nombre }}
-            </option>
-        @endforeach
-    </select>
-</div>
-<div class="mb-5">
-    <label for="idFase" class="mb-3 block text-base font-medium text-white">
-        Seleccionar Fase
-    </label>
-    <select name="idFase" id="idFase"
-        class="panel-form-input">
-        @foreach ($fases as $f)
-            <option value="{{ $f->id }}"
-                {{ old('idFase', $partido->idFase) == $f->id ? 'selected' : '' }}>
-                {{ $f->nombre }}
-            </option>
-        @endforeach
-    </select>
-</div>
-<div class="mb-5">
-    <label for="idCopa" class="mb-3 block text-base font-medium text-white">
-        Seleccionar Copa
-    </label>
-    <select name="idCopa" id="idCopa"
-        class="panel-form-input">
-        <option value="">Ninguna copa</option> <!-- Opción para ninguna copa -->
-        @foreach ($copas as $copa)
-            <option value="{{ $copa->id }}"
-                {{ old('idCopa', $partido->idCopa) == $copa->id ? 'selected' : '' }}>
-                {{ $copa->nombre }}
-            </option>
-        @endforeach
-    </select>
-</div>
-<div class="mb-5">
-    <label for="horario" class="mb-3 block text-base font-medium text-white">
-        Fecha y Hora del partido
-    </label>
-    <input type="datetime-local" name="horario" id="horario"
-        class="panel-form-input"
-        value="{{ $horarioPorDefecto }}">
-</div>
-<div class="mb-5">
-    <label for="cancha" class="mb-3 block text-base font-medium text-white">
-        Cancha
-    </label>
-    <input type="text" name="cancha" id="cancha" value="{{old('cancha', $partido->cancha)}}"
-        class="panel-form-input"
-         />
-</div>
+
 <input class="hidden" type="number" name="idEdicion" id="idEdicion" value="{{ $EdicionSeleccionada->id }}">
