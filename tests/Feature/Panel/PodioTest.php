@@ -18,6 +18,7 @@ use App\Models\Fase;
 use App\Models\InstanciaFinal;
 use App\Models\Subcampeon;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 function crearAdminPodio(): User
 {
@@ -326,6 +327,75 @@ it('confirmar rechaza si no hay una sugerencia vigente', function () {
     $response->assertSessionHas('error');
     expect(Campeon::where('idCopa', $copa->id)->count())->toBe(0)
         ->and(Subcampeon::where('idCopa', $copa->id)->count())->toBe(0);
+});
+
+it('confirmar dos veces seguidas para la misma copa no crea duplicados', function () {
+    // Envío secuencial (doble click / dos pestañas, uno después del otro):
+    // simula la carrera sin poder probar concurrencia real en Pest.
+    $admin = crearAdminPodio();
+    $contexto = crearContextoPodio();
+    $copa = Copa::create(['nombre' => 'Copa Doble Envio Feature']);
+    $local = crearEquipoParaPodio($contexto['edicion'], $contexto['categoria'], 'Local Doble Envio Feature');
+    $visitante = crearEquipoParaPodio($contexto['edicion'], $contexto['categoria'], 'Visitante Doble Envio Feature');
+    crearFinalParaPodio($contexto, $copa, 'Final', $local, $visitante, [
+        'golesEquipoLocal' => 2, 'golesEquipoVisitante' => 0,
+    ]);
+
+    $payload = [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idCopa' => $copa->id,
+    ];
+
+    // Cada assertSessionHas se hace apenas llega la respuesta: el store de
+    // sesión es compartido, así que si se difiere el segundo post ya
+    // pisó el flash del primero.
+    $primero = $this->actingAs($admin)->withSession(['_token' => 'token-csrf-podio'])->withHeaders(['X-CSRF-TOKEN' => 'token-csrf-podio'])->post(route('podio.confirmar'), $payload);
+    $primero->assertSessionHas('status');
+
+    $segundo = $this->actingAs($admin)->withSession(['_token' => 'token-csrf-podio'])->withHeaders(['X-CSRF-TOKEN' => 'token-csrf-podio'])->post(route('podio.confirmar'), $payload);
+    $segundo->assertSessionHas('error', 'Esta copa ya tiene campeón o subcampeón cargado.');
+
+    expect(Campeon::where('idCopa', $copa->id)->count())->toBe(1)
+        ->and(Subcampeon::where('idCopa', $copa->id)->count())->toBe(1);
+});
+
+it('si falla la confirmacion revierte todo, avisa y loguea la excepcion', function () {
+    Log::spy();
+
+    $admin = crearAdminPodio();
+    $contexto = crearContextoPodio();
+    $copa = Copa::create(['nombre' => 'Copa Fallo Confirmar Feature']);
+    $local = crearEquipoParaPodio($contexto['edicion'], $contexto['categoria'], 'Local Fallo Confirmar Feature');
+    $visitante = crearEquipoParaPodio($contexto['edicion'], $contexto['categoria'], 'Visitante Fallo Confirmar Feature');
+    crearFinalParaPodio($contexto, $copa, 'Final', $local, $visitante, [
+        'golesEquipoLocal' => 3, 'golesEquipoVisitante' => 0,
+    ]);
+
+    Subcampeon::creating(function (): void {
+        throw new RuntimeException('Fallo simulado al confirmar el podio');
+    });
+
+    $response = $this->actingAs($admin)->withSession(['_token' => 'token-csrf-podio'])->withHeaders(['X-CSRF-TOKEN' => 'token-csrf-podio'])->post(route('podio.confirmar'), [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idCopa' => $copa->id,
+    ]);
+
+    $response->assertRedirect(route('podio.index', ['idEdicion' => $contexto['edicion']->id]));
+    $response->assertSessionHas('error', 'No se pudo confirmar el podio. Intentá nuevamente.');
+
+    expect(Campeon::where('idCopa', $copa->id)->count())->toBe(0)
+        ->and(Subcampeon::where('idCopa', $copa->id)->count())->toBe(0);
+
+    Log::shouldHaveReceived('error')->once()->with(
+        'No se pudo confirmar el podio sugerido',
+        Mockery::on(function (array $contexto) {
+            return array_key_exists('exception', $contexto)
+                && $contexto['exception'] instanceof RuntimeException
+                && $contexto['exception']->getMessage() === 'Fallo simulado al confirmar el podio';
+        })
+    );
 });
 
 it('confirmar rechaza ids inexistentes o invalidos', function () {

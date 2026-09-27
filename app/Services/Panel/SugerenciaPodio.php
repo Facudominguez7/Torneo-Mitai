@@ -144,20 +144,23 @@ class SugerenciaPodio
             return null;
         }
 
-        $final = $this->resolverFinal($idEdicion, $idCategoria, $idCopa);
+        $legs = $this->resolverFinal($idEdicion, $idCategoria, $idCopa);
 
-        if (! $final || $final->golesEquipoLocal === null || $final->golesEquipoVisitante === null) {
+        if (! $legs || $legs->contains(fn (InstanciaFinal $leg) => $leg->golesEquipoLocal === null || $leg->golesEquipoVisitante === null)) {
+            // Si hay ida y vuelta, alcanza con que una sola ida no esté
+            // jugada para considerar que la final completa no se jugó.
             return null;
         }
 
-        $ganador = $this->resolverGanador($final);
+        $ganador = $this->resolverGanador($legs);
 
         if ($ganador === null) {
             return null;
         }
 
-        $equipoCampeon = $ganador === 'local' ? $final->equipoLocal : $final->equipoVisitante;
-        $equipoSubcampeon = $ganador === 'local' ? $final->equipoVisitante : $final->equipoLocal;
+        $ultima = $legs->last();
+        $equipoCampeon = $ganador === 'local' ? $ultima->equipoLocal : $ultima->equipoVisitante;
+        $equipoSubcampeon = $ganador === 'local' ? $ultima->equipoVisitante : $ultima->equipoLocal;
 
         if (! $equipoCampeon || ! $equipoSubcampeon) {
             return null;
@@ -167,7 +170,7 @@ class SugerenciaPodio
             'idEdicion' => $idEdicion,
             'idCategoria' => $idCategoria,
             'idCopa' => $idCopa,
-            'idInstanciaFinal' => $final->id,
+            'idInstanciaFinal' => $ultima->id,
             'idEquipoCampeon' => $equipoCampeon->id,
             'idEquipoSubcampeon' => $equipoSubcampeon->id,
             'nombreCampeon' => $equipoCampeon->nombre,
@@ -176,15 +179,18 @@ class SugerenciaPodio
     }
 
     /**
-     * "La final" de una copa: la instancia de esa edición/categoría/copa cuya
-     * fase, recortada y sin importar mayúsculas, empieza con "Final" (excluye
-     * "Semifinal" y "Cuartos de final", que no empiezan así). Con ida y
-     * vuelta (mismo par de equipos, con o sin localía invertida) se toma la
-     * de horario más reciente; a igual horario, la de mayor id. Si hay
+     * "La final" de una copa: todas las instancias de esa edición/categoría/
+     * copa cuya fase, recortada y sin importar mayúsculas, empieza con
+     * "Final" (excluye "Semifinal" y "Cuartos de final", que no empiezan
+     * así), ordenadas de más antigua a más reciente (a igual horario, la de
+     * mayor id va última). Con ida y vuelta puede haber más de una, siempre
+     * que sea el mismo par de equipos (con o sin localía invertida). Si hay
      * varias finales entre pares distintos, la final es ambigua y no se
      * sugiere nada.
+     *
+     * @return Collection<int, InstanciaFinal>|null
      */
-    private function resolverFinal(int $idEdicion, int $idCategoria, int $idCopa): ?InstanciaFinal
+    private function resolverFinal(int $idEdicion, int $idCategoria, int $idCopa): ?Collection
     {
         $finales = InstanciaFinal::with(['equipoLocal:id,nombre', 'equipoVisitante:id,nombre', 'fase:id,nombre'])
             ->where('idEdicion', $idEdicion)
@@ -192,6 +198,10 @@ class SugerenciaPodio
             ->where('idCopa', $idCopa)
             ->get()
             ->filter(fn (InstanciaFinal $instancia) => $this->esFinal($instancia->fase?->nombre));
+
+        if ($finales->isEmpty()) {
+            return null;
+        }
 
         $paresDeEquipos = $finales
             ->map(fn (InstanciaFinal $instancia) => collect([(int) $instancia->idEquipoLocal, (int) $instancia->idEquipoVisitante])->sort()->implode('-'))
@@ -203,7 +213,7 @@ class SugerenciaPodio
 
         return $finales
             ->sortBy(fn (InstanciaFinal $instancia) => sprintf('%s|%010d', (string) $instancia->horario, $instancia->id))
-            ->last();
+            ->values();
     }
 
     private function esFinal(?string $nombreFase): bool
@@ -216,30 +226,62 @@ class SugerenciaPodio
     }
 
     /**
-     * Ganador de la final: `resultadoGlobal` ("a-b", local-visitante) si está
-     * cargado y es parseable; si no, los goles. Empatado eso, decide penales.
-     * Sin manera de determinarlo, no hay ganador (y por lo tanto no hay
-     * sugerencia): el admin siempre confirma a mano.
+     * Ganador de la final, en términos de local/visitante de la última ida:
+     * `resultadoGlobal` ("a-b", local-visitante) de la última ida si está
+     * cargado y es parseable; si no, los goles — de esa única ida si es a
+     * partido único, o el agregado de todas las idas (goles a favor menos en
+     * contra, sumados, invirtiendo cuando la localía se invierte entre
+     * idas) si hay ida y vuelta. Empatado eso, decide los penales de la
+     * última ida. Sin manera de determinarlo, no hay ganador (y por lo tanto
+     * no hay sugerencia): el admin siempre confirma a mano.
+     *
+     * @param  Collection<int, InstanciaFinal>  $legs  ordenadas de más
+     *                                                 antigua a más reciente
      */
-    private function resolverGanador(InstanciaFinal $final): ?string
+    private function resolverGanador(Collection $legs): ?string
     {
-        $porGlobal = $this->compararPorGlobal($final->resultadoGlobal);
+        $ultima = $legs->last();
+        $porGlobal = $this->compararPorGlobal($ultima->resultadoGlobal);
 
         if ($porGlobal !== null) {
             if ($porGlobal === 0) {
-                return $this->desempatarPorPenales($final);
+                return $this->desempatarPorPenales($ultima);
             }
 
             return $porGlobal > 0 ? 'local' : 'visitante';
         }
 
-        $diferenciaGoles = (int) $final->golesEquipoLocal - (int) $final->golesEquipoVisitante;
+        $diferencia = $legs->count() === 1
+            ? (int) $ultima->golesEquipoLocal - (int) $ultima->golesEquipoVisitante
+            : $this->diferenciaAgregada($legs, $ultima);
 
-        if ($diferenciaGoles !== 0) {
-            return $diferenciaGoles > 0 ? 'local' : 'visitante';
+        if ($diferencia !== 0) {
+            return $diferencia > 0 ? 'local' : 'visitante';
         }
 
-        return $this->desempatarPorPenales($final);
+        return $this->desempatarPorPenales($ultima);
+    }
+
+    /**
+     * Diferencia de goles agregada de todas las idas, en la perspectiva
+     * local/visitante de la última ida (la localía puede invertirse entre
+     * idas, así que cada ida se suma desde el punto de vista de quién es el
+     * mismo equipo que el local de la última).
+     *
+     * @param  Collection<int, InstanciaFinal>  $legs
+     */
+    private function diferenciaAgregada(Collection $legs, InstanciaFinal $ultima): int
+    {
+        $idLocalUltima = (int) $ultima->idEquipoLocal;
+
+        return (int) $legs->sum(function (InstanciaFinal $leg) use ($idLocalUltima) {
+            $golesLocal = (int) $leg->golesEquipoLocal;
+            $golesVisitante = (int) $leg->golesEquipoVisitante;
+
+            return (int) $leg->idEquipoLocal === $idLocalUltima
+                ? $golesLocal - $golesVisitante
+                : $golesVisitante - $golesLocal;
+        });
     }
 
     /**

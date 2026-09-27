@@ -7,24 +7,29 @@ use App\Http\Requests\Podio\ConfirmarRequest;
 use App\Models\Campeon;
 use App\Models\Edicion;
 use App\Models\Subcampeon;
+use App\Services\Panel\ConfirmadorPodio;
 use App\Services\Panel\SugerenciaPodio;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
  * Podio: fusión de Campeones y Subcampeones por categoría y copa (T8b,
  * panel-admin-redesign). Controlador fino: toda la lógica de sugerencia vive
- * en SugerenciaPodio; acá solo se resuelve el contexto de edición, se valida
- * que no exista ya un campeón/subcampeón y se confirma dentro de una
- * transacción.
+ * en SugerenciaPodio y la confirmación transaccional (con su lock contra
+ * confirmaciones concurrentes) vive en ConfirmadorPodio. Acá solo se
+ * resuelve el contexto de edición, se hace el chequeo temprano de "ya
+ * existe" (para no pagar el costo de una transacción en el camino de
+ * rechazo sin carrera) y se traduce el resultado a la respuesta.
  */
 class ControladorPodio extends Controller
 {
-    public function __construct(private readonly SugerenciaPodio $sugerenciaPodio) {}
+    public function __construct(
+        private readonly SugerenciaPodio $sugerenciaPodio,
+        private readonly ConfirmadorPodio $confirmadorPodio,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -52,7 +57,14 @@ class ControladorPodio extends Controller
     {
         $data = $request->validated();
         $parametrosRegreso = ['idEdicion' => $data['idEdicion']];
+        $errorYaExiste = 'Esta copa ya tiene campeón o subcampeón cargado.';
+        $errorSinSugerencia = 'No hay una sugerencia vigente para confirmar en esta copa.';
 
+        // Chequeo temprano fuera de la transacción: en el camino sin carrera
+        // (la gran mayoría) evita pagar el costo de abrir una transacción y
+        // tomar el lock solo para terminar rechazando. ConfirmadorPodio
+        // vuelve a hacer este mismo chequeo, ya con el lock tomado, para
+        // cubrir la carrera real (doble click, dos admins a la vez).
         $yaExiste = Campeon::where('idEdicion', $data['idEdicion'])
             ->where('idCategoria', $data['idCategoria'])
             ->where('idCopa', $data['idCopa'])
@@ -63,8 +75,7 @@ class ControladorPodio extends Controller
                 ->exists();
 
         if ($yaExiste) {
-            return to_route('podio.index', $parametrosRegreso)
-                ->with('error', 'Esta copa ya tiene campeón o subcampeón cargado.');
+            return to_route('podio.index', $parametrosRegreso)->with('error', $errorYaExiste);
         }
 
         $sugerencia = $this->sugerenciaPodio->sugerenciaParaCopa(
@@ -74,39 +85,32 @@ class ControladorPodio extends Controller
         );
 
         if (! $sugerencia) {
-            return to_route('podio.index', $parametrosRegreso)
-                ->with('error', 'No hay una sugerencia vigente para confirmar en esta copa.');
+            return to_route('podio.index', $parametrosRegreso)->with('error', $errorSinSugerencia);
         }
 
         try {
-            DB::transaction(function () use ($data, $sugerencia): void {
-                Campeon::create([
-                    'idEdicion' => $data['idEdicion'],
-                    'idCategoria' => $data['idCategoria'],
-                    'idCopa' => $data['idCopa'],
-                    'idEquipo' => $sugerencia['idEquipoCampeon'],
-                ]);
-
-                Subcampeon::create([
-                    'idEdicion' => $data['idEdicion'],
-                    'idCategoria' => $data['idCategoria'],
-                    'idCopa' => $data['idCopa'],
-                    'idEquipo' => $sugerencia['idEquipoSubcampeon'],
-                ]);
-            });
+            $confirmacion = $this->confirmadorPodio->confirmar(
+                $data['idEdicion'],
+                $data['idCategoria'],
+                $data['idCopa'],
+            );
         } catch (Throwable $error) {
             Log::error('No se pudo confirmar el podio sugerido', [
                 'idEdicion' => $data['idEdicion'],
                 'idCategoria' => $data['idCategoria'],
                 'idCopa' => $data['idCopa'],
+                'exception' => $error,
             ]);
 
             return to_route('podio.index', $parametrosRegreso)
                 ->with('error', 'No se pudo confirmar el podio. Intentá nuevamente.');
         }
 
-        return to_route('podio.index', $parametrosRegreso)
-            ->with('status', 'Podio confirmado.');
+        return match ($confirmacion['resultado']) {
+            'confirmado' => to_route('podio.index', $parametrosRegreso)->with('status', 'Podio confirmado.'),
+            'ya_existe' => to_route('podio.index', $parametrosRegreso)->with('error', $errorYaExiste),
+            default => to_route('podio.index', $parametrosRegreso)->with('error', $errorSinSugerencia),
+        };
     }
 
     /**

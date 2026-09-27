@@ -90,13 +90,17 @@ it('reconoce "Final" y variantes como la final, pero no Semifinal ni Cuartos de 
         ->and($copaPodio['sugerencia']['nombreCampeon'])->toBe('Local Fase');
 });
 
-it('con ida y vuelta usa la de horario mas reciente', function () {
+it('con ida y vuelta el agregado de goles coincide con el resultado de la vuelta y confirma el mismo campeon', function () {
+    // Antes esta prueba decía "usa la de horario mas reciente", pero con
+    // estos datos el agregado (0+4 vs 3+0) y la vuelta sola dan el mismo
+    // ganador: no alcanza para distinguir "solo la última" de "agregado".
+    // La prueba de agregado real (donde difieren) es la de más abajo.
     $contexto = crearContextoSugerenciaPodio();
     $copa = Copa::create(['nombre' => 'Copa Ida Vuelta Podio']);
     $local = crearEquipoParaSugerenciaPodio($contexto['edicion'], $contexto['categoria'], 'Local Ida Vuelta');
     $visitante = crearEquipoParaSugerenciaPodio($contexto['edicion'], $contexto['categoria'], 'Visitante Ida Vuelta');
 
-    // Ida: gana el visitante. Vuelta (más tarde): gana el local. Debe usarse la vuelta.
+    // Ida: gana el visitante. Vuelta (más tarde): gana el local, y también el agregado (4-3).
     crearFinalParaSugerenciaPodio($contexto, $copa, Fase::create(['nombre' => 'Final Ida']), $local, $visitante, [
         'golesEquipoLocal' => 0, 'golesEquipoVisitante' => 3, 'horario' => '2026-05-01 10:00:00',
     ]);
@@ -108,6 +112,69 @@ it('con ida y vuelta usa la de horario mas reciente', function () {
     $copaPodio = $podio['categorias']->first()['copas']->firstWhere('idCopa', $copa->id);
 
     expect($copaPodio['sugerencia']['nombreCampeon'])->toBe('Local Ida Vuelta');
+});
+
+it('con ida y vuelta sin resultadoGlobal parseable decide por el agregado de goles y no por la ultima ida sola', function () {
+    $contexto = crearContextoSugerenciaPodio();
+    $copa = Copa::create(['nombre' => 'Copa Agregado Podio']);
+    $equipoA = crearEquipoParaSugerenciaPodio($contexto['edicion'], $contexto['categoria'], 'Equipo A Agregado');
+    $equipoB = crearEquipoParaSugerenciaPodio($contexto['edicion'], $contexto['categoria'], 'Equipo B Agregado');
+
+    // Ida: A local gana 3-0. Vuelta (localía invertida): B local gana 1-0.
+    // Por la última ida sola ganaría B, pero en el agregado (3-1) gana A.
+    crearFinalParaSugerenciaPodio($contexto, $copa, Fase::create(['nombre' => 'Final Ida']), $equipoA, $equipoB, [
+        'golesEquipoLocal' => 3, 'golesEquipoVisitante' => 0, 'horario' => '2026-05-01 10:00:00',
+    ]);
+    crearFinalParaSugerenciaPodio($contexto, $copa, Fase::create(['nombre' => 'Final Vuelta']), $equipoB, $equipoA, [
+        'golesEquipoLocal' => 1, 'golesEquipoVisitante' => 0, 'horario' => '2026-05-08 10:00:00',
+    ]);
+
+    $podio = crearServicioSugerenciaPodio()->obtenerPodio($contexto['edicion']->id);
+    $copaPodio = $podio['categorias']->first()['copas']->firstWhere('idCopa', $copa->id);
+
+    expect($copaPodio['sugerencia']['nombreCampeon'])->toBe('Equipo A Agregado');
+});
+
+it('con empate en el agregado de goles decide por los penales de la ultima ida', function () {
+    $contexto = crearContextoSugerenciaPodio();
+    $copa = Copa::create(['nombre' => 'Copa Agregado Penales Podio']);
+    $local = crearEquipoParaSugerenciaPodio($contexto['edicion'], $contexto['categoria'], 'Local Agregado Penales');
+    $visitante = crearEquipoParaSugerenciaPodio($contexto['edicion'], $contexto['categoria'], 'Visitante Agregado Penales');
+
+    // Ida: local gana 2-1. Vuelta: visitante gana 1-0. Agregado 2-2: define
+    // la ultima ida por penales.
+    crearFinalParaSugerenciaPodio($contexto, $copa, Fase::create(['nombre' => 'Final Ida']), $local, $visitante, [
+        'golesEquipoLocal' => 2, 'golesEquipoVisitante' => 1, 'horario' => '2026-05-01 10:00:00',
+    ]);
+    crearFinalParaSugerenciaPodio($contexto, $copa, Fase::create(['nombre' => 'Final Vuelta']), $local, $visitante, [
+        'golesEquipoLocal' => 0, 'golesEquipoVisitante' => 1, 'horario' => '2026-05-08 10:00:00',
+        'penalesEquipoLocal' => 3, 'penalesEquipoVisitante' => 5,
+    ]);
+
+    $podio = crearServicioSugerenciaPodio()->obtenerPodio($contexto['edicion']->id);
+    $copaPodio = $podio['categorias']->first()['copas']->firstWhere('idCopa', $copa->id);
+
+    expect($copaPodio['sugerencia']['nombreCampeon'])->toBe('Visitante Agregado Penales');
+});
+
+it('con ida y vuelta si una ida no se jugo no sugiere nada', function () {
+    $contexto = crearContextoSugerenciaPodio();
+    $copa = Copa::create(['nombre' => 'Copa Ida Sin Jugar Podio']);
+    $local = crearEquipoParaSugerenciaPodio($contexto['edicion'], $contexto['categoria'], 'Local Ida Sin Jugar');
+    $visitante = crearEquipoParaSugerenciaPodio($contexto['edicion'], $contexto['categoria'], 'Visitante Ida Sin Jugar');
+
+    crearFinalParaSugerenciaPodio($contexto, $copa, Fase::create(['nombre' => 'Final Ida']), $local, $visitante, [
+        'golesEquipoLocal' => 2, 'golesEquipoVisitante' => 0, 'horario' => '2026-05-01 10:00:00',
+    ]);
+    // Vuelta sin jugar (sin goles cargados todavía).
+    crearFinalParaSugerenciaPodio($contexto, $copa, Fase::create(['nombre' => 'Final Vuelta']), $visitante, $local, [
+        'horario' => '2026-05-08 10:00:00',
+    ]);
+
+    $podio = crearServicioSugerenciaPodio()->obtenerPodio($contexto['edicion']->id);
+    $copaPodio = $podio['categorias']->first()['copas']->firstWhere('idCopa', $copa->id);
+
+    expect($copaPodio['sugerencia'])->toBeNull();
 });
 
 it('con ida y vuelta acepta la localia invertida entre partidos', function () {
