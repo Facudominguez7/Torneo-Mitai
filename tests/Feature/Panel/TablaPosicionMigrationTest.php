@@ -74,6 +74,17 @@ function crearFilaPosicionMigration(array $contexto, Equipo $equipo, array $atri
     ], $atributos));
 }
 
+// Extrae el <form> del control de borrado real (x-ui.confirm-delete), y no
+// cualquier otro punto de la página que también renderice el mismo nombre de
+// campo (por ejemplo el form de filtros re-emite idEdicion/idCategoria como
+// ocultos con el mismo valor).
+function extraerFormularioEliminarPosicion(string $html, string $actionUrl): string
+{
+    preg_match('/<form\b[^>]*\baction="'.preg_quote($actionUrl, '/').'"[^>]*\bdata-confirm-delete\b.*?<\/form>/s', $html, $coincidencias);
+
+    return $coincidencias[0] ?? '';
+}
+
 it('renderiza el encabezado, la categoria activa y el link al portal', function () {
     $admin = crearAdminTablaPosicionMigration();
     $contexto = crearContextoTablaPosicionMigration();
@@ -93,12 +104,16 @@ it('renderiza el encabezado, la categoria activa y el link al portal', function 
     ];
 
     $response->assertOk()
-        ->assertSee('aria-current="page"', false)
         ->assertSee(e(route('tabla_posicion.create', $parametros)), false)
         ->assertSee(e(route('tabla-posiciones', $parametros)), false)
         ->assertSee('target="_blank"', false)
         ->assertSee('rel="noopener"', false)
         ->assertSee('Ver en el portal');
+
+    // aria-current="page" atado al <a> del chip de la categoría activa, no a
+    // cualquier otro elemento de la página que también lo emita.
+    $hrefCategoriaActiva = e(route('tabla_posicion.index', $parametros));
+    expect($response->getContent())->toMatch('/<a href="'.preg_quote($hrefCategoriaActiva, '/').'"\s+aria-current="page"/');
 });
 
 it('muestra el ranking compacto por grupo con la insignia de clasificacion en el top dos', function () {
@@ -109,9 +124,14 @@ it('muestra el ranking compacto por grupo con la insignia de clasificacion en el
     $equipoDos = crearEquipoPosicionMigration($contexto, 'Mitai Dos');
     $equipoTres = crearEquipoPosicionMigration($contexto, 'Mitai Tres');
 
-    crearFilaPosicionMigration($contexto, $equipoUno, ['puntos' => 15]);
-    crearFilaPosicionMigration($contexto, $equipoDos, ['puntos' => 12]);
-    crearFilaPosicionMigration($contexto, $equipoTres, ['puntos' => 3]);
+    // Puntos asignados deliberadamente fuera del orden de alta (Uno, Dos,
+    // Tres) para que la aserción de orden solo pueda pasar si el ranking
+    // realmente se ordena por puntos y no por id/alta (revisión
+    // R3-ranking-posicion-orden): el orden esperado es Tres (15), Uno (12),
+    // Dos (3).
+    crearFilaPosicionMigration($contexto, $equipoUno, ['puntos' => 12]);
+    crearFilaPosicionMigration($contexto, $equipoDos, ['puntos' => 3]);
+    crearFilaPosicionMigration($contexto, $equipoTres, ['puntos' => 15]);
 
     $response = $this->actingAs($admin)->get(route('tabla_posicion.index', [
         'idEdicion' => $contexto['edicion']->id,
@@ -125,7 +145,7 @@ it('muestra el ranking compacto por grupo con la insignia de clasificacion en el
         ->assertSee('data-posicion="2"', false)
         ->assertSee('data-posicion="3"', false)
         ->assertSee('data-destacado="clasifica"', false)
-        ->assertSeeInOrder(['data-posicion="1"', 'Mitai Uno', 'data-posicion="2"', 'Mitai Dos', 'data-posicion="3"', 'Mitai Tres'], false);
+        ->assertSeeInOrder(['data-posicion="1"', 'Mitai Tres', 'data-posicion="2"', 'Mitai Uno', 'data-posicion="3"', 'Mitai Dos'], false);
 
     expect(substr_count($response->getContent(), 'data-destacado="clasifica"'))->toBe(2);
 });
@@ -161,11 +181,19 @@ it('elimina con confirmacion real y conserva los campos ocultos de contexto', fu
         'idCategoria' => $contexto['categoria']->id,
     ]));
 
-    $response->assertOk()
-        ->assertSee('data-confirm-delete', false)
-        ->assertSee(e(route('tabla_posicion.destroy', $fila)), false)
-        ->assertSee('name="idEdicion" value="'.$contexto['edicion']->id.'"', false)
-        ->assertSee('name="idGrupo" value="'.$contexto['grupo']->id.'"', false);
+    $response->assertOk()->assertSee('data-confirm-delete', false);
+
+    // El form de filtros re-emite idEdicion (y en su create/edit,
+    // idCategoria) como oculto con el mismo valor: la aserción tiene que
+    // mirar específicamente el <form> del borrado, no cualquier campo
+    // oculto homónimo de la página (revisión
+    // R3-idEdicion-hidden-ambiguo-posicion).
+    $formularioEliminar = extraerFormularioEliminarPosicion($response->getContent(), e(route('tabla_posicion.destroy', $fila)));
+
+    expect($formularioEliminar)->not->toBe('')
+        ->and($formularioEliminar)->toContain('name="idEdicion" value="'.$contexto['edicion']->id.'"')
+        ->and($formularioEliminar)->toContain('name="idCategoria" value="'.$contexto['categoria']->id.'"')
+        ->and($formularioEliminar)->toContain('name="idGrupo" value="'.$contexto['grupo']->id.'"');
 });
 
 it('renderiza el estado vacio con el componente compartido cuando no hay posiciones', function () {
