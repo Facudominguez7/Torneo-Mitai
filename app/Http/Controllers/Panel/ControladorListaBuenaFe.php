@@ -47,7 +47,8 @@ class ControladorListaBuenaFe extends Controller
         $idCategoria = $request->get('idCategoria');
         $search = $request->get('search');
 
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : Edicion::latest()->first();
+        // Edicion no tiene timestamps: latest() fallaba sin idEdicion en la query.
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : Edicion::orderBy('id', 'desc')->first();
         $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada);
         $ediciones = Edicion::all();
 
