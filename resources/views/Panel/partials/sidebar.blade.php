@@ -126,14 +126,13 @@
                     'activo' => request()->routeIs('estadisticas-jugadores'),
                 ],
                 [
-                    'label' => 'Campeones',
-                    'route' => route('campeon.index', $parametrosEdicionActual),
-                    'activo' => request()->routeIs('campeon.*'),
-                ],
-                [
-                    'label' => 'Subcampeones',
-                    'route' => route('subcampeon.index', $parametrosEdicionActual),
-                    'activo' => request()->routeIs('subcampeon.*'),
+                    // Podio fusiona Campeones y Subcampeones (T8b,
+                    // panel-admin-redesign); campeon.index/subcampeon.index
+                    // siguen existiendo (seleccionar-categoria, redirects de
+                    // store/update/destroy) pero redirigen acá.
+                    'label' => 'Podio',
+                    'route' => route('podio.index', $parametrosEdicionActual),
+                    'activo' => request()->routeIs('podio.*', 'campeon.*', 'subcampeon.*'),
                 ],
                 [
                     'label' => 'Goleadores del torneo',

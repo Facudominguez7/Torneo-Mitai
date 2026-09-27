@@ -25,6 +25,7 @@ use App\Http\Controllers\Panel\ControladorInstitucion;
 use App\Http\Controllers\Panel\ControladorListaBuenaFe;
 use App\Http\Controllers\Panel\ControladorPartidos;
 use App\Http\Controllers\Panel\ControladorPlanillaJugador;
+use App\Http\Controllers\Panel\ControladorPodio;
 use App\Http\Controllers\Panel\ControladorSubcampeon;
 use App\Http\Controllers\Panel\ControladorTablaGoleadores;
 use App\Http\Controllers\Panel\ControladorTablaPosiciones;
@@ -68,6 +69,8 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::resource('edicion', ControladorEdicion::class);
     Route::resource('campeon', ControladorCampeon::class);
     Route::resource('subcampeon', ControladorSubcampeon::class);
+    Route::get('podio', [ControladorPodio::class, 'index'])->name('podio.index');
+    Route::post('podio/confirmar', [ControladorPodio::class, 'confirmar'])->name('podio.confirmar');
     Route::resource('copa', ControladorCopa::class);
     Route::resource('fecha', ControladorFecha::class);
     Route::resource('goleador', ControladorGoleador::class);
