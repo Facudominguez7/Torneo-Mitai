@@ -78,7 +78,7 @@ it('renderiza el encabezado, las tabs y los filtros de revision de jugadores', f
         ->assertSee('name="idEdicion"', false)
         ->assertSee('name="idEquipo"', false)
         ->assertSee('Posible duplicado con otro equipo')
-        ->assertSee('text-2xl font-bold text-gray-800', false);
+        ->assertSee('<h1', false);
 });
 
 it('muestra resuelto por y fecha de resolucion solo en la pestaña resueltos', function () {
@@ -87,15 +87,25 @@ it('muestra resuelto por y fecha de resolucion solo en la pestaña resueltos', f
     crearJugadorConflictivoMigration($contexto, '40300002', [
         'resuelto' => true,
         'resuelto_por' => 'Admin Torneo',
-        'fecha_resolucion' => now(),
+        'fecha_resolucion' => '2026-09-20 15:30:00',
         'notas_resolucion' => 'Se verificó la identidad',
     ]);
+    crearJugadorConflictivoMigration($contexto, '40300009');
 
-    $response = $this->actingAs($admin)->get(route('lista-buena-fe.conflictivos', ['estado' => 'resueltos']));
+    $resueltos = $this->actingAs($admin)->get(route('lista-buena-fe.conflictivos', ['estado' => 'resueltos']));
 
-    $response->assertOk()
+    $resueltos->assertOk()
+        ->assertSee('Resuelto Por')
+        ->assertSee('Fecha Resolución')
         ->assertSee('Admin Torneo')
+        ->assertSee('20/09/2026 15:30')
         ->assertSee('Se verificó la identidad');
+
+    $pendientes = $this->actingAs($admin)->get(route('lista-buena-fe.conflictivos'));
+
+    $pendientes->assertOk()
+        ->assertDontSee('Resuelto Por')
+        ->assertDontSee('Fecha Resolución');
 });
 
 it('muestra el boton resolver solo para pendientes con los data attributes del modal', function () {
@@ -111,7 +121,14 @@ it('muestra el boton resolver solo para pendientes con los data attributes del m
         ->assertSee('resolveModal', false)
         ->assertSee('name="notas_resolucion"', false)
         ->assertSee('Marcar como Resuelto')
-        ->assertSee('[&>tr>th]:px-5', false);
+        ->assertSee('onclick="closeResolveModal()"', false);
+
+    $registro->forceFill(['resuelto' => true, 'resuelto_por' => 'Admin Torneo', 'fecha_resolucion' => now()])->save();
+
+    $this->actingAs($admin)->get(route('lista-buena-fe.conflictivos', ['estado' => 'resueltos']))
+        ->assertOk()
+        ->assertSee('Admin Torneo')
+        ->assertDontSee('data-resolve-id="'.$registro->id.'"', false);
 });
 
 it('renderiza el estado vacio de pendientes y de resueltos', function () {

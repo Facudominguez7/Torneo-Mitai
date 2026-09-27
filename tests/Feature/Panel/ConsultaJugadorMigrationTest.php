@@ -103,8 +103,10 @@ it('muestra el encabezado del jugador, las tarjetas estadisticas y los partidos 
         ->assertSee('DNI: 40400001')
         ->assertSee('Mitai Local')
         ->assertSee($contexto['categoria']->nombreCategoria)
-        ->assertSee('Goles')
         ->assertSee('Partidos Jugados')
+        ->assertSee('P-'.$contexto['partido']->id)
+        ->assertSee('3 - 1')
+        ->assertSeeInOrder(['Historial Completo de Partidos', 'P-'.$contexto['partido']->id, '3 - 1', '2', 'Sí', '9'])
         ->assertDontSee('Tarjetas Rojas')
         ->assertSee('Partidos donde Hizo Goles')
         ->assertSee('Historial Completo de Partidos');
@@ -178,6 +180,10 @@ it('redirige con error cuando el dni no existe', function () {
         ->assertRedirect(route('jugador.consulta', ['dni' => 99999999, 'idEdicion' => $contexto['edicion']->id]));
 
     $this->actingAs($admin)
-        ->get(route('jugador.consulta', ['dni' => 99999999, 'idEdicion' => $contexto['edicion']->id]))
-        ->assertOk();
+        ->withSession(['_token' => $token])
+        ->followingRedirects()
+        ->post(route('jugador.buscar'), ['_token' => $token, 'dni' => 99999999, 'idEdicion' => $contexto['edicion']->id])
+        ->assertOk()
+        ->assertSee('role="alert"', false)
+        ->assertSee('No se encontró ningún jugador con el DNI: 99999999');
 });
