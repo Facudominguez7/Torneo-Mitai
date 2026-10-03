@@ -20,6 +20,7 @@ use App\Http\Controllers\Panel\ControladorFase;
 use App\Http\Controllers\Panel\ControladorFecha;
 use App\Http\Controllers\Panel\ControladorGoleador;
 use App\Http\Controllers\Panel\ControladorGrupos;
+use App\Http\Controllers\Panel\ControladorImpresiones;
 use App\Http\Controllers\Panel\ControladorInstanciaFinal;
 use App\Http\Controllers\Panel\ControladorInstitucion;
 use App\Http\Controllers\Panel\ControladorListaBuenaFe;
@@ -73,6 +74,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::resource('subcampeon', ControladorSubcampeon::class);
     Route::get('podio', [ControladorPodio::class, 'index'])->name('podio.index');
     Route::post('podio/confirmar', [ControladorPodio::class, 'confirmar'])->name('podio.confirmar');
+    Route::get('impresiones', [ControladorImpresiones::class, 'index'])->name('impresiones.index');
     Route::resource('copa', ControladorCopa::class);
     Route::resource('fecha', ControladorFecha::class);
     Route::resource('goleador', ControladorGoleador::class);

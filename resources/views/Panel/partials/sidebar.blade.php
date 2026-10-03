@@ -23,6 +23,11 @@
                     'route' => route('partido.index', $parametrosEdicionActual),
                     'activo' => request()->routeIs('partido.*', 'cargar-resultado', 'planilla.*'),
                 ],
+                [
+                    'label' => 'Planillas e impresiones',
+                    'route' => route('impresiones.index', $parametrosEdicionActual),
+                    'activo' => request()->routeIs('impresiones.*'),
+                ],
             ],
         ],
         [
