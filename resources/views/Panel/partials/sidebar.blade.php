@@ -23,6 +23,11 @@
                     'route' => route('partido.index', $parametrosEdicionActual),
                     'activo' => request()->routeIs('partido.*', 'cargar-resultado', 'planilla.*'),
                 ],
+                [
+                    'label' => 'Planillas e impresiones',
+                    'route' => route('impresiones.index', $parametrosEdicionActual),
+                    'activo' => request()->routeIs('impresiones.*'),
+                ],
             ],
         ],
         [
@@ -173,11 +178,9 @@
 
 <div class="flex h-[72px] shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4">
     <a href="{{ route('admin', $parametrosEdicionActual) }}" class="flex min-w-0 items-center gap-3">
-        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-brand-navy text-sm font-bold text-brand-gold">
-            M
-        </span>
+        <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="" class="h-10 w-10 shrink-0 rounded-full object-contain">
         <span class="min-w-0">
-            <span class="block truncate text-sm font-bold text-gray-900">Torneo Mitai</span>
+            <span class="block truncate text-sm font-bold text-gray-900">Torneos Mita'í</span>
             <span class="block truncate text-xs text-gray-600">Panel de administración</span>
         </span>
     </a>

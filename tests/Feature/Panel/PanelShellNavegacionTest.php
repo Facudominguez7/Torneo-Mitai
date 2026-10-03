@@ -181,3 +181,35 @@ it('renderiza el panel en modo estandar con doctype y lang', function () {
     expect(ltrim($html))->toStartWith('<!DOCTYPE html>')
         ->and($html)->toMatch('/<html lang="es">\s*<head>/');
 });
+
+it('incluye Planillas e impresiones en el grupo Hoy, despues de Partidos', function () {
+    $admin = crearAdminPanelShell();
+
+    $html = $this->actingAs($admin)->get(route('admin'))->getContent();
+
+    expect($html)->toContain('Planillas e impresiones')
+        ->toContain('href="'.route('impresiones.index').'"');
+
+    $posicionPartidos = strpos($html, 'href="'.route('partido.index').'"');
+    $posicionImpresiones = strpos($html, 'href="'.route('impresiones.index').'"');
+    $posicionTorneo = strpos($html, 'data-grupo-nav="torneo"');
+
+    expect($posicionPartidos)->not->toBeFalse()
+        ->and($posicionImpresiones)->not->toBeFalse()
+        ->and($posicionTorneo)->not->toBeFalse()
+        ->and($posicionImpresiones)->toBeGreaterThan($posicionPartidos)
+        ->and($posicionImpresiones)->toBeLessThan($posicionTorneo);
+});
+
+it('muestra el logo y el nombre del torneo en la cabecera del menu', function () {
+    $admin = crearAdminPanelShell();
+
+    $html = $this->actingAs($admin)->get(route('admin'))->assertOk()->getContent();
+
+    preg_match('/<a href="[^"]*"[^>]*>\s*<img[^>]*Logo_Mitai_SinFondo\.png[^>]*>.*?<\/a>/s', $html, $marca);
+
+    expect($marca[0] ?? '')
+        ->toContain('alt=""')
+        ->toContain("Torneos Mita'í")
+        ->not->toContain('Torneo Mitai');
+});
