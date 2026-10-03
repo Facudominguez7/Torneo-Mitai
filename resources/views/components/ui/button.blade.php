@@ -82,7 +82,9 @@
 @endphp
 
 @if ($isLink)
-    <a href="{{ $href }}"
+    {{-- href="{{ }}" on a component arrives already escaped; e($href, false)
+         escapes without double-encoding, so "&" survives either way. --}}
+    <a href="{!! e($href, false) !!}"
         {{ $attributes->merge(['class' => $classes]) }}
     >{{ $slot }}</a>
 @else

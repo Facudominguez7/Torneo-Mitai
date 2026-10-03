@@ -313,3 +313,137 @@ filter group, not a toggle chip, so there was nothing to extract 1:1 there.
 The `panel`-tone classes follow the same tone-split convention established
 by `x-ui.button` (flat solid Panel look vs. bordered/gradient portal pill)
 rather than inventing an unrelated shape.
+
+## `x-ui.data-table`
+
+Shared list/table shell (T3, panel-admin-redesign), extracted from the ~20
+hand-typed `Panel/**/index.blade.php` tables (e.g.
+`Panel/equipo/index.blade.php`, `Panel/categoria/index.blade.php`), each
+retyping the same `bg-gray-200` header / `border-collapse` markup. Owns the
+card shell, the filters bar, the header/body table structure, the empty
+state and the footer (pagination) area — a module only supplies its own
+`<tr>` rows.
+
+```blade
+<x-ui.data-table :empty="$equipos->isEmpty()">
+    <x-slot name="filters">
+        <form method="GET">...</form>
+    </x-slot>
+
+    <x-slot name="head">
+        <tr><th>Nombre</th><th>Acción</th></tr>
+    </x-slot>
+
+    <x-slot name="body">
+        @foreach ($equipos as $equipo)
+            <tr><td>{{ $equipo->nombre }}</td><td>...</td></tr>
+        @endforeach
+    </x-slot>
+
+    <x-slot name="footer">
+        {{ $equipos->links() }}
+    </x-slot>
+</x-ui.data-table>
+```
+
+| Prop    | Values  | Default | Notes |
+|---------|---------|---------|-------|
+| `empty` | boolean | `false` | When true, renders the `emptyState` slot (or `x-ui.empty-state` by default) instead of the table. |
+
+**API choice**: a `head` + `body` slot **pair**, not one default slot. A
+`<table>` needs a real `<thead>`/`<tbody>` split for accessibility, and the
+header-row styling below only applies to the header — a single default slot
+would force the component to guess where one ends and the other begins from
+raw markup. Two named slots are unambiguous.
+
+**Naming note — a real Blade collision, not a hypothetical one**: the
+`emptyState` slot is deliberately **not** named `empty`, even though the
+boolean prop is `:empty`. Verified directly against
+`Illuminate\View\Compilers\Concerns\CompilesComponents::compileProps()`:
+when a prop and a named slot share one name, the `@props` cleanup step
+either drops the boolean (the slot's `ComponentSlot` object wins, if
+`empty` is declared in `@props`) or unsets the slot variable entirely (if it
+is not declared in `@props`, because `@props` scrubs any variable whose
+name still matches an attribute key it did not claim). Naming the slot
+`emptyState` keeps both usable together.
+
+Styling is centralized rather than left to callers: the `<thead>` carries
+`[&>tr>th]:px-5 [&>tr>th]:py-3` and the `<tbody>` carries
+`[&>tr>td]:px-5 [&>tr>td]:py-3` (plus `divide-y divide-gray-100`), so a
+caller's `head`/`body` slot only supplies `<tr><th>`/`<tr><td>` markup, never
+hand-typed padding classes on every cell.
+
+**Responsive**: wraps the table in `overflow-x-auto` — the only requirement
+is that a table never breaks the layout below `md`. A stacked mobile-card
+layout was left out; it is an explicit bonus, not a requirement, and this
+replaces the old per-cell `lg:hidden absolute` mobile-label hack some index
+pages used (a visual behavior change — horizontal scroll instead of stacked
+labels on narrow screens — not a functional loss; every column and action
+stays reachable).
+
+## `x-ui.form-card`
+
+White card wrapper for Panel forms (T3, panel-admin-redesign), extracted
+from the ~15 `Panel/**/_form.blade.php` partials, each rendered with no real
+container (a bare centered `<div class="max-w-[550px]">`) and `text-white`
+labels left over from the old dark shell — invisible now that T1 moved the
+Panel to a light shell.
+
+```blade
+<form action="{{ route('equipo.store') }}" method="POST" enctype="multipart/form-data">
+    <x-ui.form-card>
+        <div>
+            @include('Panel.equipo._form')
+        </div>
+
+        <x-slot name="actions">
+            <x-ui.button type="submit" variant="primary">Agregar</x-ui.button>
+        </x-slot>
+    </x-ui.form-card>
+</form>
+```
+
+This component owns only the visual shell: the card, section separators,
+and the footer action bar. **It never renders a `<form>` element itself** —
+the caller's own `<form method="POST" ...>` stays outside it, so
+`x-ui.form-card` can also wrap read-only content, and never risks a form
+nested inside a form.
+
+"Sections separated by `border-b`": rather than a fixed number of named
+section slots, the default slot's wrapper uses `divide-y` so any direct
+child element the caller passes (typically one `<div>` per logical section)
+gets an automatic top border from its next sibling, with no
+slot-per-section API to keep in sync. `[&>*]:p-6` gives every direct child
+the same padding without the caller retyping it.
+
+## `x-ui.confirm-delete`
+
+Delete control with a real confirmation step (T3, panel-admin-redesign),
+replacing the 12-of-14 raw `<form method="post">@method('DELETE')@csrf`
+delete forms across the Panel, which submit immediately with no
+confirmation.
+
+```blade
+<x-ui.confirm-delete
+    action="{{ route('equipo.destroy', $equipo->id) }}"
+    entity="el equipo {{ $equipo->nombre }}"
+    :fields="['idEdicion' => $EdicionSeleccionada->id]"
+/>
+```
+
+| Prop      | Values                    | Default      | Notes |
+|-----------|---------------------------|--------------|-------|
+| `action`  | string (required)         | —            | The delete route. |
+| `label`   | string                    | `'Eliminar'` | Button text. |
+| `message` | string, or omitted        | `null`       | Explicit confirmation wording; overrides the `entity`-built default. |
+| `entity`  | string, or omitted        | `null`       | Used to build the default message ("¿Eliminar {entity}? ..."). |
+| `fields`  | array `[name => value]`   | `[]`         | Extra hidden inputs, for controllers that need more than the model id (e.g. `ControladorEquipo::destroy` reads `idEdicion` from the request). |
+| `size`    | `sm` \| `md` \| `lg`     | `md`         | Forwarded to the inner `x-ui.button`; use `sm` next to other row actions. |
+
+The `<form>` here is real — real `POST`, real `DELETE` method spoofing, real
+CSRF — so it works with JavaScript disabled; only the confirmation *step* is
+JS-driven (event delegation on `[data-confirm-delete]`, registered once in
+`resources/js/admin/confirm-delete.js`, imported from
+`resources/js/admin/admin.js`). It never depends on Alpine: it uses
+`window.Swal` when SweetAlert2 is present, falling back to the native
+`window.confirm()` otherwise, so a delete is never left unprotected.
