@@ -24,8 +24,9 @@ function crearAdminSuscriptores(): User
 it('renderiza el encabezado y las tres tarjetas', function () {
     $response = $this->actingAs(crearAdminSuscriptores())->get(route('notificaciones.index'));
 
+    // El nombre del admin también contiene "Suscriptores": se valida el <h1>.
     $response->assertOk()
-        ->assertSee('Suscriptores')
+        ->assertSee('>Suscriptores</h1>', false)
         ->assertSee('Familias que reciben novedades del torneo por email.')
         ->assertSee('Resumen de la fecha')
         ->assertSee('Aviso rápido')
@@ -153,13 +154,17 @@ it('muestra los badges de verificacion y suscripcion', function () {
     User::factory()->create(['name' => 'Suscripta Badge', 'email' => 'suscripta@example.com', 'email_verified_at' => now(), 'email_subscribed' => true]);
     User::factory()->unverified()->create(['name' => 'De Baja Badge', 'email' => 'baja@example.com', 'email_subscribed' => false]);
 
-    $response = $this->actingAs(crearAdminSuscriptores())->get(route('notificaciones.index'));
+    $html = $this->actingAs(crearAdminSuscriptores())->get(route('notificaciones.index'))->assertOk()->getContent();
 
-    $response->assertOk()
-        ->assertSee('Verificado')
-        ->assertSee('Pendiente')
-        ->assertSee('Suscripto')
-        ->assertSee('De baja');
+    // Los mismos textos son opciones del filtro: se valida dentro de la fila de cada usuario.
+    $fila = function (string $nombre) use ($html): string {
+        preg_match('/<tr\b(?:(?!<\/tr>).)*?'.preg_quote($nombre, '/').'.*?<\/tr>/s', $html, $coincidencia);
+
+        return $coincidencia[0] ?? '';
+    };
+
+    expect($fila('Suscripta Badge'))->toContain('Verificado')->toContain('Suscripto')->not->toContain('De baja')
+        ->and($fila('De Baja Badge'))->toContain('Pendiente')->toContain('De baja')->not->toContain('Verificado');
 });
 
 it('la tarjeta de recordatorio muestra el total real de cuentas sin verificar', function () {
@@ -171,13 +176,27 @@ it('la tarjeta de recordatorio muestra el total real de cuentas sin verificar', 
         ->assertSee('3 cuentas sin verificar el email. Se envía por tandas para no superar el límite del servidor.');
 });
 
+it('la tarjeta de recordatorio usa singular con una cuenta y avisa cuando no hay ninguna', function () {
+    $admin = crearAdminSuscriptores();
+
+    $this->actingAs($admin)->get(route('notificaciones.index'))
+        ->assertOk()
+        ->assertSee('No hay cuentas sin verificar el email.');
+
+    User::factory()->unverified()->create();
+
+    $this->actingAs($admin)->get(route('notificaciones.index'))
+        ->assertOk()
+        ->assertSee('1 cuenta sin verificar el email.');
+});
+
 it('muestra el estado vacio con direccion cuando los filtros no devuelven usuarios', function () {
     $response = $this->actingAs(crearAdminSuscriptores())
         ->get(route('notificaciones.index', ['search' => 'zzz-no-existe-zzz']));
 
     $response->assertOk()
         ->assertSee('No se encontraron usuarios con esos filtros')
-        ->assertSee('Limpiar');
+        ->assertSee('Probá con otra búsqueda o limpiá los filtros para ver a todos los usuarios.');
 });
 
 it('un invitado no puede ver suscriptores', function () {
