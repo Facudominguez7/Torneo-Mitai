@@ -205,7 +205,9 @@
                                     </x-ui.select>
                                 </div>
                                 @foreach (request()->except(['horario', '_token']) as $key => $value)
-                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                    @if (is_scalar($value))
+                                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                    @endif
                                 @endforeach
                                 <x-ui.button type="submit" variant="primary" size="sm">Filtrar</x-ui.button>
                             </form>
@@ -229,7 +231,10 @@
                     @else
                         @foreach ($gruposPorHorario as $horarioGrupo => $partidosGrupo)
                             <div class="mt-5" data-dashboard-horario="{{ $horarioGrupo }}">
-                                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+                                <h3 class="mb-3 flex items-center gap-2 text-xl font-extrabold text-brand-navy">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
                                     {{ $horarioGrupo === 'sin-horario' ? 'Sin horario asignado' : $horarioGrupo . ' hs' }}
                                 </h3>
                                 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -255,13 +260,17 @@
                                                 <x-ui.badge variant="info">{{ $p->nombre_categoria }}</x-ui.badge>
                                             </div>
 
-                                            <div class="mt-4 flex flex-col items-center justify-center gap-4 sm:flex-row sm:justify-around">
+                                            <div class="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                                                 <div class="flex flex-col items-center gap-2">
                                                     <img src="{{ asset('fotos/equipos/' . $p->foto_local) }}" width="60" height="60" alt="Escudo {{ $p->nombre_local }}"
                                                         class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
                                                     <div class="text-center text-base font-bold leading-tight text-gray-900 md:text-xl">{{ $p->nombre_local }}</div>
                                                 </div>
-                                                <div class="text-sm font-semibold text-gray-400 md:text-lg">vs</div>
+                                                @if ($resultadoCargado)
+                                                    <div data-dashboard-centro class="whitespace-nowrap text-center text-2xl font-extrabold text-gray-900 md:text-3xl">{{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}</div>
+                                                @else
+                                                    <div data-dashboard-centro class="text-center text-sm font-semibold text-gray-400 md:text-lg">vs</div>
+                                                @endif
                                                 <div class="flex flex-col items-center gap-2">
                                                     <img src="{{ asset('fotos/equipos/' . $p->foto_visitante) }}" width="60" height="60" alt="Escudo {{ $p->nombre_visitante }}"
                                                         class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
@@ -269,12 +278,13 @@
                                                 </div>
                                             </div>
 
-                                            <div class="mt-2 text-center text-2xl font-extrabold text-gray-900 md:text-3xl">
-                                                {{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}
-                                            </div>
-
-                                            <div class="mt-3 flex flex-col items-center justify-center gap-2 text-sm text-gray-600 md:flex-row md:justify-around md:text-base">
-                                                <span class="font-medium">{{ \Carbon\Carbon::parse($p->horario_datetime)->format('d-m-Y H:i') }}</span>
+                                            <div class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-gray-600 md:text-base">
+                                                @if ($horarioGrupo !== 'sin-horario')
+                                                    <span data-dashboard-hora class="text-lg font-bold text-brand-navy">{{ $horarioGrupo }} hs</span>
+                                                @endif
+                                                @if ($p->horario_datetime)
+                                                    <span class="font-medium">{{ \Carbon\Carbon::parse($p->horario_datetime)->format('d-m-Y') }}</span>
+                                                @endif
                                                 <span class="font-medium">Cancha {{ $p->cancha }}</span>
                                             </div>
 
