@@ -172,3 +172,12 @@ it('solo oculta con x-cloak los grupos que el servidor renderiza cerrados', func
     expect($html)->toMatch('/<ul id="grupo-nav-torneo"(?![^>]*x-cloak)[^>]*>/')
         ->and($html)->toMatch('/<ul id="grupo-nav-estadisticas"[^>]*x-cloak/');
 });
+
+it('renderiza el panel en modo estandar con doctype y lang', function () {
+    $admin = crearAdminPanelShell();
+
+    $html = $this->actingAs($admin)->get(route('admin'))->getContent();
+
+    expect(ltrim($html))->toStartWith('<!DOCTYPE html>')
+        ->and($html)->toMatch('/<html lang="es">\s*<head>/');
+});

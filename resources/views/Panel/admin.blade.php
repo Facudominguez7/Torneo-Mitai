@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="es">
 @include('head')
 @include('components.loader')
 
