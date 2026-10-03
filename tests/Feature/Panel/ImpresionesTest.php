@@ -80,7 +80,7 @@ it('renderiza el encabezado y las tres secciones', function () {
         ->assertSee('Todo lo que se imprime para el día de partido, en un solo lugar.')
         ->assertSee('Día de partido')
         ->assertSee('Equipos y jugadores')
-        ->assertSee('Tablas');
+        ->assertSee('Posiciones e instancias finales');
 });
 
 it('la tarjeta del fixture imprime la edicion y acepta una fecha opcional', function () {

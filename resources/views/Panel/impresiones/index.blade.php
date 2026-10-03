@@ -78,7 +78,7 @@
                     ],
                 ],
                 [
-                    'titulo' => 'Tablas',
+                    'titulo' => 'Posiciones e instancias finales',
                     'tarjetas' => [
                         [
                             'clave' => 'tabla-posiciones',
