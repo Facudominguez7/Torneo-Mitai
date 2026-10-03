@@ -19,6 +19,7 @@ use App\Models\VallaMenosVencida;
 use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use App\Services\FixtureExploradorService;
+use App\Services\Panel\ResumenDashboard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,7 @@ class ControladorHome extends Controller
     public function __construct(
         private readonly EquiposDeEdicionService $equiposDeEdicion,
         private readonly FixtureExploradorService $fixtureExplorador,
+        private readonly ResumenDashboard $resumenDashboard,
     ) {}
 
     public function index(Request $request)
@@ -192,6 +194,7 @@ class ControladorHome extends Controller
             'total_pendientes' => 0,
             'equipos' => [],
         ];
+        $resumenDashboard = null;
         if ($idEdicion) {
             $estadisticasService = new EstadisticasService();
             $estadisticasJugadores = $estadisticasService->obtenerJugadoresDosUltimasFechas($idEdicion);
@@ -199,7 +202,15 @@ class ControladorHome extends Controller
             $equiposSinAsistencia = $estadisticasService->obtenerEquiposSinAsistenciaUltimaFecha((int) $idEdicion, $horarioString);
         }
 
-        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion'));
+        // El resumen del dashboard se calcula sobre la edición activa que el
+        // layout resuelve (query o, en su defecto, sesión vía middleware) para
+        // no desincronizarse con el `$EdicionSeleccionada` que ve la vista.
+        $idEdicionResumen = $idEdicion ?: $request->attributes->get('panel.idEdicion');
+        if ($idEdicionResumen) {
+            $resumenDashboard = $this->resumenDashboard->obtenerResumen((int) $idEdicionResumen);
+        }
+
+        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion', 'resumenDashboard'));
     }
 
     public function campeones(Request $request)

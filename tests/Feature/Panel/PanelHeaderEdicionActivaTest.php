@@ -181,7 +181,9 @@ it('muestra un único selector de edición sin duplicados en sidebar ni tarjeta'
     expect(substr_count($html, 'data-panel-edicion-form'))->toBe(1);
     expect($html)->not->toContain('Seleccionar Edición');
     expect($html)->not->toContain('dropdown-example');
-    expect(substr_count($html, 'Edicion Activa 2024'))->toBe(1);
+    // El dashboard (T2) agrega un subtítulo "Edición activa: ..." intencional;
+    // la edición ya no aparece solo en el selector del header sino también ahí.
+    expect(substr_count($html, 'Edicion Activa 2024'))->toBe(2);
     expect($html)->toContain('lg:ml-64');
 });
 
