@@ -116,9 +116,14 @@
                     'activo' => request()->routeIs('tabla_goleador.*'),
                 ],
                 [
+                    // Ranking de solo lectura (T8c, panel-admin-redesign);
+                    // cargar o cambiar el arquero se hace desde Premios
+                    // individuales. valla.index sigue existiendo
+                    // (seleccionar-categoria, redirects de
+                    // store/update/destroy) pero redirige a Premios.
                     'label' => 'Vallas menos vencidas',
-                    'route' => route('valla.index', $parametrosEdicionActual),
-                    'activo' => request()->routeIs('valla.*'),
+                    'route' => route('vallas.index', $parametrosEdicionActual),
+                    'activo' => request()->routeIs('vallas.*'),
                 ],
                 [
                     'label' => 'Estadísticas de Jugadores',
@@ -135,9 +140,14 @@
                     'activo' => request()->routeIs('podio.*', 'campeon.*', 'subcampeon.*'),
                 ],
                 [
-                    'label' => 'Goleadores del torneo',
-                    'route' => route('goleador.index', $parametrosEdicionActual),
-                    'activo' => request()->routeIs('goleador.*'),
+                    // Premios individuales fusiona Goleador del torneo y
+                    // Valla menos vencida (T8c, panel-admin-redesign);
+                    // goleador.index/valla.index siguen existiendo
+                    // (seleccionar-categoria, redirects de
+                    // store/update/destroy) pero redirigen acá.
+                    'label' => 'Premios individuales',
+                    'route' => route('premios.index', $parametrosEdicionActual),
+                    'activo' => request()->routeIs('premios.*', 'goleador.*', 'valla.*'),
                 ],
             ],
         ],

@@ -16,23 +16,14 @@ class ControladorGoleador extends Controller
 {
     use SeleccionarCategoriaTrait;
     /**
-     * Display a listing of the resource.
+     * Goleador se fusionó con Valla en Premios individuales (T8c,
+     * panel-admin-redesign): el listado ahora vive ahí. Se conserva la ruta
+     * `goleador.index` (que usan `seleccionar-categoria` y los redirects de
+     * store/update/destroy) redirigiendo a Premios con el mismo idEdicion.
      */
     public function index(Request $request)
     {
-        $ediciones = Edicion::all();
-        $idEdicion = $request->idEdicion;
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $goleadores = Goleador::join('ediciones as ed', 'goleadores.idEdicion', '=', 'ed.id')
-            ->join('equipos as e', 'goleadores.idEquipo', '=', 'e.id')
-            ->join('categorias as cat', 'goleadores.idCategoria', '=', 'cat.id')
-            ->select('goleadores.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo')
-            ->where('goleadores.idEdicion', $idEdicion)
-            ->orderBy('cat.nombreCategoria', 'desc')
-            ->paginate(7);
-        $goleadores->appends(['idEdicion' => $idEdicion]);
-        $tipo = 'goleador';
-        return view('Panel.goleador.index', compact('tipo', 'ediciones', 'EdicionSeleccionada', 'goleadores'));
+        return to_route('premios.index', array_filter(['idEdicion' => $request->idEdicion]));
     }
 
     /**

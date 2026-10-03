@@ -15,21 +15,16 @@ use Illuminate\Http\Request;
 class ControladorValla extends Controller
 {
     use SeleccionarCategoriaTrait;
+    /**
+     * Valla se fusionó con Goleador en Premios individuales (T8c,
+     * panel-admin-redesign): el listado ahora vive ahí, junto con el
+     * ranking de Vallas menos vencidas (`vallas.index`). Se conserva la ruta
+     * `valla.index` (que usan `seleccionar-categoria` y los redirects de
+     * store/update/destroy) redirigiendo a Premios con el mismo idEdicion.
+     */
     public function index(Request $request)
     {
-        $ediciones = Edicion::all();
-        $idEdicion = $request->idEdicion;
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $vallas = VallaMenosVencida::join('ediciones as ed', 'vallas_menos_vencidas.idEdicion', '=', 'ed.id')
-            ->join('equipos as e', 'vallas_menos_vencidas.idEquipo', '=', 'e.id')
-            ->join('categorias as cat', 'vallas_menos_vencidas.idCategoria', '=', 'cat.id')
-            ->select('vallas_menos_vencidas.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo')
-            ->where('vallas_menos_vencidas.idEdicion', $idEdicion)
-            ->orderBy('cat.nombreCategoria', 'desc')
-            ->paginate(7);
-        $vallas->appends(['idEdicion' => $idEdicion]);
-        $tipo = 'valla';
-        return view('Panel.valla.index', compact('tipo', 'ediciones', 'EdicionSeleccionada', 'vallas'));
+        return to_route('premios.index', array_filter(['idEdicion' => $request->idEdicion]));
     }
 
     /**
