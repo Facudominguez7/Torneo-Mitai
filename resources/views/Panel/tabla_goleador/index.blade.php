@@ -1,137 +1,161 @@
 @extends('Panel.admin')
 
 @section('contenido')
-    <div class="flex justify-center ">
+    @php
+        // El controlador nunca pasó $idEdicion/$idCategoria a la vista (solo
+        // $EdicionSeleccionada, que ya viene resuelta de $request->idEdicion);
+        // se derivan acá desde el request(), igual que el resto de esta
+        // vista ya lee request()->search_value directamente, sin tocar el
+        // controlador.
+        $idEdicion = $EdicionSeleccionada->id ?? request('idEdicion');
+        $idCategoria = request('idCategoria');
+    @endphp
+
+    <x-ui.page-header title="Tabla de goleadores" subtitle="Se arma sola con los goles cargados de cada partido.">
         @if (isset($EdicionSeleccionada))
-            <div class="flex flex-row justify-center mb-2">
-                <div>
-                    <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada, 'tipo' => $tipo]) }}">
-                        <button
-                            class="bg-gray-800 hover:bg-gray-900 mt-2 mb-2 text-white py-2 px-4 rounded-full transition-all duration-300 md:py-3 md:px-6 md:rounded-lg">
-                            Agregar Jugador a la Tabla de Goleadores
-                        </button>
-                    </a>
-                </div>
-            </div>
+            <x-slot name="actions">
+                <x-ui.button href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada, 'tipo' => $tipo]) }}" variant="secondary">
+                    Corrección manual
+                </x-ui.button>
+                <x-ui.button
+                    href="{{ route('tabla-goleadores', array_filter(['idEdicion' => $idEdicion, 'idCategoria' => $idCategoria])) }}"
+                    variant="primary" target="_blank" rel="noopener">
+                    Ver en el portal
+                </x-ui.button>
+            </x-slot>
         @endif
-    </div>
-    <form method="GET" action="{{ url()->current() }}">
-        <div class="flex items-center justify-center w-full max-w-md mx-auto p-4">
-            <div class="relative flex-1">
-                <input type="text" name="search_value" value="{{ old('search_value', request()->search_value) }}" placeholder="Buscar..."
-                    class="w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-12 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </div>
-            </div>
+    </x-ui.page-header>
+
+    @if (isset($EdicionSeleccionada) && isset($categorias) && $categorias->isNotEmpty())
+        <div class="mt-6 flex flex-wrap gap-2" aria-label="Categoría">
+            <x-ui.filter-chip href="{{ route('tabla_goleador.index', ['idEdicion' => $idEdicion]) }}" :active="empty($idCategoria)">
+                Todas
+            </x-ui.filter-chip>
+            @foreach ($categorias as $categoria)
+                <x-ui.filter-chip
+                    href="{{ route('tabla_goleador.index', ['idEdicion' => $idEdicion, 'idCategoria' => $categoria->id]) }}"
+                    :active="(string) $idCategoria === (string) $categoria->id">
+                    {{ $categoria->nombreCategoria }}
+                </x-ui.filter-chip>
+            @endforeach
         </div>
-        @foreach(request()->except('search_value') as $key => $value)
-            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-        @endforeach
-    </form>
-    <div class="mx-auto w-full max-w-2xl flex justify-center items-stretch pb-2 px-2 sm:px-6 lg:px-8">
-        <table class="border-collapse w-full mt-2">
-            <thead>
-                <tr>
-                    <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
-                        Id
-                    </th>
-                    <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
-                        Nombre
-                    </th>
-                    <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
-                        Equipo
-                    </th>
-                    <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
-                        Categoria
-                    </th>
-                    <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
-                        Goles
-                    </th>
-                    <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
-                        Accion
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                @if ($goleadores_t->isempty())
-                    <tr
-                        class="bg-white lg:hover:bg-gray-100 flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
-                        <td colspan="6"
-                            class="w-full lg:w-auto p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                            No existen registros
-                        </td>
-                    </tr>
-                @endif
-                @foreach ($goleadores_t as $g)
-                    <tr
-                        class="bg-white lg:hover:bg-gray-100 flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
-                        <td
-                            class="w-full lg:w-auto p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                            <span
-                                class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Id
-                            </span>
-                            {{ $g->id }}
-                        </td>
-                        <td
-                            class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                            <span
-                                class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Nombre
-                            </span>
-                            {{ $g->nombre }}
-                        </td>
-                        <td
-                            class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                            <span
-                                class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">nombre
-                            </span>
-                            {{ $g->nombreEquipo }}
-                        </td>
-                        <td
-                            class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                            <span
-                                class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Categoria
-                            </span>
-                            {{ $g->nombreCategoria }}
-                        </td>
-                        <td
-                            class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                            <span
-                                class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Goles
-                            </span>
-                            {{ $g->cantidadGoles }}
-                        </td>
-                        <td
-                            class="w-full lg:w-full p-3 text-gray-800 text-center border border-b  block lg:table-cell relative lg:static">
-                            <span
-                                class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Accion
-                            </span>
-                            <div class="lg:flex lg:justify-center lg:space-x-4 lg:flex-row flex justify-center flex-col">
-                                <x-ui.button href="{{ route('tabla_goleador.edit', $g) }}" variant="success"
-                                    class="mb-1 lg:mb-0">
-                                    Editar
-                                </x-ui.button>
-                                <form class="mb-0" action="{{ route('tabla_goleador.destroy', $g) }}" method="post">
-                                    @method('DELETE')
-                                    @csrf
-                                    <input type="number" id="idEdicion" name="idEdicion" class="hidden"
-                                        value="{{ $g->idEdicion }}">
-                                    <x-ui.button type="submit" variant="danger">Eliminar</x-ui.button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
+    @endif
+
+    @php
+        // El podio es un resumen visual de los primeros tres puestos; la
+        // tabla de abajo sigue listando TODAS las filas (incluidas esas
+        // mismas tres) para no perder Editar/Eliminar/Ver jugador en ningún
+        // puesto. Solo tiene sentido cuando el orden es "todo goles dentro
+        // de una sola categoría" (idCategoria activo), en la primera
+        // página y SIN búsqueda activa: con search_value el orden deja de
+        // ser el ranking real de goles de la categoría y pasa a ser el
+        // orden relativo a los resultados filtrados (revisión
+        // R3-podio-busqueda).
+        $todasLasFilas = collect($goleadores_t->items())->values();
+        $searchValue = request('search_value');
+        $mostrarPodio = isset($EdicionSeleccionada) && !empty($idCategoria) && empty($searchValue) && $goleadores_t->currentPage() === 1 && $todasLasFilas->isNotEmpty();
+        $filasPodio = $mostrarPodio ? $todasLasFilas->slice(0, 3)->values() : collect();
+        $rankBase = ($goleadores_t->currentPage() - 1) * $goleadores_t->perPage();
+    @endphp
+
+    @if ($mostrarPodio)
+        <div class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+            @foreach ($filasPodio as $index => $g)
+                @php $posicion = $index + 1; @endphp
+                <article data-podio-posicion="{{ $posicion }}"
+                    @class([
+                        'flex items-center gap-4 rounded-xl border p-4',
+                        'border-brand-gold bg-brand-gold/10' => $posicion === 1,
+                        'border-gray-200 bg-white' => $posicion !== 1,
+                    ])
+                >
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-gold/40 text-lg font-extrabold text-brand-navy">
+                        {{ $posicion }}
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate font-bold text-gray-900">{{ $g->nombre }}</p>
+                        <p class="truncate text-sm text-gray-500">{{ $g->nombreEquipo }}</p>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-2xl font-extrabold text-brand-navy">{{ $g->cantidadGoles }}</span>
+                        <span class="text-xs text-gray-500">goles</span>
+                    </div>
+                </article>
+            @endforeach
+        </div>
+    @endif
+
+    <x-ui.data-table class="mt-6" :empty="$goleadores_t->isEmpty()">
+        <x-slot name="filters">
+            <form method="GET" action="{{ url()->current() }}" class="flex flex-wrap items-end gap-3">
+                <div class="min-w-[16rem] flex-1">
+                    <x-ui.search label="Buscar" labelHidden name="search_value"
+                        :value="old('search_value', request()->search_value)" placeholder="Buscar..." />
+                </div>
+                <x-ui.button type="submit" variant="primary">Buscar</x-ui.button>
+                @foreach (request()->except('search_value') as $key => $value)
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                 @endforeach
-            </tbody>
-        </table>
-    </div>
-    <div class="flex justify-center">
-        {{ $goleadores_t->links() }}
-    </div>
+            </form>
+        </x-slot>
+
+        <x-slot name="head">
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Jugador</th>
+                <th scope="col">Equipo</th>
+                @if (empty($idCategoria))
+                    <th scope="col">Categoría</th>
+                @endif
+                <th scope="col" class="text-center">Goles</th>
+                <th scope="col" class="text-center">Acción</th>
+            </tr>
+        </x-slot>
+
+        <x-slot name="body">
+            @foreach ($todasLasFilas as $index => $g)
+                @php $rank = $rankBase + $index + 1; @endphp
+                <tr>
+                    {{-- Con búsqueda activa el orden ya no es el ranking real
+                         de goles, sino el orden relativo a los resultados
+                         filtrados: mostrar un número acá sería un puesto
+                         engañoso, así que se muestra un guion neutral y se
+                         omite el atributo data-posicion (revisión
+                         R3-podio-busqueda). --}}
+                    @if (empty($searchValue))
+                        <td data-posicion="{{ $rank }}" class="font-semibold text-gray-500">{{ $rank }}</td>
+                    @else
+                        <td class="font-semibold text-gray-500">—</td>
+                    @endif
+                    <td class="font-semibold">{{ $g->nombre }}</td>
+                    <td>{{ $g->nombreEquipo }}</td>
+                    @if (empty($idCategoria))
+                        <td>{{ $g->nombreCategoria }}</td>
+                    @endif
+                    <td class="text-center font-extrabold text-brand-navy">{{ $g->cantidadGoles }}</td>
+                    <td>
+                        <div class="flex flex-wrap items-center justify-center gap-2">
+                            <x-ui.button href="{{ route('jugador.consulta', ['dni' => $g->dni_jugador]) }}" variant="secondary" size="sm">
+                                Ver jugador
+                            </x-ui.button>
+                            <x-ui.button href="{{ route('tabla_goleador.edit', $g) }}" variant="success" size="sm">
+                                Editar
+                            </x-ui.button>
+                            <x-ui.confirm-delete size="sm"
+                                action="{{ route('tabla_goleador.destroy', $g) }}"
+                                entity="a {{ $g->nombre }} de la tabla de goleadores"
+                                :fields="['idEdicion' => $g->idEdicion]"
+                            />
+                        </div>
+                    </td>
+                </tr>
+            @endforeach
+        </x-slot>
+
+        <x-slot name="footer">
+            <div class="flex justify-center">
+                {{ $goleadores_t->links() }}
+            </div>
+        </x-slot>
+    </x-ui.data-table>
 @endsection

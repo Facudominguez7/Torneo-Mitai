@@ -1,12 +1,24 @@
 @extends('Panel.admin')
 
 @section('contenido')
-    <div class="mx-auto max-w-3xl px-4 py-6">
-        <div class="mb-4 text-center">
-            <h1 class="text-2xl font-bold text-gray-900">Nueva Posición</h1>
-            <p class="text-sm text-gray-600">{{ $EdicionSeleccionada?->nombre ?? 'Sin edición seleccionada' }}</p>
-        </div>
+    <x-ui.page-header title="Nueva Posición" :subtitle="$EdicionSeleccionada?->nombre ?? 'Sin edición seleccionada'" />
 
-        @include('Panel.tabla_posicion._form', ['accion' => route('tabla_posicion.store'), 'metodo' => 'POST', 'parametrosRegreso' => $parametrosRegreso])
-    </div>
+    @include('Panel.fragment._errores-formulario')
+
+    <form action="{{ route('tabla_posicion.store') }}" method="POST" class="mt-6">
+        <x-ui.form-card>
+            <div>
+                @include('Panel.tabla_posicion._form')
+            </div>
+
+            <x-slot name="actions">
+                <x-ui.button href="{{ route('tabla_posicion.index', $parametrosRegreso) }}" variant="secondary">
+                    Volver
+                </x-ui.button>
+                <x-ui.button type="submit" variant="primary">
+                    Guardar
+                </x-ui.button>
+            </x-slot>
+        </x-ui.form-card>
+    </form>
 @endsection
