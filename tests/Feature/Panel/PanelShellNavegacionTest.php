@@ -196,3 +196,16 @@ it('incluye Planillas e impresiones en el grupo Hoy, despues de Partidos', funct
 
     expect($posicionImpresiones)->toBeGreaterThan($posicionPartidos);
 });
+
+it('muestra el logo y el nombre del torneo en la cabecera del menu', function () {
+    $admin = crearAdminPanelShell();
+
+    $html = $this->actingAs($admin)->get(route('admin'))->assertOk()->getContent();
+
+    preg_match('/<a href="[^"]*"[^>]*>\s*<img[^>]*Logo_Mitai_SinFondo\.png[^>]*>.*?<\/a>/s', $html, $marca);
+
+    expect($marca[0] ?? '')
+        ->toContain('alt=""')
+        ->toContain("Torneos Mita'í")
+        ->not->toContain('Torneo Mitai');
+});
