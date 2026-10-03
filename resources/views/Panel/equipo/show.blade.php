@@ -2,13 +2,14 @@
 
 @section('detalle')
     <div class="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
-        <div class="mb-5 flex items-center justify-between gap-3">
-            <h1 class="text-2xl font-bold text-white sm:text-3xl">Detalle de Equipo</h1>
-            <a href="{{ route('equipo.index', ['idEdicion' => $EdicionSeleccionada?->id]) }}"
-                class="rounded-lg bg-white/90 px-4 py-2 text-sm font-semibold text-gray-800 shadow hover:bg-white">
-                Volver
-            </a>
-        </div>
+        <x-ui.page-header title="Detalle de Equipo" class="mb-5">
+            <x-slot name="actions">
+                <x-ui.button href="{{ route('equipo.index', ['idEdicion' => $EdicionSeleccionada?->id]) }}"
+                    variant="secondary">
+                    Volver
+                </x-ui.button>
+            </x-slot>
+        </x-ui.page-header>
 
         <div class="overflow-hidden rounded-xl bg-white shadow-lg">
             <div class="border-b border-gray-100 p-5">
