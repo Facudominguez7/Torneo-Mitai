@@ -226,7 +226,7 @@ it('muestra la proxima fecha con cantidad de partidos canchas y primer horario',
         ->assertSee(e(route('partido.index', ['idEdicion' => $contexto['edicion']->id, 'idFecha' => $contexto['fecha']->id])), false);
 });
 
-it('preserva las acciones existentes y el listado completo colapsado con el filtro de horario', function () {
+it('preserva las acciones existentes y el listado completo con el filtro de horario', function () {
     $admin = crearAdminDashboard();
     $contexto = crearContextoDashboard();
 
@@ -241,7 +241,8 @@ it('preserva las acciones existentes y el listado completo colapsado con el filt
         ->assertSee('Planilla de Cobro')
         ->assertSee('Todos los partidos de la edición')
         ->assertSee('id="horario"', false)
-        ->assertSee('<details', false);
+        // Decisión del usuario (T10): el listado va abierto y justo debajo de los KPIs, sin <details>.
+        ->assertDontSee('<details', false);
 });
 
 it('muestra un estado vacio de proxima fecha cuando no quedan partidos por jugar', function () {
