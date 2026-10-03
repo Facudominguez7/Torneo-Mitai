@@ -1,3 +1,11 @@
+{{--
+    Suscriptores (T9a, panel-admin-redesign): tarjetas de envío (resumen de la
+    fecha, aviso rápido, recordatorio de verificación), filtros y tabla de
+    usuarios sobre los componentes x-ui.*. El <script> del final es el del
+    envío por lotes y no cambió: los ids, data-* y nombres de funciones de acá
+    son su contrato (ver ENDPOINTS, mostrarProgreso, localStorage
+    `mitai_sending_state`).
+--}}
 @extends('Panel.admin')
 
 @section('contenido')
@@ -8,417 +16,270 @@
         $resumenIdFecha = $resumenIdFecha ?? null;
         $categoriasResumen = $categoriasResumen ?? collect();
         $fechasResumen = $fechasResumen ?? collect();
+        $totalSinVerificar = $totalSinVerificar ?? 0;
         $idEdicionNotificacion = $EdicionSeleccionada->id ?? $resumenIdEdicion;
         $urlNotificacionFixture = route('fixture', ['idEdicion' => $idEdicionNotificacion]);
         $urlNotificacionGoleadores = route('tabla-goleadores', ['idEdicion' => $idEdicionNotificacion]);
+        $iniciales = static fn (string $nombre): string => collect(preg_split('/\s+/', trim($nombre)))
+            ->filter()
+            ->take(2)
+            ->map(static fn (string $parte): string => mb_strtoupper(mb_substr($parte, 0, 1)))
+            ->implode('');
     @endphp
 
-    <div class="rounded-lg bg-white p-3 shadow-lg sm:p-4 lg:p-6">
-        <div class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-            <h1 class="flex items-center gap-3 text-xl font-bold text-gray-800 sm:text-2xl">
-                <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path
-                        d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-                </svg>
-                Gestión de Usuarios y Notificaciones
-            </h1>
-            <div class="w-full max-w-[860px] xl:justify-self-end">
-                <div id="recordatorios-container" class="w-full">
-                    <div class="flex flex-wrap items-stretch gap-2 sm:gap-3 xl:justify-end">
-                        <button type="button" id="btn-enviar-recordatorios" onclick="iniciarEnvioRecordatorios()" 
-                            class="panel-action-button panel-action-button--warning">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                            </svg>
-                            <span id="btn-text">Enviar Recordatorios</span>
-                        </button>
-                        
-                        <!-- Botón Notificación Manual -->
-                        <div class="relative min-h-[44px] w-full sm:w-auto" id="notif-dropdown-container">
-                            <button type="button" onclick="toggleNotifDropdown()" id="btn-manual"
-                                class="panel-action-button panel-action-button--primary">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-                                </svg>
-                                Notificar ▼
-                            </button>
-                            <!-- Dropdown Menu -->
-                            <div id="notif-dropdown" class="absolute right-0 z-50 mt-2 hidden w-full min-w-[250px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl sm:w-auto">
-                                <button type="button"
-                                    data-notif-titulo="Fixture Actualizado"
-                                    data-notif-mensaje="Se cargo el fixture. Consulta los proximos partidos."
-                                    data-notif-url="{{ $urlNotificacionFixture }}"
-                                    data-notif-icono="📅"
-                                    onclick="prepararNotificacionDesdeBoton(this); cerrarNotifDropdown()"
-                                    class="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors border-b first:rounded-t-lg">
-                                    <span class="mr-2">📅</span> Fixture Cargado
-                                </button>
-                                <button type="button"
-                                    data-notif-titulo="Goleadores Actualizados"
-                                    data-notif-mensaje="Se actualizo la tabla de goleadores. Mira quienes lideran."
-                                    data-notif-url="{{ $urlNotificacionGoleadores }}"
-                                    data-notif-icono="⚽"
-                                    onclick="prepararNotificacionDesdeBoton(this); cerrarNotifDropdown()"
-                                    class="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors border-b">
-                                    <span class="mr-2">⚽</span> Goleadores Actualizados
-                                </button>
-                                <button onclick="abrirModalNotificacion(); cerrarNotifDropdown()"
-                                    class="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors last:rounded-b-lg">
-                                    <span class="mr-2">✏️</span> Personalizada...
-                                </button>
-                            </div>
-                        </div>
+    <x-ui.page-header title="Suscriptores" subtitle="Familias que reciben novedades del torneo por email.">
+        <x-slot name="actions">
+            <x-ui.badge variant="info">{{ $usuarios->total() }} usuarios</x-ui.badge>
+        </x-slot>
+    </x-ui.page-header>
 
-                        <button type="button" id="btn-detener" onclick="detenerEnvio()" 
-                            class="panel-action-button panel-action-button--danger hidden">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                            Detener
-                        </button>
-
-                        <button type="button" id="btn-continuar" onclick="continuarEnvioPausado()"
-                            class="panel-action-button panel-action-button--primary hidden">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.868v4.264a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Continuar
-                        </button>
-                    </div>
-                    <div id="progreso-recordatorios" class="mt-2 hidden text-sm text-gray-600">
-                        <div class="flex items-center gap-2">
-                            <svg id="progreso-spinner" class="animate-spin w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
-                            <span id="progreso-texto">Iniciando...</span>
-                        </div>
-                        <div id="error-debug-msg" class="text-xs text-red-600 mt-2 hidden text-center font-mono bg-red-50 p-2 rounded border border-red-200"></div>
-                    </div>
-                </div>
-                <span class="mt-3 inline-flex justify-center rounded-full bg-blue-600 px-4 py-2 text-base font-bold text-white">
-                    {{ $usuarios->total() }} Usuarios
-                </span>
+    <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {{-- Resumen de la fecha --}}
+        <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
+            <div>
+                <h2 class="text-base font-bold text-gray-800">Resumen de la fecha</h2>
+                <p class="mt-1 text-sm text-gray-500">Resultados de una fecha para los suscriptos de la categoría.</p>
+                <p class="mt-1 text-xs text-gray-400">Edición activa: {{ $resumenNombreEdicion }}</p>
             </div>
-        </div>
 
-        <div class="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-3 sm:p-4">
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                <div class="w-full">
-                    <h2 class="text-sm font-semibold uppercase tracking-wide text-blue-800">Resumen de resultados por fecha</h2>
-                    <p class="mt-1 text-xs text-blue-700">Centraliza el envío desde aquí para no disparar un correo por cada carga de resultado.</p>
-                    <p class="mt-2 inline-flex items-center rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700">
-                        Edición activa: {{ $resumenNombreEdicion }}
-                    </p>
-                </div>
+            <div class="flex flex-col gap-2" id="resumen-fecha-controls">
+                <x-ui.select id="resumen-idCategoria" label="Categoría">
+                    <option value="">Todas las categorías</option>
+                    @foreach($categoriasResumen as $categoriaResumen)
+                        <option value="{{ $categoriaResumen->id }}" {{ (string) $resumenIdCategoria === (string) $categoriaResumen->id ? 'selected' : '' }}>
+                            {{ $categoriaResumen->nombreCategoria }}
+                        </option>
+                    @endforeach
+                </x-ui.select>
 
-                <div class="flex w-full flex-wrap items-stretch gap-2 lg:justify-end" id="resumen-fecha-controls">
-                    <select id="resumen-idCategoria" class="panel-control-input">
-                        <option value="">Todas las categorías</option>
-                        @foreach($categoriasResumen as $categoriaResumen)
-                            <option value="{{ $categoriaResumen->id }}" {{ (string) $resumenIdCategoria === (string) $categoriaResumen->id ? 'selected' : '' }}>
-                                {{ $categoriaResumen->nombreCategoria }}
-                            </option>
-                        @endforeach
-                    </select>
+                <x-ui.select id="resumen-idFecha" label="Fecha">
+                    <option value="">Seleccionar fecha</option>
+                    @foreach($fechasResumen as $fechaResumen)
+                        <option value="{{ $fechaResumen->id }}" data-categoria="{{ $fechaResumen->idCategoria }}" {{ (string) $resumenIdFecha === (string) $fechaResumen->id ? 'selected' : '' }}>
+                            {{ $fechaResumen->nombre }}
+                        </option>
+                    @endforeach
+                </x-ui.select>
 
-                    <select id="resumen-idFecha" class="panel-control-input panel-control-input--fecha">
-                        <option value="">Seleccionar fecha</option>
-                        @foreach($fechasResumen as $fechaResumen)
-                            <option value="{{ $fechaResumen->id }}" data-categoria="{{ $fechaResumen->idCategoria }}" {{ (string) $resumenIdFecha === (string) $fechaResumen->id ? 'selected' : '' }}>
-                                {{ $fechaResumen->nombre }}
-                            </option>
-                        @endforeach
-                    </select>
+                <x-ui.button id="btn-enviar-resumen-fecha" onclick="iniciarEnvioResumenFecha()" class="mt-1 w-full">
+                    Enviar resumen
+                </x-ui.button>
+            </div>
+        </article>
 
-                    <button type="button" id="btn-enviar-resumen-fecha" onclick="iniciarEnvioResumenFecha()"
-                        class="panel-action-button panel-action-button--summary">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        Enviar resumen de fecha
+        {{-- Aviso rápido --}}
+        <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
+            <div>
+                <h2 class="text-base font-bold text-gray-800">Aviso rápido</h2>
+                <p class="mt-1 text-sm text-gray-500">Un mensaje prearmado o uno a medida para todos los suscriptos.</p>
+            </div>
+
+            <div id="notif-dropdown-container">
+                <x-ui.button id="btn-manual" onclick="toggleNotifDropdown()" class="w-full">
+                    Elegir aviso ▼
+                </x-ui.button>
+
+                <div id="notif-dropdown" class="mt-2 hidden overflow-hidden rounded-lg border border-gray-200 bg-white">
+                    <button type="button"
+                        data-notif-titulo="Fixture Actualizado"
+                        data-notif-mensaje="Se cargo el fixture. Consulta los proximos partidos."
+                        data-notif-url="{{ $urlNotificacionFixture }}"
+                        data-notif-icono="📅"
+                        onclick="prepararNotificacionDesdeBoton(this); cerrarNotifDropdown()"
+                        class="flex w-full items-center gap-2 border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-navy/50">
+                        <span aria-hidden="true">📅</span> Fixture cargado
+                    </button>
+                    <button type="button"
+                        data-notif-titulo="Goleadores Actualizados"
+                        data-notif-mensaje="Se actualizo la tabla de goleadores. Mira quienes lideran."
+                        data-notif-url="{{ $urlNotificacionGoleadores }}"
+                        data-notif-icono="⚽"
+                        onclick="prepararNotificacionDesdeBoton(this); cerrarNotifDropdown()"
+                        class="flex w-full items-center gap-2 border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-navy/50">
+                        <span aria-hidden="true">⚽</span> Goleadores actualizados
+                    </button>
+                    <button type="button" onclick="abrirModalNotificacion(); cerrarNotifDropdown()"
+                        class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-bold text-brand-navy transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-navy/50">
+                        <span aria-hidden="true">✏️</span> Personalizado…
                     </button>
                 </div>
             </div>
-        </div>
+        </article>
 
-        {{-- Filtros --}}
-        <form method="GET" action="{{ route('notificaciones.index') }}" class="mb-8 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="md:col-span-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Nombre o Email..." 
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        {{-- Recordatorio de verificación --}}
+        <article class="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div>
+                <h2 class="text-base font-bold text-amber-800">Recordatorio de verificación</h2>
+                <p class="mt-1 text-sm text-amber-800">
+                    @if ($totalSinVerificar > 0)
+                        {{ $totalSinVerificar }} {{ $totalSinVerificar === 1 ? 'cuenta sin verificar el email' : 'cuentas sin verificar el email' }}. Se envía por tandas para no superar el límite del servidor.
+                    @else
+                        No hay cuentas sin verificar el email.
+                    @endif
+                </p>
+            </div>
+
+            <div id="recordatorios-container" class="w-full">
+                <div class="flex flex-wrap items-center gap-2">
+                    <x-ui.button id="btn-enviar-recordatorios" onclick="iniciarEnvioRecordatorios()" class="grow">
+                        <span id="btn-text">Enviar recordatorios</span>
+                    </x-ui.button>
+
+                    <x-ui.button id="btn-detener" variant="danger" onclick="detenerEnvio()" class="hidden">
+                        Detener
+                    </x-ui.button>
+
+                    <x-ui.button id="btn-continuar" variant="success" onclick="continuarEnvioPausado()" class="hidden">
+                        Continuar
+                    </x-ui.button>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Verificación Email</label>
-                    <select name="verified_status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="todos" {{ request('verified_status') == 'todos' ? 'selected' : '' }}>Todos</option>
-                        <option value="verificado" {{ request('verified_status') == 'verificado' ? 'selected' : '' }}>Verificado</option>
-                        <option value="no_verificado" {{ request('verified_status') == 'no_verificado' ? 'selected' : '' }}>No Verificado</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Suscripción Email</label>
-                    <select name="email_notif_status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="todos" {{ request('email_notif_status') == 'todos' ? 'selected' : '' }}>Todos</option>
-                        <option value="activo" {{ request('email_notif_status') == 'activo' ? 'selected' : '' }}>Sí, quiere recibir</option>
-                        <option value="inactivo" {{ request('email_notif_status') == 'inactivo' ? 'selected' : '' }}>No quiere recibir</option>
-                    </select>
+
+                <div id="progreso-recordatorios" class="mt-3 hidden text-sm text-amber-800">
+                    <div class="flex items-center gap-2">
+                        <svg id="progreso-spinner" class="h-4 w-4 animate-spin text-amber-600" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span id="progreso-texto" aria-live="polite">Iniciando...</span>
+                    </div>
+                    <div id="error-debug-msg" class="mt-2 hidden rounded border border-red-200 bg-red-50 p-2 text-center font-mono text-xs text-red-600"></div>
                 </div>
             </div>
-            <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <a href="{{ route('notificaciones.index') }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-center text-sm text-gray-600 transition hover:bg-gray-50">Limpiar</a>
-                <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm text-white shadow-sm transition hover:bg-blue-700">Filtrar Resultados</button>
-            </div>
-        </form>
-
-        @if($usuarios->isEmpty())
-            <div class="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-                <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-                <p class="text-gray-500 text-lg">No se encontraron usuarios con esos filtros</p>
-            </div>
-        @else
-            <div class="space-y-3 md:hidden">
-                @foreach($usuarios as $user)
-                    <article class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-                        <div class="flex items-start gap-3">
-                            <div class="h-10 w-10 shrink-0">
-                                @if($user->google_avatar)
-                                    <img class="h-10 w-10 rounded-full" src="{{ $user->google_avatar }}" alt="">
-                                @else
-                                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white shadow-sm">
-                                        {{ strtoupper(substr($user->name, 0, 1)) }}
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-semibold text-gray-900">{{ $user->name }}</p>
-                                <p class="truncate text-xs text-gray-500">{{ $user->email }}</p>
-                                <p class="mt-1 text-[11px] text-gray-400">Reg: {{ $user->created_at->format('d/m/Y') }}</p>
-                            </div>
-                        </div>
-
-                        <div class="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-                            <div class="rounded-md bg-gray-50 p-2">
-                                <p class="font-semibold text-gray-700">Verificación</p>
-                                @if($user->hasVerifiedEmail())
-                                    <p class="mt-1 text-green-700">Verificado</p>
-                                @else
-                                    <p class="mt-1 text-yellow-700">Pendiente</p>
-                                @endif
-                            </div>
-                            <div class="rounded-md bg-gray-50 p-2">
-                                <p class="font-semibold text-gray-700">Email</p>
-                                <p class="mt-1 text-gray-700">{{ $user->email_subscribed ? 'Suscrito' : 'Baja' }}</p>
-                            </div>
-                            <div class="rounded-md bg-gray-50 p-2">
-                                <p class="font-semibold text-gray-700">Ultimo envio</p>
-                                <p class="mt-1 text-gray-700">{{ $user->last_notification_at ? $user->last_notification_at->format('d/m/Y H:i') : '-' }}</p>
-                            </div>
-                        </div>
-
-                        @if(!$user->hasVerifiedEmail())
-                            <form action="{{ route('notificaciones.reenviar-verificacion', $user->id) }}" method="POST" class="mt-3">
-                                @csrf
-                                <button type="submit" class="inline-flex w-full items-center justify-center gap-1 rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                    Reenviar verificación
-                                </button>
-                            </form>
-                        @endif
-                    </article>
-                @endforeach
-            </div>
-
-            <div class="hidden overflow-x-auto rounded-lg border border-gray-200 md:block">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Usuario</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Verificación Email</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Notif. Email</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Último Envío</th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($usuarios as $user)
-                            <tr class="hover:bg-gray-50 transition">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-10 w-10">
-                                            @if($user->google_avatar)
-                                                <img class="h-10 w-10 rounded-full" src="{{ $user->google_avatar }}" alt="">
-                                            @else
-                                                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                                                    {{ strtoupper(substr($user->name, 0, 1)) }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $user->name }}</div>
-                                            <div class="text-sm text-gray-500">{{ $user->email }}</div>
-                                            <div class="text-xs text-gray-400 mt-0.5">Reg: {{ $user->created_at->format('d/m/Y') }}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($user->hasVerifiedEmail())
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                                            Verificado
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
-                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
-                                            Pendiente
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($user->email_subscribed)
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
-                                            📧 Suscrito
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                                            🚫 Baja
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ $user->last_notification_at ? $user->last_notification_at->format('d/m/Y H:i') : '-' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    @if(!$user->hasVerifiedEmail())
-                                        <form action="{{ route('notificaciones.reenviar-verificacion', $user->id) }}" method="POST" class="inline-block">
-                                            @csrf
-                                            <button type="submit" class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md transition text-xs font-semibold flex items-center gap-1 ml-auto" title="Reenviar email de verificación">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                                Reenviar Email
-                                            </button>
-                                        </form>
-                                    @else
-                                        <span class="text-gray-400 text-xs">-</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="mt-6">
-                {{ $usuarios->links() }}
-            </div>
-        @endif
+        </article>
     </div>
 
+    {{-- Filtros --}}
+    <form method="GET" action="{{ route('notificaciones.index') }}" class="mt-6 rounded-xl border border-gray-200 bg-white p-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <x-ui.search id="search" name="search" label="Buscar" placeholder="Nombre o email" :value="request('search')" />
+
+            <x-ui.select id="verified_status" name="verified_status" label="Verificación">
+                <option value="todos" {{ request('verified_status') == 'todos' ? 'selected' : '' }}>Todos</option>
+                <option value="verificado" {{ request('verified_status') == 'verificado' ? 'selected' : '' }}>Verificado</option>
+                <option value="no_verificado" {{ request('verified_status') == 'no_verificado' ? 'selected' : '' }}>Pendiente</option>
+            </x-ui.select>
+
+            <x-ui.select id="email_notif_status" name="email_notif_status" label="Suscripción">
+                <option value="todos" {{ request('email_notif_status') == 'todos' ? 'selected' : '' }}>Todos</option>
+                <option value="activo" {{ request('email_notif_status') == 'activo' ? 'selected' : '' }}>Suscripto</option>
+                <option value="inactivo" {{ request('email_notif_status') == 'inactivo' ? 'selected' : '' }}>De baja</option>
+            </x-ui.select>
+        </div>
+        <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <x-ui.button href="{{ route('notificaciones.index') }}" variant="secondary" class="text-center">Limpiar</x-ui.button>
+            <x-ui.button type="submit">Filtrar</x-ui.button>
+        </div>
+    </form>
+
+    @if($usuarios->isEmpty())
+        <x-ui.empty-state class="mt-6" message="No se encontraron usuarios con esos filtros"
+            description="Probá con otra búsqueda o limpiá los filtros para ver a todos los usuarios." />
+    @else
+        <div class="mt-6 space-y-3 md:hidden">
+            @foreach($usuarios as $user)
+                <article class="rounded-xl border border-gray-200 bg-white p-3">
+                    <div class="flex items-start gap-3">
+                        @if($user->google_avatar)
+                            <img class="h-10 w-10 shrink-0 rounded-full" src="{{ $user->google_avatar }}" alt="">
+                        @else
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-teal text-sm font-extrabold text-white" aria-hidden="true">{{ $iniciales($user->name) }}</span>
+                        @endif
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold text-gray-900">{{ $user->name }}</p>
+                            <p class="truncate text-xs text-gray-500">{{ $user->email }}</p>
+                            <p class="mt-1 text-[11px] text-gray-400">Registro: {{ $user->created_at->format('d/m/Y') }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                        @if($user->hasVerifiedEmail())
+                            <x-ui.badge variant="success">Verificado</x-ui.badge>
+                        @else
+                            <x-ui.badge variant="warning">Pendiente</x-ui.badge>
+                        @endif
+                        @if($user->email_subscribed)
+                            <x-ui.badge variant="success">Suscripto</x-ui.badge>
+                        @else
+                            <x-ui.badge variant="neutral">De baja</x-ui.badge>
+                        @endif
+                    </div>
+                    <p class="mt-2 text-xs text-gray-500">Último envío: {{ $user->last_notification_at ? $user->last_notification_at->format('d/m/Y H:i') : '-' }}</p>
+
+                    @if(!$user->hasVerifiedEmail())
+                        <form action="{{ route('notificaciones.reenviar-verificacion', $user->id) }}" method="POST" class="mt-3">
+                            @csrf
+                            <x-ui.button type="submit" variant="secondary" size="sm" class="w-full">Reenviar verificación</x-ui.button>
+                        </form>
+                    @endif
+                </article>
+            @endforeach
+        </div>
+
+        <x-ui.data-table class="mt-6 hidden md:block">
+            <x-slot name="head">
+                <tr>
+                    <th scope="col">Usuario</th>
+                    <th scope="col">Verificación</th>
+                    <th scope="col">Suscripción</th>
+                    <th scope="col">Último envío</th>
+                    <th scope="col" class="text-right">Acciones</th>
+                </tr>
+            </x-slot>
+
+            <x-slot name="body">
+                @foreach($usuarios as $user)
+                    <tr>
+                        <td>
+                            <div class="flex items-center gap-3">
+                                @if($user->google_avatar)
+                                    <img class="h-8 w-8 shrink-0 rounded-full" src="{{ $user->google_avatar }}" alt="">
+                                @else
+                                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-teal text-xs font-extrabold text-white" aria-hidden="true">{{ $iniciales($user->name) }}</span>
+                                @endif
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-gray-900">{{ $user->name }}</p>
+                                    <p class="text-xs text-gray-500">{{ $user->email }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            @if($user->hasVerifiedEmail())
+                                <x-ui.badge variant="success">Verificado</x-ui.badge>
+                            @else
+                                <x-ui.badge variant="warning">Pendiente</x-ui.badge>
+                            @endif
+                        </td>
+                        <td>
+                            @if($user->email_subscribed)
+                                <x-ui.badge variant="success">Suscripto</x-ui.badge>
+                            @else
+                                <x-ui.badge variant="neutral">De baja</x-ui.badge>
+                            @endif
+                        </td>
+                        <td class="whitespace-nowrap text-gray-500">
+                            {{ $user->last_notification_at ? $user->last_notification_at->format('d/m/Y H:i') : '-' }}
+                        </td>
+                        <td class="text-right">
+                            @if(!$user->hasVerifiedEmail())
+                                <form action="{{ route('notificaciones.reenviar-verificacion', $user->id) }}" method="POST" class="inline-block">
+                                    @csrf
+                                    <x-ui.button type="submit" variant="secondary" size="sm" title="Reenviar email de verificación">Reenviar verificación</x-ui.button>
+                                </form>
+                            @else
+                                <span class="text-xs text-gray-400">-</span>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </x-slot>
+        </x-ui.data-table>
+
+        <div class="mt-6">
+            {{ $usuarios->links() }}
+        </div>
+    @endif
+
     <style>
-        .panel-action-button {
-            min-height: 44px;
-            width: 100%;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            border-radius: 0.75rem;
-            padding: 0.625rem 1rem;
-            font-size: 0.9rem;
-            font-weight: 700;
-            line-height: 1;
-            color: #fff;
-            box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.65);
-            transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
-        }
-
-        .panel-action-button:not(.hidden) {
-            display: inline-flex;
-        }
-
-        .panel-action-button:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.02);
-            box-shadow: 0 14px 28px -16px rgba(15, 23, 42, 0.78);
-        }
-
-        .panel-action-button:disabled {
-            cursor: not-allowed;
-            opacity: 0.58;
-            transform: none;
-            filter: none;
-            box-shadow: none;
-        }
-
-        .panel-action-button--warning {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        }
-
-        .panel-action-button--primary {
-            min-width: 190px;
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        }
-
-        .panel-action-button--summary {
-            min-width: 228px;
-            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-        }
-
-        .panel-action-button--danger {
-            min-width: 140px;
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        }
-
-        .panel-control-input {
-            min-height: 44px;
-            width: 100%;
-            min-width: 185px;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.75rem;
-            background: #ffffff;
-            padding: 0 0.875rem;
-            font-size: 0.9rem;
-            color: #0f172a;
-            box-shadow: 0 8px 18px -20px rgba(15, 23, 42, 0.8);
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .panel-control-input:focus {
-            border-color: #3b82f6;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
-        }
-
-        .panel-control-input--fecha {
-            min-width: 210px;
-        }
-
-        @media (min-width: 640px) {
-            .panel-action-button {
-                width: auto;
-                min-width: 198px;
-            }
-
-            .panel-action-button--primary {
-                min-width: 190px;
-            }
-
-            .panel-action-button--summary {
-                min-width: 228px;
-            }
-
-            .panel-action-button--danger {
-                min-width: 140px;
-            }
-
-            .panel-control-input {
-                width: auto;
-            }
-        }
-
         .swal2-popup .swal2-confirm {
             background-color: #2563eb !important;
             color: #ffffff !important;
