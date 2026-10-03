@@ -140,7 +140,7 @@
                 </div>
 
                 {{-- KPIs --}}
-                <div class="mb-4 grid grid-cols-1 gap-3 px-3 sm:grid-cols-2 sm:px-4 xl:grid-cols-4">
+                <div class="mb-4 grid grid-cols-2 gap-3 px-3 sm:px-4 xl:grid-cols-4">
                     <div class="rounded-xl border border-gray-200 bg-white p-5">
                         <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Equipos inscriptos</p>
                         <p class="mt-2 text-3xl font-bold text-gray-900">{{ $resumenDashboard['equiposInscriptos'] }}</p>
@@ -158,6 +158,168 @@
                         <p class="mt-2 text-3xl font-bold text-amber-700">{{ $resumenDashboard['pendientesDeCarga'] }}</p>
                     </div>
                 </div>
+
+                {{-- Todos los partidos de la edición: sección principal del dashboard, siempre abierta (pedido del usuario, T10). --}}
+                @php
+                    $pendientesPorPartido = collect($equiposSinAsistencia['equipos'] ?? [])->groupBy('partido_id');
+                    $partidosPlanos = $partidos->flatten(1);
+
+                    // Misma clave de agrupación que Panel.partido.index: el horario
+                    // legacy (texto 24 h) gana sobre horario_datetime.
+                    $gruposPorHorario = $partidosPlanos->groupBy(function ($p) {
+                        if ($p->horario !== null && $p->horario !== '') {
+                            if (preg_match('/^(\d{1,2})(?:[:.](\d{2}))?$/', trim((string) $p->horario), $partes)) {
+                                return sprintf('%02d:%s', (int) $partes[1], $partes[2] ?? '00');
+                            }
+
+                            return 'sin-horario';
+                        }
+
+                        if ($p->horario_datetime) {
+                            return \Carbon\Carbon::parse($p->horario_datetime)->format('H:i');
+                        }
+
+                        return 'sin-horario';
+                    })->sortKeys();
+                    $horarioFiltroActivo = request('horario');
+                @endphp
+                <section class="mb-4 px-3 sm:px-4" aria-labelledby="titulo-partidos-edicion">
+                    <div class="rounded-xl border border-gray-200 bg-white p-5">
+                        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                            <div>
+                                <h2 id="titulo-partidos-edicion" class="text-lg font-bold text-gray-900">Todos los partidos de la edición</h2>
+                                <p class="mt-1 text-sm text-gray-600">
+                                    {{ $partidosPlanos->count() }} {{ $partidosPlanos->count() === 1 ? 'partido' : 'partidos' }} de la última fecha
+                                </p>
+                            </div>
+                            <form action="{{ route('admin', $parametrosEdicionActual) }}" method="GET"
+                                class="flex w-full flex-col gap-2 sm:flex-row sm:items-end md:w-auto filtro-fecha">
+                                <div class="w-full sm:w-48">
+                                    <x-ui.select label="Horario" id="horario" name="horario">
+                                        <option value="">Todos los horarios</option>
+                                        @foreach ($horariosDisponibles as $horario)
+                                            <option value="{{ $horario }}" {{ request('horario') == $horario ? 'selected' : '' }}>
+                                                {{ $horario }} hs
+                                            </option>
+                                        @endforeach
+                                    </x-ui.select>
+                                </div>
+                                @foreach (request()->except(['horario', '_token']) as $key => $value)
+                                    @if (is_scalar($value))
+                                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                    @endif
+                                @endforeach
+                                <x-ui.button type="submit" variant="primary" size="sm">Filtrar</x-ui.button>
+                            </form>
+                        </div>
+                        @if ($horarioFiltroActivo)
+                            <div class="mt-4 flex flex-wrap items-center gap-2">
+                                <x-ui.filter-chip active href="{{ route('admin', $parametrosEdicionActual) }}">
+                                    Mostrando partidos de las {{ $horarioFiltroActivo }} hs
+                                </x-ui.filter-chip>
+                                <a href="{{ route('admin', $parametrosEdicionActual) }}"
+                                    class="rounded-md px-1 py-1 text-sm font-semibold text-brand-navy hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
+                                    Limpiar
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+
+                    @if ($partidosPlanos->isEmpty())
+                        <x-ui.empty-state class="mt-4" message="No hay partidos para mostrar"
+                            description="{{ $horarioFiltroActivo ? 'Probá con otro horario o limpiá el filtro.' : 'Cuando se carguen partidos en la última fecha aparecerán acá.' }}" />
+                    @else
+                        @foreach ($gruposPorHorario as $horarioGrupo => $partidosGrupo)
+                            <div class="mt-5" data-dashboard-horario="{{ $horarioGrupo }}">
+                                <h3 class="mb-3 flex items-center gap-2 text-xl font-extrabold text-brand-navy">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    {{ $horarioGrupo === 'sin-horario' ? 'Sin horario asignado' : $horarioGrupo . ' hs' }}
+                                </h3>
+                                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                                    @foreach ($partidosGrupo as $p)
+                                        @php
+                                            $resultadoCargado = $p->golesEquipoLocal !== null && $p->golesEquipoVisitante !== null;
+                                            $estadoGolesLabel = null;
+                                            $estadoGolesVariant = null;
+
+                                            if ($p->goles_confirmados_at !== null) {
+                                                $estadoGolesLabel = 'Goles confirmados';
+                                                $estadoGolesVariant = 'success';
+                                            } elseif ($resultadoCargado) {
+                                                $estadoGolesLabel = 'Goles pendientes de carga';
+                                                $estadoGolesVariant = 'warning';
+                                            }
+                                        @endphp
+                                        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm" data-dashboard-partido="{{ $p->id }}">
+                                            <div class="flex flex-wrap items-center justify-center gap-2 text-center text-sm font-semibold uppercase tracking-wide text-gray-500">
+                                                {{ $p->nombre_fecha }}
+                                            </div>
+                                            <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+                                                <x-ui.badge variant="info">{{ $p->nombre_categoria }}</x-ui.badge>
+                                            </div>
+
+                                            <div class="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                                                <div class="flex flex-col items-center gap-2">
+                                                    <img src="{{ asset('fotos/equipos/' . $p->foto_local) }}" width="60" height="60" alt="Escudo {{ $p->nombre_local }}"
+                                                        class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
+                                                    <div class="text-center text-base font-bold leading-tight text-gray-900 md:text-xl">{{ $p->nombre_local }}</div>
+                                                </div>
+                                                @if ($resultadoCargado)
+                                                    <div data-dashboard-centro class="whitespace-nowrap text-center text-2xl font-extrabold text-gray-900 md:text-3xl">{{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}</div>
+                                                @else
+                                                    <div data-dashboard-centro class="text-center text-sm font-semibold text-gray-400 md:text-lg">vs</div>
+                                                @endif
+                                                <div class="flex flex-col items-center gap-2">
+                                                    <img src="{{ asset('fotos/equipos/' . $p->foto_visitante) }}" width="60" height="60" alt="Escudo {{ $p->nombre_visitante }}"
+                                                        class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
+                                                    <div class="text-center text-base font-bold leading-tight text-gray-900 md:text-xl">{{ $p->nombre_visitante }}</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-gray-600 md:text-base">
+                                                @if ($horarioGrupo !== 'sin-horario')
+                                                    <span data-dashboard-hora class="text-lg font-bold text-brand-navy">{{ $horarioGrupo }} hs</span>
+                                                @endif
+                                                @if ($p->horario_datetime)
+                                                    <span class="font-medium">{{ \Carbon\Carbon::parse($p->horario_datetime)->format('d-m-Y') }}</span>
+                                                @endif
+                                                <span class="font-medium">Cancha {{ $p->cancha }}</span>
+                                            </div>
+
+                                            @if ($estadoGolesLabel)
+                                                <div class="mt-3 flex justify-center">
+                                                    <x-ui.badge :variant="$estadoGolesVariant">{{ $estadoGolesLabel }}</x-ui.badge>
+                                                </div>
+                                            @endif
+
+                                            @if ($pendientesPorPartido->has($p->id))
+                                                <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
+                                                    @foreach ($pendientesPorPartido->get($p->id) as $pendienteAsistencia)
+                                                        <x-ui.badge :variant="$pendienteAsistencia['estado'] === 'sin_planilla' ? 'danger' : 'warning'">
+                                                            <svg class="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            {{ $pendienteAsistencia['equipo'] }} ({{ $pendienteAsistencia['condicion'] }}): {{ $pendienteAsistencia['estado_label'] }}
+                                                        </x-ui.badge>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+
+                                            <div class="mt-4 flex justify-center">
+                                                <x-ui.button size="sm" variant="secondary"
+                                                    href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $idEdicionContexto, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0, 'origen' => 'admin', 'horario_filtro' => $horarioString]) }}">
+                                                    Planillas
+                                                </x-ui.button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    @endif
+                </section>
 
                 {{-- Requiere atención + Próxima fecha / Jugadores por categoría --}}
                 <div class="mb-4 grid grid-cols-1 gap-3 px-3 sm:px-4 lg:grid-cols-3">
@@ -252,137 +414,6 @@
                     </div>
                 </div>
 
-                {{-- Parity (#T2 parity watch): filtro de horario y listado completo, colapsados por defecto --}}
-                <details class="mx-3 mb-4 rounded-xl border border-gray-200 bg-white sm:mx-4">
-                    <summary class="cursor-pointer select-none px-5 py-3 text-sm font-semibold text-gray-700">
-                        Todos los partidos de la edición
-                    </summary>
-                    <div class="border-t border-gray-100 px-3 py-4 sm:px-4">
-                        <!-- Filtro de horario -->
-                        <div class="flex justify-center px-3 sm:px-4">
-                            <div class="relative inline-block w-full text-left md:w-80 filtro-fecha">
-                                <p class="text-center text-gray-800 font-semibold bg-gray-200 py-2 rounded-lg shadow-md mb-2">
-                                    Filtro por Horario
-                                </p>
-                                <form action="{{ route('admin', $parametrosEdicionActual) }}" method="GET"
-                                    class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-4">
-                                    <div class="relative w-full">
-                                        <select id="horario" name="horario"
-                                            class="appearance-none bg-white text-gray-800 font-medium border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none hover:border-gray-400 px-4 py-2 rounded-lg shadow-md w-full transition ease-in-out duration-200">
-                                            <option value="">Mostrar Todos</option>
-                                            @foreach ($horariosDisponibles as $horario)
-                                                <option value="{{ $horario }}" {{ request('horario') == $horario ? 'selected' : '' }}>
-                                                    {{ $horario }} hs
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    @foreach (request()->except(['horario', '_token']) as $key => $value)
-                                        <!-- Excluir horario y token -->
-                                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                                    @endforeach
-                                    <button type="submit"
-                                        class="w-full rounded-lg bg-blue-600 px-4 py-2 font-bold text-white transition ease-in-out duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto">
-                                        Filtrar
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="flex justify-center mb-4">
-                            @if(request('horario'))
-                                <p class="text-center text-gray-700 font-semibold  bg-gray-200 py-2 px-4 rounded-lg shadow-md">
-                                    Mostrando partidos de las {{ request('horario') }} hs
-                                </p>
-                            @endif
-                        </div>
-                        @php
-                            $pendientesPorPartido = collect($equiposSinAsistencia['equipos'] ?? [])->groupBy('partido_id');
-                        @endphp
-                        @foreach ($partidos as $categoria => $partidosPorCategoria)
-                            <div class="px-3 sm:px-4">
-                                <h1 class="text-center text-2xl font-bold text-gray-900 sm:text-3xl lg:text-4xl">{{ $categoria }}</h1>
-                            </div>
-                            @php
-                                $partidosPorFecha = $partidosPorCategoria->groupBy('nombre_fecha');
-                            @endphp
-                            @foreach ($partidosPorFecha as $fecha => $partidos)
-                                <h3 class="my-2 text-center text-xl font-semibold text-gray-800 sm:text-2xl lg:text-3xl">{{ $fecha }}
-                                </h3>
-                                @foreach ($partidos as $p)
-                                    @php
-                                        $resultadoCargado = $p->golesEquipoLocal !== null && $p->golesEquipoVisitante !== null;
-                                        $estadoGolesLabel = null;
-                                        $estadoGolesClase = '';
-
-                                        if ($p->goles_confirmados_at !== null) {
-                                            $estadoGolesLabel = 'Goles confirmados';
-                                            $estadoGolesClase = 'bg-emerald-100 text-emerald-700';
-                                        } elseif ($resultadoCargado) {
-                                            $estadoGolesLabel = 'Goles pendientes de carga';
-                                            $estadoGolesClase = 'bg-amber-100 text-amber-700';
-                                        }
-                                    @endphp
-                                    <div class="mb-5 flex justify-center px-3 sm:px-4">
-                                        <div class="grid w-full gap-4 bg-gray-50 p-2 sm:p-3 lg:w-11/12 xl:w-3/4 2xl:w-1/2">
-                                            <div class="overflow-x-auto rounded-lg shadow-lg md:overflow-x-visible">
-                                                <div class="flex flex-col items-center justify-between gap-3 border-b px-3 py-4 sm:px-4 md:flex-row md:px-6">
-                                                    <div class="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-4 sm:text-left">
-                                                        <img src="{{ asset('fotos/equipos/' . $p->foto_local) }}" width="40" height="40" alt="Escudo {{ $p->nombre_local }}"
-                                                            class="object-cover" />
-                                                        <div class="text-base font-medium sm:text-lg">{{ $p->nombre_local }}</div>
-                                                        <div class="text-gray-500">vs</div>
-                                                        <div class="text-base font-medium sm:text-lg">{{ $p->nombre_visitante }}</div>
-                                                        <img src="{{ asset('fotos/equipos/' . $p->foto_visitante) }}" width="40" height="40" alt="Escudo {{ $p->nombre_visitante }}"
-                                                            class="object-cover" />
-                                                    </div>
-                                                    <div class="mt-1 text-center text-xl font-bold text-[--color-primary] sm:text-2xl md:mt-0">
-                                                        {{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}
-                                                    </div>
-                                                </div>
-                                                <div class="flex flex-col items-center justify-between gap-2 px-3 py-3 text-muted-foreground sm:px-4 md:flex-row md:px-6">
-                                                    <div class="mb-1 flex items-center gap-2 md:mb-0">
-                                                        <span
-                                                            class="text-base sm:text-lg">{{ \Carbon\Carbon::parse($p->horario_datetime)->format('d-m-Y H:i') }}</span>
-                                                    </div>
-                                                    <div class="flex flex-col items-center gap-2">
-                                                        <span class="text-sm sm:text-base">Cancha {{ $p->cancha }}</span>
-                                                    </div>
-                                                </div>
-                                                @if ($estadoGolesLabel)
-                                                    <div class="flex justify-center px-3 pb-4">
-                                                        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $estadoGolesClase }}">
-                                                            {{ $estadoGolesLabel }}
-                                                        </span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            @if($pendientesPorPartido->has($p->id))
-                                                <div class="flex flex-wrap items-center justify-center gap-2 px-3 py-2">
-                                                    @foreach($pendientesPorPartido->get($p->id) as $pendienteAsistencia)
-                                                        <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold {{ $pendienteAsistencia['estado'] === 'sin_planilla' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700' }}">
-                                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            {{ $pendienteAsistencia['equipo'] }} ({{ $pendienteAsistencia['condicion'] }}): {{ $pendienteAsistencia['estado_label'] }}
-                                                        </span>
-                                                    @endforeach
-                                                </div>
-                                            @endif
-                                            <div class="my-2 flex justify-center">
-                                                <a
-                                                    href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $idEdicionContexto, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0, 'origen' => 'admin', 'horario_filtro' => $horarioString]) }}">
-                                                    <button class="w-full rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 sm:w-auto">
-                                                        Planillas
-                                                    </button>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            @endforeach
-                        @endforeach
-                    </div>
-                </details>
             @endif
         @endif
         @php
