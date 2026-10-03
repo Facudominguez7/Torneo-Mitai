@@ -647,7 +647,11 @@ it('la vista index muestra el formulario de eliminacion con confirmacion y filtr
     $response->assertOk();
     $response->assertSee(htmlspecialchars($urlEliminacion, ENT_QUOTES), false);
     $response->assertSee('name="_method" value="DELETE"', false);
-    $response->assertSee('confirm(', false);
+    // T5 (panel-admin-redesign): el borrado directo con onsubmit="return confirm(...)"
+    // pasa a x-ui.confirm-delete (data-confirm-delete + SweetAlert/window.confirm
+    // via resources/js/admin/confirm-delete.js), por eso ya no hay un literal
+    // "confirm(" en el HTML servido.
+    $response->assertSee('data-confirm-delete', false);
     $response->assertSee('event.defaultPrevented', false);
     $response->assertSee("loader.classList.remove('hidden')", false);
     $response->assertSee('md:grid-cols-4', false);
@@ -655,8 +659,12 @@ it('la vista index muestra el formulario de eliminacion con confirmacion y filtr
 
     $contenido = $response->getContent();
 
-    expect(substr_count($contenido, 'inline-flex h-9 w-full items-center justify-center rounded-full'))->toBe(4);
-    expect(substr_count($contenido, 'text-center text-sm font-semibold text-white transition hover:bg-'))->toBe(4);
+    // T5: los 4 controles de la tarjeta (Cargar/Editar resultado, Planillas,
+    // Editar y el Eliminar de x-ui.confirm-delete) comparten ahora la firma
+    // compacta de x-ui.button tamaño "sm", en vez del viejo pill "h-9 w-full
+    // rounded-full" hand-typed.
+    $firmaBotonSm = 'inline-flex items-center justify-center gap-2 font-semibold transition focus:outline-none focus-visible:ring-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 text-xs';
+    expect(substr_count($contenido, $firmaBotonSm))->toBe(4);
     expect($contenido)->not->toContain('min-h-11');
 });
 
@@ -702,7 +710,11 @@ it('muestra una unica accion primaria para crear partidos que preserva los filtr
     $respuesta->assertOk();
     $contenido = $respuesta->getContent();
 
-    expect(substr_count($contenido, 'Nuevo partido'))->toBe(1);
+    // T5 (panel-admin-redesign): sin partidos cargados, el estado vacío
+    // agrega una segunda acción "Nuevo partido" (la del encabezado se
+    // mantiene única; la del estado vacío es la acción del criterio de
+    // aceptación "estado vacío con dirección").
+    expect(substr_count($contenido, 'Nuevo partido'))->toBe(2);
 
     $hrefCreacion = hrefQueContenga($contenido, '/partido/create');
 
@@ -731,7 +743,9 @@ it('recurre a la seleccion de categoria para la accion primaria sin contexto de 
     $respuesta->assertOk();
     $contenido = $respuesta->getContent();
 
-    expect(substr_count($contenido, 'Nuevo partido'))->toBe(1);
+    // T5: idem, el estado vacío (sin partidos en este contexto) suma su
+    // propia acción "Nuevo partido" a la del encabezado.
+    expect(substr_count($contenido, 'Nuevo partido'))->toBe(2);
     expect(hrefQueContenga($contenido, '/partido/create'))->toBeNull();
 
     $urlSeleccion = route('seleccionar-categoria', [
@@ -756,7 +770,9 @@ it('mantiene la creacion interzonal como accion secundaria disponible solo con c
     $respuestaConCategoria->assertOk();
     $contenidoConCategoria = $respuestaConCategoria->getContent();
 
-    expect(substr_count($contenidoConCategoria, 'Nuevo partido'))->toBe(1);
+    // T5: sin partidos en este contexto, el estado vacío suma su propia
+    // acción "Nuevo partido" a la del encabezado.
+    expect(substr_count($contenidoConCategoria, 'Nuevo partido'))->toBe(2);
 
     $hrefsInterzonal = collect(hrefsDelContenido($contenidoConCategoria))
         ->filter(fn (string $href): bool => str_contains($href, '/partido-interzonal/create'))
@@ -798,26 +814,32 @@ it('la barra de acciones muestra un unico signo mas y controles compactos equiva
 
     // El icono SVG ya comunica el alta: el texto visible no debe repetir el signo +.
     expect($contenido)->not->toContain('+ Nuevo partido');
-    expect(substr_count($contenido, 'Nuevo partido'))->toBe(1);
+    // T5 (panel-admin-redesign): sin partidos en este contexto, el estado
+    // vacío suma su propia acción "Nuevo partido" a la del encabezado.
+    expect(substr_count($contenido, 'Nuevo partido'))->toBe(2);
 
-    // Los tres controles comparten una unica firma compacta (altura, escala,
-    // padding y radio); la identidad visual de cada accion queda fuera del contrato.
-    $firmaCompactaCompartida = 'inline-flex h-9 w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold';
+    // T5: los tres controles del encabezado (Nuevo partido, Partido
+    // interzonal, Imprimir planilla de árbitros) comparten la misma firma
+    // compacta de x-ui.button tamaño "md" (base + forma + tamaño, sin el
+    // color de variante), en vez del viejo pill "h-9 w-full rounded-full".
+    // "Limpiar todo" pasa a ser un link de texto: limpiar filtros no es una
+    // acción destructiva y no lleva el botón rojo.
+    $firmaCompactaCompartida = 'inline-flex items-center justify-center gap-2 font-semibold transition focus:outline-none focus-visible:ring-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-4 py-2 text-sm';
     expect(substr_count($contenido, $firmaCompactaCompartida))->toBe(3);
 
-    foreach (['Nuevo partido', 'Partido Interzonal', 'Imprimir Planilla Árbitros'] as $accion) {
+    foreach (['Nuevo partido', 'Partido interzonal', 'Imprimir planilla de árbitros'] as $accion) {
         $bloque = bloqueDeAccion($contenido, $accion);
 
         expect($bloque)->not->toBeNull();
         expect($bloque)->toContain('aria-hidden="true"');
     }
 
-    // Interzonal: secundario pero legible sobre el panel oscuro (superficie ambar clara).
-    $bloqueInterzonal = bloqueDeAccion($contenido, 'Partido Interzonal');
+    // Interzonal: variante secundaria de x-ui.button (brand-teal), distinta
+    // de la primaria (brand-navy) de "Nuevo partido".
+    $bloqueInterzonal = bloqueDeAccion($contenido, 'Partido interzonal');
 
-    expect($bloqueInterzonal)->toContain('bg-amber-100');
-    expect($bloqueInterzonal)->toContain('text-amber-900');
-    expect($bloqueInterzonal)->not->toContain('bg-emerald-600');
+    expect($bloqueInterzonal)->toContain('bg-brand-teal');
+    expect($bloqueInterzonal)->not->toContain('bg-brand-navy');
 });
 
 it('muestra la cantidad de partidos que devuelve el filtro aplicado', function () {
