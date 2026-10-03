@@ -156,3 +156,16 @@ it('renderiza el estado vacio sin equipos y sin edicion en contexto', function (
         ->assertOk()
         ->assertSee('Seleccioná una edición para ver el ranking de vallas');
 });
+
+it('ignora un idCategoria mal formado en vez de fallar', function () {
+    $admin = crearAdminVallasRanking();
+    $contexto = crearContextoVallasRanking();
+    crearEquipoVallasRanking($contexto['edicion'], $contexto['categoria'], 'Equipo Malformado', 2);
+
+    foreach ([['idCategoria' => ['1', '2']], ['idCategoria' => 'abc']] as $parametros) {
+        $this->actingAs($admin)
+            ->get(route('vallas.index', ['idEdicion' => $contexto['edicion']->id] + $parametros))
+            ->assertOk()
+            ->assertSee('Equipo Malformado');
+    }
+});

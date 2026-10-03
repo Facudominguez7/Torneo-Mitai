@@ -730,5 +730,7 @@ it('el sidebar muestra Premios individuales y no Goleadores del torneo suelto', 
 
     $response->assertOk()
         ->assertSee('>Premios individuales<', false)
-        ->assertSee(e(route('premios.index', ['idEdicion' => $contexto['edicion']->id])), false);
+        ->assertSee(e(route('premios.index', ['idEdicion' => $contexto['edicion']->id])), false)
+        ->assertDontSee('Goleadores del torneo')
+        ->assertSee(e(route('vallas.index', ['idEdicion' => $contexto['edicion']->id])), false);
 });

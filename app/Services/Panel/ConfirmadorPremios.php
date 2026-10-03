@@ -23,6 +23,9 @@ use Illuminate\Support\Facades\DB;
  * el lock tomado, para no confiar en nada que ControladorPremios haya
  * calculado antes de entrar a la transacción — y, sobre todo, para nunca
  * confiar en un nombre o equipo que mande el cliente para el goleador.
+ *
+ * Alcance: protege solo premios.goleador y premios.valla. El alta manual
+ * (goleador.store, valla.store) sigue sin este chequeo, igual que antes.
  */
 class ConfirmadorPremios
 {

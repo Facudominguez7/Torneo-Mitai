@@ -24,7 +24,9 @@ class ControladorVallasRanking extends Controller
     {
         $idEdicion = $this->resolverIdEdicion($request);
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $idCategoria = $request->query('idCategoria') ?: null;
+        $idCategoria = $request->query('idCategoria');
+        // Un valor mal formado (array, texto) se ignora: se muestran todas las categorías.
+        $idCategoria = is_string($idCategoria) && ctype_digit($idCategoria) ? $idCategoria : null;
 
         $categorias = $idEdicion
             ? Categoria::where('idEdicion', $idEdicion)->orderByDesc('nombreCategoria')->get()
