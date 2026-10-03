@@ -192,9 +192,13 @@ it('incluye Planillas e impresiones en el grupo Hoy, despues de Partidos', funct
 
     $posicionPartidos = strpos($html, 'href="'.route('partido.index').'"');
     $posicionImpresiones = strpos($html, 'href="'.route('impresiones.index').'"');
-    $posicionTorneo = strpos($html, 'Torneo</');
+    $posicionTorneo = strpos($html, 'data-grupo-nav="torneo"');
 
-    expect($posicionImpresiones)->toBeGreaterThan($posicionPartidos);
+    expect($posicionPartidos)->not->toBeFalse()
+        ->and($posicionImpresiones)->not->toBeFalse()
+        ->and($posicionTorneo)->not->toBeFalse()
+        ->and($posicionImpresiones)->toBeGreaterThan($posicionPartidos)
+        ->and($posicionImpresiones)->toBeLessThan($posicionTorneo);
 });
 
 it('muestra el logo y el nombre del torneo en la cabecera del menu', function () {

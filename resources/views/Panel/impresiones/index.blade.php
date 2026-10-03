@@ -214,5 +214,10 @@
 
             imprimirEnIframe(url);
         }
+
+        // El navegador puede restaurar una fecha elegida (recarga o "atrás") sin disparar change.
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-impresion] select[data-print-requerido]').forEach(actualizarImpresion);
+        });
     </script>
 @endsection

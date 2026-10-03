@@ -110,6 +110,22 @@ it('la planilla de arbitros acepta horario y avisa que usa la proxima fecha sin 
         ->toContain('próxima fecha sin partidos jugados');
 });
 
+it('normaliza los horarios legacy sin duplicarlos con los de horario_datetime', function () {
+    $contexto = crearContextoImpresiones();
+    crearPartidoConHorarioImpresiones($contexto, '17:30');
+    // Ediciones viejas: horario en texto ("17:30", "19.30", "9") y sin horario_datetime.
+    foreach (['17:30', '19.30', '9'] as $horarioLegacy) {
+        crearPartidoConHorarioImpresiones($contexto, '00:00')
+            ->forceFill(['horario_datetime' => null, 'horario' => $horarioLegacy])
+            ->save();
+    }
+
+    $tarjeta = tarjetaImpresion(verImpresiones($this, crearAdminImpresiones(), $contexto)->getContent(), 'arbitros');
+    preg_match_all('/<option value="([^"]+)"/', $tarjeta, $opciones);
+
+    expect($opciones[1])->toBe(['09:00', '17:30', '19:30']);
+});
+
 it('la planilla de cobro solo recibe la edicion y avisa que usa el ultimo dia con partidos', function () {
     $contexto = crearContextoImpresiones();
 

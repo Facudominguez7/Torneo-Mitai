@@ -69,8 +69,10 @@ class ControladorImpresiones extends Controller
                     return Carbon::parse($partido->horario_datetime)->format('H:i');
                 }
 
-                if ($partido->horario !== null && $partido->horario !== '') {
-                    return str_pad((string) $partido->horario, 2, '0', STR_PAD_LEFT).':00';
+                // Horario legacy en texto ("17:30", "19.30", "9"): misma normalización que la agrupación de Partidos.
+                if ($partido->horario !== null && $partido->horario !== ''
+                    && preg_match('/^(\d{1,2})(?:[:.](\d{2}))?$/', trim((string) $partido->horario), $partes)) {
+                    return sprintf('%02d:%s', (int) $partes[1], $partes[2] ?? '00');
                 }
 
                 return null;
