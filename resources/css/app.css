@@ -5,6 +5,11 @@
 
 
 @layer base {
+    /* Oculta los elementos Alpine con x-cloak hasta que Alpine inicializa. */
+    [x-cloak] {
+        display: none !important;
+    }
+
     :root {
         --color-primary: rgb(14, 75, 94);
         --color-secondary: rgb(42, 109, 129);

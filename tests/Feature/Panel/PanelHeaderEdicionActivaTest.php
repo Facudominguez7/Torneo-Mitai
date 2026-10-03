@@ -249,7 +249,13 @@ it('reemplaza el acento saturado por uno neutro y etiqueta la edición de forma 
     expect($formulario)->not->toContain('sr-only');
 });
 
-it('usa una familia tipográfica con fallback sans cuando Poppins no carga', function () {
+it('usa la utilidad font-sans en vez del stack arbitrario de Poppins', function () {
+    // T1 (rediseño del panel admin): el shell aprobado deja de declarar
+    // `font-[Poppins,...]` en el <body> y usa la utilidad `font-sans` de
+    // Tailwind (que ya resuelve a Figtree + el stack sans por defecto en
+    // tailwind.config.js), así que la aserción de "fallback dentro de
+    // Poppins" queda obsoleta: ya no hay ningún `font-[Poppins` que necesite
+    // fallback.
     [$activa, $otra] = crearEdicionesHeaderEdicion();
     $admin = crearAdminHeaderEdicion();
 
@@ -258,9 +264,8 @@ it('usa una familia tipográfica con fallback sans cuando Poppins no carga', fun
         ->assertSuccessful()
         ->getContent();
 
-    // La declaración de fuente debe incluir un fallback genérico, no solo el nombre de la fuente.
-    expect(preg_match('/font-\[Poppins,\s*(serif|sans-serif|system-ui[\w,-]*)\]/', $html))->toBe(1);
-    expect($html)->not->toMatch('/font-\[Poppins\]/');
+    expect(preg_match('/<body[^>]*class="[^"]*\bfont-sans\b[^"]*"/', $html))->toBe(1);
+    expect($html)->not->toMatch('/font-\[Poppins/');
 });
 
 it('presenta un header espacioso sin una barra global de módulos', function () {
