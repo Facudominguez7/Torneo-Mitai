@@ -9,6 +9,7 @@ use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\TablaPosicion;
+use App\Services\Panel\DetalleEquipo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -100,7 +101,7 @@ class ControladorEquipo extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Equipo $equipo)
+    public function show(Request $request, Equipo $equipo, DetalleEquipo $detalleEquipo)
     {
         $ediciones = Edicion::all();
         $idEdicion = $request->idEdicion;
@@ -118,7 +119,9 @@ class ControladorEquipo extends Controller
 
         $categorias = Categoria::where('idEdicion', $idEdicion)->get();
 
-        return view('Panel.equipo.show', compact('equipo', 'ediciones', 'idEdicion', 'EdicionSeleccionada', 'categorias', 'equipos', 'idCategoria'));
+        $detalle = $detalleEquipo->obtener($equipo, $idEdicion ? (int) $idEdicion : null);
+
+        return view('Panel.equipo.show', compact('equipo', 'ediciones', 'idEdicion', 'EdicionSeleccionada', 'categorias', 'equipos', 'idCategoria', 'detalle'));
     }
 
     /**
