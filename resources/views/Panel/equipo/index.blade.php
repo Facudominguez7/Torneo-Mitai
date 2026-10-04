@@ -73,7 +73,7 @@
                                 Editar
                             </x-ui.button>
                             <x-ui.button
-                                href="{{ route('equipo.show', ['equipo' => $e, 'idEdicion' => $e->idEdicion]) }}"
+                                href="{{ route('equipo.show', ['equipo' => $e, 'idEdicion' => $idEdicion]) }}"
                                 variant="primary" size="sm">
                                 Detalle
                             </x-ui.button>

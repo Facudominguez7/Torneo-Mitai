@@ -110,12 +110,17 @@
                                     <td class="text-center">{{ $fila->diferenciaGoles }}</td>
                                     <td class="text-center">{{ $fila->golesContraGeneral ?? '-' }}</td>
                                     <td class="text-center font-extrabold text-brand-navy">{{ $fila->puntos }}</td>
-                                    <td>
-                                        <div class="flex flex-wrap items-center justify-center gap-2">
+                                    <td class="whitespace-nowrap">
+                                        <div class="flex flex-col items-stretch justify-center gap-2 lg:flex-row lg:items-center">
                                             <x-ui.button
                                                 href="{{ route('tabla_posicion.edit', array_merge(['tabla_posicion' => $fila], $parametrosRegreso)) }}"
                                                 variant="success" size="sm">
                                                 Editar
+                                            </x-ui.button>
+                                            <x-ui.button
+                                                href="{{ route('reemplazo-equipo.create', ['idEdicion' => $fila->idEdicion, 'idCategoria' => $fila->grupo?->idCategoria, 'idGrupo' => $fila->idGrupo, 'idEquipo' => $fila->idEquipo]) }}"
+                                                variant="secondary" size="sm" data-accion="reemplazar-equipo">
+                                                Reemplazar equipo
                                             </x-ui.button>
                                             <x-ui.confirm-delete size="sm"
                                                 action="{{ route('tabla_posicion.destroy', $fila) }}"
