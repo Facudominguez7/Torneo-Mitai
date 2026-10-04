@@ -111,7 +111,7 @@
                 <fieldset class="mb-5 space-y-4">
                     <legend class="mb-2 text-base font-medium text-white">¿Quién reemplaza a {{ $equipoReemplazado->nombre }}?</legend>
 
-                    <div class="rounded-lg bg-white/10 p-4">
+                    <div data-opcion-reemplazo="existente" @if ($hayElegibles) @click="origen = 'existente'" @endif class="rounded-lg border-2 bg-white/10 p-4 transition {{ $hayElegibles ? 'cursor-pointer' : 'cursor-not-allowed opacity-70' }}" :class="origen === 'existente' ? 'border-white bg-white/20' : 'border-transparent hover:bg-white/15'">
                         <label class="flex items-center gap-2 font-medium text-white">
                             <input type="radio" name="origen" value="existente" x-model="origen" @disabled(! $hayElegibles)>
                             Equipo ya inscripto
@@ -128,7 +128,7 @@
                         @endif
                     </div>
 
-                    <div class="rounded-lg bg-white/10 p-4">
+                    <div data-opcion-reemplazo="nuevo" @click="origen = 'nuevo'" class="rounded-lg border-2 bg-white/10 p-4 transition cursor-pointer" :class="origen === 'nuevo' ? 'border-white bg-white/20' : 'border-transparent hover:bg-white/15'">
                         <label class="flex items-center gap-2 font-medium text-white">
                             <input type="radio" name="origen" value="nuevo" x-model="origen">
                             Equipo nuevo
@@ -145,7 +145,7 @@
                         </div>
                     </div>
 
-                    <div class="rounded-lg bg-white/10 p-4">
+                    <div data-opcion-reemplazo="otra_edicion" @click="origen = 'otra_edicion'" class="rounded-lg border-2 bg-white/10 p-4 transition cursor-pointer" :class="origen === 'otra_edicion' ? 'border-white bg-white/20' : 'border-transparent hover:bg-white/15'">
                         <label class="flex items-center gap-2 font-medium text-white">
                             <input type="radio" name="origen" value="otra_edicion" x-model="origen">
                             Equipo de otra edición
