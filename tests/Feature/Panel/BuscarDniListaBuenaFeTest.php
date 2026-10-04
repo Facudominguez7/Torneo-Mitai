@@ -57,13 +57,16 @@ function crearJugadorListaBuenaFe(array $contexto, string $dni, string $nombre, 
         'idEdicion' => $contexto['edicion']->id,
         'idCategoria' => $contexto['categoria']->id,
         'fecha_nacimiento' => '2014-05-10',
-        'numero_camiseta' => 7,
         'fecha_alta' => now()->subDays(3),
         'activo' => $activo,
         'fecha_baja' => $activo ? null : now()->subDay(),
         'motivo_baja' => $activo ? null : 'Baja de prueba',
     ]);
 }
+
+it('no anuncia numero_camiseta como campo asignable masivamente', function () {
+    expect((new ListaBuenaFe())->getFillable())->not->toContain('numero_camiseta');
+});
 
 it('filtra jugadores activos e inactivos por dni en la vista de lista buena fe', function () {
     $contexto = crearContextoListaBuenaFeParaBusqueda();
