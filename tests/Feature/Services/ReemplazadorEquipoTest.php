@@ -16,6 +16,7 @@ use App\Models\ReemplazoEquipo;
 use App\Models\TablaPosicion;
 use App\Services\PartidoService;
 use App\Services\ReemplazadorEquipo;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 
 if (! function_exists('contextoReemplazo')) {
@@ -173,7 +174,7 @@ it('intercambia la pertenencia al grupo sin duplicados y registra el reemplazo',
     expect($reemplazo->grupo->is($c['grupo']))->toBeTrue();
 });
 
-it('reasigna solo partidos y finales pendientes y deja los demas con el reemplazado', function () {
+it('reasigna solo partidos y finales pendientes y deja los aplicados con el reemplazado', function () {
     $c = contextoReemplazo();
     $viejo = equipoReemplazo($c, 'Viejo');
     $rival = equipoReemplazo($c, 'Rival');
@@ -182,26 +183,18 @@ it('reasigna solo partidos y finales pendientes y deja los demas con el reemplaz
     $pendienteLocal = partidoReemplazo($c, $viejo, $rival);
     $pendienteVisita = partidoReemplazo($c, $rival, $viejo);
     $jugado = partidoReemplazo($c, $viejo, $rival, ['jugado' => 1, 'golesEquipoLocal' => 2, 'golesEquipoVisitante' => 0]);
-    $golesSinJugado = partidoReemplazo($c, $viejo, $rival, ['golesEquipoLocal' => 1, 'golesEquipoVisitante' => 1]);
-    $conPlanilla = partidoReemplazo($c, $rival, $viejo);
-    planillaReemplazo($conPlanilla, '111', $viejo->id);
 
     $finalPendiente = finalReemplazo($c, $viejo, $rival);
     $finalJugada = finalReemplazo($c, $viejo, $rival, ['golesEquipoLocal' => 3, 'golesEquipoVisitante' => 1]);
-    $finalConPlanilla = finalReemplazo($c, $rival, $viejo);
-    planillaReemplazo($finalConPlanilla, '222', $viejo->id);
 
     reemplazador()->reemplazar(100, $c['categoria']->id, $viejo->id, $nuevo->id, null);
 
     expect($pendienteLocal->fresh()->idEquipoLocal)->toBe($nuevo->id);
     expect($pendienteVisita->fresh()->idEquipoVisitante)->toBe($nuevo->id);
     expect($jugado->fresh()->idEquipoLocal)->toBe($viejo->id);
-    expect($golesSinJugado->fresh()->idEquipoLocal)->toBe($viejo->id);
-    expect($conPlanilla->fresh()->idEquipoVisitante)->toBe($viejo->id);
 
     expect($finalPendiente->fresh()->idEquipoLocal)->toBe($nuevo->id);
     expect($finalJugada->fresh()->idEquipoLocal)->toBe($viejo->id);
-    expect($finalConPlanilla->fresh()->idEquipoVisitante)->toBe($viejo->id);
 });
 
 it('recalcula golesContra de ambos equipos', function () {
@@ -269,8 +262,9 @@ it('rechaza reemplazos invalidos sin modificar datos', function (string $caso, s
         'no inscripto' => $ajeno->id,
         'sin origen' => null,
         'ya reemplazado' => $libre->id,
+        'ambos origenes' => $libre->id,
     };
-    $nuevo = $caso === 'sin origen' ? null : null;
+    $nuevo = $caso === 'ambos origenes' ? ['nombre' => 'Equipo nuevo', 'foto' => null] : null;
 
     if ($caso === 'ya reemplazado') {
         reemplazador()->reemplazar(100, $c['categoria']->id, $viejo->id, $libre->id, null);
@@ -293,7 +287,8 @@ it('rechaza reemplazos invalidos sin modificar datos', function (string $caso, s
     'reemplazante ya en un grupo' => ['ya en grupo', 'ya pertenece a un grupo'],
     'mismo equipo' => ['mismo equipo', 'mismo equipo'],
     'no inscripto en edicion y categoria' => ['no inscripto', 'no está inscripto'],
-    'sin reemplazante' => ['sin origen', 'Indicá'],
+    'sin reemplazante' => ['sin origen', 'Indicá un equipo existente o los datos de un equipo nuevo.'],
+    'ambos origenes' => ['ambos origenes', 'pero no ambos'],
     'reemplazado ya reemplazado' => ['ya reemplazado', 'ya fue reemplazado'],
 ]);
 
@@ -374,4 +369,53 @@ it('lista equipos elegibles y arma la vista previa del reemplazo', function () {
     expect($vista['finalesPendientes'])->toBe(1);
     expect($vista['resultadosBloqueados'])->toBe(2);
     expect($vista['yaReemplazado'])->toBeFalse();
+});
+
+it('rechaza reemplazar mientras el reemplazado tiene partidos o finales a medio cargar', function (string $caso) {
+    $c = contextoReemplazo();
+    $viejo = equipoReemplazo($c, 'Viejo');
+    $rival = equipoReemplazo($c, 'Rival');
+    $nuevo = equipoReemplazo($c, 'Nuevo', enGrupo: false);
+    filaPosicionReemplazo($c, $viejo);
+
+    match ($caso) {
+        'planillas sin resultado' => planillaReemplazo(partidoReemplazo($c, $viejo, $rival), '111', $viejo->id),
+        'goles sin jugado' => partidoReemplazo($c, $viejo, $rival, ['golesEquipoLocal' => 1, 'golesEquipoVisitante' => 0, 'jugado' => 0]),
+        'jugado sin goles' => partidoReemplazo($c, $viejo, $rival, ['jugado' => 1]),
+        'final con planillas' => planillaReemplazo(finalReemplazo($c, $viejo, $rival), '222', $viejo->id),
+    };
+
+    expect(fn () => reemplazador()->reemplazar(100, $c['categoria']->id, $viejo->id, $nuevo->id, null))
+        ->toThrow(DomainException::class, 'a medio cargar');
+
+    expect(ReemplazoEquipo::count())->toBe(0);
+    expect(TablaPosicion::where('idEquipo', $viejo->id)->exists())->toBeTrue();
+})->with(['planillas sin resultado', 'goles sin jugado', 'jugado sin goles', 'final con planillas']);
+
+it('permite reemplazar cuando los partidos del reemplazado estan pendientes o ya aplicados', function () {
+    $c = contextoReemplazo();
+    $viejo = equipoReemplazo($c, 'Viejo');
+    $rival = equipoReemplazo($c, 'Rival');
+    $nuevo = equipoReemplazo($c, 'Nuevo', enGrupo: false);
+    filaPosicionReemplazo($c, $viejo);
+    partidoReemplazo($c, $viejo, $rival, ['jugado' => 1, 'golesEquipoLocal' => 2, 'golesEquipoVisitante' => 0]);
+    partidoReemplazo($c, $rival, $viejo);
+    finalReemplazo($c, $viejo, $rival, ['golesEquipoLocal' => 1, 'golesEquipoVisitante' => 1]);
+
+    $reemplazo = reemplazador()->reemplazar(100, $c['categoria']->id, $viejo->id, $nuevo->id, null);
+
+    expect($reemplazo->idEquipoReemplazante)->toBe($nuevo->id);
+});
+
+it('impone un indice unico sobre el equipo reemplazado por edicion y categoria', function () {
+    $c = contextoReemplazo();
+    $viejo = equipoReemplazo($c, 'Viejo');
+    $a = equipoReemplazo($c, 'A', enGrupo: false);
+    $b = equipoReemplazo($c, 'B', enGrupo: false);
+    $datos = ['idEdicion' => 100, 'idCategoria' => $c['categoria']->id, 'idGrupo' => $c['grupo']->id, 'idEquipoReemplazado' => $viejo->id];
+
+    ReemplazoEquipo::create($datos + ['idEquipoReemplazante' => $a->id]);
+
+    expect(fn () => ReemplazoEquipo::create($datos + ['idEquipoReemplazante' => $b->id]))
+        ->toThrow(QueryException::class);
 });

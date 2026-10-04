@@ -308,17 +308,24 @@ class PartidoService
     }
 
     /**
-     * Un partido o instancia final con actividad (no pendiente) donde juega un
+     * Indica si el resultado del partido o instancia final ya impactó en las posiciones:
+     * partido con `jugado` y ambos goles; instancia final con ambos goles.
+     */
+    public function resultadoAplicado(Partido|InstanciaFinal $partido): bool
+    {
+        $conGoles = $partido->golesEquipoLocal !== null && $partido->golesEquipoVisitante !== null;
+
+        return $partido instanceof Partido ? ($conGoles && (bool) $partido->jugado) : $conGoles;
+    }
+
+    /**
+     * Un partido o instancia final con resultado aplicado donde juega un
      * equipo reemplazado conserva su resultado: la fila de posiciones ya fue
      * heredada y editarlo la dejaría desactualizada.
      */
     public function resultadoBloqueadoPorReemplazo(Partido|InstanciaFinal $partido): bool
     {
-        $pendiente = $partido instanceof Partido
-            ? $this->partidoPendiente($partido)
-            : $this->instanciaFinalPendiente($partido);
-
-        if ($pendiente) {
+        if (! $this->resultadoAplicado($partido)) {
             return false;
         }
 

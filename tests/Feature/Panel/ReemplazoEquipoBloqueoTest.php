@@ -12,6 +12,7 @@ use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\TablaPosicion;
 use App\Models\User;
+use App\Services\PartidoService;
 use App\Services\ReemplazadorEquipo;
 
 if (! function_exists('escenarioBloqueoReemplazo')) {
@@ -217,4 +218,39 @@ it('mantiene editable un partido jugado cuando ningun equipo fue reemplazado', f
 
     $response->assertSessionMissing('error');
     expect($partido->fresh()->golesEquipoLocal)->toBe(2);
+});
+
+it('permite editar y borrar un partido a medio cargar de un equipo ya reemplazado', function () {
+    $e = escenarioBloqueoReemplazo();
+    $medioCargado = Partido::create([
+        'idEdicion' => 100, 'idCategoria' => $e['categoria']->id, 'idFechas' => $e['pendiente']->idFechas,
+        'idEquipoLocal' => $e['viejo']->id, 'idEquipoVisitante' => $e['rival']->id, 'idGrupo' => $e['grupo']->id,
+        'horario_datetime' => '2026-04-26 10:00:00', 'cancha' => 1, 'jugado' => 0,
+        'golesEquipoLocal' => 1, 'golesEquipoVisitante' => 0,
+    ]);
+
+    expect(app(PartidoService::class)->resultadoBloqueadoPorReemplazo($medioCargado))->toBeFalse();
+
+    $response = peticionAdminReemplazo($this)->delete(route('partido.destroy', ['partido' => $medioCargado->id, 'idEdicion' => 100]), ['_token' => 'x']);
+
+    $response->assertSessionMissing('error');
+    expect(Partido::find($medioCargado->id))->toBeNull();
+});
+
+it('permite borrar una instancia final a medio cargar de un equipo ya reemplazado', function () {
+    $e = escenarioBloqueoReemplazo();
+    $final = InstanciaFinal::create([
+        'idEdicion' => 100, 'idCategoria' => $e['categoria']->id, 'idFase' => $e['finalJugada']->idFase,
+        'idEquipoLocal' => $e['viejo']->id, 'idEquipoVisitante' => $e['rival']->id,
+        'horario' => '2026-06-05 10:00:00', 'cancha' => 1, 'golesEquipoLocal' => 1,
+    ]);
+
+    expect(app(PartidoService::class)->resultadoBloqueadoPorReemplazo($final))->toBeFalse();
+});
+
+it('sigue bloqueando un partido jugado con resultado aplicado del reemplazado', function () {
+    $e = escenarioBloqueoReemplazo();
+
+    expect(app(PartidoService::class)->resultadoBloqueadoPorReemplazo($e['jugado']))->toBeTrue();
+    expect(app(PartidoService::class)->resultadoBloqueadoPorReemplazo($e['finalJugada']))->toBeTrue();
 });

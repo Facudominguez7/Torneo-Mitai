@@ -13,6 +13,7 @@ use App\Models\TablaPosicion;
 use DomainException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -47,17 +48,36 @@ class ReemplazadorEquipo
             }, 3);
         } catch (DomainException $e) {
             throw $e;
+        } catch (QueryException $e) {
+            if ($this->esViolacionDeUnicidad($e)) {
+                throw new DomainException('Este equipo ya fue reemplazado en la edición y no puede reemplazarse de nuevo.', 0, $e);
+            }
+
+            $this->registrarFallo($e, $idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente);
+
+            throw $e;
         } catch (Throwable $e) {
-            Log::error('No se pudo reemplazar el equipo', [
-                'idEdicion' => $idEdicion,
-                'idCategoria' => $idCategoria,
-                'idEquipoReemplazado' => $idEquipoReemplazado,
-                'idEquipoExistente' => $idEquipoExistente,
-                'exception' => $e,
-            ]);
+            $this->registrarFallo($e, $idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente);
 
             throw $e;
         }
+    }
+
+    private function registrarFallo(Throwable $e, int $idEdicion, int $idCategoria, int $idEquipoReemplazado, ?int $idEquipoExistente): void
+    {
+        Log::error('No se pudo reemplazar el equipo', [
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'idEquipoReemplazado' => $idEquipoReemplazado,
+            'idEquipoExistente' => $idEquipoExistente,
+            'exception' => $e,
+        ]);
+    }
+
+    private function esViolacionDeUnicidad(QueryException $e): bool
+    {
+        return in_array((string) $e->getCode(), ['23000', '23505'], true)
+            && str_contains($e->getMessage(), 'reemplazos_equipos_reemplazado_unique');
     }
 
     /**
@@ -112,12 +132,15 @@ class ReemplazadorEquipo
 
     private function ejecutar(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, ?int $idEquipoExistente, ?array $datosEquipoNuevo): ReemplazoEquipo
     {
+        $this->bloquearFilasDelReemplazado($idEdicion, $idCategoria, $idEquipoReemplazado);
         $this->validarReemplazado($idEdicion, $idCategoria, $idEquipoReemplazado);
 
         $grupo = $this->grupoDelEquipo($idEquipoReemplazado, $idEdicion, $idCategoria);
         if (! $grupo) {
             throw new DomainException('El equipo a reemplazar no pertenece a ningún grupo de esta categoría.');
         }
+
+        $this->validarSinPartidosAMedioCargar($idEdicion, $idCategoria, $idEquipoReemplazado);
 
         $idEquipoReemplazante = $this->resolverReemplazante($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo);
 
@@ -149,9 +172,90 @@ class ReemplazadorEquipo
             throw new DomainException('El equipo a reemplazar no está inscripto en esta edición y categoría.');
         }
 
-        if ($this->partidoService->equipoFueReemplazado($idEquipoReemplazado, $idEdicion, $idCategoria)) {
+        $yaReemplazado = ReemplazoEquipo::query()
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $idCategoria)
+            ->where('idEquipoReemplazado', $idEquipoReemplazado)
+            ->lockForUpdate()
+            ->exists();
+
+        if ($yaReemplazado) {
             throw new DomainException('Este equipo ya fue reemplazado en la edición y no puede reemplazarse de nuevo.');
         }
+    }
+
+    /**
+     * Serializa reemplazos simultáneos del mismo equipo: toma los bloqueos antes de validar.
+     */
+    private function bloquearFilasDelReemplazado(int $idEdicion, int $idCategoria, int $idEquipoReemplazado): void
+    {
+        $idsGrupos = $this->gruposDeCategoria($idEdicion, $idCategoria)->pluck('id');
+
+        EquipoGrupo::query()
+            ->whereIn('idGrupo', $idsGrupos)
+            ->where('idEquipo', $idEquipoReemplazado)
+            ->lockForUpdate()
+            ->get();
+
+        TablaPosicion::query()
+            ->whereIn('idGrupo', $idsGrupos)
+            ->where('idEquipo', $idEquipoReemplazado)
+            ->lockForUpdate()
+            ->get();
+    }
+
+    /**
+     * Los partidos o finales con planillas o goles pero sin resultado aplicado
+     * quedarían trabados con el reemplazado: se pide terminarlos o limpiarlos antes.
+     */
+    private function validarSinPartidosAMedioCargar(int $idEdicion, int $idCategoria, int $idEquipoReemplazado): void
+    {
+        $detalles = [];
+
+        $partidos = $this->partidosDelEquipo($idEquipoReemplazado, $idEdicion, $idCategoria)->with(['fecha', 'equipoLocal', 'equipoVisitante'])->get();
+        foreach ($partidos as $partido) {
+            if (! $this->partidoService->partidoPendiente($partido) && ! $this->partidoService->resultadoAplicado($partido)) {
+                $detalles[] = ($partido->fecha?->nombre ?? 'Fecha sin nombre').' '.$this->descripcionEnfrentamiento($partido);
+            }
+        }
+
+        $finales = $this->finalesDelEquipo($idEquipoReemplazado, $idEdicion, $idCategoria)->with(['equipoLocal', 'equipoVisitante'])->get();
+        foreach ($finales as $final) {
+            if (! $this->partidoService->instanciaFinalPendiente($final) && ! $this->partidoService->resultadoAplicado($final)) {
+                $detalles[] = 'Instancia final '.$this->descripcionEnfrentamiento($final);
+            }
+        }
+
+        if ($detalles !== []) {
+            throw new DomainException('Tiene partidos a medio cargar: '.implode('; ', $detalles).'. Terminá de cargarlos o limpialos antes de reemplazar al equipo.');
+        }
+    }
+
+    private function descripcionEnfrentamiento(Partido|InstanciaFinal $partido): string
+    {
+        return ($partido->equipoLocal?->nombre ?? '?').' vs '.($partido->equipoVisitante?->nombre ?? '?');
+    }
+
+    /**
+     * Partidos y finales a medio cargar del equipo, para mostrar el motivo antes del formulario.
+     */
+    public function motivoImposibilidad(int $idEdicion, int $idCategoria, int $idEquipoReemplazado): ?string
+    {
+        try {
+            if ($this->partidoService->equipoFueReemplazado($idEquipoReemplazado, $idEdicion, $idCategoria)) {
+                return 'Este equipo ya fue reemplazado en la edición y no puede reemplazarse de nuevo.';
+            }
+
+            if (! $this->grupoDelEquipo($idEquipoReemplazado, $idEdicion, $idCategoria)) {
+                return 'El equipo a reemplazar no pertenece a ningún grupo de esta categoría.';
+            }
+
+            $this->validarSinPartidosAMedioCargar($idEdicion, $idCategoria, $idEquipoReemplazado);
+        } catch (DomainException $e) {
+            return $e->getMessage();
+        }
+
+        return null;
     }
 
     /**
