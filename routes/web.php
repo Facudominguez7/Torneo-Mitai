@@ -25,6 +25,7 @@ use App\Http\Controllers\Panel\ControladorInstitucion;
 use App\Http\Controllers\Panel\ControladorListaBuenaFe;
 use App\Http\Controllers\Panel\ControladorPartidos;
 use App\Http\Controllers\Panel\ControladorPlanillaJugador;
+use App\Http\Controllers\Panel\ControladorReemplazoEquipo;
 use App\Http\Controllers\Panel\ControladorSubcampeon;
 use App\Http\Controllers\Panel\ControladorTablaGoleadores;
 use App\Http\Controllers\Panel\ControladorTablaPosiciones;
@@ -73,6 +74,8 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::resource('goleador', ControladorGoleador::class);
     Route::resource('valla', ControladorValla::class);
     Route::resource('tabla_posicion', ControladorTablaPosiciones::class);
+    Route::get('reemplazo-equipo/crear', [ControladorReemplazoEquipo::class, 'create'])->name('reemplazo-equipo.create');
+    Route::post('reemplazo-equipo', [ControladorReemplazoEquipo::class, 'store'])->name('reemplazo-equipo.store');
     Route::resource('grupos', ControladorGrupos::class);
     Route::resource('equipogrupo', ControladorEquiposGrupos::class);
     Route::post('equipogrupo/asignar-pendientes', [ControladorEquiposGrupos::class, 'asignarPendientes'])

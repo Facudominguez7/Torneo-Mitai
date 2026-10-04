@@ -115,10 +115,12 @@
                                     {{ $fila->golesContraGeneral ?? '-' }}
                                 </td>
                                 <td class="p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static whitespace-nowrap">
-                                    <div class="lg:flex lg:justify-center lg:space-x-4 lg:flex-row flex justify-center flex-col">
+                                    <div class="flex flex-col items-center justify-center gap-1 lg:flex-row lg:flex-wrap lg:gap-2">
                                         <x-ui.button
                                             href="{{ route('tabla_posicion.edit', array_merge(['tabla_posicion' => $fila], $parametrosRegreso)) }}"
                                             variant="success" class="mb-1 lg:mb-0">Editar</x-ui.button>
+                                        <a href="{{ route('reemplazo-equipo.create', ['idEdicion' => $fila->idEdicion, 'idCategoria' => $fila->grupo?->idCategoria, 'idGrupo' => $fila->idGrupo, 'idEquipo' => $fila->idEquipo]) }}"
+                                            class="mb-1 inline-flex items-center justify-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-teal/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/50 lg:mb-0">Reemplazar equipo</a>
                                         <form class="mb-0" action="{{ route('tabla_posicion.destroy', $fila) }}" method="post">
                                             @method('DELETE')
                                             @csrf
