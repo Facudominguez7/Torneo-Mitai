@@ -21,7 +21,7 @@
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Equipo</p>
                         <p class="text-2xl font-bold text-gray-800">{{ $equipo->nombre }}</p>
-                        <p class="text-sm text-gray-500">{{ $equipo->categoria->nombreCategoria }}</p>
+                        <p class="text-sm text-gray-500">{{ ($detalle['categoria'] ?? null)?->nombreCategoria ?? $equipo->categoria?->nombreCategoria }}</p>
                     </div>
                 </div>
             </div>
@@ -37,7 +37,7 @@
                 </div>
                 <div class="p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Categoría</p>
-                    <p class="mt-2 text-lg font-semibold text-gray-800">{{ $equipo->categoria->nombreCategoria }}</p>
+                    <p class="mt-2 text-lg font-semibold text-gray-800">{{ ($detalle['categoria'] ?? null)?->nombreCategoria ?? $equipo->categoria?->nombreCategoria }}</p>
                 </div>
             </div>
         </div>

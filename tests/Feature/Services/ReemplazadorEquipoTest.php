@@ -419,3 +419,35 @@ it('impone un indice unico sobre el equipo reemplazado por edicion y categoria',
     expect(fn () => ReemplazoEquipo::create($datos + ['idEquipoReemplazante' => $b->id]))
         ->toThrow(QueryException::class);
 });
+
+it('traduce una violacion de unicidad en reemplazos_equipos al mensaje de equipo ya reemplazado', function () {
+    $c = contextoReemplazo();
+    $viejo = equipoReemplazo($c, 'Viejo');
+    $nuevo = equipoReemplazo($c, 'Nuevo', enGrupo: false);
+    $otro = equipoReemplazo($c, 'Otro', enGrupo: false);
+    filaPosicionReemplazo($c, $viejo);
+
+    ReemplazoEquipo::creating(function () use ($c, $viejo, $otro): void {
+        ReemplazoEquipo::withoutEvents(fn () => ReemplazoEquipo::create([
+            'idEdicion' => 100, 'idCategoria' => $c['categoria']->id, 'idGrupo' => $c['grupo']->id,
+            'idEquipoReemplazado' => $viejo->id, 'idEquipoReemplazante' => $otro->id,
+        ]));
+    });
+
+    expect(fn () => reemplazador()->reemplazar(100, $c['categoria']->id, $viejo->id, $nuevo->id, null))
+        ->toThrow(DomainException::class, 'Este equipo ya fue reemplazado en la edición y no puede reemplazarse de nuevo.');
+});
+
+it('no traduce otras violaciones de unicidad como equipo ya reemplazado', function () {
+    $c = contextoReemplazo();
+    $viejo = equipoReemplazo($c, 'Viejo');
+    $nuevo = equipoReemplazo($c, 'Nuevo', enGrupo: false);
+    filaPosicionReemplazo($c, $viejo);
+
+    ReemplazoEquipo::creating(function (): void {
+        throw new QueryException('mysql', 'insert into otra_tabla', [], new PDOException('Duplicate entry for key otra_tabla.idx', 1062));
+    });
+
+    expect(fn () => reemplazador()->reemplazar(100, $c['categoria']->id, $viejo->id, $nuevo->id, null))
+        ->toThrow(QueryException::class);
+});

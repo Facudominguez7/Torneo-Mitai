@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Categoria;
+use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\EquipoGrupo;
@@ -14,6 +16,7 @@ use DomainException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection as ColeccionSimple;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -31,6 +34,9 @@ class ReemplazadorEquipo
     public function __construct(private readonly PartidoService $partidoService) {}
 
     /**
+     * Exactamente un origen: equipo inscripto, equipo nuevo o equipo de otra edición.
+     * Este último se inscribe en la edición y categoría dentro de la misma transacción.
+     *
      * @param  array{nombre?: string|null, foto?: string|null}|null  $datosEquipoNuevo  nombre y nombre del archivo de escudo ya almacenado
      *
      * @throws DomainException cuando el reemplazo no cumple las reglas de negocio
@@ -41,10 +47,11 @@ class ReemplazadorEquipo
         int $idEquipoReemplazado,
         ?int $idEquipoExistente,
         ?array $datosEquipoNuevo,
+        ?int $idEquipoOtraEdicion = null,
     ): ReemplazoEquipo {
         try {
-            return DB::transaction(function () use ($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo): ReemplazoEquipo {
-                return $this->ejecutar($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo);
+            return DB::transaction(function () use ($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo, $idEquipoOtraEdicion): ReemplazoEquipo {
+                return $this->ejecutar($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo, $idEquipoOtraEdicion);
             }, 3);
         } catch (DomainException $e) {
             throw $e;
@@ -74,10 +81,20 @@ class ReemplazadorEquipo
         ]);
     }
 
+    /**
+     * Detecta el duplicado por SQLSTATE y código del driver (MySQL 1062, PostgreSQL 23505,
+     * SQLite 19) y confirma que la tabla afectada es reemplazos_equipos, porque otras
+     * tablas de la transacción también pueden tener índices únicos.
+     */
     private function esViolacionDeUnicidad(QueryException $e): bool
     {
-        return in_array((string) $e->getCode(), ['23000', '23505'], true)
-            && str_contains($e->getMessage(), 'reemplazos_equipos_reemplazado_unique');
+        $sqlState = (string) ($e->errorInfo[0] ?? $e->getCode());
+        $codigoDriver = (int) ($e->errorInfo[1] ?? 0);
+
+        $esDuplicado = ($sqlState === '23000' && in_array($codigoDriver, [1062, 19], true))
+            || $sqlState === '23505';
+
+        return $esDuplicado && str_contains($e->getMessage(), 'reemplazos_equipos');
     }
 
     /**
@@ -130,7 +147,7 @@ class ReemplazadorEquipo
         ];
     }
 
-    private function ejecutar(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, ?int $idEquipoExistente, ?array $datosEquipoNuevo): ReemplazoEquipo
+    private function ejecutar(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, ?int $idEquipoExistente, ?array $datosEquipoNuevo, ?int $idEquipoOtraEdicion): ReemplazoEquipo
     {
         $this->bloquearFilasDelReemplazado($idEdicion, $idCategoria, $idEquipoReemplazado);
         $this->validarReemplazado($idEdicion, $idCategoria, $idEquipoReemplazado);
@@ -142,7 +159,7 @@ class ReemplazadorEquipo
 
         $this->validarSinPartidosAMedioCargar($idEdicion, $idCategoria, $idEquipoReemplazado);
 
-        $idEquipoReemplazante = $this->resolverReemplazante($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo);
+        $idEquipoReemplazante = $this->resolverReemplazante($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo, $idEquipoOtraEdicion);
 
         $this->heredarFilaDePosiciones($grupo, $idEquipoReemplazado, $idEquipoReemplazante);
         $this->intercambiarLugarEnGrupo($grupo, $idEquipoReemplazado, $idEquipoReemplazante);
@@ -261,8 +278,25 @@ class ReemplazadorEquipo
     /**
      * Devuelve el id del reemplazante, creándolo si corresponde.
      */
-    private function resolverReemplazante(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, ?int $idEquipoExistente, ?array $datosEquipoNuevo): int
+    private function resolverReemplazante(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, ?int $idEquipoExistente, ?array $datosEquipoNuevo, ?int $idEquipoOtraEdicion = null): int
     {
+        if ($idEquipoOtraEdicion !== null) {
+            if ($idEquipoExistente !== null || $datosEquipoNuevo !== null) {
+                throw new DomainException('Elegí un solo origen para el reemplazante.');
+            }
+
+            $this->validarReemplazanteDeOtraEdicion($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoOtraEdicion);
+
+            EquipoEdicion::create([
+                'idEquipo' => $idEquipoOtraEdicion,
+                'idEdicion' => $idEdicion,
+                'idCategoria' => $idCategoria,
+                'golesContra' => 0,
+            ]);
+
+            return $idEquipoOtraEdicion;
+        }
+
         if ($idEquipoExistente !== null && $datosEquipoNuevo !== null) {
             throw new DomainException('Indicá un equipo existente o los datos de un equipo nuevo, pero no ambos.');
         }
@@ -297,6 +331,149 @@ class ReemplazadorEquipo
         ]);
 
         return $equipo->id;
+    }
+
+    private function validarReemplazanteDeOtraEdicion(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, int $idEquipo): void
+    {
+        if ($idEquipo === $idEquipoReemplazado) {
+            throw new DomainException('El reemplazante no puede ser el mismo equipo que se reemplaza.');
+        }
+
+        $equipo = Equipo::query()->whereKey($idEquipo)->lockForUpdate()->first();
+
+        if (! $equipo) {
+            throw new DomainException('El equipo elegido no existe.');
+        }
+
+        $inscripcionesEnEstaEdicion = EquipoEdicion::query()
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->lockForUpdate()
+            ->get();
+
+        if ($inscripcionesEnEstaEdicion->isNotEmpty()) {
+            throw new DomainException('Ese equipo ya está inscripto en esta edición. Usá la opción «Equipo ya inscripto» para elegirlo.');
+        }
+
+        $nombreCategoria = Categoria::query()->findOrFail($idCategoria)->nombreCategoria;
+        $normalizado = $this->normalizarNombre($nombreCategoria);
+
+        $origenes = EquipoEdicion::query()
+            ->with('categoria')
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', '!=', $idEdicion)
+            ->get();
+
+        $coincidePorInscripcion = $origenes->contains(fn (EquipoEdicion $origen): bool => $origen->categoria !== null
+            && $this->normalizarNombre($origen->categoria->nombreCategoria) === $normalizado);
+
+        $categoriaPropia = $equipo->idCategoria !== null ? Categoria::query()->find($equipo->idCategoria) : null;
+        $coincidePorCategoriaPropia = $categoriaPropia !== null
+            && $this->normalizarNombre($categoriaPropia->nombreCategoria) === $normalizado;
+
+        if (! $coincidePorInscripcion && ! $coincidePorCategoriaPropia) {
+            throw new DomainException("La categoría del equipo elegido no coincide con «{$nombreCategoria}».");
+        }
+    }
+
+    /**
+     * Candidatos para traer de otra edición o sin inscribir: unión de (a) equipos inscriptos en otra edición en una
+     * categoría de igual nombre normalizado y (b) equipos cuya propia categoría tiene ese nombre, en cualquier edición,
+     * sin inscripción en esta edición. Un equipo aparece una sola vez, de la edición más reciente a la más antigua.
+     *
+     * @return ColeccionSimple<int, array{id: int, nombre: string, foto: string|null, edicion: string, categoria: string}>
+     */
+    public function equiposDeOtrasEdiciones(int $idEdicion, int $idCategoria, ?string $busqueda, int $limite = 20): ColeccionSimple
+    {
+        $categoria = Categoria::query()->find($idCategoria);
+
+        if ($limite < 1 || ! $categoria) {
+            return collect();
+        }
+
+        $normalizado = $this->normalizarNombre($categoria->nombreCategoria);
+        $equivalentes = Categoria::query()
+            ->get(['id', 'idEdicion', 'nombreCategoria'])
+            ->filter(fn (Categoria $otra): bool => $this->normalizarNombre($otra->nombreCategoria) === $normalizado);
+        $idsCategorias = $equivalentes->pluck('id');
+        $idsCategoriasOtras = $equivalentes->where('idEdicion', '!=', $idEdicion)->pluck('id');
+
+        $inscripciones = (new EquipoEdicion)->getTable();
+        $equipos = (new Equipo)->getTable();
+        $busqueda = trim((string) $busqueda);
+        $inscriptosAca = EquipoEdicion::query()->where('idEdicion', $idEdicion)->select('idEquipo');
+
+        $origenA = DB::table($inscripciones)
+            ->where('idEdicion', '!=', $idEdicion)
+            ->whereIn('idCategoria', $idsCategoriasOtras)
+            ->whereNotIn('idEquipo', $inscriptosAca)
+            ->select('idEquipo', 'idEdicion', 'idCategoria');
+
+        $origenB = DB::table($equipos)
+            ->whereIn('idCategoria', $idsCategorias)
+            ->whereNotIn('id', $inscriptosAca)
+            ->select('id as idEquipo', 'idEdicion', 'idCategoria');
+
+        $origenes = $origenA->union($origenB);
+
+        $idsEquipos = DB::query()
+            ->fromSub($origenes, 'origen')
+            ->join($equipos, "{$equipos}.id", '=', 'origen.idEquipo')
+            ->when($busqueda !== '', fn ($q) => $q->where("{$equipos}.nombre", 'like', '%'.addcslashes($busqueda, '\\%_').'%'))
+            ->groupBy('origen.idEquipo', "{$equipos}.nombre")
+            ->orderByRaw('MAX(origen.idEdicion) desc')
+            ->orderBy("{$equipos}.nombre")
+            ->limit($limite)
+            ->pluck('origen.idEquipo')
+            ->map(fn ($id): int => (int) $id);
+
+        if ($idsEquipos->isEmpty()) {
+            return collect();
+        }
+
+        $equiposPorId = Equipo::query()->whereIn('id', $idsEquipos)->get()->keyBy('id');
+        $mejorOrigen = DB::query()
+            ->fromSub($origenes, 'origen')
+            ->whereIn('origen.idEquipo', $idsEquipos)
+            ->orderByDesc('origen.idEdicion')
+            ->orderByDesc('origen.idCategoria')
+            ->get()
+            ->unique('idEquipo')
+            ->keyBy('idEquipo');
+
+        $ediciones = Edicion::query()->whereIn('id', $mejorOrigen->pluck('idEdicion')->filter()->unique())->get()->keyBy('id');
+        $categorias = Categoria::query()->whereIn('id', $mejorOrigen->pluck('idCategoria')->filter()->unique())->get()->keyBy('id');
+
+        return $idsEquipos
+            ->map(function (int $idEquipo) use ($equiposPorId, $mejorOrigen, $ediciones, $categorias): array {
+                $origen = $mejorOrigen[$idEquipo];
+
+                return [
+                    'id' => $idEquipo,
+                    'nombre' => $equiposPorId[$idEquipo]->nombre,
+                    'foto' => $equiposPorId[$idEquipo]->foto,
+                    'edicion' => (string) $ediciones->get($origen->idEdicion)?->nombre,
+                    'categoria' => (string) $categorias->get($origen->idCategoria)?->nombreCategoria,
+                ];
+            })
+            ->values();
+    }
+
+    /**
+     * Misma normalización que ControladorEquiposEdiciones::store: espacios, mayúsculas y acentos.
+     */
+    private function normalizarNombre(string $texto): string
+    {
+        $texto = preg_replace('/\s+/', ' ', trim($texto));
+
+        return strtr(mb_strtolower($texto, 'UTF-8'), [
+            'á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a',
+            'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+            'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i',
+            'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
+            'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u',
+            'ñ' => 'n',
+        ]);
     }
 
     private function validarReemplazanteExistente(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, int $idEquipoExistente): void

@@ -2,8 +2,10 @@
 
 namespace App\Services\Panel;
 
+use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\TablaGoleador;
@@ -51,6 +53,7 @@ class DetalleEquipo
     /**
      * @return array{
      *     idEdicion: ?int,
+     *     categoria: ?Categoria,
      *     partidos: list<FilaPartido>,
      *     estadisticas: array{
      *         faseGrupos: list<array{grupo: ?string, puntos: int, pj: int, g: int, e: int, p: int, gf: int, gc: int, dg: int}>,
@@ -63,20 +66,36 @@ class DetalleEquipo
     public function obtener(Equipo $equipo, ?int $idEdicion = null): array
     {
         $idEdicion = $this->resolverEdicion($equipo, $idEdicion);
+        $categoria = $this->categoriaEnEdicion($equipo, $idEdicion);
 
         $partidos = $this->partidosJugados($equipo, $idEdicion);
         $finales = $partidos->where('tipo', 'instanciaFinal');
 
         return [
             'idEdicion' => $idEdicion,
+            'categoria' => $categoria,
             'partidos' => $partidos->values()->all(),
             'estadisticas' => [
                 'faseGrupos' => $this->tablaPosiciones($equipo, $idEdicion),
                 'instanciasFinales' => $this->totales($finales),
                 'total' => $this->totales($partidos),
             ],
-            'goleadores' => $this->goleadores($equipo, $idEdicion),
+            'goleadores' => $this->goleadores($equipo, $idEdicion, $categoria?->id ?? $equipo->idCategoria),
         ];
+    }
+
+    /**
+     * Categoría del equipo en esa edición: un equipo traído de otra edición
+     * guarda en equipos.idCategoria la categoría de origen, no la actual.
+     */
+    private function categoriaEnEdicion(Equipo $equipo, ?int $idEdicion): ?Categoria
+    {
+        $idCategoria = EquipoEdicion::query()
+            ->where('idEquipo', $equipo->id)
+            ->where('idEdicion', $idEdicion)
+            ->value('idCategoria');
+
+        return Categoria::find($idCategoria ?? $equipo->idCategoria);
     }
 
     /**
@@ -149,14 +168,15 @@ class DetalleEquipo
         $tienePenales = $penalesLocal !== null && $penalesVisitante !== null;
 
         $resultado = 'E';
+        $definePenales = false;
+        $global = $this->parsearResultadoGlobal($f->resultadoGlobal);
         if ($favor !== $contra) {
             $resultado = $favor > $contra ? 'G' : 'P';
-        } elseif (preg_match('/^\s*(\d+)\s*-\s*(\d+)\s*$/', (string) $f->resultadoGlobal, $m) && $m[1] !== $m[2]) {
-            $ganaLocal = (int) $m[1] > (int) $m[2];
-            $resultado = $ganaLocal === $esLocal ? 'G' : 'P';
+        } elseif ($global !== null && $global[0] !== $global[1]) {
+            $resultado = ($global[0] > $global[1]) === $esLocal ? 'G' : 'P';
         } elseif ($tienePenales && $penalesLocal !== $penalesVisitante) {
-            $ganaLocal = $penalesLocal > $penalesVisitante;
-            $resultado = $ganaLocal === $esLocal ? 'G' : 'P';
+            $resultado = ($penalesLocal > $penalesVisitante) === $esLocal ? 'G' : 'P';
+            $definePenales = true;
         }
 
         return [
@@ -169,10 +189,24 @@ class DetalleEquipo
             'rival' => $esLocal ? $f->equipoVisitante : $f->equipoLocal,
             'golesFavor' => $favor,
             'golesContra' => $contra,
-            'penalesFavor' => $tienePenales && $favor === $contra ? (int) ($esLocal ? $penalesLocal : $penalesVisitante) : null,
-            'penalesContra' => $tienePenales && $favor === $contra ? (int) ($esLocal ? $penalesVisitante : $penalesLocal) : null,
+            'penalesFavor' => $definePenales ? (int) ($esLocal ? $penalesLocal : $penalesVisitante) : null,
+            'penalesContra' => $definePenales ? (int) ($esLocal ? $penalesVisitante : $penalesLocal) : null,
             'resultado' => $resultado,
         ];
+    }
+
+    /**
+     * Resultado global "local-visitante" como enteros, o null si no es interpretable.
+     *
+     * @return array{0: int, 1: int}|null
+     */
+    private function parsearResultadoGlobal(?string $global): ?array
+    {
+        if (! preg_match('/^\s*(\d+)\s*-\s*(\d+)\s*$/', (string) $global, $m)) {
+            return null;
+        }
+
+        return [(int) $m[1], (int) $m[2]];
     }
 
     /**
@@ -224,13 +258,13 @@ class DetalleEquipo
     /**
      * @return array{maximos: list<Goleador>, ranking: list<Goleador>}
      */
-    private function goleadores(Equipo $equipo, ?int $idEdicion): array
+    private function goleadores(Equipo $equipo, ?int $idEdicion, ?int $idCategoria): array
     {
         $ordenados = TablaGoleador::query()
             ->with('jugador')
             ->where('idEquipo', $equipo->id)
             ->where('idEdicion', $idEdicion)
-            ->where('idCategoria', $equipo->idCategoria)
+            ->where('idCategoria', $idCategoria)
             ->where('cantidadGoles', '>', 0)
             ->get()
             ->map(fn (TablaGoleador $g): array => [

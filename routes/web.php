@@ -75,6 +75,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::resource('valla', ControladorValla::class);
     Route::resource('tabla_posicion', ControladorTablaPosiciones::class);
     Route::get('reemplazo-equipo/crear', [ControladorReemplazoEquipo::class, 'create'])->name('reemplazo-equipo.create');
+    Route::get('reemplazo-equipo/buscar-otra-edicion', [ControladorReemplazoEquipo::class, 'buscarOtraEdicion'])->name('reemplazo-equipo.buscar-otra-edicion');
     Route::post('reemplazo-equipo', [ControladorReemplazoEquipo::class, 'store'])->name('reemplazo-equipo.store');
     Route::resource('grupos', ControladorGrupos::class);
     Route::resource('equipogrupo', ControladorEquiposGrupos::class);

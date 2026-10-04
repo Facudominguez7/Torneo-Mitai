@@ -104,7 +104,8 @@ class ControladorEquipo extends Controller
     public function show(Request $request, Equipo $equipo, DetalleEquipo $detalleEquipo)
     {
         $ediciones = Edicion::all();
-        $idEdicion = $request->idEdicion;
+        // Sin idEdicion en la URL, la edición elegida en el panel (query o sesión, vía PanelEdicionContextMiddleware).
+        $idEdicion = $request->idEdicion ?: $request->attributes->get('panel.idEdicion');
         $idCategoria = $request->idCategoria;
 
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
