@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Categoria;
+use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\EquipoGrupo;
@@ -354,30 +355,31 @@ class ReemplazadorEquipo
             throw new DomainException('Ese equipo ya está inscripto en esta edición. Usá la opción «Equipo ya inscripto» para elegirlo.');
         }
 
+        $nombreCategoria = Categoria::query()->findOrFail($idCategoria)->nombreCategoria;
+        $normalizado = $this->normalizarNombre($nombreCategoria);
+
         $origenes = EquipoEdicion::query()
             ->with('categoria')
             ->where('idEquipo', $idEquipo)
             ->where('idEdicion', '!=', $idEdicion)
             ->get();
 
-        if ($origenes->isEmpty()) {
-            throw new DomainException('El equipo elegido no pertenece a otra edición.');
-        }
-
-        $nombreCategoria = Categoria::query()->findOrFail($idCategoria)->nombreCategoria;
-        $normalizado = $this->normalizarNombre($nombreCategoria);
-
-        $coincide = $origenes->contains(fn (EquipoEdicion $origen): bool => $origen->categoria !== null
+        $coincidePorInscripcion = $origenes->contains(fn (EquipoEdicion $origen): bool => $origen->categoria !== null
             && $this->normalizarNombre($origen->categoria->nombreCategoria) === $normalizado);
 
-        if (! $coincide) {
-            throw new DomainException("La categoría del equipo en su edición de origen no coincide con «{$nombreCategoria}».");
+        $categoriaPropia = $equipo->idCategoria !== null ? Categoria::query()->find($equipo->idCategoria) : null;
+        $coincidePorCategoriaPropia = $categoriaPropia !== null
+            && $this->normalizarNombre($categoriaPropia->nombreCategoria) === $normalizado;
+
+        if (! $coincidePorInscripcion && ! $coincidePorCategoriaPropia) {
+            throw new DomainException("La categoría del equipo elegido no coincide con «{$nombreCategoria}».");
         }
     }
 
     /**
-     * Candidatos para traer de otra edición: equipos que jugaron en una categoría de igual
-     * nombre normalizado y todavía no están inscriptos en esta edición, de la edición más reciente a la más antigua.
+     * Candidatos para traer de otra edición o sin inscribir: unión de (a) equipos inscriptos en otra edición en una
+     * categoría de igual nombre normalizado y (b) equipos cuya propia categoría tiene ese nombre, en cualquier edición,
+     * sin inscripción en esta edición. Un equipo aparece una sola vez, de la edición más reciente a la más antigua.
      *
      * @return ColeccionSimple<int, array{id: int, nombre: string, foto: string|null, edicion: string, categoria: string}>
      */
@@ -390,52 +392,70 @@ class ReemplazadorEquipo
         }
 
         $normalizado = $this->normalizarNombre($categoria->nombreCategoria);
-        $idsCategorias = Categoria::query()
-            ->where('idEdicion', '!=', $idEdicion)
-            ->get(['id', 'nombreCategoria'])
-            ->filter(fn (Categoria $otra): bool => $this->normalizarNombre($otra->nombreCategoria) === $normalizado)
-            ->pluck('id');
+        $equivalentes = Categoria::query()
+            ->get(['id', 'idEdicion', 'nombreCategoria'])
+            ->filter(fn (Categoria $otra): bool => $this->normalizarNombre($otra->nombreCategoria) === $normalizado);
+        $idsCategorias = $equivalentes->pluck('id');
+        $idsCategoriasOtras = $equivalentes->where('idEdicion', '!=', $idEdicion)->pluck('id');
 
         $inscripciones = (new EquipoEdicion)->getTable();
         $equipos = (new Equipo)->getTable();
         $busqueda = trim((string) $busqueda);
+        $inscriptosAca = EquipoEdicion::query()->where('idEdicion', $idEdicion)->select('idEquipo');
 
-        $idsEquipos = EquipoEdicion::query()
-            ->join($equipos, "{$equipos}.id", '=', "{$inscripciones}.idEquipo")
-            ->where("{$inscripciones}.idEdicion", '!=', $idEdicion)
-            ->whereIn("{$inscripciones}.idCategoria", $idsCategorias)
-            ->whereNotIn("{$inscripciones}.idEquipo", EquipoEdicion::query()->where('idEdicion', $idEdicion)->select('idEquipo'))
-            ->when($busqueda !== '', fn (Builder $q) => $q->where("{$equipos}.nombre", 'like', '%'.addcslashes($busqueda, '\\%_').'%'))
-            ->groupBy("{$inscripciones}.idEquipo", "{$equipos}.nombre")
-            ->orderByRaw("MAX({$inscripciones}.idEdicion) desc")
+        $origenA = DB::table($inscripciones)
+            ->where('idEdicion', '!=', $idEdicion)
+            ->whereIn('idCategoria', $idsCategoriasOtras)
+            ->whereNotIn('idEquipo', $inscriptosAca)
+            ->select('idEquipo', 'idEdicion', 'idCategoria');
+
+        $origenB = DB::table($equipos)
+            ->whereIn('idCategoria', $idsCategorias)
+            ->whereNotIn('id', $inscriptosAca)
+            ->select('id as idEquipo', 'idEdicion', 'idCategoria');
+
+        $origenes = $origenA->union($origenB);
+
+        $idsEquipos = DB::query()
+            ->fromSub($origenes, 'origen')
+            ->join($equipos, "{$equipos}.id", '=', 'origen.idEquipo')
+            ->when($busqueda !== '', fn ($q) => $q->where("{$equipos}.nombre", 'like', '%'.addcslashes($busqueda, '\\%_').'%'))
+            ->groupBy('origen.idEquipo', "{$equipos}.nombre")
+            ->orderByRaw('MAX(origen.idEdicion) desc')
             ->orderBy("{$equipos}.nombre")
             ->limit($limite)
-            ->pluck("{$inscripciones}.idEquipo");
+            ->pluck('origen.idEquipo')
+            ->map(fn ($id): int => (int) $id);
 
         if ($idsEquipos->isEmpty()) {
             return collect();
         }
 
         $equiposPorId = Equipo::query()->whereIn('id', $idsEquipos)->get()->keyBy('id');
-        $origenes = EquipoEdicion::query()
-            ->with(['edicion', 'categoria'])
-            ->whereIn('idEquipo', $idsEquipos)
-            ->where('idEdicion', '!=', $idEdicion)
-            ->whereIn('idCategoria', $idsCategorias)
-            ->orderByDesc('idEdicion')
-            ->orderByDesc('id')
+        $mejorOrigen = DB::query()
+            ->fromSub($origenes, 'origen')
+            ->whereIn('origen.idEquipo', $idsEquipos)
+            ->orderByDesc('origen.idEdicion')
+            ->orderByDesc('origen.idCategoria')
             ->get()
             ->unique('idEquipo')
             ->keyBy('idEquipo');
 
+        $ediciones = Edicion::query()->whereIn('id', $mejorOrigen->pluck('idEdicion')->filter()->unique())->get()->keyBy('id');
+        $categorias = Categoria::query()->whereIn('id', $mejorOrigen->pluck('idCategoria')->filter()->unique())->get()->keyBy('id');
+
         return $idsEquipos
-            ->map(fn (int $idEquipo): array => [
-                'id' => $idEquipo,
-                'nombre' => $equiposPorId[$idEquipo]->nombre,
-                'foto' => $equiposPorId[$idEquipo]->foto,
-                'edicion' => (string) $origenes[$idEquipo]->edicion?->nombre,
-                'categoria' => (string) $origenes[$idEquipo]->categoria?->nombreCategoria,
-            ])
+            ->map(function (int $idEquipo) use ($equiposPorId, $mejorOrigen, $ediciones, $categorias): array {
+                $origen = $mejorOrigen[$idEquipo];
+
+                return [
+                    'id' => $idEquipo,
+                    'nombre' => $equiposPorId[$idEquipo]->nombre,
+                    'foto' => $equiposPorId[$idEquipo]->foto,
+                    'edicion' => (string) $ediciones->get($origen->idEdicion)?->nombre,
+                    'categoria' => (string) $categorias->get($origen->idCategoria)?->nombreCategoria,
+                ];
+            })
             ->values();
     }
 

@@ -148,9 +148,9 @@
                     <div data-opcion-reemplazo="otra_edicion" @click="origen = 'otra_edicion'" class="rounded-lg border-2 bg-white/10 p-4 transition cursor-pointer" :class="origen === 'otra_edicion' ? 'border-white bg-white/20' : 'border-transparent hover:bg-white/15'">
                         <label class="flex items-center gap-2 font-medium text-white">
                             <input type="radio" name="origen" value="otra_edicion" x-model="origen">
-                            Equipo de otra edición
+                            Equipo de otra edición o sin inscribir
                         </label>
-                        <p class="mt-1 text-sm text-white/80">Equipos de la categoría {{ $categoria->nombreCategoria }} en ediciones anteriores. Se inscribe en esta edición y toma el lugar del reemplazado.</p>
+                        <p class="mt-1 text-sm text-white/80">Equipos de la categoría {{ $categoria->nombreCategoria }} de ediciones anteriores y equipos de esta categoría que no están inscriptos en esta edición. Se inscribe en esta edición y toma el lugar del reemplazado.</p>
 
                         <div class="mt-3" x-show="origen === 'otra_edicion'" x-cloak>
                             <label for="buscar-otra-edicion" class="mb-1 block text-sm text-white">Buscar por nombre</label>
@@ -191,7 +191,7 @@
                                     @endforeach
                                 </ul>
                             @else
-                                <p class="mt-2 text-sm text-white/80">No hay equipos de otras ediciones para mostrar.</p>
+                                <p class="mt-2 text-sm text-white/80">No hay equipos de otras ediciones ni sin inscribir para mostrar.</p>
                             @endif
                         </noscript>
                     </div>

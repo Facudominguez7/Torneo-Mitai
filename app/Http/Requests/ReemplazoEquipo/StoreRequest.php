@@ -36,11 +36,11 @@ class StoreRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'origen.required' => 'Elegí si el reemplazo es un equipo inscripto, un equipo nuevo o un equipo de otra edición.',
-            'origen.in' => 'Elegí si el reemplazo es un equipo inscripto, un equipo nuevo o un equipo de otra edición.',
+            'origen.required' => 'Elegí si el reemplazo es un equipo inscripto, un equipo nuevo o un equipo de otra edición o sin inscribir.',
+            'origen.in' => 'Elegí si el reemplazo es un equipo inscripto, un equipo nuevo o un equipo de otra edición o sin inscribir.',
             'idEquipoExistente.required_if' => 'Elegí el equipo que reemplaza.',
             'idEquipoExistente.exists' => 'El equipo elegido no existe.',
-            'idEquipoOtraEdicion.required_if' => 'Elegí el equipo de otra edición que reemplaza.',
+            'idEquipoOtraEdicion.required_if' => 'Elegí el equipo de otra edición o sin inscribir que reemplaza.',
             'idEquipoOtraEdicion.exists' => 'El equipo elegido no existe.',
             'idEquipoOtraEdicion.prohibited_unless' => 'Completá solo los datos de la opción elegida.',
             'idEquipoExistente.prohibited_unless' => 'Completá solo los datos de la opción elegida.',
