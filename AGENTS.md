@@ -332,3 +332,9 @@ it('has emails', function (string $email) {
   - Aserciones de DOM/estado: scripts Node con `page.evaluate` (elementos visibles, clases, posición sticky, contadores).
 - Mínimo a verificar en cada cambio de UI: desktop (1280px) y mobile (390px), comportamiento con scroll (sticky/fixed), y los flujos puntuales afectados. Revisar las capturas con `read` antes de reportar.
 - Si el toolbox no existe, recrearlo (npm init + `npm install playwright-core`) antes de tocar UI; usar el Chrome del sistema (`executablePath: /usr/bin/google-chrome-stable`), sin descargar browsers.
+
+## 9. CONTEXTO COMPARTIDO DEL REDISEÑO
+
+- Antes de continuar el rediseño, leer `.engram/CONTEXT.md` y contrastarlo con el estado actual de Git y la memoria de Engram.
+- Todo el trabajo y los pushes del rediseño deben quedar en `feat/panel-admin-redesign`. No mergear a `main` sin autorización nueva y explícita.
+- Actualizar el resumen compartido al cerrar cambios o decisiones, sin incluir credenciales, tokens, datos privados ni conversaciones completas.
