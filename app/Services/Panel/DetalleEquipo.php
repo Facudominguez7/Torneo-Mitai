@@ -168,14 +168,15 @@ class DetalleEquipo
         $tienePenales = $penalesLocal !== null && $penalesVisitante !== null;
 
         $resultado = 'E';
+        $definePenales = false;
+        $global = $this->parsearResultadoGlobal($f->resultadoGlobal);
         if ($favor !== $contra) {
             $resultado = $favor > $contra ? 'G' : 'P';
-        } elseif (preg_match('/^\s*(\d+)\s*-\s*(\d+)\s*$/', (string) $f->resultadoGlobal, $m) && $m[1] !== $m[2]) {
-            $ganaLocal = (int) $m[1] > (int) $m[2];
-            $resultado = $ganaLocal === $esLocal ? 'G' : 'P';
+        } elseif ($global !== null && $global[0] !== $global[1]) {
+            $resultado = ($global[0] > $global[1]) === $esLocal ? 'G' : 'P';
         } elseif ($tienePenales && $penalesLocal !== $penalesVisitante) {
-            $ganaLocal = $penalesLocal > $penalesVisitante;
-            $resultado = $ganaLocal === $esLocal ? 'G' : 'P';
+            $resultado = ($penalesLocal > $penalesVisitante) === $esLocal ? 'G' : 'P';
+            $definePenales = true;
         }
 
         return [
@@ -188,10 +189,24 @@ class DetalleEquipo
             'rival' => $esLocal ? $f->equipoVisitante : $f->equipoLocal,
             'golesFavor' => $favor,
             'golesContra' => $contra,
-            'penalesFavor' => $tienePenales && $favor === $contra ? (int) ($esLocal ? $penalesLocal : $penalesVisitante) : null,
-            'penalesContra' => $tienePenales && $favor === $contra ? (int) ($esLocal ? $penalesVisitante : $penalesLocal) : null,
+            'penalesFavor' => $definePenales ? (int) ($esLocal ? $penalesLocal : $penalesVisitante) : null,
+            'penalesContra' => $definePenales ? (int) ($esLocal ? $penalesVisitante : $penalesLocal) : null,
             'resultado' => $resultado,
         ];
+    }
+
+    /**
+     * Resultado global "local-visitante" como enteros, o null si no es interpretable.
+     *
+     * @return array{0: int, 1: int}|null
+     */
+    private function parsearResultadoGlobal(?string $global): ?array
+    {
+        if (! preg_match('/^\s*(\d+)\s*-\s*(\d+)\s*$/', (string) $global, $m)) {
+            return null;
+        }
+
+        return [(int) $m[1], (int) $m[2]];
     }
 
     /**

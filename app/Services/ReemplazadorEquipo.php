@@ -80,10 +80,20 @@ class ReemplazadorEquipo
         ]);
     }
 
+    /**
+     * Detecta el duplicado por SQLSTATE y código del driver (MySQL 1062, PostgreSQL 23505,
+     * SQLite 19) y confirma que la tabla afectada es reemplazos_equipos, porque otras
+     * tablas de la transacción también pueden tener índices únicos.
+     */
     private function esViolacionDeUnicidad(QueryException $e): bool
     {
-        return in_array((string) $e->getCode(), ['23000', '23505'], true)
-            && str_contains($e->getMessage(), 'reemplazos_equipos_reemplazado_unique');
+        $sqlState = (string) ($e->errorInfo[0] ?? $e->getCode());
+        $codigoDriver = (int) ($e->errorInfo[1] ?? 0);
+
+        $esDuplicado = ($sqlState === '23000' && in_array($codigoDriver, [1062, 19], true))
+            || $sqlState === '23505';
+
+        return $esDuplicado && str_contains($e->getMessage(), 'reemplazos_equipos');
     }
 
     /**
@@ -328,11 +338,19 @@ class ReemplazadorEquipo
             throw new DomainException('El reemplazante no puede ser el mismo equipo que se reemplaza.');
         }
 
-        if (! Equipo::query()->whereKey($idEquipo)->exists()) {
+        $equipo = Equipo::query()->whereKey($idEquipo)->lockForUpdate()->first();
+
+        if (! $equipo) {
             throw new DomainException('El equipo elegido no existe.');
         }
 
-        if (EquipoEdicion::query()->where('idEquipo', $idEquipo)->where('idEdicion', $idEdicion)->exists()) {
+        $inscripcionesEnEstaEdicion = EquipoEdicion::query()
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', $idEdicion)
+            ->lockForUpdate()
+            ->get();
+
+        if ($inscripcionesEnEstaEdicion->isNotEmpty()) {
             throw new DomainException('Ese equipo ya está inscripto en esta edición. Usá la opción «Equipo ya inscripto» para elegirlo.');
         }
 
@@ -378,30 +396,45 @@ class ReemplazadorEquipo
             ->filter(fn (Categoria $otra): bool => $this->normalizarNombre($otra->nombreCategoria) === $normalizado)
             ->pluck('id');
 
-        $consulta = EquipoEdicion::query()
-            ->with(['equipo', 'edicion', 'categoria'])
+        $inscripciones = (new EquipoEdicion)->getTable();
+        $equipos = (new Equipo)->getTable();
+        $busqueda = trim((string) $busqueda);
+
+        $idsEquipos = EquipoEdicion::query()
+            ->join($equipos, "{$equipos}.id", '=', "{$inscripciones}.idEquipo")
+            ->where("{$inscripciones}.idEdicion", '!=', $idEdicion)
+            ->whereIn("{$inscripciones}.idCategoria", $idsCategorias)
+            ->whereNotIn("{$inscripciones}.idEquipo", EquipoEdicion::query()->where('idEdicion', $idEdicion)->select('idEquipo'))
+            ->when($busqueda !== '', fn (Builder $q) => $q->where("{$equipos}.nombre", 'like', '%'.addcslashes($busqueda, '\\%_').'%'))
+            ->groupBy("{$inscripciones}.idEquipo", "{$equipos}.nombre")
+            ->orderByRaw("MAX({$inscripciones}.idEdicion) desc")
+            ->orderBy("{$equipos}.nombre")
+            ->limit($limite)
+            ->pluck("{$inscripciones}.idEquipo");
+
+        if ($idsEquipos->isEmpty()) {
+            return collect();
+        }
+
+        $equiposPorId = Equipo::query()->whereIn('id', $idsEquipos)->get()->keyBy('id');
+        $origenes = EquipoEdicion::query()
+            ->with(['edicion', 'categoria'])
+            ->whereIn('idEquipo', $idsEquipos)
             ->where('idEdicion', '!=', $idEdicion)
             ->whereIn('idCategoria', $idsCategorias)
-            ->whereNotIn('idEquipo', EquipoEdicion::query()->where('idEdicion', $idEdicion)->select('idEquipo'))
-            ->whereHas('equipo', function (Builder $equipos) use ($busqueda): void {
-                $busqueda = trim((string) $busqueda);
-                if ($busqueda !== '') {
-                    $equipos->where('nombre', 'like', '%'.addcslashes($busqueda, '\\%_').'%');
-                }
-            })
             ->orderByDesc('idEdicion')
             ->orderByDesc('id')
-            ->limit($limite * 4);
-
-        return $consulta->get()
+            ->get()
             ->unique('idEquipo')
-            ->take($limite)
-            ->map(fn (EquipoEdicion $inscripcion): array => [
-                'id' => (int) $inscripcion->idEquipo,
-                'nombre' => $inscripcion->equipo->nombre,
-                'foto' => $inscripcion->equipo->foto,
-                'edicion' => (string) $inscripcion->edicion?->nombre,
-                'categoria' => (string) $inscripcion->categoria?->nombreCategoria,
+            ->keyBy('idEquipo');
+
+        return $idsEquipos
+            ->map(fn (int $idEquipo): array => [
+                'id' => $idEquipo,
+                'nombre' => $equiposPorId[$idEquipo]->nombre,
+                'foto' => $equiposPorId[$idEquipo]->foto,
+                'edicion' => (string) $origenes[$idEquipo]->edicion?->nombre,
+                'categoria' => (string) $origenes[$idEquipo]->categoria?->nombreCategoria,
             ])
             ->values();
     }

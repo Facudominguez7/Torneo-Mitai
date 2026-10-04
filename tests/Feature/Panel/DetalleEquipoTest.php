@@ -149,6 +149,38 @@ it('muestra la insignia G E P y define las finales empatadas por penales o resul
     expect($html)->toContain('data-penales');
 });
 
+it('oculta los penales cuando el resultado global define la final y los muestra cuando la define el penal', function () {
+    $e = escenarioDetalleEquipo();
+    $global = $e['crear']('Rival Global');
+
+    finalDetalleEquipo($e, $e['equipo'], $global, 0, 0, '2026-04-02 10:00:00', ['resultadoGlobal' => '1-2', 'penalesEquipoLocal' => 4, 'penalesEquipoVisitante' => 1]);
+
+    $fila = app(DetalleEquipo::class)->obtener($e['equipo'], $e['edicion']->id)['partidos'][0];
+    expect($fila['resultado'])->toBe('P');
+    expect([$fila['penalesFavor'], $fila['penalesContra']])->toBe([null, null]);
+    expect(verDetalleEquipo($e)->assertOk()->getContent())->not->toContain('data-penales');
+});
+
+it('compara el resultado global como numeros y trata los ceros a la izquierda como empate', function (string $global, ?array $penales, string $esperado, bool $muestraPenales) {
+    $e = escenarioDetalleEquipo();
+    $rival = $e['crear']('Rival Cero');
+    $extra = ['resultadoGlobal' => $global];
+    if ($penales) {
+        $extra += ['penalesEquipoLocal' => $penales[0], 'penalesEquipoVisitante' => $penales[1]];
+    }
+
+    finalDetalleEquipo($e, $e['equipo'], $rival, 1, 1, '2026-04-02 10:00:00', $extra);
+
+    $fila = app(DetalleEquipo::class)->obtener($e['equipo'], $e['edicion']->id)['partidos'][0];
+    expect($fila['resultado'])->toBe($esperado);
+    expect($fila['penalesFavor'] !== null)->toBe($muestraPenales);
+})->with([
+    'empate con cero a la izquierda y penales a favor' => ['02-2', [4, 1], 'G', true],
+    'empate con ceros a la derecha y penales en contra' => ['0-00', [1, 4], 'P', true],
+    'empate sin penales' => ['0-00', null, 'E', false],
+    'global decide con cero a la izquierda' => ['03-2', [1, 4], 'G', false],
+]);
+
 it('calcula las estadisticas por seccion y el total, y muestra la fila de tabla de posiciones', function () {
     $e = escenarioDetalleEquipo();
     $a = $e['crear']('Rival Uno');

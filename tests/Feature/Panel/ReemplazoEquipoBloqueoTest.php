@@ -139,14 +139,19 @@ it('rechaza editar el resultado de una instancia final jugada del reemplazado', 
     expect([$final->golesEquipoLocal, $final->golesEquipoVisitante])->toBe([1, 0]);
 });
 
-it('rechaza eliminar y cambiar equipos de una instancia final jugada del reemplazado', function () {
+it('rechaza eliminar una instancia final jugada del reemplazado', function () {
     $e = escenarioBloqueoReemplazo();
 
-    $respuestaBorrado = peticionAdminReemplazo($this)->delete(route('instancia_final.destroy', ['instancia_final' => $e['finalJugada']->id, 'idEdicion' => 100]), ['_token' => 'x']);
-    $respuestaBorrado->assertSessionHas('error');
-    expect(InstanciaFinal::find($e['finalJugada']->id))->not->toBeNull();
+    $response = peticionAdminReemplazo($this)->delete(route('instancia_final.destroy', ['instancia_final' => $e['finalJugada']->id, 'idEdicion' => 100]), ['_token' => 'x']);
 
-    $respuestaCambio = peticionAdminReemplazo($this)->patch(route('instancia_final.update', $e['finalJugada']->id), [
+    $response->assertSessionHas('error');
+    expect(InstanciaFinal::find($e['finalJugada']->id))->not->toBeNull();
+});
+
+it('rechaza cambiar los equipos de una instancia final jugada del reemplazado', function () {
+    $e = escenarioBloqueoReemplazo();
+
+    $response = peticionAdminReemplazo($this)->patch(route('instancia_final.update', $e['finalJugada']->id), [
         '_token' => 'x',
         'idCategoria' => $e['categoria']->id,
         'idEdicion' => 100,
@@ -156,7 +161,8 @@ it('rechaza eliminar y cambiar equipos de una instancia final jugada del reempla
         'horario' => '2026-05-05T10:00',
         'cancha' => 1,
     ]);
-    $respuestaCambio->assertSessionHas('error');
+
+    $response->assertSessionHas('error');
     expect($e['finalJugada']->fresh()->idEquipoLocal)->toBe($e['viejo']->id);
 });
 
@@ -220,7 +226,7 @@ it('mantiene editable un partido jugado cuando ningun equipo fue reemplazado', f
     expect($partido->fresh()->golesEquipoLocal)->toBe(2);
 });
 
-it('permite editar y borrar un partido a medio cargar de un equipo ya reemplazado', function () {
+it('permite borrar un partido a medio cargar de un equipo ya reemplazado', function () {
     $e = escenarioBloqueoReemplazo();
     $medioCargado = Partido::create([
         'idEdicion' => 100, 'idCategoria' => $e['categoria']->id, 'idFechas' => $e['pendiente']->idFechas,
@@ -246,6 +252,12 @@ it('permite borrar una instancia final a medio cargar de un equipo ya reemplazad
     ]);
 
     expect(app(PartidoService::class)->resultadoBloqueadoPorReemplazo($final))->toBeFalse();
+
+    $response = peticionAdminReemplazo($this)->delete(route('instancia_final.destroy', ['instancia_final' => $final->id, 'idEdicion' => 100]), ['_token' => 'x']);
+
+    $response->assertSessionMissing('error');
+    expect(InstanciaFinal::find($final->id))->toBeNull();
+    expect(InstanciaFinal::find($e['finalJugada']->id))->not->toBeNull();
 });
 
 it('sigue bloqueando un partido jugado con resultado aplicado del reemplazado', function () {
