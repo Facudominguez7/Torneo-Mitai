@@ -13,6 +13,7 @@ use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
@@ -116,7 +117,8 @@ class ControladorReemplazoEquipo extends Controller
             return null;
         }
 
-        $nombreArchivo = time().'.'.$request->file('foto')->getClientOriginalExtension();
+        // Sufijo aleatorio: dos subidas en el mismo segundo no se pisan ni se borran entre sí.
+        $nombreArchivo = time().'_'.Str::random(8).'.'.$request->file('foto')->getClientOriginalExtension();
         $request->file('foto')->move(public_path('../public_html/fotos/equipos'), $nombreArchivo);
 
         return $nombreArchivo;
