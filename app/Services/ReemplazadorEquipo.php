@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Categoria;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\EquipoGrupo;
@@ -14,6 +15,7 @@ use DomainException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection as ColeccionSimple;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -31,6 +33,9 @@ class ReemplazadorEquipo
     public function __construct(private readonly PartidoService $partidoService) {}
 
     /**
+     * Exactamente un origen: equipo inscripto, equipo nuevo o equipo de otra edición.
+     * Este último se inscribe en la edición y categoría dentro de la misma transacción.
+     *
      * @param  array{nombre?: string|null, foto?: string|null}|null  $datosEquipoNuevo  nombre y nombre del archivo de escudo ya almacenado
      *
      * @throws DomainException cuando el reemplazo no cumple las reglas de negocio
@@ -41,10 +46,11 @@ class ReemplazadorEquipo
         int $idEquipoReemplazado,
         ?int $idEquipoExistente,
         ?array $datosEquipoNuevo,
+        ?int $idEquipoOtraEdicion = null,
     ): ReemplazoEquipo {
         try {
-            return DB::transaction(function () use ($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo): ReemplazoEquipo {
-                return $this->ejecutar($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo);
+            return DB::transaction(function () use ($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo, $idEquipoOtraEdicion): ReemplazoEquipo {
+                return $this->ejecutar($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo, $idEquipoOtraEdicion);
             }, 3);
         } catch (DomainException $e) {
             throw $e;
@@ -130,7 +136,7 @@ class ReemplazadorEquipo
         ];
     }
 
-    private function ejecutar(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, ?int $idEquipoExistente, ?array $datosEquipoNuevo): ReemplazoEquipo
+    private function ejecutar(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, ?int $idEquipoExistente, ?array $datosEquipoNuevo, ?int $idEquipoOtraEdicion): ReemplazoEquipo
     {
         $this->bloquearFilasDelReemplazado($idEdicion, $idCategoria, $idEquipoReemplazado);
         $this->validarReemplazado($idEdicion, $idCategoria, $idEquipoReemplazado);
@@ -142,7 +148,7 @@ class ReemplazadorEquipo
 
         $this->validarSinPartidosAMedioCargar($idEdicion, $idCategoria, $idEquipoReemplazado);
 
-        $idEquipoReemplazante = $this->resolverReemplazante($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo);
+        $idEquipoReemplazante = $this->resolverReemplazante($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoExistente, $datosEquipoNuevo, $idEquipoOtraEdicion);
 
         $this->heredarFilaDePosiciones($grupo, $idEquipoReemplazado, $idEquipoReemplazante);
         $this->intercambiarLugarEnGrupo($grupo, $idEquipoReemplazado, $idEquipoReemplazante);
@@ -261,8 +267,25 @@ class ReemplazadorEquipo
     /**
      * Devuelve el id del reemplazante, creándolo si corresponde.
      */
-    private function resolverReemplazante(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, ?int $idEquipoExistente, ?array $datosEquipoNuevo): int
+    private function resolverReemplazante(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, ?int $idEquipoExistente, ?array $datosEquipoNuevo, ?int $idEquipoOtraEdicion = null): int
     {
+        if ($idEquipoOtraEdicion !== null) {
+            if ($idEquipoExistente !== null || $datosEquipoNuevo !== null) {
+                throw new DomainException('Elegí un solo origen para el reemplazante.');
+            }
+
+            $this->validarReemplazanteDeOtraEdicion($idEdicion, $idCategoria, $idEquipoReemplazado, $idEquipoOtraEdicion);
+
+            EquipoEdicion::create([
+                'idEquipo' => $idEquipoOtraEdicion,
+                'idEdicion' => $idEdicion,
+                'idCategoria' => $idCategoria,
+                'golesContra' => 0,
+            ]);
+
+            return $idEquipoOtraEdicion;
+        }
+
         if ($idEquipoExistente !== null && $datosEquipoNuevo !== null) {
             throw new DomainException('Indicá un equipo existente o los datos de un equipo nuevo, pero no ambos.');
         }
@@ -297,6 +320,107 @@ class ReemplazadorEquipo
         ]);
 
         return $equipo->id;
+    }
+
+    private function validarReemplazanteDeOtraEdicion(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, int $idEquipo): void
+    {
+        if ($idEquipo === $idEquipoReemplazado) {
+            throw new DomainException('El reemplazante no puede ser el mismo equipo que se reemplaza.');
+        }
+
+        if (! Equipo::query()->whereKey($idEquipo)->exists()) {
+            throw new DomainException('El equipo elegido no existe.');
+        }
+
+        if (EquipoEdicion::query()->where('idEquipo', $idEquipo)->where('idEdicion', $idEdicion)->exists()) {
+            throw new DomainException('Ese equipo ya está inscripto en esta edición. Usá la opción «Equipo ya inscripto» para elegirlo.');
+        }
+
+        $origenes = EquipoEdicion::query()
+            ->with('categoria')
+            ->where('idEquipo', $idEquipo)
+            ->where('idEdicion', '!=', $idEdicion)
+            ->get();
+
+        if ($origenes->isEmpty()) {
+            throw new DomainException('El equipo elegido no pertenece a otra edición.');
+        }
+
+        $nombreCategoria = Categoria::query()->findOrFail($idCategoria)->nombreCategoria;
+        $normalizado = $this->normalizarNombre($nombreCategoria);
+
+        $coincide = $origenes->contains(fn (EquipoEdicion $origen): bool => $origen->categoria !== null
+            && $this->normalizarNombre($origen->categoria->nombreCategoria) === $normalizado);
+
+        if (! $coincide) {
+            throw new DomainException("La categoría del equipo en su edición de origen no coincide con «{$nombreCategoria}».");
+        }
+    }
+
+    /**
+     * Candidatos para traer de otra edición: equipos que jugaron en una categoría de igual
+     * nombre normalizado y todavía no están inscriptos en esta edición, de la edición más reciente a la más antigua.
+     *
+     * @return ColeccionSimple<int, array{id: int, nombre: string, foto: string|null, edicion: string, categoria: string}>
+     */
+    public function equiposDeOtrasEdiciones(int $idEdicion, int $idCategoria, ?string $busqueda, int $limite = 20): ColeccionSimple
+    {
+        $categoria = Categoria::query()->find($idCategoria);
+
+        if ($limite < 1 || ! $categoria) {
+            return collect();
+        }
+
+        $normalizado = $this->normalizarNombre($categoria->nombreCategoria);
+        $idsCategorias = Categoria::query()
+            ->where('idEdicion', '!=', $idEdicion)
+            ->get(['id', 'nombreCategoria'])
+            ->filter(fn (Categoria $otra): bool => $this->normalizarNombre($otra->nombreCategoria) === $normalizado)
+            ->pluck('id');
+
+        $consulta = EquipoEdicion::query()
+            ->with(['equipo', 'edicion', 'categoria'])
+            ->where('idEdicion', '!=', $idEdicion)
+            ->whereIn('idCategoria', $idsCategorias)
+            ->whereNotIn('idEquipo', EquipoEdicion::query()->where('idEdicion', $idEdicion)->select('idEquipo'))
+            ->whereHas('equipo', function (Builder $equipos) use ($busqueda): void {
+                $busqueda = trim((string) $busqueda);
+                if ($busqueda !== '') {
+                    $equipos->where('nombre', 'like', '%'.addcslashes($busqueda, '\\%_').'%');
+                }
+            })
+            ->orderByDesc('idEdicion')
+            ->orderByDesc('id')
+            ->limit($limite * 4);
+
+        return $consulta->get()
+            ->unique('idEquipo')
+            ->take($limite)
+            ->map(fn (EquipoEdicion $inscripcion): array => [
+                'id' => (int) $inscripcion->idEquipo,
+                'nombre' => $inscripcion->equipo->nombre,
+                'foto' => $inscripcion->equipo->foto,
+                'edicion' => (string) $inscripcion->edicion?->nombre,
+                'categoria' => (string) $inscripcion->categoria?->nombreCategoria,
+            ])
+            ->values();
+    }
+
+    /**
+     * Misma normalización que ControladorEquiposEdiciones::store: espacios, mayúsculas y acentos.
+     */
+    private function normalizarNombre(string $texto): string
+    {
+        $texto = preg_replace('/\s+/', ' ', trim($texto));
+
+        return strtr(mb_strtolower($texto, 'UTF-8'), [
+            'á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a',
+            'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+            'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i',
+            'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
+            'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u',
+            'ñ' => 'n',
+        ]);
     }
 
     private function validarReemplazanteExistente(int $idEdicion, int $idCategoria, int $idEquipoReemplazado, int $idEquipoExistente): void

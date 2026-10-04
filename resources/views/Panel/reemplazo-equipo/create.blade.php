@@ -10,6 +10,13 @@
         $fila = $vistaPrevia['filaPosicion'];
         $hayElegibles = $equiposElegibles->isNotEmpty();
         $origenInicial = old('origen', $hayElegibles ? 'existente' : 'nuevo');
+        $configOtraEdicion = [
+            'url' => route('reemplazo-equipo.buscar-otra-edicion'),
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'recientes' => $candidatosOtraEdicion->values()->all(),
+            'elegido' => old('idEquipoOtraEdicion') ? (int) old('idEquipoOtraEdicion') : null,
+        ];
     @endphp
 
     <div class="mx-auto w-full max-w-[640px] px-2 sm:px-6">
@@ -47,7 +54,52 @@
             </section>
 
             <form action="{{ route('reemplazo-equipo.store') }}" method="POST" enctype="multipart/form-data"
-                x-data="{ origen: '{{ $origenInicial }}' }">
+                x-data="{
+                    origen: @js($origenInicial),
+                    otra: {
+                        config: @js($configOtraEdicion),
+                        q: '',
+                        items: @js($candidatosOtraEdicion->values()->all()),
+                        elegido: @js($configOtraEdicion['elegido']),
+                        buscando: false,
+                        error: false,
+                        temporizador: null,
+                        controlador: null,
+                        buscar() {
+                            clearTimeout(this.temporizador);
+                            const texto = this.q.trim();
+                            if (texto.length < 2) {
+                                if (this.controlador) { this.controlador.abort(); }
+                                this.buscando = false;
+                                this.error = false;
+                                this.items = this.config.recientes;
+                                return;
+                            }
+                            this.temporizador = setTimeout(() => this.consultar(texto), 300);
+                        },
+                        async consultar(texto) {
+                            if (this.controlador) { this.controlador.abort(); }
+                            this.controlador = new AbortController();
+                            this.buscando = true;
+                            this.error = false;
+                            const params = new URLSearchParams({ idEdicion: this.config.idEdicion, idCategoria: this.config.idCategoria, q: texto });
+                            try {
+                                const respuesta = await fetch(this.config.url + '?' + params, {
+                                    headers: { 'Accept': 'application/json' },
+                                    credentials: 'same-origin',
+                                    signal: this.controlador.signal,
+                                });
+                                if (!respuesta.ok) { throw new Error('busqueda'); }
+                                this.items = (await respuesta.json()).items;
+                                this.buscando = false;
+                            } catch (e) {
+                                if (e.name === 'AbortError') { return; }
+                                this.error = true;
+                                this.buscando = false;
+                            }
+                        },
+                    },
+                }">
                 @csrf
                 <input type="hidden" name="idEdicion" value="{{ $idEdicion }}">
                 <input type="hidden" name="idCategoria" value="{{ $idCategoria }}">
@@ -91,6 +143,57 @@
                                 <input type="file" name="foto" id="foto" accept="image/png,image/jpeg,image/webp" class="panel-form-input" :disabled="origen !== 'nuevo'">
                             </div>
                         </div>
+                    </div>
+
+                    <div class="rounded-lg bg-white/10 p-4">
+                        <label class="flex items-center gap-2 font-medium text-white">
+                            <input type="radio" name="origen" value="otra_edicion" x-model="origen">
+                            Equipo de otra edición
+                        </label>
+                        <p class="mt-1 text-sm text-white/80">Equipos de la categoría {{ $categoria->nombreCategoria }} en ediciones anteriores. Se inscribe en esta edición y toma el lugar del reemplazado.</p>
+
+                        <div class="mt-3" x-show="origen === 'otra_edicion'" x-cloak>
+                            <label for="buscar-otra-edicion" class="mb-1 block text-sm text-white">Buscar por nombre</label>
+                            <input type="search" id="buscar-otra-edicion" autocomplete="off" class="panel-form-input"
+                                placeholder="Escribí al menos 2 letras" x-model="otra.q" @input="otra.buscar()" :disabled="origen !== 'otra_edicion'">
+                            <p class="mt-2 text-sm text-white/80" x-show="otra.buscando" x-cloak>Buscando...</p>
+                            <p class="mt-2 text-sm text-red-200" x-show="otra.error" x-cloak>No se pudo buscar. Probá de nuevo.</p>
+                            <p class="mt-2 text-sm text-white/80" x-show="!otra.buscando && !otra.error && otra.items.length === 0" x-cloak>No hay equipos para mostrar.</p>
+
+                            <ul class="mt-3 max-h-64 space-y-2 overflow-y-auto" role="radiogroup" aria-label="Equipos de otras ediciones">
+                                <template x-for="item in otra.items" :key="item.id">
+                                    <li>
+                                        <label class="flex cursor-pointer items-center gap-2 rounded-lg bg-white/10 p-2 text-sm text-white">
+                                            <input type="radio" :value="item.id" x-model.number="otra.elegido">
+                                            <span>
+                                                <span class="block font-medium" x-text="item.nombre"></span>
+                                                <span class="block text-xs text-white/80" x-text="item.edicion + ' · ' + item.categoria"></span>
+                                            </span>
+                                        </label>
+                                    </li>
+                                </template>
+                            </ul>
+                            <template x-if="origen === 'otra_edicion' && otra.elegido">
+                                <input type="hidden" name="idEquipoOtraEdicion" :value="otra.elegido">
+                            </template>
+                        </div>
+
+                        <noscript>
+                            @if ($candidatosOtraEdicion->isNotEmpty())
+                                <ul class="mt-3 space-y-2">
+                                    @foreach ($candidatosOtraEdicion as $candidato)
+                                        <li>
+                                            <label class="flex items-center gap-2 text-sm text-white">
+                                                <input type="radio" name="idEquipoOtraEdicion" value="{{ $candidato['id'] }}" @checked((string) old('idEquipoOtraEdicion') === (string) $candidato['id'])>
+                                                {{ $candidato['nombre'] }} · {{ $candidato['edicion'] }} · {{ $candidato['categoria'] }}
+                                            </label>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <p class="mt-2 text-sm text-white/80">No hay equipos de otras ediciones para mostrar.</p>
+                            @endif
+                        </noscript>
                     </div>
                 </fieldset>
 

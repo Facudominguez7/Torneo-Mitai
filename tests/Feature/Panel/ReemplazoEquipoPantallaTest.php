@@ -219,7 +219,7 @@ it('rechaza el envio con errores de validacion', function (array $extra, string 
     $response->assertSessionHasErrors([$campo => $mensaje]);
     expect(ReemplazoEquipo::count())->toBe(0);
 })->with([
-    'sin ninguna opcion' => [[], 'origen', 'Elegí si el reemplazo es un equipo inscripto o un equipo nuevo.'],
+    'sin ninguna opcion' => [[], 'origen', 'Elegí si el reemplazo es un equipo inscripto, un equipo nuevo o un equipo de otra edición.'],
     'existente sin equipo' => [['origen' => 'existente'], 'idEquipoExistente', 'Elegí el equipo que reemplaza.'],
     'nuevo sin nombre' => [['origen' => 'nuevo'], 'nombre', 'Escribí el nombre del equipo nuevo.'],
     'ambas opciones' => [['origen' => 'existente', 'idEquipoExistente' => '__libre__', 'nombre' => 'Otro'], 'nombre', 'Elegí una sola opción: un equipo inscripto o un equipo nuevo.'],

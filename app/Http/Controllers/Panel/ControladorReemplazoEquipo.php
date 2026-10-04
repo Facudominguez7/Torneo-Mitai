@@ -10,6 +10,7 @@ use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Services\ReemplazadorEquipo;
 use DomainException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -44,6 +45,9 @@ class ControladorReemplazoEquipo extends Controller
         $equiposElegibles = $motivoImposibilidad === null
             ? $this->reemplazador->equiposElegibles($idEdicion, $idCategoria, $idEquipo)
             : collect();
+        $candidatosOtraEdicion = $motivoImposibilidad === null
+            ? $this->reemplazador->equiposDeOtrasEdiciones($idEdicion, $idCategoria, null, 10)
+            : collect();
 
         $ediciones = Edicion::all();
         $EdicionSeleccionada = $edicion;
@@ -57,10 +61,29 @@ class ControladorReemplazoEquipo extends Controller
             'vistaPrevia',
             'motivoImposibilidad',
             'equiposElegibles',
+            'candidatosOtraEdicion',
             'idEdicion',
             'idCategoria',
             'idGrupo',
         ));
+    }
+
+    /**
+     * Busca equipos de otras ediciones con la categoría equivalente, para el buscador de la pantalla.
+     */
+    public function buscarOtraEdicion(Request $request): JsonResponse
+    {
+        $busqueda = trim((string) $request->query('q', ''));
+
+        if (mb_strlen($busqueda) < 2) {
+            return response()->json(['items' => []]);
+        }
+
+        return response()->json([
+            'items' => $this->reemplazador
+                ->equiposDeOtrasEdiciones($request->integer('idEdicion'), $request->integer('idCategoria'), $busqueda, 20)
+                ->all(),
+        ]);
     }
 
     /**
@@ -73,6 +96,7 @@ class ControladorReemplazoEquipo extends Controller
         $idCategoria = (int) $datos['idCategoria'];
         $idEquipoReemplazado = (int) $datos['idEquipoReemplazado'];
         $esNuevo = $datos['origen'] === 'nuevo';
+        $esOtraEdicion = $datos['origen'] === 'otra_edicion';
 
         $escudo = $esNuevo ? $this->guardarEscudo($request) : null;
 
@@ -81,8 +105,9 @@ class ControladorReemplazoEquipo extends Controller
                 $idEdicion,
                 $idCategoria,
                 $idEquipoReemplazado,
-                $esNuevo ? null : (int) $datos['idEquipoExistente'],
+                $datos['origen'] === 'existente' ? (int) $datos['idEquipoExistente'] : null,
                 $esNuevo ? ['nombre' => $datos['nombre'], 'foto' => $escudo] : null,
+                $esOtraEdicion ? (int) $datos['idEquipoOtraEdicion'] : null,
             );
         } catch (Throwable $error) {
             // Si el reemplazo no se hizo, el escudo subido no queda huérfano en disco.
