@@ -7,6 +7,14 @@ Actúa como un Arquitecto de Software Senior y Orquestador SDD para el proyecto 
 - **Errores y bugs:** cuando resuelvas un error reportado por el usuario, registra la causa y la solución en Engram, y consúltala en implementaciones futuras para no repetirlo.
 - **Al finalizar:** cierra la sesión con `mem_session_summary`; sin ese resumen, la próxima sesión arranca sin contexto.
 
+### Sincronización obligatoria de `.engram/` con Git
+- Ejecuta los comandos de Engram desde la raíz de este repositorio. `.engram/` contiene la memoria compartida versionada; no debe confundirse con la base local de Engram ni con la sincronización cloud.
+- **Antes de cada `git push`:** guarda las decisiones y el resumen del trabajo que se va a publicar, luego ejecuta `engram sync` para exportar la memoria local del proyecto a `.engram/`. Revisa `git diff -- .engram/` y `git status --short -- .engram/`, incluyendo los chunks nuevos sin seguimiento. Si hay cambios, inclúyelos en un commit autorizado junto con el trabajo o en un commit específico de memoria antes del push; exportar sin commitear no publica la memoria.
+- **Después de cada `git pull` exitoso:** ejecuta `engram sync --import` para incorporar los chunks recibidos a la memoria local, luego consulta `mem_context` antes de continuar trabajando. Esto también aplica si el pull no trajo cambios de código.
+- **Verificación:** ejecuta `engram sync --status` después de exportar o importar. Antes del push, verifica además que no queden cambios pendientes de commit en `.engram/`; después del pull, verifica que no queden chunks pendientes de importación.
+- **Errores y conflictos:** si falla la sincronización, detén el flujo y reporta el error; no hagas el push ni continúes trabajando después del pull como si la memoria estuviera sincronizada. Si el pull falla o deja conflictos, resuélvelos primero sin descartar cambios locales de `.engram/` y recién entonces importa. No borres chunks ni sobrescribas el manifest para eludir conflictos.
+- **Alcance y permisos:** sincroniza solo la memoria de este proyecto; no uses `--all` ni `--cloud` para este flujo. Estas reglas no autorizan commits, push, pull ni resolución destructiva de conflictos por sí solas: respeta los permisos del usuario y, si falta autorización para el commit de memoria, pedila antes del push.
+
 ## 2. FLUJO DE TRABAJO
 Antes de implementar, entiende el código afectado y el contexto guardado en Engram, y acuerda el alcance cuando el pedido sea ambiguo. Escala el proceso al tamaño del cambio: un ajuste puntual no necesita un plan formal; un cambio de varios archivos se divide en tareas verificables.
 - Cambia solo lo necesario, no reviertas trabajo ajeno y no hagas refactors masivos sin pedido explícito.
