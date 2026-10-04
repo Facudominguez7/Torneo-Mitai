@@ -131,3 +131,19 @@ it('falls back to the panel tone and primary variant for an unknown tone or vari
 
     expect($html)->toContain('bg-brand-navy');
 });
+
+it('does not double-escape an href with several query parameters', function () {
+    $url = '/Panel/tabla_posicion/5/edit?idCategoria=1&idGrupo=2';
+
+    $escapado = Blade::render('<x-ui.button href="{{ $url }}">Editar</x-ui.button>', ['url' => $url]);
+    $enlazado = Blade::render('<x-ui.button :href="$url">Editar</x-ui.button>', ['url' => $url]);
+
+    expect($escapado)->toContain('href="/Panel/tabla_posicion/5/edit?idCategoria=1&amp;idGrupo=2"')
+        ->and($enlazado)->toContain('href="/Panel/tabla_posicion/5/edit?idCategoria=1&amp;idGrupo=2"');
+});
+
+it('still escapes markup injected through href', function () {
+    $html = Blade::render('<x-ui.button :href="$url">Ir</x-ui.button>', ['url' => '/x"><script>alert(1)</script>']);
+
+    expect($html)->not->toContain('<script>');
+});
