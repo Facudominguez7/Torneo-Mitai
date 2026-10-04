@@ -1,0 +1,425 @@
+<?php
+
+use App\Models\Categoria;
+use App\Models\Edicion;
+use App\Models\Equipo;
+use App\Models\EquipoEdicion;
+use App\Models\EquipoGrupo;
+use App\Models\Fecha;
+use App\Models\Grupo;
+use App\Models\Partido;
+use App\Models\ReemplazoEquipo;
+use App\Models\TablaPosicion;
+use App\Models\User;
+use App\Services\PartidoService;
+use App\Services\ReemplazadorEquipo;
+
+if (! function_exists('otraEdicionContexto')) {
+    /**
+     * Edición actual 100 (Categoría 2011) y edición anterior 101 con categorías de nombre equivalente y distinto.
+     *
+     * @return array<string, mixed>
+     */
+    function otraEdicionContexto(): array
+    {
+        foreach ([[100, 'Edicion Actual'], [101, 'Edicion Anterior'], [102, 'Edicion Antigua']] as [$id, $nombre]) {
+            $edicion = Edicion::create(['nombre' => $nombre]);
+            $edicion->id = $id;
+            $edicion->save();
+        }
+
+        $categoria = Categoria::create(['idEdicion' => 100, 'nombreCategoria' => 'Categoría 2011']);
+        $grupo = Grupo::create(['idCategoria' => $categoria->id, 'idEdicion' => 100, 'nombre' => 'Grupo A']);
+        $fecha = Fecha::create(['idEdicion' => 100, 'idCategoria' => $categoria->id, 'nombre' => 'Fecha 1']);
+        $categoriaAnterior = Categoria::create(['idEdicion' => 101, 'nombreCategoria' => ' categoria  2011 ']);
+        $categoriaAntigua = Categoria::create(['idEdicion' => 102, 'nombreCategoria' => 'CATEGORÍA 2011']);
+        $categoriaOtra = Categoria::create(['idEdicion' => 101, 'nombreCategoria' => 'Categoría 2012']);
+
+        $inscribir = function (string $nombre, int $idEdicion, Categoria $cat, bool $enGrupo = false) use ($grupo): Equipo {
+            $equipo = Equipo::create(['nombre' => $nombre, 'foto' => 'e.png', 'idCategoria' => $cat->id, 'idEdicion' => $idEdicion]);
+            EquipoEdicion::create(['idEquipo' => $equipo->id, 'idEdicion' => $idEdicion, 'idCategoria' => $cat->id, 'golesContra' => 0]);
+            if ($enGrupo) {
+                EquipoGrupo::create(['idEquipo' => $equipo->id, 'idGrupo' => $grupo->id]);
+                TablaPosicion::create([
+                    'idGrupo' => $grupo->id, 'idEquipo' => $equipo->id, 'idEdicion' => 100,
+                    'puntos' => 7, 'jugado' => 3, 'ganado' => 2, 'empatado' => 1, 'perdido' => 0,
+                    'golesFavor' => 6, 'golesContra' => 2, 'diferenciaGoles' => 4,
+                ]);
+            }
+
+            return $equipo;
+        };
+
+        $viejo = $inscribir('Club Viejo', 100, $categoria, true);
+        $rival = $inscribir('Club Rival', 100, $categoria, true);
+        $anterior = $inscribir('Atlético Visitante', 101, $categoriaAnterior);
+        $antiguo = $inscribir('Deportivo Antiguo', 102, $categoriaAntigua);
+        $otraCat = $inscribir('Club Otra Categoría', 101, $categoriaOtra);
+
+        return compact('categoria', 'grupo', 'fecha', 'categoriaAnterior', 'categoriaOtra', 'viejo', 'rival', 'anterior', 'antiguo', 'otraCat', 'inscribir');
+    }
+
+    function otraEdicionAdmin(mixed $test): mixed
+    {
+        $admin = User::factory()->create(['rol' => 'admin', 'email_verified_at' => now()]);
+
+        return $test->actingAs($admin)->withSession(['_token' => 'x']);
+    }
+
+    function otraEdicionPartido(array $c, Equipo $local, Equipo $visitante): Partido
+    {
+        return Partido::create([
+            'idFechas' => $c['fecha']->id, 'idEquipoLocal' => $local->id, 'idEquipoVisitante' => $visitante->id,
+            'idGrupo' => $c['grupo']->id, 'idEdicion' => 100, 'idCategoria' => $c['categoria']->id,
+            'horario_datetime' => '2026-04-05 10:00:00', 'cancha' => 1, 'jugado' => 0,
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    function otraEdicionPayload(array $c, ?Equipo $elegido, array $extra = []): array
+    {
+        return array_merge([
+            '_token' => 'x',
+            'idEdicion' => 100,
+            'idCategoria' => $c['categoria']->id,
+            'idGrupo' => $c['grupo']->id,
+            'idEquipoReemplazado' => $c['viejo']->id,
+            'origen' => 'otra_edicion',
+            'idEquipoOtraEdicion' => $elegido?->id,
+            'confirmar' => '1',
+        ], $extra);
+    }
+}
+
+it('lista candidatos solo de otras ediciones con la categoria de igual nombre normalizado', function () {
+    $c = otraEdicionContexto();
+
+    $items = app(ReemplazadorEquipo::class)->equiposDeOtrasEdiciones(100, $c['categoria']->id, null);
+
+    expect($items->pluck('nombre')->all())->toBe(['Deportivo Antiguo', 'Atlético Visitante']);
+    expect($items->first())->toMatchArray([
+        'id' => $c['antiguo']->id,
+        'edicion' => 'Edicion Antigua',
+        'categoria' => 'CATEGORÍA 2011',
+        'foto' => 'e.png',
+    ]);
+});
+
+it('excluye los equipos ya inscriptos en esta edicion y filtra por nombre', function () {
+    $c = otraEdicionContexto();
+    EquipoEdicion::create(['idEquipo' => $c['antiguo']->id, 'idEdicion' => 100, 'idCategoria' => $c['categoria']->id, 'golesContra' => 0]);
+    $servicio = app(ReemplazadorEquipo::class);
+
+    expect($servicio->equiposDeOtrasEdiciones(100, $c['categoria']->id, null)->pluck('id')->all())->toBe([$c['anterior']->id]);
+    expect($servicio->equiposDeOtrasEdiciones(100, $c['categoria']->id, 'atlét')->pluck('id')->all())->toBe([$c['anterior']->id]);
+    expect($servicio->equiposDeOtrasEdiciones(100, $c['categoria']->id, 'zzz'))->toBeEmpty();
+    expect($servicio->equiposDeOtrasEdiciones(100, $c['categoria']->id, null, 0)->count())->toBe(0);
+});
+
+it('devuelve cada equipo una sola vez aunque haya jugado varias ediciones', function () {
+    $c = otraEdicionContexto();
+    EquipoEdicion::create(['idEquipo' => $c['anterior']->id, 'idEdicion' => 102, 'idCategoria' => $c['categoriaOtra']->id, 'golesContra' => 0]);
+    $categoriaAntigua = Categoria::where('idEdicion', 102)->first();
+    EquipoEdicion::create(['idEquipo' => $c['anterior']->id, 'idEdicion' => 102, 'idCategoria' => $categoriaAntigua->id, 'golesContra' => 0]);
+
+    $items = app(ReemplazadorEquipo::class)->equiposDeOtrasEdiciones(100, $c['categoria']->id, null);
+
+    expect($items->pluck('id')->all())->toEqualCanonicalizing([$c['anterior']->id, $c['antiguo']->id]);
+    expect($items->count())->toBe(2);
+});
+
+it('responde el buscador con items y vacio si q tiene menos de 2 caracteres', function () {
+    $c = otraEdicionContexto();
+    $url = route('reemplazo-equipo.buscar-otra-edicion');
+
+    otraEdicionAdmin($this)->getJson($url.'?idEdicion=100&idCategoria='.$c['categoria']->id.'&q=Atl')
+        ->assertOk()
+        ->assertJsonCount(1, 'items')
+        ->assertJsonPath('items.0.id', $c['anterior']->id)
+        ->assertJsonPath('items.0.nombre', 'Atlético Visitante')
+        ->assertJsonPath('items.0.edicion', 'Edicion Anterior')
+        ->assertJsonStructure(['items' => [['id', 'nombre', 'foto', 'edicion', 'categoria']]]);
+
+    otraEdicionAdmin($this)->getJson($url.'?idEdicion=100&idCategoria='.$c['categoria']->id.'&q=A')
+        ->assertOk()->assertExactJson(['items' => []]);
+    otraEdicionAdmin($this)->getJson($url.'?idEdicion=100&idCategoria='.$c['categoria']->id)
+        ->assertOk()->assertExactJson(['items' => []]);
+});
+
+it('protege el buscador de invitados y no admin', function () {
+    $c = otraEdicionContexto();
+    $url = route('reemplazo-equipo.buscar-otra-edicion').'?idEdicion=100&idCategoria='.$c['categoria']->id.'&q=Atl';
+
+    $this->get($url)->assertRedirect(route('login'));
+    $usuario = User::factory()->create(['rol' => 'regular', 'email_verified_at' => now()]);
+    $this->actingAs($usuario)->get($url)->assertRedirect('/');
+});
+
+it('inscribe al equipo de otra edicion y hace el reemplazo en una transaccion', function () {
+    $c = otraEdicionContexto();
+    $pendiente = otraEdicionPartido($c, $c['viejo'], $c['rival']);
+    $equiposAntes = Equipo::count();
+
+    $response = otraEdicionAdmin($this)->post(route('reemplazo-equipo.store'), otraEdicionPayload($c, $c['anterior']));
+
+    $response->assertRedirect(route('tabla_posicion.index', [
+        'idEdicion' => 100, 'idCategoria' => $c['categoria']->id, 'idGrupo' => $c['grupo']->id,
+    ]));
+    $response->assertSessionHas('success', 'Atlético Visitante reemplazó a Club Viejo y heredó su posición.');
+
+    expect(Equipo::count())->toBe($equiposAntes);
+    $inscripciones = EquipoEdicion::where('idEquipo', $c['anterior']->id)->where('idEdicion', 100)->get();
+    expect($inscripciones)->toHaveCount(1);
+    expect($inscripciones->first()->idCategoria)->toBe($c['categoria']->id);
+    expect(EquipoGrupo::where('idGrupo', $c['grupo']->id)->pluck('idEquipo')->sort()->values()->all())
+        ->toBe(collect([$c['anterior']->id, $c['rival']->id])->sort()->values()->all());
+    expect(TablaPosicion::where('idEquipo', $c['anterior']->id)->value('puntos'))->toBe(7);
+    expect(TablaPosicion::where('idEquipo', $c['viejo']->id)->exists())->toBeFalse();
+    expect($pendiente->fresh()->idEquipoLocal)->toBe($c['anterior']->id);
+    expect(ReemplazoEquipo::where('idEquipoReemplazado', $c['viejo']->id)->where('idEquipoReemplazante', $c['anterior']->id)->count())->toBe(1);
+});
+
+it('no crea la inscripcion si falla el reemplazo', function () {
+    $c = otraEdicionContexto();
+    otraEdicionPartido($c, $c['viejo'], $c['rival']);
+
+    $falla = Mockery::mock(PartidoService::class)->makePartial();
+    $falla->shouldReceive('actualizarGolesContraEquipoEdicion')->andThrow(new RuntimeException('falla simulada'));
+    $servicio = new ReemplazadorEquipo($falla);
+
+    expect(fn () => $servicio->reemplazar(100, $c['categoria']->id, $c['viejo']->id, null, null, $c['anterior']->id))
+        ->toThrow(RuntimeException::class, 'falla simulada');
+
+    expect(EquipoEdicion::where('idEquipo', $c['anterior']->id)->where('idEdicion', 100)->exists())->toBeFalse();
+    expect(ReemplazoEquipo::count())->toBe(0);
+    expect(TablaPosicion::where('idEquipo', $c['viejo']->id)->exists())->toBeTrue();
+});
+
+it('rechaza reemplazantes de otra edicion invalidos sin crear nada', function (string $caso, string $mensaje) {
+    $c = otraEdicionContexto();
+    $yaInscripto = $c['inscribir']('Ya inscripto', 100, $c['categoria']);
+    EquipoEdicion::create(['idEquipo' => $yaInscripto->id, 'idEdicion' => 101, 'idCategoria' => $c['categoriaAnterior']->id, 'golesContra' => 0]);
+
+    $elegido = match ($caso) {
+        'ya inscripto' => $yaInscripto,
+        'categoria distinta' => $c['otraCat'],
+        'el reemplazado' => $c['viejo'],
+        'misma edicion' => $c['rival'],
+    };
+
+    $antes = [EquipoEdicion::count(), Equipo::count(), ReemplazoEquipo::count(), TablaPosicion::count()];
+
+    expect(fn () => app(ReemplazadorEquipo::class)->reemplazar(100, $c['categoria']->id, $c['viejo']->id, null, null, $elegido->id))
+        ->toThrow(DomainException::class, $mensaje);
+
+    expect([EquipoEdicion::count(), Equipo::count(), ReemplazoEquipo::count(), TablaPosicion::count()])->toBe($antes);
+})->with([
+    'ya inscripto' => ['ya inscripto', 'Equipo ya inscripto'],
+    'categoria distinta' => ['categoria distinta', 'categoría'],
+    'el reemplazado' => ['el reemplazado', 'mismo equipo'],
+    'misma edicion' => ['misma edicion', 'Equipo ya inscripto'],
+]);
+
+it('rechaza un equipo sin inscribir de otra categoria', function () {
+    $c = otraEdicionContexto();
+    $solo = Equipo::create(['nombre' => 'Sin historia', 'foto' => 'e.png', 'idCategoria' => $c['categoriaOtra']->id, 'idEdicion' => 101]);
+    $antes = [EquipoEdicion::count(), Equipo::count(), ReemplazoEquipo::count()];
+
+    expect(fn () => app(ReemplazadorEquipo::class)->reemplazar(100, $c['categoria']->id, $c['viejo']->id, null, null, $solo->id))
+        ->toThrow(DomainException::class, 'categoría');
+
+    expect([EquipoEdicion::count(), Equipo::count(), ReemplazoEquipo::count()])->toBe($antes);
+});
+
+it('lista equipos sin inscribir creados en esta edicion con la categoria del reemplazo', function () {
+    $c = otraEdicionContexto();
+    $huerfano = Equipo::create(['nombre' => 'El Mesías', 'foto' => 'm.png', 'idCategoria' => $c['categoria']->id, 'idEdicion' => 100]);
+    $servicio = app(ReemplazadorEquipo::class);
+
+    $items = $servicio->equiposDeOtrasEdiciones(100, $c['categoria']->id, null);
+
+    expect($items->pluck('id')->all())->toContain($huerfano->id);
+    expect($items->firstWhere('id', $huerfano->id))->toMatchArray([
+        'id' => $huerfano->id, 'nombre' => 'El Mesías', 'foto' => 'm.png',
+        'edicion' => 'Edicion Actual', 'categoria' => 'Categoría 2011',
+    ]);
+    expect($servicio->equiposDeOtrasEdiciones(100, $c['categoria']->id, 'mesí')->pluck('id')->all())->toBe([$huerfano->id]);
+});
+
+it('lista equipos sin inscribir de una edicion anterior con categoria de igual nombre normalizado', function () {
+    $c = otraEdicionContexto();
+    $huerfano = Equipo::create(['nombre' => 'Club Huérfano', 'foto' => 'h.png', 'idCategoria' => $c['categoriaAnterior']->id, 'idEdicion' => 101]);
+
+    $items = app(ReemplazadorEquipo::class)->equiposDeOtrasEdiciones(100, $c['categoria']->id, null);
+
+    expect($items->pluck('id')->all())->toContain($huerfano->id);
+    expect($items->firstWhere('id', $huerfano->id))->toMatchArray(['edicion' => 'Edicion Anterior', 'categoria' => ' categoria  2011 ']);
+});
+
+it('no lista equipos sin inscribir de otra categoria ni equipos inscriptos en esta edicion', function () {
+    $c = otraEdicionContexto();
+    $otraCategoria = Equipo::create(['nombre' => 'Huérfano Otra', 'foto' => 'e.png', 'idCategoria' => $c['categoriaOtra']->id, 'idEdicion' => 101]);
+    $otraCategoriaActual = Categoria::create(['idEdicion' => 100, 'nombreCategoria' => 'Categoría 2013']);
+    $inscripto = Equipo::create(['nombre' => 'Inscripto Otra Cat', 'foto' => 'e.png', 'idCategoria' => $c['categoria']->id, 'idEdicion' => 100]);
+    EquipoEdicion::create(['idEquipo' => $inscripto->id, 'idEdicion' => 100, 'idCategoria' => $otraCategoriaActual->id, 'golesContra' => 0]);
+
+    $ids = app(ReemplazadorEquipo::class)->equiposDeOtrasEdiciones(100, $c['categoria']->id, null)->pluck('id')->all();
+
+    expect($ids)->not->toContain($otraCategoria->id)->not->toContain($inscripto->id)->not->toContain($c['viejo']->id);
+});
+
+it('no duplica un equipo sin inscribir que ademas tiene inscripciones viejas', function () {
+    $c = otraEdicionContexto();
+    $categoriaAntigua = Categoria::where('idEdicion', 102)->first();
+    $equipo = Equipo::create(['nombre' => 'Doble Origen', 'foto' => 'e.png', 'idCategoria' => $c['categoria']->id, 'idEdicion' => 100]);
+    EquipoEdicion::create(['idEquipo' => $equipo->id, 'idEdicion' => 101, 'idCategoria' => $c['categoriaAnterior']->id, 'golesContra' => 0]);
+    EquipoEdicion::create(['idEquipo' => $equipo->id, 'idEdicion' => 102, 'idCategoria' => $categoriaAntigua->id, 'golesContra' => 0]);
+
+    $items = app(ReemplazadorEquipo::class)->equiposDeOtrasEdiciones(100, $c['categoria']->id, null);
+
+    expect($items->where('id', $equipo->id))->toHaveCount(1);
+    expect($items->count())->toBe($items->pluck('id')->unique()->count());
+    expect($items->firstWhere('id', $equipo->id)['edicion'])->toBe('Edicion Antigua');
+});
+
+it('encuentra al equipo sin inscribir en el buscador y en la pantalla', function () {
+    $c = otraEdicionContexto();
+    $huerfano = Equipo::create(['nombre' => 'El Mesías', 'foto' => 'm.png', 'idCategoria' => $c['categoria']->id, 'idEdicion' => 100]);
+
+    otraEdicionAdmin($this)->getJson(route('reemplazo-equipo.buscar-otra-edicion').'?idEdicion=100&idCategoria='.$c['categoria']->id.'&q=Mes')
+        ->assertOk()
+        ->assertJsonCount(1, 'items')
+        ->assertJsonPath('items.0.id', $huerfano->id);
+
+    otraEdicionAdmin($this)->get(route('reemplazo-equipo.create', [
+        'idEdicion' => 100, 'idCategoria' => $c['categoria']->id, 'idGrupo' => $c['grupo']->id, 'idEquipo' => $c['viejo']->id,
+    ]))->assertOk()
+        ->assertSee('Equipo de otra edición o sin inscribir')
+        ->assertSee('no están inscriptos en esta edición')
+        ->assertSee('El Mesías');
+});
+
+it('inscribe a un equipo sin inscribir y hace el reemplazo sin crear equipos', function () {
+    $c = otraEdicionContexto();
+    $huerfano = Equipo::create(['nombre' => 'El Mesías', 'foto' => 'm.png', 'idCategoria' => $c['categoria']->id, 'idEdicion' => 100]);
+    $pendiente = otraEdicionPartido($c, $c['viejo'], $c['rival']);
+    $equiposAntes = Equipo::count();
+
+    otraEdicionAdmin($this)->post(route('reemplazo-equipo.store'), otraEdicionPayload($c, $huerfano))
+        ->assertRedirect()
+        ->assertSessionHas('success', 'El Mesías reemplazó a Club Viejo y heredó su posición.');
+
+    expect(Equipo::count())->toBe($equiposAntes);
+    $inscripciones = EquipoEdicion::where('idEquipo', $huerfano->id)->get();
+    expect($inscripciones)->toHaveCount(1);
+    expect($inscripciones->first()->idEdicion)->toBe(100);
+    expect($inscripciones->first()->idCategoria)->toBe($c['categoria']->id);
+    expect(EquipoGrupo::where('idGrupo', $c['grupo']->id)->pluck('idEquipo')->sort()->values()->all())
+        ->toBe(collect([$huerfano->id, $c['rival']->id])->sort()->values()->all());
+    expect(TablaPosicion::where('idEquipo', $huerfano->id)->value('puntos'))->toBe(7);
+    expect(TablaPosicion::where('idEquipo', $c['viejo']->id)->exists())->toBeFalse();
+    expect($pendiente->fresh()->idEquipoLocal)->toBe($huerfano->id);
+    expect(ReemplazoEquipo::where('idEquipoReemplazado', $c['viejo']->id)->where('idEquipoReemplazante', $huerfano->id)->count())->toBe(1);
+});
+
+it('rechaza confirmar con un equipo sin inscribir de otra categoria', function () {
+    $c = otraEdicionContexto();
+    $huerfano = Equipo::create(['nombre' => 'Huérfano Otra', 'foto' => 'e.png', 'idCategoria' => $c['categoriaOtra']->id, 'idEdicion' => 101]);
+    $antes = [EquipoEdicion::count(), ReemplazoEquipo::count(), TablaPosicion::count()];
+
+    expect(fn () => app(ReemplazadorEquipo::class)->reemplazar(100, $c['categoria']->id, $c['viejo']->id, null, null, $huerfano->id))
+        ->toThrow(DomainException::class, 'categoría');
+
+    expect([EquipoEdicion::count(), ReemplazoEquipo::count(), TablaPosicion::count()])->toBe($antes);
+});
+
+it('rechaza combinar el origen de otra edicion con otro origen', function () {
+    $c = otraEdicionContexto();
+
+    expect(fn () => app(ReemplazadorEquipo::class)->reemplazar(100, $c['categoria']->id, $c['viejo']->id, $c['rival']->id, null, $c['anterior']->id))
+        ->toThrow(DomainException::class, 'un solo origen');
+});
+
+it('valida el formulario del origen otra edicion', function () {
+    $c = otraEdicionContexto();
+    $volver = route('reemplazo-equipo.create', ['idEdicion' => 100, 'idCategoria' => $c['categoria']->id, 'idGrupo' => $c['grupo']->id, 'idEquipo' => $c['viejo']->id]);
+
+    otraEdicionAdmin($this)->from($volver)
+        ->post(route('reemplazo-equipo.store'), otraEdicionPayload($c, null))
+        ->assertRedirect($volver)
+        ->assertSessionHasErrors(['idEquipoOtraEdicion' => 'Elegí el equipo de otra edición o sin inscribir que reemplaza.']);
+
+    otraEdicionAdmin($this)->from($volver)
+        ->post(route('reemplazo-equipo.store'), otraEdicionPayload($c, $c['anterior'], ['idEquipoExistente' => $c['rival']->id]))
+        ->assertRedirect($volver)
+        ->assertSessionHasErrors(['idEquipoExistente' => 'Completá solo los datos de la opción elegida.']);
+
+    expect(ReemplazoEquipo::count())->toBe(0);
+});
+
+it('muestra la opcion de otra edicion con candidatos recientes en la pantalla', function () {
+    $c = otraEdicionContexto();
+
+    $response = otraEdicionAdmin($this)->get(route('reemplazo-equipo.create', [
+        'idEdicion' => 100, 'idCategoria' => $c['categoria']->id, 'idGrupo' => $c['grupo']->id, 'idEquipo' => $c['viejo']->id,
+    ]));
+
+    $response->assertOk()
+        ->assertSee('Equipo de otra edición')
+        ->assertSee('value="otra_edicion"', false)
+        ->assertSee('name="idEquipoOtraEdicion"', false)
+        ->assertSee('Atlético Visitante')
+        ->assertSee('Edicion Anterior')
+        ->assertSee('Deportivo Antiguo')
+        ->assertDontSee('Club Otra Categoría')
+        ->assertSee('buscar-otra-edicion', false);
+});
+
+it('rechaza que un segundo reemplazo elija al mismo equipo de otra edicion y deja una sola inscripcion', function () {
+    $c = otraEdicionContexto();
+    $servicio = app(ReemplazadorEquipo::class);
+
+    $servicio->reemplazar(100, $c['categoria']->id, $c['viejo']->id, null, null, $c['anterior']->id);
+
+    expect(fn () => $servicio->reemplazar(100, $c['categoria']->id, $c['rival']->id, null, null, $c['anterior']->id))
+        ->toThrow(DomainException::class, 'Ese equipo ya está inscripto en esta edición. Usá la opción «Equipo ya inscripto» para elegirlo.');
+
+    expect(EquipoEdicion::where('idEquipo', $c['anterior']->id)->where('idEdicion', 100)->where('idCategoria', $c['categoria']->id)->count())->toBe(1);
+    expect(ReemplazoEquipo::where('idEquipoReemplazado', $c['rival']->id)->exists())->toBeFalse();
+});
+
+it('devuelve exactamente el limite de equipos distintos aunque cada uno tenga muchas inscripciones', function () {
+    $c = otraEdicionContexto();
+    $categoriaAntigua = Categoria::where('idEdicion', 102)->first();
+    $limite = 3;
+
+    $nombres = ['Zeta', 'Eta', 'Theta', 'Iota', 'Kappa'];
+    foreach ($nombres as $nombre) {
+        $equipo = $c['inscribir']("Club {$nombre}", 101, $c['categoriaAnterior']);
+        for ($j = 0; $j < 7; $j++) {
+            EquipoEdicion::create(['idEquipo' => $equipo->id, 'idEdicion' => 102, 'idCategoria' => $categoriaAntigua->id, 'golesContra' => 0]);
+        }
+    }
+
+    $items = app(ReemplazadorEquipo::class)->equiposDeOtrasEdiciones(100, $c['categoria']->id, null, $limite);
+
+    expect($items)->toHaveCount($limite);
+    expect($items->pluck('id')->unique())->toHaveCount($limite);
+    expect($items->pluck('edicion')->unique()->all())->toBe(['Edicion Antigua']);
+    expect($items->pluck('nombre')->all())->toBe(['Club Eta', 'Club Iota', 'Club Kappa']);
+});
+
+it('ordena los candidatos por su edicion de origen mas reciente y luego por nombre', function () {
+    $c = otraEdicionContexto();
+    $categoriaAntigua = Categoria::where('idEdicion', 102)->first();
+    EquipoEdicion::create(['idEquipo' => $c['anterior']->id, 'idEdicion' => 102, 'idCategoria' => $categoriaAntigua->id, 'golesContra' => 0]);
+    $aaa = $c['inscribir']('Aaa Club', 101, $c['categoriaAnterior']);
+
+    $items = app(ReemplazadorEquipo::class)->equiposDeOtrasEdiciones(100, $c['categoria']->id, null);
+
+    expect($items->pluck('nombre')->all())->toBe(['Atlético Visitante', 'Deportivo Antiguo', 'Aaa Club']);
+    expect($items->first())->toMatchArray(['id' => $c['anterior']->id, 'edicion' => 'Edicion Antigua', 'categoria' => 'CATEGORÍA 2011']);
+    expect($items->last()['id'])->toBe($aaa->id);
+});

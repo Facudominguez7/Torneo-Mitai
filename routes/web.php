@@ -28,6 +28,7 @@ use App\Http\Controllers\Panel\ControladorPartidos;
 use App\Http\Controllers\Panel\ControladorPlanillaJugador;
 use App\Http\Controllers\Panel\ControladorPodio;
 use App\Http\Controllers\Panel\ControladorPremios;
+use App\Http\Controllers\Panel\ControladorReemplazoEquipo;
 use App\Http\Controllers\Panel\ControladorSubcampeon;
 use App\Http\Controllers\Panel\ControladorTablaGoleadores;
 use App\Http\Controllers\Panel\ControladorTablaPosiciones;
@@ -84,6 +85,9 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::post('premios/valla', [ControladorPremios::class, 'guardarValla'])->name('premios.valla');
     Route::get('vallas', [ControladorVallasRanking::class, 'index'])->name('vallas.index');
     Route::resource('tabla_posicion', ControladorTablaPosiciones::class);
+    Route::get('reemplazo-equipo/crear', [ControladorReemplazoEquipo::class, 'create'])->name('reemplazo-equipo.create');
+    Route::get('reemplazo-equipo/buscar-otra-edicion', [ControladorReemplazoEquipo::class, 'buscarOtraEdicion'])->name('reemplazo-equipo.buscar-otra-edicion');
+    Route::post('reemplazo-equipo', [ControladorReemplazoEquipo::class, 'store'])->name('reemplazo-equipo.store');
     Route::resource('grupos', ControladorGrupos::class);
     Route::resource('equipogrupo', ControladorEquiposGrupos::class);
     Route::post('equipogrupo/asignar-pendientes', [ControladorEquiposGrupos::class, 'asignarPendientes'])

@@ -14,7 +14,9 @@ use App\Models\InstanciaFinal;
 use App\Services\EstadisticasService;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
+use DomainException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ControladorInstanciaFinal extends Controller
 {
@@ -164,7 +166,7 @@ class ControladorInstanciaFinal extends Controller
             ->get();
 
         $copas = Copa::orderByDesc('nombre')->get();
-        $partido = new InstanciaFinal();
+        $partido = new InstanciaFinal;
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $idEdicion,
             'idCategoria' => $idCategoria,
@@ -215,16 +217,29 @@ class ControladorInstanciaFinal extends Controller
         $resultadoGlobal = $request->input('resultadoGlobal');
 
         if (! is_null($golesEquipoLocal) && ! is_null($golesEquipoVisitante)) {
-            $partido->golesEquipoLocal = $golesEquipoLocal;
-            $partido->golesEquipoVisitante = $golesEquipoVisitante;
-            $partido->penalesEquipoLocal = $penalesEquipoLocal;
-            $partido->penalesEquipoVisitante = $penalesEquipoVisitante;
-            $partido->resultadoGlobal = $resultadoGlobal;
-            $partido->save();
-            $idGrupo = 0;
-            $this->partidoService->actualizarHistorialInstanciasFinales($partido, $golesEquipoLocal, $golesEquipoVisitante);
-            $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoLocal, $partido->idEdicion, $idGrupo);
-            $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoVisitante, $partido->idEdicion, $idGrupo);
+            try {
+                DB::transaction(function () use ($partido, $golesEquipoLocal, $golesEquipoVisitante, $penalesEquipoLocal, $penalesEquipoVisitante, $resultadoGlobal): void {
+                    $bloqueada = InstanciaFinal::query()->whereKey($partido->id)->lockForUpdate()->firstOrFail();
+                    $this->partidoService->asegurarResultadoEditable($bloqueada);
+
+                    $bloqueada->golesEquipoLocal = $golesEquipoLocal;
+                    $bloqueada->golesEquipoVisitante = $golesEquipoVisitante;
+                    $bloqueada->penalesEquipoLocal = $penalesEquipoLocal;
+                    $bloqueada->penalesEquipoVisitante = $penalesEquipoVisitante;
+                    $bloqueada->resultadoGlobal = $resultadoGlobal;
+                    $bloqueada->save();
+                    $idGrupo = 0;
+                    $this->partidoService->actualizarHistorialInstanciasFinales($bloqueada, $golesEquipoLocal, $golesEquipoVisitante);
+                    $this->partidoService->actualizarGolesContraEquipoEdicion($bloqueada->idEquipoLocal, $bloqueada->idEdicion, $idGrupo);
+                    $this->partidoService->actualizarGolesContraEquipoEdicion($bloqueada->idEquipoVisitante, $bloqueada->idEdicion, $idGrupo);
+                });
+            } catch (DomainException $error) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $error->getMessage()], 422);
+                }
+
+                return redirect()->to($rutaRegreso)->with('error', $error->getMessage());
+            }
 
             // Las notificaciones se envían desde el frontend via AJAX por lotes
             // Si es AJAX, devolvemos el partido_id para que el frontend envíe notificaciones
@@ -322,7 +337,23 @@ class ControladorInstanciaFinal extends Controller
     public function update(StoreRequest $request, InstanciaFinal $instancia_final)
     {
         $data = $request->validated();
-        $instancia_final->update($data);
+
+        $cambiaEquipos = (int) $data['idEquipoLocal'] !== (int) $instancia_final->idEquipoLocal
+            || (int) $data['idEquipoVisitante'] !== (int) $instancia_final->idEquipoVisitante;
+
+        try {
+            DB::transaction(function () use ($instancia_final, $data, $cambiaEquipos): void {
+                $bloqueada = InstanciaFinal::query()->whereKey($instancia_final->id)->lockForUpdate()->firstOrFail();
+
+                if ($cambiaEquipos) {
+                    $this->partidoService->asegurarResultadoEditable($bloqueada);
+                }
+
+                $bloqueada->update($data);
+            });
+        } catch (DomainException $error) {
+            return redirect()->back()->withInput()->with('error', $error->getMessage());
+        }
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $data['idEdicion'],
@@ -347,7 +378,15 @@ class ControladorInstanciaFinal extends Controller
             'idEdicion' => $request->idEdicion ?: $instancia_final->idEdicion,
         ]);
 
-        $instancia_final->delete();
+        try {
+            DB::transaction(function () use ($instancia_final): void {
+                $bloqueada = InstanciaFinal::query()->whereKey($instancia_final->id)->lockForUpdate()->firstOrFail();
+                $this->partidoService->asegurarResultadoEditable($bloqueada);
+                $bloqueada->delete();
+            });
+        } catch (DomainException $error) {
+            return to_route('instancia_final.index', $parametrosRegreso)->with('error', $error->getMessage());
+        }
 
         return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Partido eliminado con éxito.');
     }
