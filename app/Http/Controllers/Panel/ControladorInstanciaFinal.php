@@ -14,6 +14,7 @@ use App\Models\InstanciaFinal;
 use App\Services\EstadisticasService;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
+use DomainException;
 use Illuminate\Http\Request;
 
 class ControladorInstanciaFinal extends Controller
@@ -164,7 +165,7 @@ class ControladorInstanciaFinal extends Controller
             ->get();
 
         $copas = Copa::orderByDesc('nombre')->get();
-        $partido = new InstanciaFinal();
+        $partido = new InstanciaFinal;
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $idEdicion,
             'idCategoria' => $idCategoria,
@@ -215,6 +216,16 @@ class ControladorInstanciaFinal extends Controller
         $resultadoGlobal = $request->input('resultadoGlobal');
 
         if (! is_null($golesEquipoLocal) && ! is_null($golesEquipoVisitante)) {
+            try {
+                $this->partidoService->asegurarResultadoEditable($partido);
+            } catch (DomainException $error) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $error->getMessage()], 422);
+                }
+
+                return redirect()->to($rutaRegreso)->with('error', $error->getMessage());
+            }
+
             $partido->golesEquipoLocal = $golesEquipoLocal;
             $partido->golesEquipoVisitante = $golesEquipoVisitante;
             $partido->penalesEquipoLocal = $penalesEquipoLocal;
@@ -322,6 +333,18 @@ class ControladorInstanciaFinal extends Controller
     public function update(StoreRequest $request, InstanciaFinal $instancia_final)
     {
         $data = $request->validated();
+
+        $cambiaEquipos = (int) $data['idEquipoLocal'] !== (int) $instancia_final->idEquipoLocal
+            || (int) $data['idEquipoVisitante'] !== (int) $instancia_final->idEquipoVisitante;
+
+        if ($cambiaEquipos) {
+            try {
+                $this->partidoService->asegurarResultadoEditable($instancia_final);
+            } catch (DomainException $error) {
+                return redirect()->back()->withInput()->with('error', $error->getMessage());
+            }
+        }
+
         $instancia_final->update($data);
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
@@ -346,6 +369,12 @@ class ControladorInstanciaFinal extends Controller
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $request->idEdicion ?: $instancia_final->idEdicion,
         ]);
+
+        try {
+            $this->partidoService->asegurarResultadoEditable($instancia_final);
+        } catch (DomainException $error) {
+            return to_route('instancia_final.index', $parametrosRegreso)->with('error', $error->getMessage());
+        }
 
         $instancia_final->delete();
 
