@@ -2,8 +2,10 @@
 
 namespace App\Services\Panel;
 
+use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\TablaGoleador;
@@ -51,6 +53,7 @@ class DetalleEquipo
     /**
      * @return array{
      *     idEdicion: ?int,
+     *     categoria: ?Categoria,
      *     partidos: list<FilaPartido>,
      *     estadisticas: array{
      *         faseGrupos: list<array{grupo: ?string, puntos: int, pj: int, g: int, e: int, p: int, gf: int, gc: int, dg: int}>,
@@ -63,20 +66,36 @@ class DetalleEquipo
     public function obtener(Equipo $equipo, ?int $idEdicion = null): array
     {
         $idEdicion = $this->resolverEdicion($equipo, $idEdicion);
+        $categoria = $this->categoriaEnEdicion($equipo, $idEdicion);
 
         $partidos = $this->partidosJugados($equipo, $idEdicion);
         $finales = $partidos->where('tipo', 'instanciaFinal');
 
         return [
             'idEdicion' => $idEdicion,
+            'categoria' => $categoria,
             'partidos' => $partidos->values()->all(),
             'estadisticas' => [
                 'faseGrupos' => $this->tablaPosiciones($equipo, $idEdicion),
                 'instanciasFinales' => $this->totales($finales),
                 'total' => $this->totales($partidos),
             ],
-            'goleadores' => $this->goleadores($equipo, $idEdicion),
+            'goleadores' => $this->goleadores($equipo, $idEdicion, $categoria?->id ?? $equipo->idCategoria),
         ];
+    }
+
+    /**
+     * Categoría del equipo en esa edición: un equipo traído de otra edición
+     * guarda en equipos.idCategoria la categoría de origen, no la actual.
+     */
+    private function categoriaEnEdicion(Equipo $equipo, ?int $idEdicion): ?Categoria
+    {
+        $idCategoria = EquipoEdicion::query()
+            ->where('idEquipo', $equipo->id)
+            ->where('idEdicion', $idEdicion)
+            ->value('idCategoria');
+
+        return Categoria::find($idCategoria ?? $equipo->idCategoria);
     }
 
     /**
@@ -224,13 +243,13 @@ class DetalleEquipo
     /**
      * @return array{maximos: list<Goleador>, ranking: list<Goleador>}
      */
-    private function goleadores(Equipo $equipo, ?int $idEdicion): array
+    private function goleadores(Equipo $equipo, ?int $idEdicion, ?int $idCategoria): array
     {
         $ordenados = TablaGoleador::query()
             ->with('jugador')
             ->where('idEquipo', $equipo->id)
             ->where('idEdicion', $idEdicion)
-            ->where('idCategoria', $equipo->idCategoria)
+            ->where('idCategoria', $idCategoria)
             ->where('cantidadGoles', '>', 0)
             ->get()
             ->map(fn (TablaGoleador $g): array => [

@@ -225,3 +225,33 @@ it('enlaza la planilla de cada partido jugado', function () {
 
     verDetalleEquipo($e)->assertOk()->assertSee(e($url), false);
 });
+
+it('respeta la edicion seleccionada para un equipo que viene de una edicion anterior', function () {
+    $admin = User::factory()->create(['rol' => 'admin', 'email_verified_at' => now()]);
+    $vieja = Edicion::create(['nombre' => 'Edicion Vieja Detalle']);
+    $nueva = Edicion::create(['nombre' => 'Edicion Nueva Detalle']);
+    $categoriaVieja = Categoria::create(['idEdicion' => $vieja->id, 'nombreCategoria' => 'Categoria Origen Vieja']);
+    $categoriaNueva = Categoria::create(['idEdicion' => $nueva->id, 'nombreCategoria' => 'Categoria Destino Nueva']);
+    // El equipo se creó en la edición vieja y se inscribió en la nueva.
+    $equipo = Equipo::create(['idCategoria' => $categoriaVieja->id, 'idEdicion' => $vieja->id, 'nombre' => 'Equipo Viajero', 'foto' => 'e.png']);
+    EquipoEdicion::create(['idEquipo' => $equipo->id, 'idEdicion' => $vieja->id, 'idCategoria' => $categoriaVieja->id]);
+    EquipoEdicion::create(['idEquipo' => $equipo->id, 'idEdicion' => $nueva->id, 'idCategoria' => $categoriaNueva->id]);
+    Jugador::create(['dni' => 47000001, 'nombre' => 'Goleador', 'apellido' => 'Nuevo']);
+    TablaGoleador::create(['idEquipo' => $equipo->id, 'idEdicion' => $nueva->id, 'idCategoria' => $categoriaNueva->id, 'dni_jugador' => 47000001, 'cantidadGoles' => 7]);
+
+    // El link del listado lleva la edición seleccionada, no la de creación del equipo.
+    $listado = $this->actingAs($admin)->get(route('equipo.index', ['idEdicion' => $nueva->id]))->assertOk()->getContent();
+    expect($listado)->toContain(e(route('equipo.show', ['equipo' => $equipo->id, 'idEdicion' => $nueva->id])));
+
+    // El detalle usa la categoría de esa edición y sus goleadores.
+    $detalle = $this->actingAs($admin)->get(route('equipo.show', ['equipo' => $equipo->id, 'idEdicion' => $nueva->id]))->assertOk()->getContent();
+    expect($detalle)->toContain('Categoria Destino Nueva')
+        ->not->toContain('Categoria Origen Vieja');
+    preg_match('/data-detalle-goleador.*?<\/section>/s', $detalle, $goleador);
+    expect($goleador[0] ?? '')->toContain('Goleador')->toContain('7');
+
+    // Sin idEdicion en la URL, usa la edición del contexto del panel.
+    $sinParametro = $this->actingAs($admin)->withSession(['panel.idEdicion' => $nueva->id])
+        ->get(route('equipo.show', ['equipo' => $equipo->id]))->assertOk()->getContent();
+    expect($sinParametro)->toContain('Categoria Destino Nueva');
+});
