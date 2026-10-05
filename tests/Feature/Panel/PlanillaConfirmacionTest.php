@@ -9,6 +9,7 @@ use App\Models\Fecha;
 use App\Models\GolArbitroReportado;
 use App\Models\Grupo;
 use App\Models\Jugador;
+use App\Models\ListaBuenaFe;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Models\TablaGoleador;
@@ -103,6 +104,17 @@ function crearContextoPlanillaConfirmacion(): array
         'goles' => 0,
         'asistio' => false,
         'tarjeta_roja' => false,
+    ]);
+
+    // El jugador debe estar activo en la Lista de Buena Fe para que la vista
+    // de planilla no lo procese como baja al sincronizar.
+    ListaBuenaFe::create([
+        'dni_jugador' => $jugador->dni,
+        'idEquipo' => $equipoLocal->id,
+        'idEdicion' => $edicion->id,
+        'idCategoria' => $categoria->id,
+        'fecha_nacimiento' => '2010-02-01',
+        'activo' => true,
     ]);
 
     return compact('admin', 'edicion', 'categoria', 'equipoLocal', 'equipoVisitante', 'partido', 'jugador', 'planilla');
@@ -482,10 +494,13 @@ it('no muestra acciones masivas de asistencia en la planilla', function () {
         ->assertDontSee('Desmarcar asistencia a todos', false);
 });
 
-it('guarda goles reportados por arbitros separados del dato oficial y marca inconsistencias', function () {
+it('guarda goles arbitrales, aplica los vinculados sobre la planilla oficial y marca inconsistencias', function () {
     $contexto = crearContextoPlanillaConfirmacion();
     $contexto['planilla']->update([
         'asistio' => true,
+    ]);
+    $contexto['partido']->update([
+        'goles_confirmados_at' => now(),
     ]);
 
     postPlanillaConCsrf(
@@ -500,7 +515,8 @@ it('guarda goles reportados por arbitros separados del dato oficial y marca inco
         ])
     )
         ->assertRedirect()
-        ->assertSessionHas('status', 'Goles reportados por arbitros actualizados correctamente.');
+        ->assertSessionHas('status', 'Goles arbitrales guardados y aplicados sobre la planilla oficial del equipo.')
+        ->assertSessionHas('warning', fn (string $warning): bool => str_contains($warning, 'Advertencia: la suma de goles individuales del equipo (2) difiere del resultado oficial (0)'));
 
     $reportes = GolArbitroReportado::query()
         ->where('partido_id', $contexto['partido']->id)
@@ -517,6 +533,15 @@ it('guarda goles reportados por arbitros separados del dato oficial y marca inco
     expect($reportes[1]->goles_reportados)->toBe(1);
     expect($reportes[1]->idPlanillaJugador)->toBeNull();
     expect($reportes[1]->es_inconsistencia)->toBeTrue();
+
+    expect((int) $contexto['planilla']->fresh()->goles)->toBe(2);
+    expect((int) $contexto['jugador']->fresh()->goles_totales)->toBe(2);
+    expect(TablaGoleador::query()
+        ->where('dni_jugador', $contexto['jugador']->dni)
+        ->where('idEdicion', $contexto['edicion']->id)
+        ->where('idEquipo', $contexto['equipoLocal']->id)
+        ->value('cantidadGoles'))->toBe(2);
+    expect($contexto['partido']->fresh()->goles_confirmados_at)->toBeNull();
 
     $this->actingAs($contexto['admin'])
         ->get(route('planilla.show', [
@@ -535,6 +560,10 @@ it('guarda goles reportados por arbitros separados del dato oficial y marca inco
 
 it('marca inconsistencia cuando la camiseta existe pero el jugador no tiene asistencia', function () {
     $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['partido']->update([
+        'goles_confirmados_at' => now(),
+    ]);
+    $confirmacionAntes = $contexto['partido']->fresh()->goles_confirmados_at->toIso8601String();
 
     postPlanillaConCsrf(
         $this->actingAs($contexto['admin']),
@@ -547,7 +576,8 @@ it('marca inconsistencia cuando la camiseta existe pero el jugador no tiene asis
         ])
     )
         ->assertRedirect()
-        ->assertSessionHas('status', 'Goles reportados por arbitros actualizados correctamente.');
+        ->assertSessionHas('status', 'Goles arbitrales guardados. No hubo cambios aplicables en la planilla oficial.')
+        ->assertSessionMissing('warning');
 
     $reporte = GolArbitroReportado::query()
         ->where('partido_id', $contexto['partido']->id)
@@ -559,6 +589,11 @@ it('marca inconsistencia cuando la camiseta existe pero el jugador no tiene asis
     expect($reporte->idPlanillaJugador)->toBeNull();
     expect($reporte->es_inconsistencia)->toBeTrue();
     expect($reporte->motivo_inconsistencia)->toBe('El jugador con la camiseta N° 10 figura en la planilla pero no está marcado como presente en este partido, por eso el gol no se vinculó.');
+
+    expect((int) $contexto['planilla']->fresh()->goles)->toBe(0);
+    expect((int) $contexto['jugador']->fresh()->goles_totales)->toBe(0);
+    expect($contexto['partido']->fresh()->goles_confirmados_at->toIso8601String())->toBe($confirmacionAntes);
+    expect(TablaGoleador::query()->where('dni_jugador', $contexto['jugador']->dni)->exists())->toBeFalse();
 
     $this->actingAs($contexto['admin'])
         ->get(route('planilla.show', [
@@ -574,7 +609,7 @@ it('marca inconsistencia cuando la camiseta existe pero el jugador no tiene asis
         ->assertDontSee('Jugador oficial vinculado: Confirmado, Juan', false);
 });
 
-it('aplica goles arbitrales al equipo cuando todos los goles oficiales estan en cero', function () {
+it('aplica goles arbitrales al guardar cuando no hay goles oficiales y bloquea la reaplicacion manual', function () {
     $contexto = crearContextoPlanillaConfirmacion();
     $contexto['planilla']->update(['asistio' => true, 'goles' => 0]);
 
@@ -587,7 +622,17 @@ it('aplica goles arbitrales al equipo cuando todos los goles oficiales estan en 
                 ['numero_camiseta' => 10, 'goles_reportados' => 3],
             ],
         ])
-    )->assertRedirect();
+    )
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Goles arbitrales guardados y aplicados sobre la planilla oficial del equipo.');
+
+    expect((int) $contexto['planilla']->fresh()->goles)->toBe(3);
+    expect((int) $contexto['jugador']->fresh()->goles_totales)->toBe(3);
+    expect(TablaGoleador::query()
+        ->where('dni_jugador', $contexto['jugador']->dni)
+        ->where('idEdicion', $contexto['edicion']->id)
+        ->where('idEquipo', $contexto['equipoLocal']->id)
+        ->value('cantidadGoles'))->toBe(3);
 
     postPlanillaConCsrf(
         $this->actingAs($contexto['admin']),
@@ -597,20 +642,167 @@ it('aplica goles arbitrales al equipo cuando todos los goles oficiales estan en 
         ])
     )
         ->assertRedirect()
-        ->assertSessionHas('status', 'Goles arbitrales aplicados sobre la planilla oficial del equipo.');
+        ->assertSessionHasErrors('idEquipo');
 
-    $planillaActualizada = $contexto['planilla']->fresh();
-    $jugadorActualizado = $contexto['jugador']->fresh();
-
-    expect($planillaActualizada)->not->toBeNull();
-    expect((int) $planillaActualizada->goles)->toBe(3);
-    expect((int) $jugadorActualizado->goles_totales)->toBe(3);
-    expect(TablaGoleador::query()->where('dni_jugador', $contexto['jugador']->dni)->value('cantidadGoles'))->toBe(3);
+    expect((int) $contexto['planilla']->fresh()->goles)->toBe(3);
+    expect((int) $contexto['jugador']->fresh()->goles_totales)->toBe(3);
 });
 
-it('bloquea la aplicacion de goles arbitrales si existe al menos un gol oficial en el equipo', function () {
+it('guarda el reporte arbitral sin tocar goles oficiales existentes y bloquea la aplicacion manual', function () {
     $contexto = crearContextoPlanillaConfirmacion();
     $contexto['planilla']->update(['asistio' => true, 'goles' => 1]);
+    $contexto['partido']->update(['goles_confirmados_at' => now()]);
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarGolesArbitros'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'reportes' => [
+                ['numero_camiseta' => 10, 'goles_reportados' => 2],
+            ],
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Goles arbitrales guardados. No se aplicaron goles a la planilla oficial porque el equipo ya tiene goles oficiales cargados.')
+        ->assertSessionMissing('warning');
+
+    $reporte = GolArbitroReportado::query()
+        ->where('partido_id', $contexto['partido']->id)
+        ->where('idEquipo', $contexto['equipoLocal']->id)
+        ->first();
+
+    expect($reporte)->not->toBeNull();
+    expect((int) $reporte->goles_reportados)->toBe(2);
+    expect($reporte->idPlanillaJugador)->toBe($contexto['planilla']->id);
+    expect($reporte->es_inconsistencia)->toBeFalse();
+
+    expect((int) $contexto['planilla']->fresh()->goles)->toBe(1);
+    expect((int) $contexto['jugador']->fresh()->goles_totales)->toBe(0);
+    expect($contexto['partido']->fresh()->goles_confirmados_at)->not->toBeNull();
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.aplicarGolesArbitrales'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionHasErrors('idEquipo');
+
+    expect((int) $contexto['planilla']->fresh()->goles)->toBe(1);
+});
+
+it('no duplica goles ni estadisticas al guardar dos veces el mismo reporte arbitral', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['planilla']->update(['asistio' => true]);
+
+    $parametros = array_merge(parametrosBasePlanilla($contexto), [
+        'idEquipo' => $contexto['equipoLocal']->id,
+        'reportes' => [
+            ['numero_camiseta' => 10, 'goles_reportados' => 2],
+        ],
+    ]);
+
+    postPlanillaConCsrf($this->actingAs($contexto['admin']), route('planilla.actualizarGolesArbitros'), $parametros)
+        ->assertRedirect();
+
+    postPlanillaConCsrf($this->actingAs($contexto['admin']), route('planilla.actualizarGolesArbitros'), $parametros)
+        ->assertRedirect()
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status', 'Goles arbitrales guardados. No se aplicaron goles a la planilla oficial porque el equipo ya tiene goles oficiales cargados.');
+
+    expect((int) $contexto['planilla']->fresh()->goles)->toBe(2);
+    expect((int) $contexto['jugador']->fresh()->goles_totales)->toBe(2);
+    expect(TablaGoleador::query()
+        ->where('dni_jugador', $contexto['jugador']->dni)
+        ->where('idEdicion', $contexto['edicion']->id)
+        ->where('idEquipo', $contexto['equipoLocal']->id)
+        ->value('cantidadGoles'))->toBe(2);
+    expect(GolArbitroReportado::query()->where('partido_id', $contexto['partido']->id)->count())->toBe(1);
+});
+
+it('no aplica goles cuando la camiseta reportada es ambigua entre jugadores presentes', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['planilla']->update(['asistio' => true]);
+
+    $jugadorDuplicado = Jugador::create([
+        'dni' => '40500004',
+        'nombre' => 'Marco',
+        'apellido' => 'Duplicado',
+        'goles_totales' => 0,
+        'partidos_totales' => 0,
+        'tarjetas_rojas_totales' => 0,
+    ]);
+
+    PlanillaJugador::create([
+        'partido_id' => $contexto['partido']->id,
+        'partido_type' => PartidoConstants::CLASS_PARTIDO,
+        'dni_jugador' => $jugadorDuplicado->dni,
+        'idEquipo' => $contexto['equipoLocal']->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'numero_camiseta' => 10,
+        'fecha_nacimiento' => '2010-05-01',
+        'goles' => 0,
+        'asistio' => true,
+        'tarjeta_roja' => false,
+    ]);
+
+    postPlanillaConCsrf(
+        $this->actingAs($contexto['admin']),
+        route('planilla.actualizarGolesArbitros'),
+        array_merge(parametrosBasePlanilla($contexto), [
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'reportes' => [
+                ['numero_camiseta' => 10, 'goles_reportados' => 2],
+            ],
+        ])
+    )
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Goles arbitrales guardados. No hubo cambios aplicables en la planilla oficial.');
+
+    $reporte = GolArbitroReportado::query()
+        ->where('partido_id', $contexto['partido']->id)
+        ->where('idEquipo', $contexto['equipoLocal']->id)
+        ->first();
+
+    expect($reporte->es_inconsistencia)->toBeFalse();
+    expect($reporte->idPlanillaJugador)->not->toBeNull();
+
+    expect((int) $contexto['planilla']->fresh()->goles)->toBe(0);
+    expect((int) PlanillaJugador::query()->where('dni_jugador', $jugadorDuplicado->dni)->value('goles'))->toBe(0);
+    expect((int) $contexto['jugador']->fresh()->goles_totales)->toBe(0);
+    expect((int) $jugadorDuplicado->fresh()->goles_totales)->toBe(0);
+});
+
+it('aplica los goles arbitrales solo al equipo reportado', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+    $contexto['planilla']->update(['asistio' => true]);
+
+    $jugadorVisitante = Jugador::create([
+        'dni' => '40500002',
+        'nombre' => 'Pedro',
+        'apellido' => 'Visitante',
+        'goles_totales' => 0,
+        'partidos_totales' => 0,
+        'tarjetas_rojas_totales' => 0,
+    ]);
+
+    $planillaVisitante = PlanillaJugador::create([
+        'partido_id' => $contexto['partido']->id,
+        'partido_type' => PartidoConstants::CLASS_PARTIDO,
+        'dni_jugador' => $jugadorVisitante->dni,
+        'idEquipo' => $contexto['equipoVisitante']->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'numero_camiseta' => 10,
+        'fecha_nacimiento' => '2010-03-01',
+        'goles' => 0,
+        'asistio' => true,
+        'tarjeta_roja' => false,
+    ]);
 
     postPlanillaConCsrf(
         $this->actingAs($contexto['admin']),
@@ -623,17 +815,7 @@ it('bloquea la aplicacion de goles arbitrales si existe al menos un gol oficial 
         ])
     )->assertRedirect();
 
-    postPlanillaConCsrf(
-        $this->actingAs($contexto['admin']),
-        route('planilla.aplicarGolesArbitrales'),
-        array_merge(parametrosBasePlanilla($contexto), [
-            'idEquipo' => $contexto['equipoLocal']->id,
-        ])
-    )
-        ->assertRedirect()
-        ->assertSessionHasErrors('idEquipo');
-
-    $planillaSinCambios = $contexto['planilla']->fresh();
-    expect($planillaSinCambios)->not->toBeNull();
-    expect((int) $planillaSinCambios->goles)->toBe(1);
+    expect((int) $contexto['planilla']->fresh()->goles)->toBe(2);
+    expect((int) $planillaVisitante->fresh()->goles)->toBe(0);
+    expect((int) $jugadorVisitante->fresh()->goles_totales)->toBe(0);
 });
