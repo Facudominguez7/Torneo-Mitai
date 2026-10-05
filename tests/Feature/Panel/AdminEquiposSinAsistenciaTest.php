@@ -10,6 +10,8 @@ use App\Models\Jugador;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Models\User;
+use Illuminate\Http\Response;
+use Illuminate\Testing\TestResponse;
 
 const TIPO_PARTIDO_PANEL = 'App\\Models\\Partido';
 
@@ -110,25 +112,70 @@ function crearJugadorConPlanilla(Partido $partido, Equipo $equipo, Categoria $ca
     ]);
 }
 
-it('muestra un equipo pendiente cuando no tiene planilla cargada', function () {
+/**
+ * Extrae con DOM el markup de la tarjeta del dashboard de un partido
+ * especifico (elemento con data-dashboard-partido) para que las aserciones
+ * de badges queden asociadas al partido correcto y no arrastren texto del
+ * sidebar, otras secciones ni tarjetas vecinas.
+ */
+function contenidoTarjetaPartido(TestResponse $response, int $partidoId): string
+{
+    $documento = new DOMDocument;
+    $estadoErrores = libxml_use_internal_errors(true);
+
+    try {
+        if ($documento->loadHTML($response->getContent()) === false) {
+            return '';
+        }
+
+        $tarjetas = (new DOMXPath($documento))->query('//*[@data-dashboard-partido="'.$partidoId.'"]');
+
+        if ($tarjetas === false || $tarjetas->length === 0) {
+            return '';
+        }
+
+        $markup = $documento->saveHTML($tarjetas->item(0));
+
+        return $markup === false ? '' : $markup;
+    } finally {
+        libxml_clear_errors();
+        libxml_use_internal_errors($estadoErrores);
+    }
+}
+
+it('extrae unicamente la tarjeta pedida sin arrastrar el contenido de la tarjeta vecina', function () {
+    $html = '<div data-dashboard-partido="1"><span>Mitai Uno</span></div>'
+        .'<div data-dashboard-partido="2"><span class="badge">Mitai Dos (Local): Sin planilla</span>'
+        .'<a href="/planilla">Planillas</a></div>';
+    $respuesta = new TestResponse(new Response($html));
+
+    expect(contenidoTarjetaPartido($respuesta, 1))
+        ->not->toBeEmpty()
+        ->not->toContain('Sin planilla')
+        ->and(contenidoTarjetaPartido($respuesta, 2))
+        ->toContain('Mitai Dos (Local): Sin planilla')
+        ->and(contenidoTarjetaPartido($respuesta, 999))->toBe('');
+});
+
+it('muestra en la tarjeta del partido los equipos sin planilla con su condicion', function () {
     $admin = crearAdminPanel();
     $contexto = crearContextoBaseAdmin();
     $local = crearEquipoEnEdicion($contexto, 'Mitai Azul');
     $visitante = crearEquipoEnEdicion($contexto, 'Mitai Rojo');
-
-    crearPartidoAdmin($contexto, $local, $visitante, '2026-03-15 10:00:00');
+    $partido = crearPartidoAdmin($contexto, $local, $visitante, '2026-03-15 10:00:00');
 
     $response = $this->actingAs($admin)
         ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]));
 
-    $response->assertOk()
-        ->assertSee('Equipos con asistencia pendiente')
-        ->assertSee('Mitai Azul')
-        ->assertSee('Mitai Rojo')
-        ->assertSee('Sin planilla');
+    $tarjeta = contenidoTarjetaPartido($response, $partido->id);
+
+    $response->assertOk();
+    expect($tarjeta)->not->toBeEmpty()
+        ->toContain('Mitai Azul (Local): Sin planilla')
+        ->toContain('Mitai Rojo (Visitante): Sin planilla');
 });
 
-it('mantiene pendiente a un equipo cuando la planilla existe pero nadie asistio', function () {
+it('distingue el badge del equipo con planilla sin asistencias marcadas del que no cargo planilla', function () {
     $admin = crearAdminPanel();
     $contexto = crearContextoBaseAdmin();
     $local = crearEquipoEnEdicion($contexto, 'Mitai Verde');
@@ -140,12 +187,15 @@ it('mantiene pendiente a un equipo cuando la planilla existe pero nadie asistio'
     $response = $this->actingAs($admin)
         ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]));
 
-    $response->assertOk()
-        ->assertSee('Mitai Verde')
-        ->assertSee('Sin asistencias marcadas');
+    $tarjeta = contenidoTarjetaPartido($response, $partido->id);
+
+    $response->assertOk();
+    expect($tarjeta)->not->toBeEmpty()
+        ->toContain('Mitai Verde (Local): Sin asistencias marcadas')
+        ->toContain('Mitai Blanco (Visitante): Sin planilla');
 });
 
-it('oculta del reporte a un equipo que ya tiene al menos una asistencia marcada', function () {
+it('mantiene la tarjeta del partido visible sin badges de asistencia cuando ambos equipos registraron presentes', function () {
     $admin = crearAdminPanel();
     $contexto = crearContextoBaseAdmin();
     $local = crearEquipoEnEdicion($contexto, 'Mitai Dorado');
@@ -158,31 +208,113 @@ it('oculta del reporte a un equipo que ya tiene al menos una asistencia marcada'
     $response = $this->actingAs($admin)
         ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]));
 
-    $response->assertOk()
-        ->assertDontSee('Sin planilla')
-        ->assertDontSee('Sin asistencias marcadas')
-        ->assertSee('No hay equipos con asistencias pendientes en el contexto visible del panel admin.');
+    $tarjeta = contenidoTarjetaPartido($response, $partido->id);
+
+    $response->assertOk();
+    expect($tarjeta)->not->toBeEmpty()
+        ->toContain('Mitai Dorado')
+        ->toContain('/planilla/'.$partido->id.'/'.$contexto['edicion']->id.'/partido')
+        ->toContain('Planillas</a>')
+        ->not->toContain('Sin planilla')
+        ->not->toContain('Sin asistencias marcadas');
 });
 
-it('respeta el filtro horario al mostrar los pendientes', function () {
+it('marca solo al equipo pendiente cuando el rival ya registro presentes', function () {
+    $admin = crearAdminPanel();
+    $contexto = crearContextoBaseAdmin();
+    $local = crearEquipoEnEdicion($contexto, 'Mitai Presente');
+    $visitante = crearEquipoEnEdicion($contexto, 'Mitai Ausente');
+    $partido = crearPartidoAdmin($contexto, $local, $visitante, '2026-03-15 13:00:00');
+
+    crearJugadorConPlanilla($partido, $local, $contexto['categoria'], $contexto['edicion'], 30100333, true);
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]));
+
+    $tarjeta = contenidoTarjetaPartido($response, $partido->id);
+
+    $response->assertOk();
+    expect($tarjeta)->not->toBeEmpty()
+        ->toContain('Mitai Ausente (Visitante): Sin planilla')
+        ->not->toContain('(Local): Sin planilla')
+        ->not->toContain('(Local): Sin asistencias marcadas');
+});
+
+it('filtra las tarjetas al horario seleccionado y excluye los partidos de otros horarios', function () {
     $admin = crearAdminPanel();
     $contexto = crearContextoBaseAdmin();
 
     $equipoManana = crearEquipoEnEdicion($contexto, 'Mitai Manana');
     $rivalManana = crearEquipoEnEdicion($contexto, 'Mitai Sol');
-    crearPartidoAdmin($contexto, $equipoManana, $rivalManana, '2026-03-15 09:00:00');
+    $partidoManana = crearPartidoAdmin($contexto, $equipoManana, $rivalManana, '2026-03-15 09:00:00');
 
     $equipoTarde = crearEquipoEnEdicion($contexto, 'Mitai Tarde');
     $rivalTarde = crearEquipoEnEdicion($contexto, 'Mitai Luna');
-    crearPartidoAdmin($contexto, $equipoTarde, $rivalTarde, '2026-03-15 15:00:00');
+    $partidoTarde = crearPartidoAdmin($contexto, $equipoTarde, $rivalTarde, '2026-03-15 15:00:00');
 
     $response = $this->actingAs($admin)
         ->get(route('admin', ['idEdicion' => $contexto['edicion']->id, 'horario' => '15:00']));
 
     $response->assertOk()
-        ->assertSee('Horario 15:00 hs')
-        ->assertSee('Mitai Tarde')
-        ->assertDontSee('Mitai Manana');
+        ->assertSee('Mostrando partidos de las 15:00 hs');
+
+    expect($response->getContent())
+        ->toContain('value="15:00" selected')
+        ->not->toContain('value="09:00" selected')
+        ->and(contenidoTarjetaPartido($response, $partidoTarde->id))
+        ->toContain('Mitai Tarde (Local): Sin planilla')
+        ->toContain('Mitai Luna (Visitante): Sin planilla')
+        ->and(contenidoTarjetaPartido($response, $partidoManana->id))->toBe('');
+});
+
+it('muestra los partidos de todos los horarios cuando no hay filtro seleccionado', function () {
+    $admin = crearAdminPanel();
+    $contexto = crearContextoBaseAdmin();
+
+    $equipoManana = crearEquipoEnEdicion($contexto, 'Mitai Manana');
+    $rivalManana = crearEquipoEnEdicion($contexto, 'Mitai Sol');
+    $partidoManana = crearPartidoAdmin($contexto, $equipoManana, $rivalManana, '2026-03-15 09:00:00');
+
+    $equipoTarde = crearEquipoEnEdicion($contexto, 'Mitai Tarde');
+    $rivalTarde = crearEquipoEnEdicion($contexto, 'Mitai Luna');
+    $partidoTarde = crearPartidoAdmin($contexto, $equipoTarde, $rivalTarde, '2026-03-15 15:00:00');
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]));
+
+    $response->assertOk()
+        ->assertSee('Todos los horarios')
+        ->assertDontSee('Mostrando partidos de las');
+
+    expect(contenidoTarjetaPartido($response, $partidoManana->id))
+        ->toContain('Mitai Manana (Local): Sin planilla')
+        ->and(contenidoTarjetaPartido($response, $partidoTarde->id))
+        ->toContain('Mitai Tarde (Local): Sin planilla');
+});
+
+it('no arrastra los pendientes de otra edicion a las tarjetas del panel', function () {
+    $admin = crearAdminPanel();
+    $contexto = crearContextoBaseAdmin();
+    $local = crearEquipoEnEdicion($contexto, 'Mitai Local A');
+    $visitante = crearEquipoEnEdicion($contexto, 'Mitai Visitante A');
+    $partido = crearPartidoAdmin($contexto, $local, $visitante, '2026-03-15 14:00:00');
+
+    $otroContexto = crearContextoBaseAdmin();
+    $equipoForaneo = crearEquipoEnEdicion($otroContexto, 'Mitai Foraneo');
+    $rivalForaneo = crearEquipoEnEdicion($otroContexto, 'Mitai Foraneo Rival');
+    crearPartidoAdmin($otroContexto, $equipoForaneo, $rivalForaneo, '2026-03-15 14:00:00');
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]));
+
+    $tarjeta = contenidoTarjetaPartido($response, $partido->id);
+
+    $response->assertOk()
+        ->assertDontSee('Mitai Foraneo');
+
+    expect($tarjeta)->not->toBeEmpty()
+        ->toContain('Mitai Local A (Local): Sin planilla')
+        ->not->toContain('Foraneo');
 });
 
 it('imprime solo los partidos de la ultima fecha disponible para arbitros', function () {
