@@ -13,7 +13,10 @@ test('login screen can be rendered', function () {
 });
 
 test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create([
+        'email' => 'usuario@gmail.com',
+        'restablecer_password' => 'innecesario',
+    ]);
 
     $response = $this->post('/login', [
         'email' => $user->email,
@@ -24,15 +27,33 @@ test('users can authenticate using the login screen', function () {
     $response->assertRedirect(route('home', absolute: false));
 });
 
-test('users can not authenticate with invalid password', function () {
-    $user = User::factory()->create();
+test('users with forced password reset are logged out and redirected to the password request screen', function () {
+    $user = User::factory()->create([
+        'email' => 'reseteo@gmail.com',
+        'restablecer_password' => 'necesario',
+    ]);
 
-    $this->post('/login', [
+    $response = $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertGuest();
+    $response->assertRedirect(route('password.request.auth', ['restablecer' => 'Si'], absolute: false));
+});
+
+test('users can not authenticate with invalid password', function () {
+    $user = User::factory()->create([
+        'restablecer_password' => 'innecesario',
+    ]);
+
+    $response = $this->post('/login', [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);
 
     $this->assertGuest();
+    $response->assertSessionHasErrors('email');
 });
 
 test('users can logout', function () {
@@ -50,6 +71,7 @@ test('unverified users are redirected to the verification screen after login', f
     $user = User::factory()->unverified()->create([
         'email' => 'pendiente@gmail.com',
         'requires_email_verification_for_notifications' => true,
+        'restablecer_password' => 'innecesario',
     ]);
 
     $response = $this->post('/login', [
