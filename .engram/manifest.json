@@ -40,6 +40,22 @@
       "sessions": 7,
       "memories": 12,
       "prompts": 5
+    },
+    {
+      "id": "74a70ff5",
+      "created_by": "facu",
+      "created_at": "2026-10-05T12:12:06.66492528Z",
+      "sessions": 6,
+      "memories": 13,
+      "prompts": 3
+    },
+    {
+      "id": "eb1a00c6",
+      "created_by": "facu",
+      "created_at": "2026-10-05T18:14:54.673505894Z",
+      "sessions": 28,
+      "memories": 21,
+      "prompts": 25
     }
   ]
 }
