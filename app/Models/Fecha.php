@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class Fecha extends Model
 {
     use HasFactory;
+
     public $timestamps = false;
+
     protected $table = 'fechas';
+
     protected $fillable = ['idCategoria', 'idEdicion', 'nombre'];
 
     public function categoria()
@@ -21,7 +24,7 @@ class Fecha extends Model
     {
         return $this->belongsTo(Edicion::class, 'idEdicion');
     }
-    
+
     public function partidos()
     {
         return $this->hasMany(Partido::class, 'idFechas');

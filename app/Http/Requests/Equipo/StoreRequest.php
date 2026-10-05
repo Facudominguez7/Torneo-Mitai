@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Equipo;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRequest extends FormRequest
@@ -17,7 +18,7 @@ class StoreRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -25,7 +26,7 @@ class StoreRequest extends FormRequest
             'nombre' => 'required|min:5|max:50',
             'idCategoria' => 'required|integer',
             'idEdicion' => 'required|integer',
-            'foto' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048', 
+            'foto' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
         ];
     }
 }

@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('ediciones')) {
+        if (! Schema::hasTable('ediciones')) {
             Schema::create('ediciones', function (Blueprint $table) {
-            $table->integer('id', true);
-            $table->string('nombre', 50);
-        });
+                $table->integer('id', true);
+                $table->string('nombre', 50);
+            });
         }
     }
 

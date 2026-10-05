@@ -5,19 +5,18 @@ namespace App\Console\Commands;
 use App\Models\User;
 use App\Services\EmailDomainGuard;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Comando para enviar recordatorios de verificación de email.
- * 
+ *
  * Se ejecuta diariamente para recordar a usuarios sin email verificado
  * que completen la verificación para poder recibir notificaciones del torneo.
- * 
+ *
  * Reglas para evitar spam:
  * - Solo envía a usuarios registrados hace más de 24 horas
  * - Máximo un recordatorio cada 7 días por usuario
- * 
- * @package App\Console\Commands
  */
 class EnviarRecordatorioVerificacion extends Command
 {
@@ -61,6 +60,7 @@ class EnviarRecordatorioVerificacion extends Command
 
         if ($usuarios->isEmpty()) {
             $this->info('✅ No hay usuarios pendientes de recordatorio.');
+
             return Command::SUCCESS;
         }
 
@@ -71,6 +71,7 @@ class EnviarRecordatorioVerificacion extends Command
             foreach ($usuarios as $usuario) {
                 $this->line("  - {$usuario->email} (registrado: {$usuario->created_at->format('d/m/Y')})");
             }
+
             return Command::SUCCESS;
         }
 
@@ -100,7 +101,7 @@ class EnviarRecordatorioVerificacion extends Command
             } catch (\Exception $e) {
                 $errores++;
                 $this->error("  ✗ Error con {$usuario->email}: {$e->getMessage()}");
-                
+
                 Log::channel('single')->error('Error enviando recordatorio de verificación', [
                     'user_id' => $usuario->id,
                     'email' => $usuario->email,
@@ -125,13 +126,13 @@ class EnviarRecordatorioVerificacion extends Command
 
     /**
      * Obtener usuarios que necesitan recordatorio de verificación.
-     * 
+     *
      * Criterios:
      * - Email no verificado
      * - Registrado hace más de 24 horas
      * - Sin recordatorio en los últimos 7 días (o nunca recibió recordatorio)
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     private function obtenerUsuariosSinVerificar()
     {
@@ -143,10 +144,10 @@ class EnviarRecordatorioVerificacion extends Command
         EmailDomainGuard::applyBlockedDomainsFilter($query);
 
         // Aplicar límite de recordatorios solo si no se fuerza
-        if (!$this->option('force')) {
+        if (! $this->option('force')) {
             $query->where(function ($q) {
                 $q->whereNull('last_verification_reminder_at')
-                  ->orWhere('last_verification_reminder_at', '<', now()->subDays(self::DIAS_ENTRE_RECORDATORIOS));
+                    ->orWhere('last_verification_reminder_at', '<', now()->subDays(self::DIAS_ENTRE_RECORDATORIOS));
             });
         }
 

@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Eliminar columna 'nombre' de tabla_goleadores ya que ahora se obtiene
      * dinámicamente desde la relación con Jugador
      */

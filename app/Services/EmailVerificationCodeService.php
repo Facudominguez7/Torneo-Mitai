@@ -9,14 +9,21 @@ use Illuminate\Support\Facades\Hash;
 class EmailVerificationCodeService
 {
     public const CODE_LENGTH = 6;
+
     public const EXPIRES_IN_MINUTES = 15;
+
     public const MAX_ATTEMPTS = 5;
+
     public const RESEND_COOLDOWN_SECONDS = 60;
 
     public const STATUS_VERIFIED = 'verified';
+
     public const STATUS_INVALID = 'invalid';
+
     public const STATUS_EXPIRED = 'expired';
+
     public const STATUS_MISSING = 'missing';
+
     public const STATUS_LOCKED = 'locked';
 
     public function issue(User $user): string

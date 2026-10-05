@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Panel;
 
-use App\Models\Fecha;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Fecha\StoreRequest;
-use App\Models\Categoria;
 use App\Models\Edicion;
+use App\Models\Fecha;
 use Illuminate\Http\Request;
 
 class ControladorFecha extends Controller
@@ -21,6 +20,7 @@ class ControladorFecha extends Controller
         $fechas = Fecha::where('idEdicion', $idEdicion)->with('categoria')->orderBy('id', 'desc')->paginate(7);
         $fechas->appends(['idEdicion' => $idEdicion]);
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.fecha.index', compact('ediciones', 'EdicionSeleccionada', 'fechas'));
     }
 
@@ -32,7 +32,8 @@ class ControladorFecha extends Controller
         $ediciones = Edicion::all();
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $fecha = new Fecha();
+        $fecha = new Fecha;
+
         return view('Panel.fecha.create', compact('ediciones', 'EdicionSeleccionada', 'fecha'));
     }
 
@@ -71,6 +72,7 @@ class ControladorFecha extends Controller
         $ediciones = Edicion::all();
         $idEdicion = $fecha->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.fecha.edit', compact('ediciones', 'fecha', 'EdicionSeleccionada'));
     }
 
@@ -81,6 +83,7 @@ class ControladorFecha extends Controller
     {
         $data = $request->validated();
         $fecha->update($data);
+
         return to_route('fecha.index', ['idEdicion' => $data['idEdicion']])->with('status', 'Fecha Actualizada');
     }
 
@@ -90,6 +93,7 @@ class ControladorFecha extends Controller
     public function destroy(Request $request, Fecha $fecha)
     {
         $fecha->delete();
+
         return to_route('fecha.index', ['idEdicion' => $request->idEdicion])->with('status', 'Fecha Eliminada');
     }
 }

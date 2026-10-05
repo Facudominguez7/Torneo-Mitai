@@ -23,9 +23,7 @@ class ControladorEquiposGrupos extends Controller
     /**
      * Servicio que concentra las reglas de asignación automática.
      */
-    public function __construct(private readonly AsignadorEquiposGrupoService $asignadorEquiposGrupoService)
-    {
-    }
+    public function __construct(private readonly AsignadorEquiposGrupoService $asignadorEquiposGrupoService) {}
 
     /**
      * Display a listing of the resource.
@@ -71,7 +69,7 @@ class ControladorEquiposGrupos extends Controller
         } else {
             $equipos = collect(); // Si no hay categoría o edición seleccionada, devuelve un conjunto vacío.
         }
-        $equipogrupo = new EquipoGrupo();
+        $equipogrupo = new EquipoGrupo;
 
         return view('Panel.equipogrupo.create', compact('equipos', 'equipogrupo', 'ediciones', 'EdicionSeleccionada', 'CategoriaSeleccionada', 'GrupoSeleccionado'));
     }

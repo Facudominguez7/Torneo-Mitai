@@ -38,7 +38,6 @@ class ControladorJugador extends Controller
         return view('Panel.jugador.index', compact('ediciones', 'EdicionSeleccionada', 'jugadores'));
     }
 
-
     /**
      * Show the form for creating a new resource.
      */
@@ -61,12 +60,11 @@ class ControladorJugador extends Controller
             ->get();
 
         // Crear una instancia de jugador vacía
-        $jugador = new Jugador();
+        $jugador = new Jugador;
 
         // Pasar todos los datos a la vista
         return view('Panel.jugador.create', compact('ediciones', 'jugador', 'EdicionSeleccionada', 'equipos', 'CategoriaSeleccionada'));
     }
-
 
     /**
      * Store a newly created resource in storage.
@@ -90,7 +88,6 @@ class ControladorJugador extends Controller
         return to_route('jugador.index', ['idEdicion' => $request->idEdicion])
             ->with('status', 'Jugador Cargado Correctamente');
     }
-
 
     /**
      * Display the specified resource.
@@ -124,7 +121,6 @@ class ControladorJugador extends Controller
         return view('Panel.jugador.edit', compact('ediciones', 'jugador', 'equipos', 'CategoriaSeleccionada', 'EdicionSeleccionada'));
     }
 
-
     /**
      * Update the specified resource in storage.
      */
@@ -147,7 +143,6 @@ class ControladorJugador extends Controller
         return to_route('jugador.index', ['idEdicion' => $request->idEdicion])
             ->with('status', 'Jugador Actualizado Correctamente');
     }
-
 
     /**
      * Remove the specified resource from storage.

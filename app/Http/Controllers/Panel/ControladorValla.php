@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 class ControladorValla extends Controller
 {
     use SeleccionarCategoriaTrait;
+
     /**
      * Valla se fusionó con Goleador en Premios individuales (T8c,
      * panel-admin-redesign): el listado ahora vive ahí, junto con el
@@ -33,7 +34,7 @@ class ControladorValla extends Controller
     public function create(Request $request)
     {
         $ediciones = Edicion::all();
-        $valla = new VallaMenosVencida();
+        $valla = new VallaMenosVencida;
         $idEdicion = $request->input('idEdicion');
         $idCategoria = $request->input('idCategoria');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
@@ -65,6 +66,7 @@ class ControladorValla extends Controller
     {
         $data = $request->validated();
         VallaMenosVencida::create($data);
+
         return to_route('valla.index', ['idEdicion' => $request->idEdicion])->with('status', 'Arquero Cargado');
     }
 
@@ -73,7 +75,7 @@ class ControladorValla extends Controller
      */
     public function show(VallaMenosVencida $vallaMenosVencida)
     {
-        //return view('panel.valla.show', compact('vallaMenosVencida'));
+        // return view('panel.valla.show', compact('vallaMenosVencida'));
     }
 
     /**
@@ -88,6 +90,7 @@ class ControladorValla extends Controller
         $equipos = Equipo::where('idEdicion', $idEdicion)
             ->where('idCategoria', $idCategoria)
             ->get();
+
         return view('Panel.valla.edit', compact('ediciones', 'valla', 'equipos', 'idCategoria', 'EdicionSeleccionada'));
     }
 
@@ -98,15 +101,17 @@ class ControladorValla extends Controller
     {
         $data = $request->validated();
         $valla->update($data);
+
         return to_route('valla.index', ['idEdicion' => $request->idEdicion])->with('status', 'Arquero Actualizado');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(VallaMenosVencida $valla,  Request $request)
+    public function destroy(VallaMenosVencida $valla, Request $request)
     {
         $valla->delete();
+
         return to_route('valla.index', ['idEdicion' => $request->idEdicion])->with('status', 'Arquero Eliminado');
     }
 }

@@ -2,23 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Modelo ListaBuenaFe
- * 
+ *
  * Representa el registro de jugadores en la Lista de Buena Fe de un equipo.
  * La lista de buena fe es el listado oficial de jugadores habilitados para
  * participar en una edición del torneo con un equipo específico.
- * 
+ *
  * Incluye funcionalidad para:
  * - Gestionar altas y bajas de jugadores
  * - Rastrear conflictos administrativos y su resolución
  * - Verificar suspensiones por tarjetas rojas
- * 
- * @package App\Models
+ *
  * @author Sistema de Gestión Torneo Mitai
  */
 class ListaBuenaFe extends Model
@@ -29,7 +29,7 @@ class ListaBuenaFe extends Model
 
     /**
      * Campos que pueden ser asignados masivamente
-     * 
+     *
      * Incluye campos de identificación del jugador, información temporal,
      * estado de actividad, y datos relacionados con conflictos administrativos
      * y su resolución.
@@ -54,7 +54,7 @@ class ListaBuenaFe extends Model
 
     /**
      * Conversión automática de tipos para atributos
-     * 
+     *
      * Laravel automáticamente convertirá estos campos a los tipos especificados
      * cuando se acceda a ellos o se guarden en la base de datos.
      */
@@ -70,11 +70,11 @@ class ListaBuenaFe extends Model
 
     /**
      * Relación con el modelo Jugador
-     * 
+     *
      * Un registro de lista de buena fe pertenece a un jugador.
      * Se usa 'dni' como clave foránea en lugar del ID convencional.
-     * 
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     *
+     * @return BelongsTo
      */
     public function jugador()
     {
@@ -119,7 +119,7 @@ class ListaBuenaFe extends Model
     public function scopeDeEquipo(Builder $query, $idEquipo, $idEdicion)
     {
         return $query->where('idEquipo', $idEquipo)
-                     ->where('idEdicion', $idEdicion);
+            ->where('idEdicion', $idEdicion);
     }
 
     /**
@@ -132,13 +132,13 @@ class ListaBuenaFe extends Model
 
     /**
      * Scope: Filtrar solo conflictos administrativos sin resolver
-     * 
+     *
      * Este scope es útil para mostrar la lista de conflictos pendientes
      * que requieren atención del administrador.
-     * 
+     *
      * Uso: ListaBuenaFe::conflictivosSinResolver()->get();
-     * 
-     * @param Builder $query Constructor de consulta Eloquent
+     *
+     * @param  Builder  $query  Constructor de consulta Eloquent
      * @return Builder Consulta filtrada
      */
     public function scopeConflictivosSinResolver(Builder $query)
@@ -170,21 +170,21 @@ class ListaBuenaFe extends Model
 
     /**
      * Resolver un conflicto administrativo
-     * 
+     *
      * Este método marca un conflicto como resuelto, registrando quién lo resolvió,
      * cuándo se resolvió, y opcionalmente notas explicativas sobre la resolución.
-     * 
+     *
      * Se utiliza tanto para resoluciones manuales (botón "Resolver" en UI) como
      * para resoluciones automáticas (cuando se da de baja un jugador conflictivo).
-     * 
-     * @param string|null $usuario Nombre o email del usuario que resuelve el conflicto
-     * @param string|null $notas Explicación detallada de cómo/por qué se resolvió
+     *
+     * @param  string|null  $usuario  Nombre o email del usuario que resuelve el conflicto
+     * @param  string|null  $notas  Explicación detallada de cómo/por qué se resolvió
      * @return void
-     * 
+     *
      * @example
      * // Resolución manual
      * $listaBuenaFe->resolverConflicto('admin@example.com', 'Se confirmó que puede jugar');
-     * 
+     *
      * // Resolución automática al dar de baja
      * $listaBuenaFe->resolverConflicto('Sistema', 'Resuelto automáticamente al dar de baja');
      */
@@ -192,16 +192,16 @@ class ListaBuenaFe extends Model
     {
         // Marcar como resuelto
         $this->resuelto = true;
-        
+
         // Registrar timestamp actual de la resolución
         $this->fecha_resolucion = now();
-        
+
         // Guardar quién resolvió (usuario o 'Sistema' si es automático)
         $this->resuelto_por = $usuario;
-        
+
         // Almacenar notas explicativas (pueden ser null si no se proporcionan)
         $this->notas_resolucion = $notas;
-        
+
         // Persistir cambios en la base de datos
         $this->save();
     }

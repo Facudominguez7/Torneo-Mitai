@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Agregar constraint único para evitar jugadores duplicados en la misma planilla
      */
     public function up(): void
@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::table('planilla_jugadores', function (Blueprint $table) {
             // Constraint único: un jugador no puede estar duplicado en la misma planilla
             $table->unique(['dni_jugador', 'idEquipo', 'partido_id', 'partido_type'], 'unique_jugador_partido');
-            
+
             // Index para búsquedas de número de camiseta por equipo y partido
             $table->index(['idEquipo', 'partido_id', 'numero_camiseta'], 'idx_equipo_partido_camiseta');
         });

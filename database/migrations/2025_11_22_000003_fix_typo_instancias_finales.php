@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Corregir typo en nombres de columnas de instancias_finales
      */
     public function up(): void

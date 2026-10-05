@@ -17,6 +17,7 @@ class ControladorGrupos extends Controller
      * Display a listing of the resource.
      */
     use SeleccionarCategoriaTrait;
+
     public function index(Request $request)
     {
         $ediciones = Edicion::all();
@@ -25,6 +26,7 @@ class ControladorGrupos extends Controller
         $grupos->appends(['idEdicion' => $idEdicion]);
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $tipo = 'grupos';
+
         return view('Panel.grupo.index', compact('tipo', 'EdicionSeleccionada', 'grupos', 'ediciones'));
     }
 
@@ -34,11 +36,12 @@ class ControladorGrupos extends Controller
     public function create(Request $request)
     {
         $ediciones = Edicion::all();
-        $grupo = new Grupo();
+        $grupo = new Grupo;
         $idEdicion = $request->idEdicion;
         $idCategoria = $request->input('idCategoria');
         $CategoriaSeleccionada = $idCategoria ? Categoria::find($idCategoria) : null;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.grupo.create', compact('ediciones', 'grupo', 'EdicionSeleccionada', 'CategoriaSeleccionada'));
     }
 
@@ -50,13 +53,14 @@ class ControladorGrupos extends Controller
         $data = $request->validated();
         $idEdicion = $data['idEdicion'];
         Grupo::create($data);
+
         return to_route('grupos.index', ['idEdicion' => $idEdicion])->with('status', 'Grupo Cargado');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Request $request , Grupo $grupo)
+    public function show(Request $request, Grupo $grupo)
     {
         $ediciones = Edicion::all();
         $idEdicion = $request->idEdicion;
@@ -68,7 +72,8 @@ class ControladorGrupos extends Controller
             ->where('equipos_grupos.idGrupo', $idGrupo)
             ->select('equipos.id AS idEquipo', 'equipos.nombre AS nombreEquipo', 'equipos.foto AS fotoEquipo', 'grupos.nombre AS nombreGrupo', 'equipos_grupos.id AS idEquipoGrupo')
             ->get();
-            $nombreGrupo = $equiposGrupo->first()->nombreGrupo ?? 'Sin Nombre';
+        $nombreGrupo = $equiposGrupo->first()->nombreGrupo ?? 'Sin Nombre';
+
         return view('Panel.grupo.show', compact('EdicionSeleccionada', 'ediciones', 'equiposGrupo', 'nombreGrupo', 'idCategoria', 'idGrupo'));
     }
 
@@ -81,6 +86,7 @@ class ControladorGrupos extends Controller
         $idEdicion = $grupo->idEdicion;
         $idCategoria = $grupo->idCategoria;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.grupo.edit', compact('grupo', 'ediciones', 'EdicionSeleccionada', 'idCategoria'));
     }
 
@@ -91,6 +97,7 @@ class ControladorGrupos extends Controller
     {
         $data = $request->validated();
         $grupo->update($data);
+
         return to_route('grupos.index', ['idEdicion' => $grupo->idEdicion])->with('status', 'Grupo Actualizado');
     }
 
@@ -100,6 +107,7 @@ class ControladorGrupos extends Controller
     public function destroy(Request $request, Grupo $grupo)
     {
         $grupo->delete();
+
         return to_route('grupos.index', ['idEdicion' => $request->idEdicion])->with('status', 'Grupo Eliminado');
     }
 }

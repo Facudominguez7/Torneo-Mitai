@@ -44,31 +44,32 @@ class ControladorEquiposEdiciones extends Controller
                 $equipoSel = Equipo::with('categoria')->find($idEquipoSel);
                 if ($equipoSel && $equipoSel->categoria) {
                     $nombreCategoriaOrigen = $equipoSel->categoria->nombreCategoria;
-                    $normalizar = function(string $texto){
+                    $normalizar = function (string $texto) {
                         $texto = trim($texto);
                         $texto = preg_replace('/\s+/', ' ', $texto);
-                        $lower = mb_strtolower($texto,'UTF-8');
+                        $lower = mb_strtolower($texto, 'UTF-8');
                         $reemplazos = [
-                            'á'=>'a','à'=>'a','ä'=>'a','â'=>'a',
-                            'é'=>'e','è'=>'e','ë'=>'e','ê'=>'e',
-                            'í'=>'i','ì'=>'i','ï'=>'i','î'=>'i',
-                            'ó'=>'o','ò'=>'o','ö'=>'o','ô'=>'o',
-                            'ú'=>'u','ù'=>'u','ü'=>'u','û'=>'u',
-                            'ñ'=>'n'
+                            'á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a',
+                            'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+                            'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i',
+                            'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
+                            'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u',
+                            'ñ' => 'n',
                         ];
-                        return strtr($lower,$reemplazos);
+
+                        return strtr($lower, $reemplazos);
                     };
                     $normalizadoOrigen = $normalizar($nombreCategoriaOrigen);
-                    $categoriaDestinoEq = Categoria::where('idEdicion', (int)$idEdicion)->get()->first(function($cat) use ($normalizar, $normalizadoOrigen){
+                    $categoriaDestinoEq = Categoria::where('idEdicion', (int) $idEdicion)->get()->first(function ($cat) use ($normalizar, $normalizadoOrigen) {
                         return $normalizar($cat->nombreCategoria) === $normalizadoOrigen;
                     });
                     if ($categoriaDestinoEq) {
                         $dup = EquipoEdicion::where('idEquipo', $equipoSel->id)
-                            ->where('idEdicion', (int)$idEdicion)
+                            ->where('idEdicion', (int) $idEdicion)
                             ->where('idCategoria', $categoriaDestinoEq->id)
                             ->exists();
                         if ($dup) {
-                            return redirect()->action([ControladorEquipo::class,'index'], ['idEdicion' => (int)$idEdicion])
+                            return redirect()->action([ControladorEquipo::class, 'index'], ['idEdicion' => (int) $idEdicion])
                                 ->with('status', 'Este equipo ya pertenece a la edición y categoría seleccionadas.');
                         }
                     }
@@ -76,17 +77,18 @@ class ControladorEquiposEdiciones extends Controller
             }
             $equipos = Equipo::where('idCategoria', $idCategoria)
                 ->where('idEdicion', $edicionfiltro)
-                ->whereDoesntHave('equipoEdiciones', function($q) use ($idEdicion){
+                ->whereDoesntHave('equipoEdiciones', function ($q) use ($idEdicion) {
                     $q->where('idEdicion', $idEdicion);
                 })
-                ->select('id','nombre')
+                ->select('id', 'nombre')
                 ->orderBy('nombre')
                 ->get();
         } else {
             $equipos = collect();
         }
-        $equipoedicion = new EquipoEdicion();
-        return view('Panel.equipoedicion.create', compact('equipos','equipoedicion','ediciones','EdicionSeleccionada','CategoriaSeleccionada'));
+        $equipoedicion = new EquipoEdicion;
+
+        return view('Panel.equipoedicion.create', compact('equipos', 'equipoedicion', 'ediciones', 'EdicionSeleccionada', 'CategoriaSeleccionada'));
     }
 
     /**
@@ -94,19 +96,19 @@ class ControladorEquiposEdiciones extends Controller
      */
     public function buscarEquipos(Request $request)
     {
-        $q = trim((string)$request->get('q', ''));
-        $limit = (int)($request->get('limit', 20));
+        $q = trim((string) $request->get('q', ''));
+        $limit = (int) ($request->get('limit', 20));
         $limit = $limit > 0 && $limit <= 100 ? $limit : 20;
 
         if (mb_strlen($q) < 2) {
-            return response()->json([ 'items' => [] ]);
+            return response()->json(['items' => []]);
         }
 
         // Búsqueda básica por LIKE; ordena por idEdicion DESC y luego por nombre
         $items = Equipo::query()
             ->join('categorias', 'equipos.idCategoria', '=', 'categorias.id')
             ->join('ediciones', 'equipos.idEdicion', '=', 'ediciones.id')
-            ->where('equipos.nombre', 'like', '%' . $q . '%')
+            ->where('equipos.nombre', 'like', '%'.$q.'%')
             ->orderByDesc('equipos.idEdicion')
             ->orderBy('equipos.nombre')
             ->limit($limit)
@@ -119,7 +121,7 @@ class ControladorEquiposEdiciones extends Controller
                 'categorias.nombreCategoria as nombreCategoria',
             ]);
 
-        return response()->json([ 'items' => $items ]);
+        return response()->json(['items' => $items]);
     }
 
     /**
@@ -131,28 +133,29 @@ class ControladorEquiposEdiciones extends Controller
     public function store(StoreRequest $request)
     {
         $equipo = Equipo::with('categoria')->findOrFail($request->idEquipo);
-        $edicionDestinoId = (int)$request->idEdicion;
+        $edicionDestinoId = (int) $request->idEdicion;
 
-        if(!$equipo->categoria){
+        if (! $equipo->categoria) {
             return back()->withErrors(['idEquipo' => 'El equipo no tiene categoría asociada en la edición origen.'])->withInput();
         }
 
         $nombreCategoriaOrigen = $equipo->categoria->nombreCategoria;
 
         // Función de normalización (acentos + mayúsculas + espacios)
-        $normalizar = function(string $texto){
+        $normalizar = function (string $texto) {
             $texto = trim($texto);
             $texto = preg_replace('/\s+/', ' ', $texto); // espacios múltiples
-            $lower = mb_strtolower($texto,'UTF-8');
+            $lower = mb_strtolower($texto, 'UTF-8');
             $reemplazos = [
-                'á'=>'a','à'=>'a','ä'=>'a','â'=>'a',
-                'é'=>'e','è'=>'e','ë'=>'e','ê'=>'e',
-                'í'=>'i','ì'=>'i','ï'=>'i','î'=>'i',
-                'ó'=>'o','ò'=>'o','ö'=>'o','ô'=>'o',
-                'ú'=>'u','ù'=>'u','ü'=>'u','û'=>'u',
-                'ñ'=>'n'
+                'á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a',
+                'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+                'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i',
+                'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
+                'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u',
+                'ñ' => 'n',
             ];
-            $lower = strtr($lower,$reemplazos);
+            $lower = strtr($lower, $reemplazos);
+
             return $lower;
         };
 
@@ -161,11 +164,11 @@ class ControladorEquiposEdiciones extends Controller
         // Traer categorías de la edición destino y buscar por nombre normalizado
         $categoriaDestino = Categoria::where('idEdicion', $edicionDestinoId)
             ->get()
-            ->first(function($cat) use ($normalizar, $normalizadoOrigen){
+            ->first(function ($cat) use ($normalizar, $normalizadoOrigen) {
                 return $normalizar($cat->nombreCategoria) === $normalizadoOrigen;
             });
 
-        if(!$categoriaDestino){
+        if (! $categoriaDestino) {
             $categoriaDestino = Categoria::create([
                 'nombreCategoria' => $nombreCategoriaOrigen,
                 'idEdicion' => $edicionDestinoId,
@@ -179,11 +182,11 @@ class ControladorEquiposEdiciones extends Controller
             ->exists();
         if ($yaExisteMismaCategoria) {
             return back()->withErrors([
-                'idEquipo' => 'Este equipo ya pertenece a la edición y categoría seleccionadas.'
+                'idEquipo' => 'Este equipo ya pertenece a la edición y categoría seleccionadas.',
             ])->withInput();
         }
 
-        DB::transaction(function() use ($equipo, $edicionDestinoId, $categoriaDestino){
+        DB::transaction(function () use ($equipo, $edicionDestinoId, $categoriaDestino) {
             EquipoEdicion::create([
                 'idEquipo' => $equipo->id,
                 'idEdicion' => $edicionDestinoId,
@@ -192,8 +195,8 @@ class ControladorEquiposEdiciones extends Controller
             ]);
         });
 
-        return redirect()->action([ControladorEquipo::class,'index'], ['idEdicion' => $edicionDestinoId])
-            ->with('status','Equipo asociado a la nueva edición correctamente');
+        return redirect()->action([ControladorEquipo::class, 'index'], ['idEdicion' => $edicionDestinoId])
+            ->with('status', 'Equipo asociado a la nueva edición correctamente');
     }
 
     /**
@@ -215,7 +218,8 @@ class ControladorEquiposEdiciones extends Controller
         $equipos = Equipo::whereHas('equipoEdiciones', function ($query) use ($idEdicion) {
             $query->where('idEdicion', $idEdicion);
         })->get();
-        return view('Panel.equipoedicion.edit', compact('equipos','equipoedicion','ediciones','EdicionSeleccionada'));
+
+        return view('Panel.equipoedicion.edit', compact('equipos', 'equipoedicion', 'ediciones', 'EdicionSeleccionada'));
     }
 
     /**
@@ -224,8 +228,9 @@ class ControladorEquiposEdiciones extends Controller
     public function update(StoreRequest $request, EquipoEdicion $equipoedicion)
     {
         $equipoedicion->update($request->validated());
-        return redirect()->action([ControladorEquipo::class,'show'], ['idEdicion' => $request->idEdicion])
-            ->with('status','Equipo actualizado correctamente');
+
+        return redirect()->action([ControladorEquipo::class, 'show'], ['idEdicion' => $request->idEdicion])
+            ->with('status', 'Equipo actualizado correctamente');
     }
 
     /**

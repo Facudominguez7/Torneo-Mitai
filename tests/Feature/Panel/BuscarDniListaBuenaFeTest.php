@@ -65,7 +65,7 @@ function crearJugadorListaBuenaFe(array $contexto, string $dni, string $nombre, 
 }
 
 it('no anuncia numero_camiseta como campo asignable masivamente', function () {
-    expect((new ListaBuenaFe())->getFillable())->not->toContain('numero_camiseta');
+    expect((new ListaBuenaFe)->getFillable())->not->toContain('numero_camiseta');
 });
 
 it('filtra jugadores activos e inactivos por dni en la vista de lista buena fe', function () {
