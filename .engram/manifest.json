@@ -32,6 +32,14 @@
       "sessions": 5,
       "memories": 3,
       "prompts": 2
+    },
+    {
+      "id": "00ac256c",
+      "created_by": "facundo",
+      "created_at": "2026-10-05T01:24:18.817480113Z",
+      "sessions": 7,
+      "memories": 12,
+      "prompts": 5
     }
   ]
 }
