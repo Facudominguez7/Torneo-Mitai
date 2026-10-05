@@ -132,6 +132,7 @@ class PlanillaPublicaTest extends TestCase
 
         $this->crearJugadorPlanillaPublica('40100001', 'Juan', 'Perez');
         $this->crearJugadorPlanillaPublica('40100002', 'Pedro', 'Lopez');
+        $this->crearJugadorPlanillaPublica('40100007', 'Marcos', 'Diaz');
 
         $registroLocal = PlanillaJugador::create([
             'partido_id' => $contexto['partido']->id,
@@ -159,8 +160,22 @@ class PlanillaPublicaTest extends TestCase
             'asistio' => false,
         ]);
 
+        $registroVisitantePresente = PlanillaJugador::create([
+            'partido_id' => $contexto['partido']->id,
+            'partido_type' => PartidoConstants::CLASS_PARTIDO,
+            'dni_jugador' => '40100007',
+            'idEquipo' => $contexto['equipoVisitante']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'numero_camiseta' => 7,
+            'fecha_nacimiento' => '2014-02-15',
+            'goles' => 0,
+            'asistio' => true,
+        ]);
+
         $registroLocal->forceFill(['updated_at' => '2026-03-18 19:45:00'])->save();
         $registroVisitante->forceFill(['updated_at' => '2026-03-18 20:15:00'])->save();
+        $registroVisitantePresente->forceFill(['updated_at' => '2026-03-18 19:30:00'])->save();
 
         $response = $this->getJson(route('planillas-publicas.show', [
             'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
@@ -174,17 +189,20 @@ class PlanillaPublicaTest extends TestCase
             ->assertJsonPath('data.partido.equipo_visitante', 'Mitai Blanco')
             ->assertJsonPath('data.goles_confirmados', true)
             ->assertJsonPath('data.goles_confirmados_at', '18/03/2026 20:30')
-            ->assertJsonPath('data.ultima_actualizacion', '18/03/2026 20:15')
+            ->assertJsonPath('data.ultima_actualizacion', '18/03/2026 19:45')
+            ->assertJsonCount(1, 'data.local')
+            ->assertJsonCount(1, 'data.visitante')
+            ->assertJsonMissing(['nombre' => 'Pedro', 'apellido' => 'Lopez'])
             ->assertJsonPath('data.local.0.nombre', 'Juan')
             ->assertJsonPath('data.local.0.apellido', 'Perez')
             ->assertJsonPath('data.local.0.numero_camiseta', 9)
             ->assertJsonPath('data.local.0.goles', 2)
             ->assertJsonPath('data.local.0.asistencia', true)
-            ->assertJsonPath('data.visitante.0.nombre', 'Pedro')
-            ->assertJsonPath('data.visitante.0.apellido', 'Lopez')
-            ->assertJsonPath('data.visitante.0.numero_camiseta', 5)
+            ->assertJsonPath('data.visitante.0.nombre', 'Marcos')
+            ->assertJsonPath('data.visitante.0.apellido', 'Diaz')
+            ->assertJsonPath('data.visitante.0.numero_camiseta', 7)
             ->assertJsonPath('data.visitante.0.goles', 0)
-            ->assertJsonPath('data.visitante.0.asistencia', false)
+            ->assertJsonPath('data.visitante.0.asistencia', true)
             ->assertJsonPath('meta.sin_planilla', false)
             ->assertJsonMissingPath('data.local.0.dni')
             ->assertJsonMissingPath('data.local.0.dni_jugador')
@@ -312,7 +330,10 @@ class PlanillaPublicaTest extends TestCase
         $contexto = $this->crearContextoPlanillaPublica();
 
         $this->crearJugadorPlanillaPublica('40100003', 'Carlos', 'Gomez');
-        PlanillaJugador::create([
+        $this->crearJugadorPlanillaPublica('40100008', 'Bruno', 'Ferreyra');
+        $this->crearJugadorPlanillaPublica('40100009', 'Diego', 'Sosa');
+
+        $registroCarlos = PlanillaJugador::create([
             'partido_id' => $contexto['instanciaFinal']->id,
             'partido_type' => PartidoConstants::CLASS_INSTANCIA_FINAL,
             'dni_jugador' => '40100003',
@@ -324,15 +345,46 @@ class PlanillaPublicaTest extends TestCase
             'asistio' => true,
         ]);
 
+        $registroLocalAusente = PlanillaJugador::create([
+            'partido_id' => $contexto['instanciaFinal']->id,
+            'partido_type' => PartidoConstants::CLASS_INSTANCIA_FINAL,
+            'dni_jugador' => '40100008',
+            'idEquipo' => $contexto['equipoLocal']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'numero_camiseta' => 4,
+            'goles' => 1,
+            'asistio' => false,
+        ]);
+
+        $registroVisitanteAusente = PlanillaJugador::create([
+            'partido_id' => $contexto['instanciaFinal']->id,
+            'partido_type' => PartidoConstants::CLASS_INSTANCIA_FINAL,
+            'dni_jugador' => '40100009',
+            'idEquipo' => $contexto['equipoVisitante']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'numero_camiseta' => 6,
+            'goles' => 1,
+            'asistio' => false,
+        ]);
+
+        $registroCarlos->forceFill(['updated_at' => '2026-04-10 15:00:00'])->save();
+        $registroLocalAusente->forceFill(['updated_at' => '2026-04-10 21:30:00'])->save();
+        $registroVisitanteAusente->forceFill(['updated_at' => '2026-04-10 20:45:00'])->save();
+
         $response = $this->getJson(route('planillas-publicas.show', [
             'tipoPartido' => PartidoConstants::TIPO_INSTANCIA_FINAL,
             'publicToken' => $contexto['instanciaFinal']->public_token,
         ]));
 
         $response->assertOk()
+            ->assertJsonCount(1, 'data.local')
+            ->assertJsonPath('data.visitante', [])
             ->assertJsonPath('data.local.0.nombre', 'Carlos')
             ->assertJsonPath('data.local.0.numero_camiseta', 10)
             ->assertJsonPath('data.local.0.goles', 3)
+            ->assertJsonPath('data.ultima_actualizacion', '10/04/2026 15:00')
             ->assertJsonPath('meta.sin_planilla', false);
     }
 
@@ -460,6 +512,10 @@ class PlanillaPublicaTest extends TestCase
         ]));
 
         $response->assertOk()
+            ->assertJsonPath('data.local', [])
+            ->assertJsonPath('data.visitante', [])
+            ->assertJsonPath('data.ultima_actualizacion', null)
+            ->assertJsonPath('meta.sin_planilla', true)
             ->assertJsonPath('data.goles_arbitros.local.0.numero_camiseta', 8)
             ->assertJsonPath('data.goles_arbitros.local.0.goles_reportados', 2)
             ->assertJsonPath('data.goles_arbitros.local.0.es_inconsistencia', true)
