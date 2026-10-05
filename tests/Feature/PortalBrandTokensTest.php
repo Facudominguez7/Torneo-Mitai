@@ -72,7 +72,7 @@ it('renderiza el listado de vallas con los tokens de marca y sin hex crudo', fun
     $response->assertDontSee('#f7f280', false);
 });
 
-it('mantiene el color de fondo de las <option> del select de portero via var(--color-primary)', function () {
+it('renderiza el selector de vallas con el estilo claro del panel y conserva la opcion del equipo', function () {
     $admin = User::factory()->create([
         'rol' => 'admin',
         'email_verified_at' => now(),
@@ -100,7 +100,41 @@ it('mantiene el color de fondo de las <option> del select de portero via var(--c
     ]));
 
     $response->assertOk();
-    $response->assertSee('background-color: var(--color-primary)', false);
+
+    $erroresInternos = libxml_use_internal_errors(true);
+    try {
+        $documento = new DOMDocument;
+        $documento->loadHTML($response->getContent());
+        $xpath = new DOMXPath($documento);
+        $selectores = $xpath->query('//select[@id="selectValla"]');
+        expect($selectores->length)->toBe(1);
+
+        $selector = $selectores->item(0);
+        if (! $selector instanceof DOMElement) {
+            throw new RuntimeException('No se encontró el selector de vallas.');
+        }
+
+        expect($selector->getAttribute('class'))->toContain('text-gray-700')
+            ->and($selector->getAttribute('style'))->not->toContain('color-scheme: dark');
+
+        $opcionesEquipo = $xpath->query('//select[@id="selectValla"]/option[@value="'.$equipo->id.'"]');
+        expect($opcionesEquipo->length)->toBe(1);
+        $opcionEquipo = $opcionesEquipo->item(0);
+        if (! $opcionEquipo instanceof DOMElement) {
+            throw new RuntimeException('No se encontró la opción del equipo.');
+        }
+
+        expect($opcionEquipo->textContent)->toContain('Mitai Azul')
+            ->and($opcionEquipo->getAttribute('style'))->not->toContain('background-color:')
+            ->and($opcionEquipo->getAttribute('style'))->not->toContain('color: white');
+
+        $camposEquipo = $xpath->query('//input[@type="hidden" and @id="idEquipo" and @name="idEquipo"]');
+        expect($camposEquipo->length)->toBe(1);
+    } finally {
+        libxml_clear_errors();
+        libxml_use_internal_errors($erroresInternos);
+    }
+
     $response->assertDontSee('#0e4b5e', false);
 });
 
@@ -116,7 +150,7 @@ it('compila las clases shadow-[...rgba(var(--brand-navy)...)] a una regla real c
     $result = Process::path(base_path())
         ->timeout(60)
         ->run([
-            'npx', 'tailwindcss',
+            'node', base_path('node_modules/tailwindcss/lib/cli.js'),
             '-c', base_path('tailwind.config.js'),
             '-i', base_path('resources/css/app.css'),
             '--content', $probeHtml,
