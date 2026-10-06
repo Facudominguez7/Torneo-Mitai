@@ -479,6 +479,28 @@ it('muestra estado neutral cuando todavia no hay resultado oficial cargado', fun
         ->assertDontSee('Goles pendientes de carga', false);
 });
 
+it('explica la aplicacion de goles arbitrales al guardar y sus restricciones', function () {
+    $contexto = crearContextoPlanillaConfirmacion();
+
+    $this->actingAs($contexto['admin'])
+        ->get(route('planilla.show', [
+            'partidoId' => $contexto['partido']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'tipoPartido' => PartidoConstants::TIPO_PARTIDO_NORMAL,
+            'horario' => '09:00',
+        ]))
+        ->assertOk()
+        ->assertSeeText('Aplicación al guardar')
+        ->assertSeeText('Solo goles válidos')
+        ->assertSeeText('Los goles arbitrales vinculados a jugadores presentes se aplican al guardar y actualizan sus estadísticas')
+        ->assertSeeText('siempre que el equipo no tenga goles oficiales cargados')
+        ->assertSeeText('Los registros sin vinculación válida quedan como inconsistencias')
+        ->assertSeeText('Guardar y aplicar goles válidos')
+        ->assertDontSeeText('Solo visual')
+        ->assertDontSeeText('No impacta estadísticas')
+        ->assertDontSeeText('no modifica goles ni estadísticas oficiales de jugadores');
+});
+
 it('no muestra acciones masivas de asistencia en la planilla', function () {
     $contexto = crearContextoPlanillaConfirmacion();
 
