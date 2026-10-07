@@ -113,3 +113,138 @@ it('rechaza duplicar la cuota del mismo equipo en el mismo padre con la unique d
 
     expect(CargoPlanilla::query()->count())->toBe(2);
 });
+
+it('rechaza tipos fuera de la whitelist financiera y tipos inconsistentes con el padre', function (string $tipo, ?string $parentType) {
+    $contexto = crearContextoCargos();
+
+    expect(fn () => CargoPlanilla::query()->create([
+        'tipo' => $tipo,
+        'parent_type' => $parentType,
+        'parent_id' => 1,
+        'idEquipo' => 1,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'precio_original' => 25000,
+        'snapshot' => [],
+    ]))->toThrow(RuntimeException::class)
+        ->and(CargoPlanilla::query()->count())->toBe(0);
+
+    // Literales en el dataset: el archivo debe cargar antes de que exista la clase bajo test.
+})->with([
+    'tipo inventado' => ['cuota_inventada', Partido::class],
+    'tipo case-sensitive' => ['Planilla_Partido', Partido::class],
+    'tipo vacío' => ['', Partido::class],
+    'tipo de partido con padre final' => ['planilla_partido', InstanciaFinal::class],
+    'tipo de final con padre partido' => ['planilla_instancia_final', Partido::class],
+]);
+
+it('rechaza precios que no son enteros positivos', function (int $precio) {
+    $contexto = crearContextoCargos();
+
+    expect(fn () => CargoPlanilla::query()->create([
+        'tipo' => CargoPlanilla::TIPO_PARTIDO,
+        'parent_type' => Partido::class,
+        'parent_id' => 1,
+        'idEquipo' => 1,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'precio_original' => $precio,
+        'snapshot' => [],
+    ]))->toThrow(RuntimeException::class)
+        ->and(CargoPlanilla::query()->count())->toBe(0);
+})->with([
+    'cero' => [0],
+    'negativo' => [-25000],
+]);
+
+it('impide editar el precio o la identidad del cargo mediante instancias Eloquent', function (array $cambios) {
+    $contexto = crearContextoCargos();
+    $local = crearEquipoCargos($contexto, 'Mitai Azul');
+    $partido = Partido::create(crearDatosPartidoCargos($contexto, $local, crearEquipoCargos($contexto, 'Mitai Rojo')));
+    $cargo = CargoPlanilla::query()->make([
+        'tipo' => CargoPlanilla::TIPO_PARTIDO,
+        'idEquipo' => $local->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'precio_original' => 25000,
+        'snapshot' => ['equipo' => ['nombre' => 'Mitai Azul']],
+    ]);
+    $cargo->parent()->associate($partido);
+    $cargo->save();
+
+    expect(fn () => $cargo->update($cambios))->toThrow(LogicException::class)
+        ->and($cargo->fresh()->precio_original)->toBe(25000)
+        ->and($cargo->fresh()->tipo)->toBe(CargoPlanilla::TIPO_PARTIDO)
+        ->and($cargo->fresh()->idEquipo)->toBe($local->id)
+        ->and($cargo->fresh()->snapshot['equipo']['nombre'])->toBe('Mitai Azul');
+})->with([
+    'precio' => [['precio_original' => 1]],
+    'tipo' => [['tipo' => 'planilla_instancia_final']],
+    'equipo' => [['idEquipo' => 999]],
+    'padre' => [['parent_id' => 999]],
+    'snapshot' => [['snapshot' => ['equipo' => ['nombre' => 'Editado']]]],
+]);
+
+it('impide borrar el cargo mediante instancias Eloquent', function () {
+    $contexto = crearContextoCargos();
+    $cargo = CargoPlanilla::query()->create([
+        'tipo' => CargoPlanilla::TIPO_PARTIDO,
+        'parent_type' => Partido::class,
+        'parent_id' => 1,
+        'idEquipo' => 1,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'precio_original' => 25000,
+        'snapshot' => [],
+    ]);
+
+    expect(fn () => $cargo->delete())->toThrow(LogicException::class)
+        ->and(CargoPlanilla::query()->count())->toBe(1);
+});
+
+it('conserva el snapshot de historia aunque se borren el partido y los equipos', function () {
+    $contexto = crearContextoCargos();
+    $local = crearEquipoCargos($contexto, 'Mitai Azul');
+    $visitante = crearEquipoCargos($contexto, 'Mitai Rojo');
+    $partido = Partido::create(crearDatosPartidoCargos($contexto, $local, $visitante));
+
+    $cargo = CargoPlanilla::query()->make([
+        'tipo' => CargoPlanilla::TIPO_PARTIDO,
+        'idEquipo' => $local->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'precio_original' => 25000,
+        'snapshot' => [
+            'equipo' => ['id' => $local->id, 'nombre' => 'Mitai Azul'],
+            'oponente' => ['id' => $visitante->id, 'nombre' => 'Mitai Rojo'],
+            'edicion' => ['id' => $contexto['edicion']->id, 'nombre' => 'Edicion Cobros'],
+            'categoria' => ['id' => $contexto['categoria']->id, 'nombre' => 'Sub 12 Cobros'],
+            'cancha' => 1,
+            'fecha_partido' => '2026-04-05 10:00:00',
+            'partido' => [
+                'id' => $partido->id,
+                'public_token' => $partido->public_token,
+                'es_interzonal' => false,
+                'id_fecha' => $partido->idFechas,
+            ],
+        ],
+    ]);
+    $cargo->parent()->associate($partido);
+    $cargo->save();
+
+    $partido->delete();
+    $local->delete();
+    $visitante->delete();
+
+    $cargo = $cargo->fresh();
+
+    expect($cargo)->not->toBeNull()
+        ->and($cargo->parent)->toBeNull()
+        ->and($cargo->equipo)->toBeNull()
+        ->and($cargo->edicion->is($contexto['edicion']))->toBeTrue()
+        ->and($cargo->categoria->is($contexto['categoria']))->toBeTrue()
+        ->and($cargo->snapshot['equipo'])->toBe(['id' => $local->id, 'nombre' => 'Mitai Azul'])
+        ->and($cargo->snapshot['oponente'])->toBe(['id' => $visitante->id, 'nombre' => 'Mitai Rojo'])
+        ->and($cargo->snapshot['partido']['public_token'])->toBe($partido->public_token)
+        ->and($cargo->snapshot['fecha_partido'])->toBe('2026-04-05 10:00:00');
+});

@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use LogicException;
 use RuntimeException;
 
 /**
  * Cuota histórica de planilla de un equipo por partido (regular, interzonal
- * o instancia final). El snapshot conserva los nombres de la época
- * para sobrevivir a borrados.
+ * o instancia final). El precio y la identidad se congelan al crear el cargo;
+ * el snapshot conserva los nombres de la época para sobrevivir a borrados.
  *
  * @property int $id
  * @property string $tipo planilla_partido|planilla_instancia_final
@@ -77,8 +78,8 @@ class CargoPlanilla extends Model
     }
 
     /**
-     * El tipo debe pertenecer a la whitelist financiera y coincidir
-     * con el padre antes de insertar un importe entero válido.
+     * Guardas de instancia: el registro es append-only y el tipo debe
+     * pertenecer a la whitelist financiera y coincidir con el padre.
      * No protege contra QueryBuilder/SQL directo.
      */
     protected static function booted(): void
@@ -90,6 +91,14 @@ class CargoPlanilla extends Model
             if (! is_int($precio) || $precio < 1 || $precio > 2147483647) {
                 throw new RuntimeException('El precio del cargo debe ser un entero positivo en ARS dentro del rango SQL.');
             }
+        });
+
+        static::updating(function (): void {
+            throw new LogicException('Los cargos de planilla son registros históricos: no se pueden editar.');
+        });
+
+        static::deleting(function (): void {
+            throw new LogicException('Los cargos de planilla son registros históricos: no se pueden borrar.');
         });
     }
 
