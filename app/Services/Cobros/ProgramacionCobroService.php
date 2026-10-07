@@ -2,7 +2,11 @@
 
 namespace App\Services\Cobros;
 
+use App\Models\Categoria;
 use App\Models\ConfiguracionCobroPlanilla;
+use App\Models\Edicion;
+use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\User;
@@ -117,19 +121,70 @@ class ProgramacionCobroService
     }
 
     /**
-     * Identidad básica del alta inactiva. El ámbito monetario se completa
-     * en el siguiente corte antes de habilitar cualquier cargo.
+     * Contexto monetario: equipos distintos y existentes, categoría de la
+     * edición y ambos equipos inscriptos en ese ámbito. Se resuelve con
+     * consultas agrupadas, sin N+1.
      *
      * @param  array<string, mixed>  $datos
      * @return array<string, mixed>
      */
     private function validarContextoMonetario(array $datos): array
     {
+        $idLocal = $this->enteroRequerido($datos, 'idEquipoLocal');
+        $idVisitante = $this->enteroRequerido($datos, 'idEquipoVisitante');
+        $idEdicion = $this->enteroRequerido($datos, 'idEdicion');
+        $idCategoria = $this->enteroRequerido($datos, 'idCategoria');
+
+        if ($idLocal === $idVisitante) {
+            throw ValidationException::withMessages([
+                'idEquipoVisitante' => ['El equipo visitante debe ser distinto del equipo local para generar la cuota.'],
+            ]);
+        }
+
+        $equipos = Equipo::query()->whereKey([$idLocal, $idVisitante])->get(['id', 'nombre']);
+
+        if ($equipos->count() !== 2) {
+            throw ValidationException::withMessages([
+                'equipos' => ['Ambos equipos del partido deben existir para generar la cuota.'],
+            ]);
+        }
+
+        $edicion = Edicion::query()->whereKey($idEdicion)->first(['id', 'nombre']);
+
+        if ($edicion === null) {
+            throw ValidationException::withMessages([
+                'idEdicion' => ['La edición del partido no existe.'],
+            ]);
+        }
+
+        $categoria = Categoria::query()->whereKey($idCategoria)->first(['id', 'idEdicion', 'nombreCategoria']);
+
+        if ($categoria === null || (int) $categoria->idEdicion !== $idEdicion) {
+            throw ValidationException::withMessages([
+                'idCategoria' => ['La categoría del partido debe pertenecer a su edición.'],
+            ]);
+        }
+
+        $inscripciones = EquipoEdicion::query()
+            ->whereIn('idEquipo', [$idLocal, $idVisitante])
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $idCategoria)
+            ->distinct()->pluck('idEquipo');
+
+        if ($inscripciones->count() !== 2) {
+            throw ValidationException::withMessages([
+                'equipos' => ['Ambos equipos deben estar inscriptos en la edición y categoría del partido.'],
+            ]);
+        }
+
         return [
-            'idEquipoLocal' => $this->enteroRequerido($datos, 'idEquipoLocal'),
-            'idEquipoVisitante' => $this->enteroRequerido($datos, 'idEquipoVisitante'),
-            'idEdicion' => $this->enteroRequerido($datos, 'idEdicion'),
-            'idCategoria' => $this->enteroRequerido($datos, 'idCategoria'),
+            'idEquipoLocal' => $idLocal,
+            'idEquipoVisitante' => $idVisitante,
+            'idEdicion' => $idEdicion,
+            'idCategoria' => $idCategoria,
+            'equipos' => $equipos->keyBy('id'),
+            'edicion' => $edicion,
+            'categoria' => $categoria,
         ];
     }
 

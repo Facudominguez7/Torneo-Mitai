@@ -1,13 +1,17 @@
 <?php
 
 use App\Models\CargoPlanilla;
+use App\Models\Categoria;
 use App\Models\ConfiguracionCobroPlanilla;
+use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\HistorialCobroPlanilla;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\User;
 use App\Services\Cobros\ProgramacionCobroService;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Validation\ValidationException;
 
 require_once __DIR__.'/FixturesCargos.php';
 
@@ -59,6 +63,76 @@ it('sin activar la instancia final también queda sin cargos', function () {
         ->and(CargoPlanilla::query()->count())->toBe(0)
         ->and(HistorialCobroPlanilla::query()->count())->toBe(0);
 });
+
+it('rechaza equipos iguales con ValidationException en ambos estados del cobro', function (bool $activo) {
+    $admin = crearAdminCargos();
+    if ($activo) {
+        activarCobrosCargos();
+    }
+
+    $contexto = crearContextoCargos();
+    $mismo = crearEquipoCargos($contexto, 'Duplicado Azul');
+
+    expect(fn () => (new ProgramacionCobroService)->crearPartido($admin, crearDatosPartidoCargos($contexto, $mismo, $mismo)))
+        ->toThrow(ValidationException::class)
+        ->and(Partido::query()->count())->toBe(0)
+        ->and(CargoPlanilla::query()->count())->toBe(0)
+        ->and(HistorialCobroPlanilla::query()->count())->toBe(0);
+})->with([
+    'cobro activo' => [true],
+    'cobro inactivo' => [false],
+]);
+
+it('rechaza contextos monetarios fuera de ámbito sin crear el padre', function (Closure $escenario) {
+    $admin = crearAdminCargos();
+    $datos = $escenario();
+
+    expect(fn () => (new ProgramacionCobroService)->crearPartido($admin, $datos))
+        ->toThrow(ValidationException::class)
+        ->and(Partido::query()->count())->toBe(0)
+        ->and(CargoPlanilla::query()->count())->toBe(0)
+        ->and(HistorialCobroPlanilla::query()->count())->toBe(0);
+})->with([
+    'equipo sin inscripción' => function (): array {
+        $contexto = crearContextoCargos('Ambito Sin Pivot');
+        $local = crearEquipoCargos($contexto, 'Pivot Azul');
+        $sueltos = Equipo::create([
+            'idCategoria' => $contexto['categoria']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'nombre' => 'Pivot Sueltos',
+        ]);
+
+        return crearDatosPartidoCargos($contexto, $local, $sueltos);
+    },
+    'visitante inscripto en otra edición' => function (): array {
+        $contexto = crearContextoCargos('Ambito Local');
+        $otro = crearContextoCargos('Ambito Otro');
+        $local = crearEquipoCargos($contexto, 'Edicion Azul');
+        $visitante = crearEquipoCargos($otro, 'Edicion Blanco');
+
+        return crearDatosPartidoCargos($contexto, $local, $visitante);
+    },
+    'visitante inscripto en otra categoría de la misma edición' => function (): array {
+        $contexto = crearContextoCargos('Ambito Categorias');
+        $otraCategoria = Categoria::create([
+            'idEdicion' => $contexto['edicion']->id,
+            'nombreCategoria' => 'Sub 14 Otra',
+        ]);
+        $local = crearEquipoCargos($contexto, 'Categoria Azul');
+        $visitante = crearEquipoCargos($contexto, 'Categoria Blanco');
+        EquipoEdicion::query()->where('idEquipo', $visitante->id)->update(['idCategoria' => $otraCategoria->id]);
+
+        return crearDatosPartidoCargos($contexto, $local, $visitante);
+    },
+    'categoría que pertenece a otra edición' => function (): array {
+        $contexto = crearContextoCargos('Ambito Categoria Cruzada');
+        $otro = crearContextoCargos('Ambito Otra Edicion');
+        $local = crearEquipoCargos($contexto, 'Cruzada Azul');
+        $visitante = crearEquipoCargos($contexto, 'Cruzada Blanco');
+
+        return crearDatosPartidoCargos($contexto, $local, $visitante, ['idCategoria' => $otro['categoria']->id]);
+    },
+]);
 
 it('autoriza sólo a un admin vigente en db sin escribir nada', function (string $escenario) {
     activarCobrosCargos();
