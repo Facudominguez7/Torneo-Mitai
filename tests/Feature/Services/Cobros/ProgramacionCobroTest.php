@@ -20,17 +20,105 @@ require_once __DIR__.'/FixturesCargos.php';
  * cuotas atómicas sólo con cobros activados, quote de tarifa única,
  * contexto monetario validado y rollback total ante cualquier veto.
  */
-it('rechaza la emisión activa mientras se prepara el motor sin crear registros', function () {
-    $admin = crearAdminCargos();
+it('crea el partido regular con dos cargos de 25000 y un evento generar_cargos cuando el cobro está activo', function () {
+    $admin = crearAdminCargos('Admin Activo');
     activarCobrosCargos();
     $contexto = crearContextoCargos();
-    $datos = crearDatosPartidoCargos($contexto, crearEquipoCargos($contexto, 'Local'), crearEquipoCargos($contexto, 'Visitante'));
+    $local = crearEquipoCargos($contexto, 'Mitai Azul');
+    $visitante = crearEquipoCargos($contexto, 'Mitai Rojo');
+    $this->travelTo('2026-06-01 12:00:00');
 
-    expect(fn () => (new ProgramacionCobroService)->crearPartido($admin, $datos))
-        ->toThrow(RuntimeException::class, 'La emisión activa de cargos aún no está integrada.')
-        ->and(Partido::query()->count())->toBe(0)
-        ->and(CargoPlanilla::query()->count())->toBe(0)
-        ->and(HistorialCobroPlanilla::query()->count())->toBe(0);
+    $admin->name = 'Nombre Mutado En Memoria';
+
+    $partido = (new ProgramacionCobroService)->crearPartido($admin, crearDatosPartidoCargos($contexto, $local, $visitante));
+
+    expect($partido)->toBeInstanceOf(Partido::class)
+        ->and($partido->exists)->toBeTrue()
+        ->and(Partido::query()->count())->toBe(1)
+        ->and(CargoPlanilla::query()->count())->toBe(2);
+
+    $cargoLocal = CargoPlanilla::query()->where('idEquipo', $local->id)->sole();
+    $cargoVisitante = CargoPlanilla::query()->where('idEquipo', $visitante->id)->sole();
+
+    expect($cargoLocal->precio_original)->toBeInt()->toBe(25000)
+        ->and($cargoVisitante->precio_original)->toBe(25000)
+        ->and($cargoLocal->tipo)->toBe('planilla_partido')
+        ->and($cargoLocal->parent_id)->toBe($partido->id)
+        ->and($cargoLocal->parent_type)->toBe(Partido::class)
+        ->and($cargoLocal->snapshot['equipo'])->toBe(['id' => $local->id, 'nombre' => 'Mitai Azul'])
+        ->and($cargoLocal->snapshot['oponente'])->toBe(['id' => $visitante->id, 'nombre' => 'Mitai Rojo'])
+        ->and($cargoLocal->snapshot['edicion'])->toBe(['id' => $contexto['edicion']->id, 'nombre' => 'Edicion Cobros'])
+        ->and($cargoLocal->snapshot['categoria'])->toBe(['id' => $contexto['categoria']->id, 'nombre' => 'Sub 12 Cobros'])
+        ->and($cargoLocal->snapshot['cancha'])->toBe(1)
+        ->and($cargoLocal->snapshot['fecha_partido'])->toBe('2026-04-05 10:00:00')
+        ->and($cargoLocal->snapshot['partido']['public_token'])->toBe($partido->public_token)
+        ->and($cargoLocal->snapshot['partido']['es_interzonal'])->toBeFalse()
+        ->and($cargoLocal->snapshot['partido']['id_fecha'])->toBe($contexto['fecha']->id);
+
+    $evento = HistorialCobroPlanilla::query()->sole();
+
+    expect($evento->accion)->toBe('generar_cargos')
+        ->and($evento->usuario_id)->toBe($admin->id)
+        // El snapshot del actor viene de la fila vigente en DB, no del objeto mutado localmente.
+        ->and($evento->actor_nombre)->toBe('Admin Activo')
+        ->and($evento->actor_nombre)->not->toBe('Nombre Mutado En Memoria')
+        ->and($evento->valores_antes)->toBe([])
+        ->and($evento->valores_despues['parent']['id'])->toBe($partido->id)
+        ->and($evento->valores_despues['cargos'])->toBe([$cargoLocal->id, $cargoVisitante->id])
+        ->and($evento->valores_despues['equipos'])->toBe([$local->id, $visitante->id])
+        ->and($evento->valores_despues['precio_ars'])->toBe(25000)
+        ->and($evento->valores_despues['fecha_partido'])->toBe('2026-04-05 10:00:00')
+        ->and($evento->created_at->format('Y-m-d H:i:s'))->toBe('2026-06-01 12:00:00');
+});
+
+it('crea el partido interzonal sin fecha con dos cargos y snapshot sin inventar horario', function () {
+    $admin = crearAdminCargos();
+    activarCobrosCargos();
+    $contexto = crearContextoCargos('Edicion Interzonal Cobros');
+    $local = crearEquipoCargos($contexto, 'Inter Azul');
+    $visitante = crearEquipoCargos($contexto, 'Inter Blanco');
+
+    $partido = (new ProgramacionCobroService)->crearPartido($admin, crearDatosPartidoCargos($contexto, $local, $visitante, [
+        'es_interzonal' => true,
+        'horario_datetime' => null,
+    ]));
+
+    expect($partido->esInterzonal())->toBeTrue()
+        ->and($partido->horario_datetime)->toBeNull()
+        ->and(CargoPlanilla::query()->count())->toBe(2);
+
+    $cargo = CargoPlanilla::query()->where('idEquipo', $local->id)->sole();
+
+    expect($cargo->precio_original)->toBe(25000)
+        ->and($cargo->snapshot['fecha_partido'])->toBeNull()
+        ->and($cargo->snapshot['partido']['es_interzonal'])->toBeTrue()
+        ->and(HistorialCobroPlanilla::query()->sole()->valores_despues['fecha_partido'])->toBeNull();
+});
+
+it('crea la instancia final con dos cargos morfeando a InstanciaFinal', function () {
+    $admin = crearAdminCargos();
+    activarCobrosCargos();
+    $contexto = crearContextoCargos('Edicion Final Cobros');
+    $local = crearEquipoCargos($contexto, 'Final Azul');
+    $visitante = crearEquipoCargos($contexto, 'Final Blanco');
+
+    $final = (new ProgramacionCobroService)->crearInstanciaFinal($admin, crearDatosFinalCargos($contexto, $local, $visitante));
+
+    expect($final)->toBeInstanceOf(InstanciaFinal::class)
+        ->and(InstanciaFinal::query()->count())->toBe(1)
+        ->and(CargoPlanilla::query()->count())->toBe(2);
+
+    $cargo = CargoPlanilla::query()->where('idEquipo', $local->id)->sole();
+
+    expect($cargo->tipo)->toBe('planilla_instancia_final')
+        ->and($cargo->parent_type)->toBe(InstanciaFinal::class)
+        ->and($cargo->parent_id)->toBe($final->id)
+        ->and($cargo->snapshot['fecha_partido'])->toBe('2026-04-05 10:00:00')
+        ->and($cargo->snapshot['cancha'])->toBe('1')
+        ->and($cargo->snapshot['partido']['es_interzonal'])->toBeNull()
+        ->and($cargo->snapshot['partido']['id_fecha'])->toBeNull()
+        ->and($cargo->snapshot['partido']['public_token'])->toBe($final->public_token)
+        ->and(HistorialCobroPlanilla::query()->sole()->valores_despues['parent']['clase'])->toBe(InstanciaFinal::class);
 });
 
 it('sin activar crea el partido con cero cargos y cero auditoría monetaria', function () {
@@ -187,4 +275,80 @@ it('falla cerrado si falta la fila de configuración global sin crear nada', fun
         ->and(CargoPlanilla::query()->count())->toBe(0)
         ->and(HistorialCobroPlanilla::query()->count())->toBe(0)
         ->and(ConfiguracionCobroPlanilla::query()->count())->toBe(0);
+});
+
+it('si el alta del padre es vetada todo se revierte', function () {
+    $admin = crearAdminCargos();
+    activarCobrosCargos();
+    $contexto = crearContextoCargos();
+    $local = crearEquipoCargos($contexto, 'VetoPadre Azul');
+    $visitante = crearEquipoCargos($contexto, 'VetoPadre Blanco');
+
+    Partido::creating(function (): bool {
+        return false;
+    });
+
+    try {
+        expect(fn () => (new ProgramacionCobroService)->crearPartido($admin, crearDatosPartidoCargos($contexto, $local, $visitante)))
+            ->toThrow(RuntimeException::class);
+    } finally {
+        Partido::flushEventListeners();
+        Partido::clearBootedModels();
+    }
+
+    expect(Partido::query()->count())->toBe(0)
+        ->and(CargoPlanilla::query()->count())->toBe(0)
+        ->and(HistorialCobroPlanilla::query()->count())->toBe(0);
+});
+
+it('si el segundo cargo es vetado se revierten padre, cargos y evento', function () {
+    $admin = crearAdminCargos();
+    activarCobrosCargos();
+    $contexto = crearContextoCargos();
+    $local = crearEquipoCargos($contexto, 'VetoCargo Azul');
+    $visitante = crearEquipoCargos($contexto, 'VetoCargo Blanco');
+
+    $intentos = 0;
+    CargoPlanilla::creating(function () use (&$intentos): bool {
+        $intentos++;
+
+        return $intentos < 2;
+    });
+
+    try {
+        expect(fn () => (new ProgramacionCobroService)->crearPartido($admin, crearDatosPartidoCargos($contexto, $local, $visitante)))
+            ->toThrow(RuntimeException::class)
+            ->and($intentos)->toBe(2);
+    } finally {
+        CargoPlanilla::flushEventListeners();
+        CargoPlanilla::clearBootedModels();
+    }
+
+    expect(Partido::query()->count())->toBe(0)
+        ->and(CargoPlanilla::query()->count())->toBe(0)
+        ->and(HistorialCobroPlanilla::query()->count())->toBe(0);
+});
+
+it('si el evento generar_cargos falla se revierte el alta completa', function () {
+    $admin = crearAdminCargos();
+    activarCobrosCargos();
+    $contexto = crearContextoCargos();
+    $local = crearEquipoCargos($contexto, 'VetoEvento Azul');
+    $visitante = crearEquipoCargos($contexto, 'VetoEvento Blanco');
+
+    HistorialCobroPlanilla::creating(function (): bool {
+        return false;
+    });
+
+    try {
+        expect(fn () => (new ProgramacionCobroService)->crearPartido($admin, crearDatosPartidoCargos($contexto, $local, $visitante)))
+            ->toThrow(RuntimeException::class);
+    } finally {
+        HistorialCobroPlanilla::flushEventListeners();
+        HistorialCobroPlanilla::clearBootedModels();
+    }
+
+    expect(Partido::query()->count())->toBe(0)
+        ->and(CargoPlanilla::query()->count())->toBe(0)
+        ->and(HistorialCobroPlanilla::query()->count())->toBe(0);
 });

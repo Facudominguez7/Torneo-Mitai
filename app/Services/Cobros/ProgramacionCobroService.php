@@ -2,11 +2,13 @@
 
 namespace App\Services\Cobros;
 
+use App\Models\CargoPlanilla;
 use App\Models\Categoria;
 use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use App\Models\HistorialCobroPlanilla;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\User;
@@ -19,13 +21,19 @@ use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 /**
- * Preparación de altas administrativas con cobros apagados.
- * La emisión activa falla cerrada hasta completar los cortes dependientes.
- * Sin conexión a rutas ni generación sobre partidos preexistentes.
+ * Motor de altas con cargos de planilla: crea el partido (regular,
+ * interzonal o instancia final) y, con los cobros activados, genera sus
+ * dos cuotas atómicas dentro de una única transacción.
+ *
+ * Los cargos sólo nacen junto a un alta nueva: no existe una vía para
+ * generar cargos de partidos anteriores. El motor no está conectado a
+ * rutas todavía; el actor será provisto por un controller futuro.
  */
 class ProgramacionCobroService
 {
     private const ID_GLOBAL = 1;
+
+    private const TARIFA_MAXIMA = 2147483647;
 
     private const ERROR_FILA_AUSENTE = 'La configuración global de cobros no está inicializada (falta la fila id 1).';
 
@@ -56,23 +64,30 @@ class ProgramacionCobroService
     }
 
     /**
-     * Alta administrativa sin cobros: la emisión activa permanece cerrada
-     * hasta incorporar su transacción y auditoría en el corte dependiente.
+     * Transacción raíz: actor, tarifa citada, validaciones, alta del padre,
+     * dos cuotas y un solo evento de auditoría; cualquier fallo revierte todo.
      *
      * @param  array<string, mixed>  $datos
      */
     private function crearAltasConCargos(User $actor, array $datos, string $clasePadre): Partido|InstanciaFinal
     {
         return DB::transaction(function () use ($actor, $datos, $clasePadre): Partido|InstanciaFinal {
-            $this->resolverActorAdmin($actor);
+            // Orden de bloqueos: primero el actor, después la configuración,
+            // ambos antes de escribir el padre.
+            $actorVigente = $this->resolverActorAdmin($actor);
             $configuracion = $this->obtenerConfiguracionBloqueada();
             $contexto = $this->validarContextoMonetario($datos);
 
-            if ($configuracion->activado_at !== null) {
-                throw new RuntimeException('La emisión activa de cargos aún no está integrada.');
+            $padre = $this->crearPadre($datos, $clasePadre, $contexto);
+
+            if ($configuracion->activado_at === null) {
+                return $padre; // Cobros inactivos: alta válida, cero cargos, cero auditoría.
             }
 
-            return $this->crearPadre($datos, $clasePadre, $contexto);
+            $cargos = $this->generarCargos($padre, $contexto, $this->tarifaVigente($configuracion));
+            $this->registrarEventoCargos($actorVigente, $padre, $cargos);
+
+            return $padre;
         });
     }
 
@@ -118,6 +133,21 @@ class ProgramacionCobroService
         }
 
         return $configuracion;
+    }
+
+    /**
+     * Precio citado una sola vez por alta: ambos cargos comparten tarifa,
+     * y los cambios posteriores de configuración sólo afectan cargos futuros.
+     */
+    private function tarifaVigente(ConfiguracionCobroPlanilla $configuracion): int
+    {
+        $tarifa = $configuracion->tarifa_ars;
+
+        if (! is_int($tarifa) || $tarifa < 1 || $tarifa > self::TARIFA_MAXIMA) {
+            throw new RuntimeException('La tarifa configurada no es un importe válido en ARS.');
+        }
+
+        return $tarifa;
     }
 
     /**
@@ -244,6 +274,100 @@ class ProgramacionCobroService
             'horario' => $this->fechaHora($datos, 'horario'),
             'cancha' => (string) $this->enteroRequerido($datos, 'cancha', 0),
         ];
+    }
+
+    /**
+     * Cuota de cada equipo con la misma tarifa citada; el snapshot congela
+     * los nombres e identidad de la época para sobrevivir a borrados.
+     *
+     * @param  array<string, mixed>  $contexto
+     * @return array<int, CargoPlanilla>
+     */
+    private function generarCargos(Partido|InstanciaFinal $padre, array $contexto, int $tarifa): array
+    {
+        $tipo = array_search($padre::class, CargoPlanilla::TIPOS_FINANCIEROS, true);
+
+        if ($tipo === false) {
+            throw new RuntimeException('El tipo de padre no pertenece a la whitelist financiera.');
+        }
+
+        $cargos = [];
+
+        foreach ([$contexto['idEquipoLocal'], $contexto['idEquipoVisitante']] as $idEquipo) {
+            $cargo = CargoPlanilla::query()->make([
+                'tipo' => $tipo,
+                'idEquipo' => $idEquipo,
+                'idEdicion' => $contexto['idEdicion'],
+                'idCategoria' => $contexto['idCategoria'],
+                'precio_original' => $tarifa,
+                'snapshot' => $this->construirSnapshot($padre, $contexto, $idEquipo),
+            ]);
+            $cargo->parent()->associate($padre);
+
+            if (! $cargo->save() || ! $cargo->exists) {
+                throw new RuntimeException('No se pudo registrar el cargo de planilla.');
+            }
+
+            $cargos[] = $cargo;
+        }
+
+        return $cargos;
+    }
+
+    /**
+     * Snapshot por equipo: el cobrado como equipo, el otro como oponente.
+     * La fecha se toma tal cual del alta; nunca se inventa si es nula.
+     *
+     * @param  array<string, mixed>  $contexto
+     * @return array<string, mixed>
+     */
+    private function construirSnapshot(Partido|InstanciaFinal $padre, array $contexto, int $idEquipo): array
+    {
+        $esFinal = $padre instanceof InstanciaFinal;
+        $idOponente = $idEquipo === $contexto['idEquipoLocal']
+            ? $contexto['idEquipoVisitante']
+            : $contexto['idEquipoLocal'];
+
+        return [
+            'equipo' => ['id' => $idEquipo, 'nombre' => $contexto['equipos'][$idEquipo]->nombre],
+            'oponente' => ['id' => $idOponente, 'nombre' => $contexto['equipos'][$idOponente]->nombre],
+            'edicion' => ['id' => $contexto['edicion']->id, 'nombre' => $contexto['edicion']->nombre],
+            'categoria' => ['id' => $contexto['categoria']->id, 'nombre' => $contexto['categoria']->nombreCategoria],
+            'cancha' => $padre->cancha,
+            'fecha_partido' => $esFinal ? $padre->horario : $padre->horario_datetime,
+            'partido' => [
+                'id' => (int) $padre->getKey(),
+                'public_token' => $padre->public_token,
+                'es_interzonal' => $esFinal ? null : (bool) $padre->es_interzonal,
+                'id_fecha' => $esFinal ? null : (int) $padre->idFechas,
+            ],
+        ];
+    }
+
+    /**
+     * Un solo evento generar_cargos por padre, dentro de la transacción raíz.
+     *
+     * @param  array<int, CargoPlanilla>  $cargos
+     */
+    private function registrarEventoCargos(User $actorVigente, Partido|InstanciaFinal $padre, array $cargos): void
+    {
+        $evento = HistorialCobroPlanilla::query()->create([
+            'accion' => 'generar_cargos',
+            'usuario_id' => $actorVigente->getKey(),
+            'actor_nombre' => $actorVigente->name,
+            'valores_antes' => [],
+            'valores_despues' => [
+                'parent' => ['tipo' => $padre->getMorphClass(), 'clase' => $padre::class, 'id' => (int) $padre->getKey()],
+                'cargos' => array_map(fn (CargoPlanilla $cargo): int => $cargo->id, $cargos),
+                'equipos' => array_map(fn (CargoPlanilla $cargo): int => (int) $cargo->idEquipo, $cargos),
+                'precio_ars' => $cargos[0]->precio_original,
+                'fecha_partido' => $cargos[0]->snapshot['fecha_partido'],
+            ],
+        ]);
+
+        if (! $evento->exists) {
+            throw new RuntimeException('No se pudo registrar el historial de cobros.');
+        }
     }
 
     private function enteroRequerido(array $datos, string $clave, int $minimo = 1): int
