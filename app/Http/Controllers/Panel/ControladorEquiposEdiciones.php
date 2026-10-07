@@ -238,6 +238,6 @@ class ControladorEquiposEdiciones extends Controller
      */
     public function destroy(Request $request, Equipo $equipo)
     {
-        return to_route('equipo.index', ['idEdicion' => $request->idEdicion])->with('status','Equipo Eliminado');
+        return to_route('equipo.index', ['idEdicion' => $request->idEdicion])->with('status', 'Equipo Eliminado');
     }
 }

@@ -21,6 +21,7 @@ use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use App\Services\FixtureExploradorService;
 use App\Services\Panel\ResumenDashboard;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -137,7 +138,7 @@ class ControladorHome extends Controller
                 ->whereNotNull('horario_datetime')
                 ->pluck('horario_datetime')
                 ->map(function ($datetime) {
-                    return \Carbon\Carbon::parse($datetime)->format('H:i');
+                    return Carbon::parse($datetime)->format('H:i');
                 })
                 ->unique()
                 ->sort()
@@ -1225,7 +1226,7 @@ class ControladorHome extends Controller
 
         foreach ($partidos as $partido) {
             $horario = $partido->horario_datetime
-                ? \Carbon\Carbon::parse($partido->horario_datetime)->format('H:i')
+                ? Carbon::parse($partido->horario_datetime)->format('H:i')
                 : 'Por definir';
             $categoria = $partido->nombre_categoria ?? 'Sin categoría';
 
@@ -1235,7 +1236,7 @@ class ControladorHome extends Controller
 
         foreach ($instanciasFinales as $instanciaFinal) {
             $horario = $instanciaFinal->horario
-                ? \Carbon\Carbon::parse($instanciaFinal->horario)->format('H:i')
+                ? Carbon::parse($instanciaFinal->horario)->format('H:i')
                 : 'Por definir';
             $categoria = $instanciaFinal->nombre_categoria ?? 'Sin categoría';
 
@@ -1249,7 +1250,7 @@ class ControladorHome extends Controller
             $agrupado[$entrada['horario']][$entrada['categoria']][] = $entrada['equipo'];
         }
 
-        $fechaJornada = \Carbon\Carbon::parse($ultimaFechaCalendario)->format('d/m/Y');
+        $fechaJornada = Carbon::parse($ultimaFechaCalendario)->format('d/m/Y');
 
         return view('Panel.imprimir.planilla-cobro', compact('agrupado', 'EdicionSeleccionada', 'fechaJornada'));
     }
