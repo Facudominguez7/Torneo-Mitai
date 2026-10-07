@@ -152,6 +152,71 @@ it('sin activar la instancia final también queda sin cargos', function () {
         ->and(HistorialCobroPlanilla::query()->count())->toBe(0);
 });
 
+it('cita la tarifa una sola vez: cambiarla a 30000 sólo afecta cargos futuros', function () {
+    $admin = crearAdminCargos();
+    activarCobrosCargos();
+    $contexto = crearContextoCargos();
+    $local = crearEquipoCargos($contexto, 'Quote Azul');
+    $visitante = crearEquipoCargos($contexto, 'Quote Blanco');
+
+    (new ProgramacionCobroService)->crearPartido($admin, crearDatosPartidoCargos($contexto, $local, $visitante));
+    fijarTarifaCargos(30000);
+    (new ProgramacionCobroService)->crearPartido($admin, crearDatosPartidoCargos($contexto, $local, $visitante));
+
+    $precios = CargoPlanilla::query()->orderBy('id')->pluck('precio_original');
+
+    expect(CargoPlanilla::query()->count())->toBe(4)
+        ->and($precios->unique()->values()->all())->toBe([25000, 30000]);
+});
+
+it('los partidos previos a la activación no reciben cargos y el motor no expone backfill', function () {
+    $admin = crearAdminCargos();
+    $contexto = crearContextoCargos();
+    $local = crearEquipoCargos($contexto, 'Backfill Azul');
+    $visitante = crearEquipoCargos($contexto, 'Backfill Blanco');
+
+    (new ProgramacionCobroService)->crearPartido($admin, crearDatosPartidoCargos($contexto, $local, $visitante));
+    activarCobrosCargos();
+    (new ProgramacionCobroService)->crearPartido($admin, crearDatosPartidoCargos($contexto, $local, $visitante));
+
+    $metodosPublicos = collect((new ReflectionClass(ProgramacionCobroService::class))->getMethods(ReflectionMethod::IS_PUBLIC))
+        ->map(fn (ReflectionMethod $metodo): string => $metodo->getName())
+        ->reject(fn (string $nombre): bool => $nombre === '__construct')
+        ->sort()
+        ->values()
+        ->all();
+
+    expect(CargoPlanilla::query()->where('parent_id', Partido::query()->min('id'))->count())->toBe(0)
+        ->and($metodosPublicos)->toBe(['crearInstanciaFinal', 'crearPartido']);
+});
+
+it('ignora campos no confiables del payload de alta', function () {
+    $admin = crearAdminCargos('Admin Confiable');
+    activarCobrosCargos();
+    $contexto = crearContextoCargos();
+    $local = crearEquipoCargos($contexto, 'Payload Azul');
+    $visitante = crearEquipoCargos($contexto, 'Payload Blanco');
+
+    $datos = crearDatosPartidoCargos($contexto, $local, $visitante, [
+        'tarifa' => 1,
+        'tipo' => 'cuota_inventada',
+        'actor' => 'Fulano',
+        'idUsuario' => 999999,
+        'importe' => 999999,
+        'precio_original' => 0,
+        'parent_type' => User::class,
+    ]);
+
+    (new ProgramacionCobroService)->crearPartido($admin, $datos);
+
+    $cargo = CargoPlanilla::query()->where('idEquipo', $local->id)->sole();
+
+    expect($cargo->precio_original)->toBe(25000)
+        ->and($cargo->tipo)->toBe('planilla_partido')
+        ->and($cargo->parent_type)->toBe(Partido::class)
+        ->and(HistorialCobroPlanilla::query()->sole()->actor_nombre)->toBe('Admin Confiable');
+});
+
 it('rechaza equipos iguales con ValidationException en ambos estados del cobro', function (bool $activo) {
     $admin = crearAdminCargos();
     if ($activo) {
