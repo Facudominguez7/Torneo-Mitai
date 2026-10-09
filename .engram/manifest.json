@@ -96,6 +96,14 @@
       "sessions": 2,
       "memories": 8,
       "prompts": 2
+    },
+    {
+      "id": "cb6e8737",
+      "created_by": "facu",
+      "created_at": "2026-10-09T17:34:37.602777284Z",
+      "sessions": 26,
+      "memories": 51,
+      "prompts": 13
     }
   ]
 }
