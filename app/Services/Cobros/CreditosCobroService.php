@@ -5,6 +5,7 @@ namespace App\Services\Cobros;
 use App\Models\AplicacionPagoPlanilla;
 use App\Models\CargoPlanilla;
 use App\Models\CuentaCobroPlanilla;
+use App\Models\ExencionCobroPlanilla;
 use App\Models\HistorialCobroPlanilla;
 use App\Models\InstanciaFinal;
 use App\Models\PagoPlanilla;
@@ -44,7 +45,7 @@ class CreditosCobroService
                 $clave = $inicio['clave'];
 
                 [$cuenta, $pago] = $this->bloquearCuentaYPago($pagoId);
-                [$cargos, $aplicadoPorCargo] = $this->bloquearCargosYPadres($cuenta, $cargoId);
+                [$cargos, $aplicadoPorCargo, $eximidoPorCargo] = $this->bloquearCargosYPadres($cuenta, $cargoId);
 
                 $credito = $this->creditoDisponible($pago);
                 if ($credito < 0) {
@@ -55,7 +56,7 @@ class CreditosCobroService
                     throw ValidationException::withMessages(['pago' => ['El pago no conserva crédito disponible.']]);
                 }
 
-                $plan = (new DistribucionCreditoService)->planificar($this->filasCargos($cargos, $aplicadoPorCargo), $cargoId, $credito);
+                $plan = (new DistribucionCreditoService)->planificar($this->filasCargos($cargos, $aplicadoPorCargo, $eximidoPorCargo), $cargoId, $credito);
                 if ($plan['aplicaciones'] === []) {
                     throw ValidationException::withMessages(['cargo' => ['Ningún cargo de la cuenta registra deuda pendiente.']]);
                 }
@@ -133,7 +134,11 @@ class CreditosCobroService
             InstanciaFinal::class => fn ($consulta) => $consulta->lockForUpdate(),
         ])]);
 
-        return [$cargos, $aplicadoPorCargo];
+        $eximidoPorCargo = ExencionCobroPlanilla::query()
+            ->whereIn('cargo_id', $cargos->modelKeys())->orderBy('cargo_id')->lockForUpdate()->get()
+            ->mapWithKeys(fn (ExencionCobroPlanilla $exencion): array => [(int) $exencion->cargo_id => $exencion->importe_ars])->all();
+
+        return [$cargos, $aplicadoPorCargo, $eximidoPorCargo];
     }
 
     /** Crédito vigente del pago: importe menos aplicaciones leídas bajo bloqueo. */
@@ -144,21 +149,25 @@ class CreditosCobroService
     }
 
     /** Filas del planificador leídas en caliente; los saldados no exigen padre ni fecha. */
-    private function filasCargos(Collection $cargos, array $aplicadoPorCargo): array
+    private function filasCargos(Collection $cargos, array $aplicadoPorCargo, array $eximidoPorCargo): array
     {
         return $cargos->map(fn (CargoPlanilla $cargo): array => [
             'id' => (int) $cargo->id,
             'precio_original' => (int) $cargo->precio_original,
             'aplicado_ars' => $aplicadoPorCargo[(int) $cargo->id] ?? 0,
+            'eximido_ars' => $eximidoPorCargo[(int) $cargo->id] ?? 0,
             'padre_valido' => $cargo->parent !== null,
-            'fecha_vigente' => $this->fechaVigente($cargo, $aplicadoPorCargo[(int) $cargo->id] ?? 0),
+            'fecha_vigente' => $this->fechaVigente($cargo, $aplicadoPorCargo[(int) $cargo->id] ?? 0, $eximidoPorCargo[(int) $cargo->id] ?? 0),
         ])->all();
     }
 
     /** Fecha vigente del deudor tomada del padre actual (horario por clase), sin snapshot ni created_at. */
-    private function fechaVigente(CargoPlanilla $cargo, int $aplicado): ?string
+    private function fechaVigente(CargoPlanilla $cargo, int $aplicado, int $eximido): ?string
     {
-        if ($cargo->parent === null || $aplicado >= (int) $cargo->precio_original) {
+        $pendiente = (new DistribucionCreditoService)->calcularDeuda([
+            'precio_original' => (int) $cargo->precio_original, 'aplicado_ars' => $aplicado, 'eximido_ars' => $eximido,
+        ], (int) $cargo->id);
+        if ($cargo->parent === null || $pendiente === 0) {
             return null;
         }
 

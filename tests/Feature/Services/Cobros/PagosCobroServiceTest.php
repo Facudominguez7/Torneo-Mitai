@@ -5,6 +5,7 @@ use App\Models\CargoPlanilla;
 use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
 use App\Models\Equipo;
+use App\Models\ExencionCobroPlanilla;
 use App\Models\HistorialCobroPlanilla;
 use App\Models\PagoPlanilla;
 use App\Models\Partido;
@@ -38,6 +39,47 @@ beforeEach(function (): void {
     activarCobrosCargos();
     $this->servicio = new PagosCobroService;
     $this->clave = 'a1111111-1111-4111-8111-111111111111';
+});
+
+it('cobra solo el residual eximido conserva historia previa y replay sin nuevos efectos', function (): void {
+    $previo = $this->servicio->registrarPago($this->admin, $this->cargo->id, 5000, 'efectivo', $this->clave)->fresh();
+    $tablas = ['cargo_planillas', 'pago_planillas', 'aplicacion_pago_planillas', 'historial_cobro_planillas'];
+    $antes = collect($tablas)->mapWithKeys(fn (string $tabla): array => [$tabla => DB::table($tabla)->orderBy('id')->get()->all()]);
+    ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 12000]);
+    foreach ($antes as $tabla => $filas) {
+        expect(DB::table($tabla)->orderBy('id')->get()->all())->toEqual($filas);
+    }
+    $clave = '22222222-2222-4222-8222-222222222222';
+    $pago = $this->servicio->registrarPago($this->admin, $this->cargo->id, 10000, 'efectivo', $clave);
+    $evento = HistorialCobroPlanilla::query()->latest('id')->first();
+    expect($evento->valores_antes['pendiente_ars'])->toBe(8000)
+        ->and($evento->valores_despues['importe_aplicado_ars'])->toBe(8000)
+        ->and($evento->valores_despues['credito_ars'])->toBe(2000)
+        ->and($previo->fresh()->getAttributes())->toBe($previo->getAttributes());
+    $final = collect($tablas)->mapWithKeys(fn (string $tabla): array => [$tabla => DB::table($tabla)->orderBy('id')->get()->all()]);
+    expect($this->servicio->registrarPago($this->admin, $this->cargo->id, 10000, 'efectivo', $clave)->is($pago))->toBeTrue();
+    expect(fn () => $this->servicio->registrarPago($this->admin, $this->cargo->id, 1, 'efectivo', '33333333-3333-4333-8333-333333333333'))->toThrow(ValidationException::class);
+    foreach ($final as $tabla => $filas) {
+        expect(DB::table($tabla)->orderBy('id')->get()->all())->toEqual($filas);
+        expect(array_slice(DB::table($tabla)->orderBy('id')->get()->all(), 0, count($antes[$tabla])))->toEqual($antes[$tabla]);
+    }
+});
+
+it('rechaza pago sobre exencion total sin crear cuenta ingreso aplicacion ni historial', function (): void {
+    ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 25000]);
+    expect(fn () => $this->servicio->registrarPago($this->admin, $this->cargo->id, 1000, 'efectivo', $this->clave))->toThrow(ValidationException::class);
+    foreach (['cuenta_cobro_planillas', 'pago_planillas', 'aplicacion_pago_planillas', 'historial_cobro_planillas'] as $tabla) {
+        $this->assertDatabaseCount($tabla, 0);
+    }
+});
+
+it('falla cerrado sin escrituras si la exencion mas pagos supera el precio', function (): void {
+    $this->servicio->registrarPago($this->admin, $this->cargo->id, 5000, 'efectivo', $this->clave);
+    ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 25000]);
+    expect(fn () => $this->servicio->registrarPago($this->admin, $this->cargo->id, 1, 'efectivo', '22222222-2222-4222-8222-222222222222'))->toThrow(RuntimeException::class);
+    $this->assertDatabaseCount('pago_planillas', 1);
+    $this->assertDatabaseCount('aplicacion_pago_planillas', 1);
+    $this->assertDatabaseCount('historial_cobro_planillas', 1);
 });
 
 it('registra un pago parcial con aplicacion minima auditoria unica y credito cero', function (): void {

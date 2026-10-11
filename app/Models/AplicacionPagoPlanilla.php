@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
+use App\Services\Cobros\DistribucionCreditoService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
+use RuntimeException;
 
 /**
  * Porción histórica de un ingreso destinada a un cargo, no un nuevo ingreso.
- * Creación interna: los límites son por fila, no saldos disponibles agregados.
- * El futuro servicio validará deuda efectiva, disponibilidad, autorización y
- * auditoría dentro de una transacción con bloqueo de la cuenta equipo-edición.
- * Las guardas de instancia no protegen SQL directo ni eventos deshabilitados.
+ * Creación interna: valida deuda efectiva agregada, pero no disponibilidad del pago.
+ * Los servicios coordinan disponibilidad, autorización y auditoría bajo bloqueos.
+ * La guarda sola no garantiza concurrencia ni protege SQL directo o eventos deshabilitados.
  */
 class AplicacionPagoPlanilla extends Model
 {
@@ -59,6 +60,20 @@ class AplicacionPagoPlanilla extends Model
 
             if ($aplicacion->importe_ars > $pago->importe_ars || $aplicacion->importe_ars > $cargo->precio_original) {
                 throw new LogicException('Una porción no puede superar el ingreso original ni el precio original del cargo.');
+            }
+
+            $exencion = ExencionCobroPlanilla::query()->where('cargo_id', (int) $cargo->id)->first();
+            try {
+                $pendiente = (new DistribucionCreditoService)->calcularDeuda([
+                    'precio_original' => (int) $cargo->precio_original,
+                    'aplicado_ars' => (int) static::query()->where('cargo_id', (int) $cargo->id)->sum('importe_ars'),
+                    'eximido_ars' => $exencion === null ? 0 : $exencion->importe_ars,
+                ], (int) $cargo->id);
+            } catch (RuntimeException $error) {
+                throw new LogicException('El cargo registra deuda efectiva corrupta.', 0, $error);
+            }
+            if ($aplicacion->importe_ars > $pendiente) {
+                throw new LogicException('La porción no puede superar la deuda efectiva pendiente del cargo.');
             }
 
             $aplicacion->setCreatedAt(now());

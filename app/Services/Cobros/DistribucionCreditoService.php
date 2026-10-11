@@ -21,7 +21,7 @@ class DistribucionCreditoService
      * Calcula el plan de aplicaciones sin mutar las filas recibidas.
      *
      * Cada fila respeta la forma:
-     * array{id: int, precio_original: int, aplicado_ars: int, fecha_vigente: ?string, padre_valido: bool}
+     * array{id: int, precio_original: int, aplicado_ars: int, eximido_ars?: int, fecha_vigente: ?string, padre_valido: bool}
      *
      * @param  array<int, array<string, mixed>>  $cargos
      * @param  int  $cargoId  cargo elegido por el usuario
@@ -114,7 +114,7 @@ class DistribucionCreditoService
      *
      * @param  array<string, mixed>  $fila
      */
-    private function calcularDeuda(array $fila, int $id): int
+    public function calcularDeuda(array $fila, int $id): int
     {
         $precio = $fila['precio_original'] ?? null;
 
@@ -128,7 +128,12 @@ class DistribucionCreditoService
             throw new RuntimeException("El cargo {$id} tiene un aplicado_ars inválido para distribuir crédito.");
         }
 
-        return $precio - $aplicado;
+        $eximido = array_key_exists('eximido_ars', $fila) ? $fila['eximido_ars'] : 0;
+        if (! is_int($eximido) || $eximido < 0 || $eximido > self::IMPORTE_MAXIMO || $eximido > $precio - $aplicado) {
+            throw new RuntimeException("El cargo {$id} tiene un eximido_ars inválido o supera la deuda pendiente.");
+        }
+
+        return $precio - $aplicado - $eximido;
     }
 
     /**

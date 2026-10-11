@@ -4,6 +4,7 @@ use App\Models\AplicacionPagoPlanilla;
 use App\Models\CargoPlanilla;
 use App\Models\CuentaCobroPlanilla;
 use App\Models\Equipo;
+use App\Models\ExencionCobroPlanilla;
 use App\Models\PagoPlanilla;
 use App\Models\Partido;
 use App\Models\User;
@@ -38,6 +39,30 @@ beforeEach(function (): void {
         'importe_ars' => 25000, 'medio' => 'efectivo', 'clave_idempotencia' => (string) Str::uuid(),
     ]);
     $this->datos = ['pago_id' => $this->pago->id, 'cargo_id' => $this->cargo->id, 'importe_ars' => 5000];
+});
+
+it('limita nuevas porciones a deuda efectiva agregada con exencion y pagos previos', function (int $eximido, int $importe, bool $aceptado): void {
+    AplicacionPagoPlanilla::create($this->datos);
+    ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => $eximido]);
+    $crear = fn () => AplicacionPagoPlanilla::create(array_replace($this->datos, ['importe_ars' => $importe]));
+    if ($aceptado) {
+        expect($crear()->importe_ars)->toBe($importe);
+    } else {
+        expect($crear)->toThrow(LogicException::class);
+    }
+    $this->assertDatabaseCount('aplicacion_pago_planillas', $aceptado ? 2 : 1);
+    expect($this->pago->fresh()->importe_ars)->toBe(25000)->and($this->cargo->fresh()->precio_original)->toBe(25000);
+})->with([
+    'total pendiente eximido' => [20000, 1, false],
+    'exceso residual' => [12000, 8001, false],
+    'residual exacto' => [12000, 8000, true],
+    'suma corrupta' => [25000, 1, false],
+]);
+
+it('no amplia la guarda a disponibilidad agregada del pago', function (): void {
+    $otroCargo = crearCargoAplicaciones($this->contexto, $this->equipo);
+    AplicacionPagoPlanilla::create(array_replace($this->datos, ['importe_ars' => 25000]));
+    expect(AplicacionPagoPlanilla::create(array_replace($this->datos, ['cargo_id' => $otroCargo->id]))->importe_ars)->toBe(5000);
 });
 
 it('conserva una porcion interna y sus relaciones sin generar otro ingreso', function (): void {

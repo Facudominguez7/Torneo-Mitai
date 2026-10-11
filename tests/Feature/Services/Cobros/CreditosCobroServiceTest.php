@@ -4,6 +4,7 @@ use App\Models\AplicacionPagoPlanilla;
 use App\Models\CargoPlanilla;
 use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\Equipo;
+use App\Models\ExencionCobroPlanilla;
 use App\Models\HistorialCobroPlanilla;
 use App\Models\InstanciaFinal;
 use App\Models\PagoPlanilla;
@@ -46,6 +47,67 @@ beforeEach(function (): void {
     $this->pago = (new PagosCobroService)->registrarPago($this->admin, $this->origen->id, 30000, 'efectivo', '11111111-1111-4111-8111-111111111111');
     $this->servicio = new CreditosCobroService;
     $this->clave = 'ca11a111-1111-41a1-8a1a-111111111111';
+});
+
+it('omite elegido eximido distribuye residual FIFO y carga exenciones en lote bloqueado', function (): void {
+    $elegido = crearCargoCredito($this->contexto, $this->equipo, 5000);
+    $temprano = crearCargoCredito($this->contexto, $this->equipo, 8000, '2026-03-01', true);
+    $tarde = crearCargoCredito($this->contexto, $this->equipo, 4000, '2026-05-01');
+    (new PagosCobroService)->registrarPago($this->admin, $temprano->id, 2000, 'efectivo', '22222222-2222-4222-8222-222222222222');
+    foreach ([$elegido->id => 5000, $temprano->id => 3000] as $id => $importe) {
+        ExencionCobroPlanilla::create(['cargo_id' => $id, 'usuario_id' => $this->admin->id, 'importe_ars' => $importe]);
+    }
+    $rival = CargoPlanilla::create(array_replace($elegido->only(['tipo', 'parent_type', 'parent_id', 'idEdicion', 'idCategoria', 'precio_original', 'snapshot']), [
+        'idEquipo' => crearEquipoCargos($this->contexto, 'Rival Eximido')->id,
+    ]));
+    ExencionCobroPlanilla::create(['cargo_id' => $rival->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 5000]);
+    DB::table('cargo_planillas')->where('id', $elegido->id)->update(['parent_id' => 2147483647]);
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+    $evento = $this->servicio->aplicarCredito($this->admin, $this->pago->id, $elegido->id, $this->clave);
+    $consultas = collect(DB::getQueryLog())->filter(fn (array $consulta): bool => str_contains($consulta['query'], 'exencion_cobro_planillas'))->values();
+    DB::disableQueryLog();
+    $lote = $consultas->filter(fn (array $consulta): bool => str_contains($consulta['query'], ' in ('))->values();
+    expect($consultas)->toHaveCount(3);
+    expect($lote)->toHaveCount(1)
+        ->and($lote[0]['query'])->toContain('order by `cargo_id` asc', 'for update')
+        ->and($lote[0]['bindings'])->toBe([$this->origen->id, $elegido->id, $temprano->id, $tarde->id]);
+    $aplicaciones = AplicacionPagoPlanilla::query()->where('pago_id', $this->pago->id)->where('cargo_id', '!=', $this->origen->id)->orderBy('id')->get();
+    expect($aplicaciones->pluck('cargo_id')->all())->toBe([$temprano->id, $tarde->id])
+        ->and($aplicaciones->pluck('importe_ars')->all())->toBe([3000, 4000])
+        ->and($evento->valores_antes['credito_ars'])->toBe(20000)
+        ->and($evento->valores_despues['credito_restante_ars'])->toBe(13000)
+        ->and($this->pago->fresh()->importe_ars)->toBe(30000)
+        ->and(AplicacionPagoPlanilla::query()->where('cargo_id', $rival->id)->count())->toBe(0);
+    expect($this->servicio->aplicarCredito($this->admin, $this->pago->id, $elegido->id, $this->clave)->is($evento))->toBeTrue();
+});
+
+it('conserva credito y filas financieras cuando todos quedan eximidos', function (): void {
+    $cargo = crearCargoCredito($this->contexto, $this->equipo, 5000);
+    ExencionCobroPlanilla::create(['cargo_id' => $cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 5000]);
+    DB::table('cargo_planillas')->where('id', $cargo->id)->update(['parent_id' => 2147483647]);
+    $tablas = ['pago_planillas', 'aplicacion_pago_planillas', 'historial_cobro_planillas'];
+    $antes = collect($tablas)->mapWithKeys(fn (string $tabla): array => [$tabla => DB::table($tabla)->orderBy('id')->get()->all()]);
+    expect(fn () => $this->servicio->aplicarCredito($this->admin, $this->pago->id, $cargo->id, $this->clave))->toThrow(ValidationException::class);
+    foreach ($antes as $tabla => $filas) {
+        expect(DB::table($tabla)->orderBy('id')->get()->all())->toEqual($filas);
+    }
+});
+
+it('exige padre vigente para residual eximido y revierte sin tocar credito', function (): void {
+    $cargo = crearCargoCredito($this->contexto, $this->equipo, 5000);
+    ExencionCobroPlanilla::create(['cargo_id' => $cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 3000]);
+    DB::table('cargo_planillas')->where('id', $cargo->id)->update(['parent_id' => 2147483647]);
+    expect(fn () => $this->servicio->aplicarCredito($this->admin, $this->pago->id, $cargo->id, $this->clave))->toThrow(RuntimeException::class);
+    expect((int) AplicacionPagoPlanilla::query()->where('pago_id', $this->pago->id)->sum('importe_ars'))->toBe(10000);
+    $this->assertDatabaseCount('historial_cobro_planillas', 1);
+});
+
+it('falla cerrado ante exencion con aplicaciones sobre el precio sin consumir credito', function (): void {
+    ExencionCobroPlanilla::create(['cargo_id' => $this->origen->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 1]);
+    expect(fn () => $this->servicio->aplicarCredito($this->admin, $this->pago->id, $this->origen->id, $this->clave))->toThrow(RuntimeException::class);
+    $this->assertDatabaseCount('aplicacion_pago_planillas', 1);
+    $this->assertDatabaseCount('historial_cobro_planillas', 1);
 });
 
 it('aplica el credito saldando primero el cargo elegido con tope parcial y remanente sin otro ingreso', function (): void {

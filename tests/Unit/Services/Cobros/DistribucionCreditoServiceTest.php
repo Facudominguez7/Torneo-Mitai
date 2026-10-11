@@ -145,6 +145,15 @@ it('falla cerrado ante filas deudoras corruptas', function (array $overrides): v
     expect(fn (): array => (new DistribucionCreditoService)->planificar($filas, 42, 1000))
         ->toThrow(RuntimeException::class);
 })->with([
+    'eximido negativo' => [['eximido_ars' => -1]],
+    'eximido ambiguo' => [['eximido_ars' => '100']],
+    'eximido nulo' => [['eximido_ars' => null]],
+    'eximido booleano' => [['eximido_ars' => true]],
+    'eximido decimal' => [['eximido_ars' => 1.5]],
+    'eximido fuera de rango' => [['eximido_ars' => 2147483648]],
+    'suma sobre precio' => [['aplicado_ars' => 600, 'eximido_ars' => 401]],
+    'residual eximido sin padre' => [['eximido_ars' => 500, 'padre_valido' => false]],
+    'residual eximido fecha corrupta' => [['eximido_ars' => 500, 'fecha_vigente' => '32/13/2026']],
     'aplicado negativo' => [['aplicado_ars' => -1]],
     'aplicado mayor que el precio' => [['aplicado_ars' => 1001]],
     'precio invalido' => [['precio_original' => 0]],
@@ -155,6 +164,23 @@ it('falla cerrado ante filas deudoras corruptas', function (array $overrides): v
     'fecha ilegible' => [['fecha_vigente' => '32/13/2026']],
     'fecha con tipo ilegal' => [['fecha_vigente' => 20260401]],
 ]);
+
+it('descuenta exenciones parciales y omite elegidos eximidos sin calendario ni padre', function (): void {
+    $filas = [
+        crearFilaDistribucionCredito(1, ['eximido_ars' => 1000, 'padre_valido' => false, 'fecha_vigente' => false]),
+        crearFilaDistribucionCredito(2, ['aplicado_ars' => 200, 'eximido_ars' => 300]),
+        crearFilaDistribucionCredito(3, ['fecha_vigente' => '2026-02-01']),
+    ];
+    $original = $filas;
+    $plan = (new DistribucionCreditoService)->planificar($filas, 1, 2000);
+    expect($plan)->toBe(['aplicaciones' => [
+        ['cargo_id' => 3, 'importe_ars' => 1000], ['cargo_id' => 2, 'importe_ars' => 500],
+    ], 'credito_restante_ars' => 500])->and($filas)->toBe($original);
+    $filas[1]['eximido_ars'] = 800;
+    $filas[2]['eximido_ars'] = 1000;
+    expect((new DistribucionCreditoService)->planificar($filas, 1, 2000))
+        ->toBe(['aplicaciones' => [], 'credito_restante_ars' => 2000]);
+});
 
 it('rechaza entradas invalidas con InvalidArgumentException', function (array $filas, int $cargoId, int $credito): void {
     expect(fn (): array => (new DistribucionCreditoService)->planificar($filas, $cargoId, $credito))

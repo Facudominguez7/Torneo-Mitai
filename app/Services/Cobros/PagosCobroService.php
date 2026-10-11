@@ -6,6 +6,7 @@ use App\Models\AplicacionPagoPlanilla;
 use App\Models\CargoPlanilla;
 use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
+use App\Models\ExencionCobroPlanilla;
 use App\Models\HistorialCobroPlanilla;
 use App\Models\PagoPlanilla;
 use App\Models\User;
@@ -19,7 +20,8 @@ use Throwable;
 
 /**
  * Ingreso único por UUID: aplica al cargo hasta saldar su deuda y conserva excedentes.
- * Los saldos se derivan bajo bloqueo; los modelos sólo validan cada fila aislada.
+ * Los servicios derivan saldos bajo bloqueo; las guardas validan deuda agregada,
+ * pero no reemplazan la coordinación transaccional ni la disponibilidad del pago.
  */
 class PagosCobroService
 {
@@ -67,9 +69,13 @@ class PagosCobroService
                     return $previo;
                 }
 
-                $pendiente = (int) $cargo->precio_original
-                    - (int) AplicacionPagoPlanilla::query()->where('cargo_id', (int) $cargo->id)->lockForUpdate()->sum('importe_ars');
-                if ($pendiente <= 0) {
+                $aplicado = (int) AplicacionPagoPlanilla::query()->where('cargo_id', (int) $cargo->id)->lockForUpdate()->sum('importe_ars');
+                $exencion = ExencionCobroPlanilla::query()->where('cargo_id', (int) $cargo->id)->lockForUpdate()->first();
+                $pendiente = (new DistribucionCreditoService)->calcularDeuda([
+                    'precio_original' => (int) $cargo->precio_original, 'aplicado_ars' => $aplicado,
+                    'eximido_ars' => $exencion === null ? 0 : $exencion->importe_ars,
+                ], (int) $cargo->id);
+                if ($pendiente === 0) {
                     throw ValidationException::withMessages(['cargo' => ['El cargo no registra deuda pendiente; no se admiten anticipos.']]);
                 }
 
