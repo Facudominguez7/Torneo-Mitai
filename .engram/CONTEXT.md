@@ -2,7 +2,17 @@
 
 Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como para hacer commits y pushes. No mergees este rediseño a `main` sin una autorización nueva y explícita del usuario.
 
-Resumen curado al 2026-10-04. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
+Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
+
+## Continuidad actual: cobros y exenciones
+
+- Rama actual `feat/panel-admin-redesign`; remoto integrado sin conflictos por merge `3e5c6f1`. Los cambios locales ajenos se conservaron.
+- Engram local recibió 13 chunks remotos (453 observaciones). Para otra máquina: `engram sync --import`, sin exportar automáticamente conversaciones.
+- E1–E3 completos: persistencia de exenciones, cálculo de deuda que las contempla y operación transaccional de eximir un cargo de un equipo. E4A (`8d96d8e`) guarda políticas históricas equipo-edición, todavía sin materialización automática.
+- E4B implementado y verificado: `ExencionesCobroService::registrarPolitica`, administrador vigente, configuración existente activa, inscripción equipo-edición, rechazo de duplicados y política+historial atómicos. Motivo opcional literal; conserva pagos y deudas anteriores. Verificación independiente S1–S3 PASS; revisión nativa de los dos archivos aprobada y acknowledgement completado (`review-b1626f69c6392cc6`). El commit de esta unidad incluye servicio, tests y este contexto, con autorización explícita del usuario.
+- Evidencia E4B propia e independiente: RED observado por el padre; GREEN focalizado 19 tests / 101 aserciones y regresión de cobros 528 tests / 1822 aserciones; Pint de los dos archivos pasa. No se ejecutó suite completa, UI ni carreras reales. Advertencias: versión Compose obsoleta y caché Pest sin permiso de escritura.
+- Documento local: `odd/tasks/cobros-exenciones-equipo.md`. E4C separado: materializar políticas al crear cargos nuevos; no autorizado en esta unidad. Sin HTTP/UI, activación de cobros ni migración de la base de desarrollo. Commit de E4B autorizado; push no autorizado.
+- La sección de reemplazo de equipo siguiente es contexto histórico, no el foco activo.
 
 ## Retomar el trabajo
 

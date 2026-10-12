@@ -6,8 +6,12 @@ use App\Models\AplicacionPagoPlanilla;
 use App\Models\CargoPlanilla;
 use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
+use App\Models\Edicion;
+use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\ExencionCobroPlanilla;
 use App\Models\HistorialCobroPlanilla;
+use App\Models\PoliticaExencionCobroPlanilla;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -78,6 +82,54 @@ class ExencionesCobroService
         } catch (Throwable $excepcion) {
             Log::error('No se pudo eximir el cargo de planilla.', [
                 'equipo_id' => $equipoId, 'cargo_id' => $cargoId,
+                'actor_id' => $actor->exists ? $actor->getKey() : null, 'excepcion' => $excepcion::class,
+            ]);
+
+            throw $excepcion;
+        }
+    }
+
+    /** Registra autorización para cargos futuros, sin perdonar deuda existente. */
+    public function registrarPolitica(User $actor, int $equipoId, int $edicionId, ?string $motivo = null): PoliticaExencionCobroPlanilla
+    {
+        try {
+            return DB::transaction(function () use ($actor, $equipoId, $edicionId, $motivo): PoliticaExencionCobroPlanilla {
+                $actorVigente = $this->resolverActorAdmin($actor);
+                $this->exigirConfiguracionActiva();
+                if ($equipoId < 1 || $edicionId < 1 || $equipoId > 2147483647 || $edicionId > 2147483647
+                    || ! Equipo::query()->whereKey($equipoId)->exists()
+                    || ! Edicion::query()->whereKey($edicionId)->exists()
+                    || ! EquipoEdicion::query()->where('idEquipo', $equipoId)->where('idEdicion', $edicionId)->lockForUpdate()->exists()) {
+                    throw ValidationException::withMessages(['politica' => ['La política requiere un equipo inscrito en una edición existente.']]);
+                }
+
+                if (PoliticaExencionCobroPlanilla::query()->where('idEquipo', $equipoId)->where('idEdicion', $edicionId)->lockForUpdate()->exists()) {
+                    throw ValidationException::withMessages(['politica' => ['El equipo ya tiene una política de exención en esta edición.']]);
+                }
+
+                $politica = new PoliticaExencionCobroPlanilla([
+                    'idEquipo' => $equipoId, 'idEdicion' => $edicionId,
+                    'usuario_id' => (int) $actorVigente->id, 'motivo' => $motivo,
+                ]);
+                if (! $politica->save() || ! $politica->exists) {
+                    throw new RuntimeException('No se pudo registrar la política de exención.');
+                }
+
+                $evento = new HistorialCobroPlanilla([
+                    'accion' => 'registrar_politica_exencion', 'usuario_id' => (int) $actorVigente->id,
+                    'actor_nombre' => $actorVigente->name,
+                    'valores_antes' => ['idEquipo' => $equipoId, 'idEdicion' => $edicionId],
+                    'valores_despues' => ['politica_id' => (int) $politica->id, 'motivo' => $motivo],
+                ]);
+                if (! $evento->save() || ! $evento->exists) {
+                    throw new RuntimeException('No se pudo registrar el historial de la política.');
+                }
+
+                return $politica;
+            });
+        } catch (Throwable $excepcion) {
+            Log::error('No se pudo registrar la política de exención de planillas.', [
+                'equipo_id' => $equipoId, 'edicion_id' => $edicionId,
                 'actor_id' => $actor->exists ? $actor->getKey() : null, 'excepcion' => $excepcion::class,
             ]);
 
