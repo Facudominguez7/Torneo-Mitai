@@ -8,9 +8,11 @@ use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use App\Models\ExencionCobroPlanilla;
 use App\Models\HistorialCobroPlanilla;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
+use App\Models\PoliticaExencionCobroPlanilla;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
@@ -85,6 +87,7 @@ class ProgramacionCobroService
             }
 
             $cargos = $this->generarCargos($padre, $contexto, $this->tarifaVigente($configuracion));
+            $this->materializarPoliticas($actorVigente, $cargos);
             $this->registrarEventoCargos($actorVigente, $padre, $cargos);
 
             return $padre;
@@ -312,6 +315,34 @@ class ProgramacionCobroService
         }
 
         return $cargos;
+    }
+
+    /**
+     * Exime sólo cargos recién creados; el otorgante histórico no se reautoriza.
+     *
+     * @param  array<int, CargoPlanilla>  $cargos
+     */
+    private function materializarPoliticas(User $actorVigente, array $cargos): void
+    {
+        $politicas = PoliticaExencionCobroPlanilla::query()
+            ->where('idEdicion', $cargos[0]->idEdicion)
+            ->whereIn('idEquipo', array_map(fn (CargoPlanilla $cargo): int => (int) $cargo->idEquipo, $cargos))
+            ->orderBy('id')->lockForUpdate()->get()->keyBy('idEquipo');
+
+        foreach ($cargos as $cargo) {
+            $politica = $politicas->get($cargo->idEquipo);
+            if ($politica === null) {
+                continue;
+            }
+            $exencion = new ExencionCobroPlanilla([
+                'cargo_id' => (int) $cargo->id, 'usuario_id' => (int) $actorVigente->id,
+                'importe_ars' => $cargo->precio_original, 'motivo' => $politica->motivo,
+                'politica_id' => (int) $politica->id,
+            ]);
+            if (! $exencion->save() || ! $exencion->exists) {
+                throw new RuntimeException('No se pudo materializar la política de exención del cargo.');
+            }
+        }
     }
 
     /**

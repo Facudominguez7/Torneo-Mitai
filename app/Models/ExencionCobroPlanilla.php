@@ -9,8 +9,8 @@ use LogicException;
 
 /**
  * Importe histórico eximido de un cargo concreto de un equipo, no un saldo.
- * Persistencia interna e inerte: el futuro servicio calculará deuda pendiente,
- * autenticará al actor y coordinará bloqueos y auditoría atómica.
+ * Los servicios calculan deuda pendiente, autentican al actor y coordinan
+ * bloqueos y auditoría atómica; la política opcional identifica el origen.
  * Los límites son por fila; las guardas no protegen SQL directo ni eventos deshabilitados.
  */
 class ExencionCobroPlanilla extends Model
@@ -19,12 +19,12 @@ class ExencionCobroPlanilla extends Model
 
     protected $table = 'exencion_cobro_planillas';
 
-    protected $fillable = ['cargo_id', 'usuario_id', 'importe_ars', 'motivo'];
+    protected $fillable = ['cargo_id', 'usuario_id', 'importe_ars', 'motivo', 'politica_id'];
 
     protected function casts(): array
     {
         return [
-            'cargo_id' => 'integer', 'usuario_id' => 'integer', 'importe_ars' => 'integer',
+            'cargo_id' => 'integer', 'usuario_id' => 'integer', 'importe_ars' => 'integer', 'politica_id' => 'integer',
             'created_at' => 'immutable_datetime',
         ];
     }
@@ -32,6 +32,11 @@ class ExencionCobroPlanilla extends Model
     public function cargo(): BelongsTo
     {
         return $this->belongsTo(CargoPlanilla::class, 'cargo_id');
+    }
+
+    public function politica(): BelongsTo
+    {
+        return $this->belongsTo(PoliticaExencionCobroPlanilla::class, 'politica_id');
     }
 
     public function usuario(): BelongsTo
@@ -58,6 +63,17 @@ class ExencionCobroPlanilla extends Model
             $cargo = CargoPlanilla::query()->find($exencion->cargo_id);
             if (! $cargo || $exencion->importe_ars > $cargo->precio_original) {
                 throw new LogicException('La exención requiere un cargo existente y no puede superar su precio original.');
+            }
+
+            $politicaId = $atributos['politica_id'] ?? null;
+            if ($politicaId !== null) {
+                if (! is_int($politicaId) || $politicaId < 1 || $politicaId > 2147483647) {
+                    throw new LogicException('El enlace de política requiere un identificador entero positivo dentro de INT firmado.');
+                }
+                $politica = PoliticaExencionCobroPlanilla::query()->find($politicaId);
+                if ($politica === null || $politica->idEquipo !== (int) $cargo->idEquipo || $politica->idEdicion !== (int) $cargo->idEdicion) {
+                    throw new LogicException('La política debe corresponder al equipo y edición del cargo.');
+                }
             }
 
             $usuario = User::query()->find($exencion->usuario_id);
