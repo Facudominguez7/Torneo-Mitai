@@ -11,21 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('planilla_jugadores')) {
+        if (! Schema::hasTable('planilla_jugadores')) {
             Schema::create('planilla_jugadores', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->integer('dni_jugador')->index('planilla_jugadores_dni_jugador_foreign');
-            $table->integer('idEquipo')->index('planilla_jugadores_equipos');
-            $table->integer('idCategoria')->index('planilla_jugadores_categorias');
-            $table->integer('partido_id');
-            $table->string('partido_type', 100);
-            $table->integer('idEdicion')->index('fkidedicion');
-            $table->integer('numero_camiseta')->nullable()->default(0);
-            $table->date('fecha_nacimiento')->nullable();
-            $table->integer('goles')->default(0);
-            $table->boolean('asistio');
-            $table->timestamps();
-        });
+                $table->bigIncrements('id');
+                $table->integer('dni_jugador')->index('planilla_jugadores_dni_jugador_foreign');
+                $table->integer('idEquipo')->index('planilla_jugadores_equipos');
+                $table->integer('idCategoria')->index('planilla_jugadores_categorias');
+                $table->integer('partido_id');
+                $table->string('partido_type', 100);
+                $table->integer('idEdicion')->index('fkidedicion');
+                $table->integer('numero_camiseta')->nullable()->default(0);
+                $table->date('fecha_nacimiento')->nullable();
+                $table->integer('goles')->default(0);
+                $table->boolean('asistio');
+                $table->timestamps();
+            });
         }
     }
 

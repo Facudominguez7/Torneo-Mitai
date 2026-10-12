@@ -24,7 +24,7 @@ class PanelEdicionContextMiddleware
     {
         $idEdicionQuery = $request->query('idEdicion');
 
-        if (!is_null($idEdicionQuery) && $idEdicionQuery !== '') {
+        if (! is_null($idEdicionQuery) && $idEdicionQuery !== '') {
             $edicion = Edicion::find((int) $idEdicionQuery);
 
             if ($edicion) {

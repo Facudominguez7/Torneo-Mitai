@@ -13,7 +13,7 @@ class NormalizadorInstituciones
         $n = mb_strtolower($nombre, 'UTF-8');
 
         // Reemplazar acentos
-        $n = strtr($n, [ 'á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','ü'=>'u','ñ'=>'n' ]);
+        $n = strtr($n, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n']);
 
         // Quitar comillas, puntos, comas
         $n = preg_replace('/["\'\.,]/u', ' ', $n);
@@ -38,19 +38,19 @@ class NormalizadorInstituciones
         }
 
         // Eliminar sufijos de subdivisiones (colores o letras)
-        $colores = ['blanco','negro','rojo','azul','verde','amarillo','naranja','celeste','gris','bordo','violeta'];
+        $colores = ['blanco', 'negro', 'rojo', 'azul', 'verde', 'amarillo', 'naranja', 'celeste', 'gris', 'bordo', 'violeta'];
         foreach ($colores as $color) {
-            $n = preg_replace('/\s'.$color.'$/','',$n);
+            $n = preg_replace('/\s'.$color.'$/', '', $n);
         }
         // Letra final aislada
-        $n = preg_replace('/\s[a-z]$/','',$n);
+        $n = preg_replace('/\s[a-z]$/', '', $n);
 
         // Contraer espacios
-        $n = preg_replace('/\s{2,}/',' ',$n);
+        $n = preg_replace('/\s{2,}/', ' ', $n);
         $n = trim($n);
 
         // Quitar palabra 'club' inicial redundante
-        $n = preg_replace('/^club\s+/','',$n);
+        $n = preg_replace('/^club\s+/', '', $n);
 
         // Unificar cualquier variante que contenga 'guarani' a la forma corta 'guarani af'
         if (str_contains($n, 'guarani')) {

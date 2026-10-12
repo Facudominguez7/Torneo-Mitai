@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('foto', 20);
         });
     }
-    
 
     /**
      * Reverse the migrations.

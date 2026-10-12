@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Panel\ActualizarPlanillaJugadoresRequest;
 use App\Http\Requests\Panel\AplicarGolesArbitralesRequest;
 use App\Http\Requests\Panel\CopiarPlanillaPartidoAnteriorRequest;
+use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\EquipoEdicion;
 use App\Models\InstanciaFinal;
@@ -742,7 +743,7 @@ class ControladorPlanillaJugador extends Controller
     /**
      * Eliminar un jugador de la planilla de un partido específico
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function eliminarJugador(Request $request)
     {
@@ -1036,7 +1037,7 @@ class ControladorPlanillaJugador extends Controller
     private function obtenerLimiteJugadoresPorEdicion($idEdicion, $idCategoria = null)
     {
         if ($idCategoria) {
-            $categoria = \App\Models\Categoria::find($idCategoria);
+            $categoria = Categoria::find($idCategoria);
             if ($categoria && (int) ($categoria->jugadores_maximos ?? 0) > 0) {
                 return (int) $categoria->jugadores_maximos;
             }

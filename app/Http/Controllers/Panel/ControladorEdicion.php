@@ -58,7 +58,7 @@ class ControladorEdicion extends Controller
      */
     public function create()
     {
-        $edicion = new Edicion();
+        $edicion = new Edicion;
 
         return view('Panel.edicion.create', compact('edicion'));
     }

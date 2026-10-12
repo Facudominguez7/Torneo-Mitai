@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\PlanillaJugador;
 use App\Models\ListaBuenaFe;
+use App\Models\PlanillaJugador;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class ListaBuenaFeSeeder extends Seeder
 {
@@ -18,13 +17,13 @@ class ListaBuenaFeSeeder extends Seeder
         // Obtener todos los jugadores únicos de las planillas
         // Agrupados por Jugador, Equipo y Edición
         $jugadoresPlanilla = PlanillaJugador::select(
-                'dni_jugador',
-                'idEquipo',
-                'idEdicion',
-                'idCategoria',
-                'fecha_nacimiento',
-                DB::raw('MIN(created_at) as fecha_alta')
-            )
+            'dni_jugador',
+            'idEquipo',
+            'idEdicion',
+            'idCategoria',
+            'fecha_nacimiento',
+            DB::raw('MIN(created_at) as fecha_alta')
+        )
             ->groupBy('dni_jugador', 'idEquipo', 'idEdicion', 'idCategoria', 'fecha_nacimiento')
             ->get();
 
@@ -37,7 +36,7 @@ class ListaBuenaFeSeeder extends Seeder
                 ->where('idEdicion', $jugador->idEdicion)
                 ->exists();
 
-            if (!$exists) {
+            if (! $exists) {
                 ListaBuenaFe::create([
                     'dni_jugador' => $jugador->dni_jugador,
                     'idEquipo' => $jugador->idEquipo,

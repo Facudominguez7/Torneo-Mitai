@@ -1,4 +1,5 @@
 <?php
+
 namespace App\View\Components;
 
 use App\Models\Edicion;
@@ -22,8 +23,6 @@ class AppLayout extends Component
 
     /**
      * Get the view / contents that represent the component.
-     *
-     * @return View
      */
     public function render(): View
     {

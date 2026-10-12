@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         // Identificar duplicados
-        $duplicates = \Illuminate\Support\Facades\DB::table('lista_buena_fe')
+        $duplicates = DB::table('lista_buena_fe')
             ->select('dni_jugador', 'idEquipo', 'idEdicion')
             ->groupBy('dni_jugador', 'idEquipo', 'idEdicion')
             ->havingRaw('COUNT(*) > 1')
@@ -20,7 +21,7 @@ return new class extends Migration
 
         foreach ($duplicates as $duplicate) {
             // Obtener todos los registros para este duplicado
-            $records = \Illuminate\Support\Facades\DB::table('lista_buena_fe')
+            $records = DB::table('lista_buena_fe')
                 ->where('dni_jugador', $duplicate->dni_jugador)
                 ->where('idEquipo', $duplicate->idEquipo)
                 ->where('idEdicion', $duplicate->idEdicion)
@@ -38,7 +39,7 @@ return new class extends Migration
                 });
 
                 if ($idsToDelete->isNotEmpty()) {
-                    \Illuminate\Support\Facades\DB::table('lista_buena_fe')
+                    DB::table('lista_buena_fe')
                         ->whereIn('id', $idsToDelete)
                         ->delete();
                 }

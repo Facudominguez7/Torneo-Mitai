@@ -8,14 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class Copa extends Model
 {
     use HasFactory;
+
     public $timestamps = false;
+
     protected $table = 'copas';
+
     protected $fillable = ['nombre'];
 
     public function campeones()
     {
         return $this->hasMany(Campeon::class, 'idCopa');
     }
+
     public function subcampeones()
     {
         return $this->hasMany(Subcampeon::class, 'idCopa');
@@ -26,5 +30,4 @@ class Copa extends Model
     {
         return $this->hasMany(InstanciaFinal::class);
     }
-    
 }

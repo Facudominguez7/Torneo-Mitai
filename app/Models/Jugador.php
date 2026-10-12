@@ -8,11 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Jugador extends Model
 {
     use HasFactory;
+
     protected $table = 'jugadores';
+
     public $timestamps = false;
+
     // La PK real es el DNI
     protected $primaryKey = 'dni';
+
     public $incrementing = false; // DNI no es autoincremental
+
     protected $keyType = 'string'; // suele almacenarse como CHAR/VARCHAR(8)
 
     protected $fillable = [
@@ -28,6 +33,4 @@ class Jugador extends Model
     {
         return $this->hasMany(PlanillaJugador::class, 'dni_jugador', 'dni');
     }
-    
-
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Campeon;
 use App\Models\Categoria;
+use App\Models\Copa;
 use App\Models\Edicion;
 use App\Models\EquipoEdicion;
 use App\Models\Fase;
@@ -20,8 +21,9 @@ use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use App\Services\FixtureExploradorService;
 use App\Services\Panel\ResumenDashboard;
+use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ControladorHome extends Controller
@@ -58,7 +60,6 @@ class ControladorHome extends Controller
         if ($edicionActual) {
             $equiposDeLaEdicion = $this->equiposDeEdicion->participantes((int) $edicionActual->id);
         }
-
 
         return view('welcome', compact(
             'ediciones',
@@ -137,7 +138,7 @@ class ControladorHome extends Controller
                 ->whereNotNull('horario_datetime')
                 ->pluck('horario_datetime')
                 ->map(function ($datetime) {
-                    return \Carbon\Carbon::parse($datetime)->format('H:i');
+                    return Carbon::parse($datetime)->format('H:i');
                 })
                 ->unique()
                 ->sort()
@@ -195,7 +196,7 @@ class ControladorHome extends Controller
         ];
         $resumenDashboard = null;
         if ($idEdicion) {
-            $estadisticasService = new EstadisticasService();
+            $estadisticasService = new EstadisticasService;
             $estadisticasJugadores = $estadisticasService->obtenerJugadoresDosUltimasFechas($idEdicion);
             $jugadoresPorCategoria = $estadisticasService->obtenerJugadoresPorCategoriaDosUltimasFechas($idEdicion);
             $equiposSinAsistencia = $estadisticasService->obtenerEquiposSinAsistenciaUltimaFecha((int) $idEdicion, $horarioString);
@@ -350,7 +351,7 @@ class ControladorHome extends Controller
      * Los datos se obtienen de `equipo_ediciones.golesContra` que se actualiza
      * automáticamente al cargar resultados.
      *
-     * @return \Illuminate\Contracts\View\View
+     * @return View
      */
     public function tablaVallas(Request $request)
     {
@@ -707,7 +708,7 @@ class ControladorHome extends Controller
             ->join('equipos as e', 'tabla_goleadores.idEquipo', '=', 'e.id')
             ->join('categorias as cat', 'tabla_goleadores.idCategoria', '=', 'cat.id')
             ->join('jugadores as j', 'tabla_goleadores.dni_jugador', '=', 'j.dni')
-            ->select('tabla_goleadores.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo', \Illuminate\Support\Facades\DB::raw("CONCAT(j.apellido, ' ', j.nombre) as nombreJugador"))
+            ->select('tabla_goleadores.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo', DB::raw("CONCAT(j.apellido, ' ', j.nombre) as nombreJugador"))
             ->where('tabla_goleadores.idEdicion', $idEdicion);
 
         if ($searchValue !== '') {
@@ -715,7 +716,7 @@ class ControladorHome extends Controller
                 $likePattern = "%{$searchValue}%";
                 $query->where('j.nombre', 'like', $likePattern)
                     ->orWhere('j.apellido', 'like', $likePattern)
-                    ->orWhere(\Illuminate\Support\Facades\DB::raw("CONCAT(j.apellido, ' ', j.nombre)"), 'like', $likePattern);
+                    ->orWhere(DB::raw("CONCAT(j.apellido, ' ', j.nombre)"), 'like', $likePattern);
             });
         }
 
@@ -785,7 +786,7 @@ class ControladorHome extends Controller
         $selectedCategoria = $request->query('categoria');
 
         // Obtener las copas disponibles para el filtro (del torneo actual)
-        $copas = \App\Models\Copa::orderBy('nombre', 'asc')->get();
+        $copas = Copa::orderBy('nombre', 'asc')->get();
         $selectedCopa = $request->query('copa');
 
         // Obtener las fases disponibles para el filtro (del torneo actual)
@@ -1225,7 +1226,7 @@ class ControladorHome extends Controller
 
         foreach ($partidos as $partido) {
             $horario = $partido->horario_datetime
-                ? \Carbon\Carbon::parse($partido->horario_datetime)->format('H:i')
+                ? Carbon::parse($partido->horario_datetime)->format('H:i')
                 : 'Por definir';
             $categoria = $partido->nombre_categoria ?? 'Sin categoría';
 
@@ -1235,7 +1236,7 @@ class ControladorHome extends Controller
 
         foreach ($instanciasFinales as $instanciaFinal) {
             $horario = $instanciaFinal->horario
-                ? \Carbon\Carbon::parse($instanciaFinal->horario)->format('H:i')
+                ? Carbon::parse($instanciaFinal->horario)->format('H:i')
                 : 'Por definir';
             $categoria = $instanciaFinal->nombre_categoria ?? 'Sin categoría';
 
@@ -1249,7 +1250,7 @@ class ControladorHome extends Controller
             $agrupado[$entrada['horario']][$entrada['categoria']][] = $entrada['equipo'];
         }
 
-        $fechaJornada = \Carbon\Carbon::parse($ultimaFechaCalendario)->format('d/m/Y');
+        $fechaJornada = Carbon::parse($ultimaFechaCalendario)->format('d/m/Y');
 
         return view('Panel.imprimir.planilla-cobro', compact('agrupado', 'EdicionSeleccionada', 'fechaJornada'));
     }

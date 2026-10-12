@@ -26,9 +26,7 @@ return new class extends Migration
             });
     }
 
-    public function down(): void
-    {
-    }
+    public function down(): void {}
 
     private function normalizarNombre(string $nombre): string
     {
@@ -52,7 +50,7 @@ return new class extends Migration
         $title = implode('', $parts);
 
         foreach (['CA', 'AF', 'FC', 'RC'] as $sigla) {
-            $pattern = '/(?<!\p{L})' . preg_quote(ucfirst(mb_strtolower($sigla, 'UTF-8')), '/') . '(?!\p{L})/u';
+            $pattern = '/(?<!\p{L})'.preg_quote(ucfirst(mb_strtolower($sigla, 'UTF-8')), '/').'(?!\p{L})/u';
             $title = preg_replace($pattern, $sigla, $title);
         }
 

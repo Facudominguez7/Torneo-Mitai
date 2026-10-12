@@ -145,6 +145,29 @@ it('advierte si pasa de categoria 2014 a 2013 en otra institucion', function () 
         ->and($resultado['message'])->toContain('Solo puede subir a una categoria de mayor edad como "Categoria 2013" dentro de la misma institucion.');
 });
 
+it('no advierte a un jugador sin historial de categorias en la edicion', function () {
+    $contexto = crearContextoCategoriasJugador();
+
+    Jugador::create([
+        'dni' => '40501111',
+        'nombre' => 'Nuevo',
+        'apellido' => 'SinHistorial',
+        'goles_totales' => 0,
+        'partidos_totales' => 0,
+        'tarjetas_rojas_totales' => 0,
+    ]);
+
+    $resultado = app(ValidadorReglasJugador::class)->validarSoloCategoriaYEdad(
+        '40501111',
+        $contexto['equipoDestino2013OtraInstitucion']->id,
+        $contexto['edicion']->id,
+        $contexto['categoria2013']->id,
+        '2014-05-10'
+    );
+
+    expect($resultado)->toBeNull();
+});
+
 it('bloquea pasar de categoria 2013 a 2014', function () {
     $contexto = crearContextoCategoriasJugador();
 

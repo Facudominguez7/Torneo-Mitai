@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use Illuminate\Database\Seeder;
 
 class InicializarEquiposEdicionesSeeder extends Seeder
 {
@@ -19,15 +19,15 @@ class InicializarEquiposEdicionesSeeder extends Seeder
         foreach ($equipos as $equipo) {
             // Verificar si ya existe el equipo en la edición destino
             $existe = EquipoEdicion::where('idEquipo', $equipo->id)
-                                    ->where('idEdicion', $idEdicionDestino)
-                                    ->exists();
+                ->where('idEdicion', $idEdicionDestino)
+                ->exists();
 
             // Si no existe, creamos el nuevo registro en la edición destino
-            if (!$existe) {
+            if (! $existe) {
                 EquipoEdicion::create([
                     'idEquipo' => $equipo->id,
                     'idEdicion' => $idEdicionDestino,
-                    'golesContra' => 0, 
+                    'golesContra' => 0,
                 ]);
             }
         }

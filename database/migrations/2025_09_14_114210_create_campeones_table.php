@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('campeones')) {
+        if (! Schema::hasTable('campeones')) {
             Schema::create('campeones', function (Blueprint $table) {
-            $table->integer('id', true);
-            $table->integer('idEdicion')->nullable()->index('idedicion');
-            $table->integer('idEquipo')->nullable()->index('idequipo');
-            $table->integer('idCategoria')->nullable()->index('idcategoria');
-            $table->integer('idCopa')->nullable()->index('idcopa');
-        });
+                $table->integer('id', true);
+                $table->integer('idEdicion')->nullable()->index('idedicion');
+                $table->integer('idEquipo')->nullable()->index('idequipo');
+                $table->integer('idCategoria')->nullable()->index('idcategoria');
+                $table->integer('idCopa')->nullable()->index('idcopa');
+            });
         }
     }
 

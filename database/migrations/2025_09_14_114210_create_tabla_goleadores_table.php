@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('tabla_goleadores')) {
+        if (! Schema::hasTable('tabla_goleadores')) {
             Schema::create('tabla_goleadores', function (Blueprint $table) {
-            $table->integer('id', true);
-            $table->integer('idCategoria')->index('fkidcategoria');
-            $table->integer('idEdicion')->index('fkidedicion');
-            $table->integer('idEquipo')->index('fkidequipo');
-            $table->integer('dni_jugador')->nullable()->index('fkdnijugador');
-            $table->string('nombre', 100);
-            $table->integer('cantidadGoles');
-        });
+                $table->integer('id', true);
+                $table->integer('idCategoria')->index('fkidcategoria');
+                $table->integer('idEdicion')->index('fkidedicion');
+                $table->integer('idEquipo')->index('fkidequipo');
+                $table->integer('dni_jugador')->nullable()->index('fkdnijugador');
+                $table->string('nombre', 100);
+                $table->integer('cantidadGoles');
+            });
         }
     }
 

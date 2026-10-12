@@ -11,22 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('equipos')) {
+        if (! Schema::hasTable('equipos')) {
             Schema::create('equipos', function (Blueprint $table) {
-            $table->integer('id', true);
-            $table->integer('idCategoria')->index('relacion_categorias');
-            $table->integer('idEdicion')->index('fkidediciones');
-            $table->string('nombre', 50);
-            $table->string('foto')->nullable();
-            $table->integer('victorias')->default(0);
-            $table->integer('derrotas')->default(0);
-            $table->integer('empates')->default(0);
-            $table->integer('partidos_jugados')->default(0);
-            $table->integer('golesFavor')->default(0);
-            $table->integer('golesContra')->default(0);
-            $table->integer('diferenciaGoles')->default(0);
-            $table->integer('puntos')->default(0);
-        });
+                $table->integer('id', true);
+                $table->integer('idCategoria')->index('relacion_categorias');
+                $table->integer('idEdicion')->index('fkidediciones');
+                $table->string('nombre', 50);
+                $table->string('foto')->nullable();
+                $table->integer('victorias')->default(0);
+                $table->integer('derrotas')->default(0);
+                $table->integer('empates')->default(0);
+                $table->integer('partidos_jugados')->default(0);
+                $table->integer('golesFavor')->default(0);
+                $table->integer('golesContra')->default(0);
+                $table->integer('diferenciaGoles')->default(0);
+                $table->integer('puntos')->default(0);
+            });
         }
     }
 

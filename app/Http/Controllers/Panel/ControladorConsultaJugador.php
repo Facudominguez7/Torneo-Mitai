@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Models\Categoria;
 use App\Models\Edicion;
-use App\Models\Jugador;
-use App\Models\PlanillaJugador;
-use App\Models\Partido;
+use App\Models\Equipo;
 use App\Models\InstanciaFinal;
+use App\Models\Jugador;
+use App\Models\ListaBuenaFe;
+use App\Models\Partido;
+use App\Models\PlanillaJugador;
 use App\Models\TrazabilidadBajaJugador;
 use Illuminate\Http\Request;
 
@@ -30,7 +33,7 @@ class ControladorConsultaJugador extends Controller
 
         // Mantener el DNI si viene en la URL
         $dni = $request->input('dni', '');
-        
+
         return view('Panel.jugador.consulta', compact('edicionActual', 'ediciones', 'EdicionSeleccionada', 'dni'));
     }
 
@@ -128,7 +131,7 @@ class ControladorConsultaJugador extends Controller
 
         if ($planillas->isEmpty()) {
             // Buscar en Lista de Buena Fe si no hay registros de planilla
-            $listaBuenaFe = \App\Models\ListaBuenaFe::where('dni_jugador', $dni)
+            $listaBuenaFe = ListaBuenaFe::where('dni_jugador', $dni)
                 ->where('idEdicion', $idEdicion)
                 ->where('activo', true)
                 ->with(['equipo', 'categoria'])
@@ -140,12 +143,12 @@ class ControladorConsultaJugador extends Controller
                 $sinRegistrosDePartidos = true;
             } else {
                 // Buscar en cualquier edición si no está en la actual
-                $listaBuenaFe = \App\Models\ListaBuenaFe::where('dni_jugador', $dni)
+                $listaBuenaFe = ListaBuenaFe::where('dni_jugador', $dni)
                     ->where('activo', true)
                     ->with(['equipo', 'categoria', 'edicion'])
                     ->orderBy('idEdicion', 'desc')
                     ->first();
-                    
+
                 if ($listaBuenaFe) {
                     $equipoActual = $listaBuenaFe->equipo;
                     $categoriaActual = $listaBuenaFe->categoria;
@@ -158,8 +161,8 @@ class ControladorConsultaJugador extends Controller
         } else {
             // Obtener el equipo y categoría actual (último registro cargado)
             $planillaReciente = $planillas->first();
-            $equipoActual = \App\Models\Equipo::find($planillaReciente->idEquipo);
-            $categoriaActual = \App\Models\Categoria::find($planillaReciente->idCategoria);
+            $equipoActual = Equipo::find($planillaReciente->idEquipo);
+            $categoriaActual = Categoria::find($planillaReciente->idCategoria);
 
             // Calcular estadísticas totales en esta edición
             $totalGoles = $planillas->sum('goles');

@@ -108,7 +108,7 @@ it('compila panel-form-input y panel-form-submit a reglas CSS reales con los tok
     $result = Process::path(base_path())
         ->timeout(60)
         ->run([
-            'npx', 'tailwindcss',
+            'node', base_path('node_modules/tailwindcss/lib/cli.js'),
             '-c', base_path('tailwind.config.js'),
             '-i', base_path('resources/css/app.css'),
             '--content', $probeHtml,

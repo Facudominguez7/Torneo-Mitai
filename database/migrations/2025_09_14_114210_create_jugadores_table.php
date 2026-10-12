@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('jugadores')) {
+        if (! Schema::hasTable('jugadores')) {
             Schema::create('jugadores', function (Blueprint $table) {
-            $table->integer('dni', true);
-            $table->string('nombre', 50);
-            $table->string('apellido', 50);
-            $table->integer('goles_totales')->default(0);
-            $table->integer('partidos_totales')->default(0);
-        });
+                $table->integer('dni', true);
+                $table->string('nombre', 50);
+                $table->string('apellido', 50);
+                $table->integer('goles_totales')->default(0);
+                $table->integer('partidos_totales')->default(0);
+            });
         }
     }
 

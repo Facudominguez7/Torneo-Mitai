@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Services\NormalizadorInstituciones;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Services\NormalizadorInstituciones;
 
 class Equipo extends Model
 {
     use HasFactory;
+
     public $timestamps = false;
+
     protected $fillable = ['nombre', 'foto', 'idCategoria', 'idEdicion', 'idInstitucion'];
 
     protected static function booted()
@@ -21,7 +23,7 @@ class Equipo extends Model
             if ($nombre !== '') {
                 $base = NormalizadorInstituciones::estandarizar($nombre);
                 // Si no tiene institución asignada, buscar o crear por el nombre base
-                if (!$equipo->idInstitucion && $base !== '') {
+                if (! $equipo->idInstitucion && $base !== '') {
                     $institucion = Institucion::firstOrCreate(['nombre' => $base]);
                     $equipo->idInstitucion = $institucion->id;
                 }
@@ -31,7 +33,7 @@ class Equipo extends Model
         // Si se actualiza el nombre, re-asignar la institución acorde al nombre normalizado
         static::updating(function (Equipo $equipo) {
             // Si cambia el nombre y NO se cambió explícitamente la institución en esta actualización
-            if ($equipo->isDirty('nombre') && !$equipo->isDirty('idInstitucion')) {
+            if ($equipo->isDirty('nombre') && ! $equipo->isDirty('idInstitucion')) {
                 $nombre = trim((string) $equipo->nombre);
                 if ($nombre !== '') {
                     $base = NormalizadorInstituciones::estandarizar($nombre);
@@ -70,58 +72,68 @@ class Equipo extends Model
         // Mantener siglas comunes en mayúscula completa
         $siglas = ['CA', 'AF', 'FC', 'RC'];
         foreach ($siglas as $sigla) {
-            $pattern = '/(?<!\p{L})' . preg_quote(ucfirst(mb_strtolower($sigla, 'UTF-8')), '/') . '(?!\p{L})/u';
+            $pattern = '/(?<!\p{L})'.preg_quote(ucfirst(mb_strtolower($sigla, 'UTF-8')), '/').'(?!\p{L})/u';
             $title = preg_replace($pattern, $sigla, $title);
         }
 
         $this->attributes['nombre'] = $title;
     }
 
-    function categoria()
+    public function categoria()
     {
         return $this->belongsTo(Categoria::class, 'idCategoria');
     }
+
     public function ediciones()
     {
         return $this->belongsToMany(Edicion::class, 'equipo_ediciones', 'idEquipo', 'idEdicion');
     }
+
     public function institucion()
     {
         return $this->belongsTo(Institucion::class, 'idInstitucion');
     }
+
     public function campeon()
     {
         return $this->hasOne(Campeon::class, 'idEquipo');
     }
+
     public function goleador()
     {
         return $this->hasOne(Goleador::class, 'idEquipo');
     }
+
     public function subcampeon()
     {
         return $this->hasOne(Subcampeon::class, 'idEquipo');
     }
+
     public function vallaMenosVencida()
     {
         return $this->hasOne(VallaMenosVencida::class, 'idEquipo');
     }
+
     public function grupos()
     {
         return $this->belongsToMany(Grupo::class, 'equipos_grupos', 'idEquipo', 'idGrupo');
     }
+
     public function partidosLocales()
     {
         return $this->hasMany(Partido::class, 'idEquipoLocal');
     }
+
     public function partidosVisitantes()
     {
         return $this->hasMany(Partido::class, 'idEquipoVisitante');
     }
+
     public function tablaPosiciones()
     {
         return $this->hasMany(TablaPosicion::class, 'idEquipo');
     }
-    
+
     // Relación con InstanciaFinal (un equipo tiene muchas instancias finales como local o visitante)
     public function instanciasFinalesComoLocal()
     {
@@ -132,13 +144,15 @@ class Equipo extends Model
     {
         return $this->hasMany(InstanciaFinal::class, 'idEquipoVisitante');
     }
-     // Relación con jugadores (un equipo tiene muchos jugadores)
-     public function jugadores()
-     {
-         return $this->hasMany(Jugador::class, 'idEquipo');
-     }
-     public function equipoEdiciones()
-     {
-         return $this->hasMany(EquipoEdicion::class, 'idEquipo');
-     }
+
+    // Relación con jugadores (un equipo tiene muchos jugadores)
+    public function jugadores()
+    {
+        return $this->hasMany(Jugador::class, 'idEquipo');
+    }
+
+    public function equipoEdiciones()
+    {
+        return $this->hasMany(EquipoEdicion::class, 'idEquipo');
+    }
 }

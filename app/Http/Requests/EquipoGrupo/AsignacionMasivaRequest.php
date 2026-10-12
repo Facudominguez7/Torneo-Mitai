@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\EquipoGrupo;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AsignacionMasivaRequest extends FormRequest
@@ -20,7 +21,7 @@ class AsignacionMasivaRequest extends FormRequest
      * Se exige edición y categoría válidas para evitar asignaciones
      * fuera de contexto por llamadas manuales al endpoint.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

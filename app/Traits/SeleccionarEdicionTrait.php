@@ -12,7 +12,7 @@ trait SeleccionarEdicionTrait
     {
         $idEdicionDestino = $request->idEdicion; // edición donde se agregará el equipo
         $EdicionSeleccionada = $idEdicionDestino ? Edicion::find($idEdicionDestino) : null;
-        $ediciones = Edicion::select('id','nombre')->orderByDesc('id')->get();
+        $ediciones = Edicion::select('id', 'nombre')->orderByDesc('id')->get();
         // Solo equipoedicion usa esta pantalla; sin un tipo válido, route($tipo.'.create') daba 500.
         $tipo = in_array($request->tipo, ['equipoedicion'], true) ? $request->tipo : 'equipoedicion';
 

@@ -7,12 +7,11 @@ use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\Institucion;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Controlador para gestionar instituciones y sus equipos asociados
- * 
+ *
  * Permite visualizar y vincular equipos que no tienen institución asignada
  * a una institución existente para resolver conflictos de validación de jugadores.
  */
@@ -45,7 +44,7 @@ class ControladorInstitucion extends Controller
                         $q->where('idEdicion', $EdicionSeleccionada->id)->with('categoria');
                     }])
                     ->get();
-                
+
                 if ($equipos->count() > 0) {
                     $equiposPorInstitucion[$institucion->id] = $equipos;
                 }
@@ -54,7 +53,7 @@ class ControladorInstitucion extends Controller
 
         // Obtener equipos SIN institución asignada
         $equiposSinInstitucionQuery = Equipo::whereNull('idInstitucion');
-        
+
         if ($EdicionSeleccionada) {
             $equiposSinInstitucionQuery->whereHas('equipoEdiciones', function ($q) use ($EdicionSeleccionada) {
                 $q->where('idEdicion', $EdicionSeleccionada->id);
@@ -62,7 +61,7 @@ class ControladorInstitucion extends Controller
                 $q->where('idEdicion', $EdicionSeleccionada->id)->with('categoria');
             }]);
         }
-        
+
         $equiposSinInstitucion = $equiposSinInstitucionQuery->orderBy('nombre')->get();
 
         // Estadísticas
@@ -82,14 +81,13 @@ class ControladorInstitucion extends Controller
         ));
     }
 
-
     /**
      * Actualizar el nombre de una institución
      */
     public function update(Request $request, Institucion $institucion)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255|unique:instituciones,nombre,' . $institucion->id,
+            'nombre' => 'required|string|max:255|unique:instituciones,nombre,'.$institucion->id,
         ]);
 
         $nombreAnterior = $institucion->nombre;
@@ -97,7 +95,7 @@ class ControladorInstitucion extends Controller
 
         Log::info("Institución renombrada: '{$nombreAnterior}' -> '{$request->nombre}'");
 
-        return redirect()->back()->with('success', 
+        return redirect()->back()->with('success',
             "Institución renombrada de $nombreAnterior a {$request->nombre}."
         );
     }
@@ -121,7 +119,7 @@ class ControladorInstitucion extends Controller
 
         Log::info("Equipo '{$equipo->nombre}' movido de '{$institucionAnterior}' a '{$institucion->nombre}'");
 
-        return redirect()->back()->with('success', 
+        return redirect()->back()->with('success',
             "Equipo {$equipo->nombre} vinculado a institución {$institucion->nombre}."
         );
     }
@@ -137,13 +135,13 @@ class ControladorInstitucion extends Controller
 
         $equipo = Equipo::findOrFail($request->equipo_id);
         $institucionAnterior = $equipo->institucion?->nombre ?? 'Sin institución';
-        
+
         $equipo->idInstitucion = null;
         $equipo->save();
 
         Log::info("Equipo '{$equipo->nombre}' desvinculado de institución '{$institucionAnterior}'");
 
-        return redirect()->back()->with('success', 
+        return redirect()->back()->with('success',
             "Equipo {$equipo->nombre} desvinculado de institución $institucionAnterior."
         );
     }
@@ -166,7 +164,7 @@ class ControladorInstitucion extends Controller
 
         Log::info("Nueva institución creada: '{$institucion->nombre}'");
 
-        return redirect()->back()->with('success', 
+        return redirect()->back()->with('success',
             "Institución {$institucion->nombre} creada correctamente."
         );
     }
