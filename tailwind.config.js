@@ -31,7 +31,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+        sans: ['Barlow', ...defaultTheme.fontFamily.sans],
       },
       colors: {
         // `primary`/`secondary`/`brand.*` are wired to the channel-only
