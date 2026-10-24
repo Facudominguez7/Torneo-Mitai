@@ -6,10 +6,10 @@
     <title>Cobros de planilla · {{ $EdicionSeleccionada?->nombre ?? 'Sin edición' }}</title>
     @vite(['resources/css/app.css'])
     <style>
-        @page { size: A4 landscape; margin: 12mm; }
+        @page { size: A4 portrait; margin: 12mm; }
         body { color: #111827; background: white; }
         tr, article { break-inside: avoid; }
-        @media print { .no-imprimir { display: none; } table { font-size: 10pt; } }
+        @media print { .no-imprimir { display: none; } table { font-size: 10pt; } th, td { padding: 6px !important; } }
     </style>
 </head>
 <body class="p-6">

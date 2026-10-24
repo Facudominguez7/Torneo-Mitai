@@ -108,6 +108,13 @@ it('imprime los cobros en la misma página sin abrir otra pestaña', function ()
         ->and($control)->toContain(e(route('cobros.imprimir', ['idEdicion' => $this->contexto['edicion']->id])));
 });
 
+it('imprime los cobros en hoja A4 vertical', function (): void {
+    $this->actingAs($this->admin)->get(route('cobros.imprimir', ['idEdicion' => $this->contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSee('@page { size: A4 portrait;', false)
+        ->assertDontSee('landscape', false);
+});
+
 it('pide importes de efectivo y mercado pago sin ofrecer transferencia', function (): void {
     $html = $this->actingAs($this->admin)->get(rutaPlanillaAccesos($this->partido))->assertOk()->getContent();
     $modal = Str::between($html, 'id="cobros-modal"', '</dialog>');
