@@ -238,7 +238,7 @@ it('preserva las acciones existentes y el listado completo con el filtro de hora
         ->assertSee('Partidos')
         ->assertSee('Imprimir Tablas de Posiciones')
         ->assertSee('Imprimir Fixture')
-        ->assertSee('Planilla de Cobro')
+        ->assertDontSee('Planilla de Cobro')
         ->assertSee('Todos los partidos de la edición')
         ->assertSee('id="horario"', false)
         // Decisión del usuario (T10): el listado va abierto y justo debajo de los KPIs, sin <details>.

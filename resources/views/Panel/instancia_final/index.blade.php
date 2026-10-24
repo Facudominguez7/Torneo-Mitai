@@ -38,7 +38,6 @@
                 'idEdicion' => $EdicionSeleccionada->id ?? '',
                 'horario' => request('horario'),
             ]);
-            $urlPlanillaCobro = route('admin.planilla-cobro', ['idEdicion' => $EdicionSeleccionada->id ?? '']);
 
             $contextoActivo = array_filter([$nombreCategoria ?? null, $nombreFase ?? null]);
             $subtituloInstancias = $totalPartidos . ' ' . ($totalPartidos === 1 ? 'partido' : 'partidos')
@@ -68,10 +67,9 @@
                         <option value="">Seleccionar opción</option>
                         <option value="fixture">Fixture</option>
                         <option value="arbitros">Planilla Árbitros</option>
-                        <option value="planilla_cobro">Planilla de Cobro</option>
                     </select>
                     <x-ui.button type="button" variant="secondary"
-                        onclick="ejecutarImpresionInstanciasFinales('{{ $urlImprimirFixture }}', '{{ $urlImprimirArbitros }}', '{{ $urlPlanillaCobro }}')">
+                        onclick="ejecutarImpresionInstanciasFinales('{{ $urlImprimirFixture }}', '{{ $urlImprimirArbitros }}')">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
@@ -225,7 +223,7 @@
     @endif
 
     <script>
-        function ejecutarImpresionInstanciasFinales(urlFixture, urlArbitros, urlPlanillaCobro) {
+        function ejecutarImpresionInstanciasFinales(urlFixture, urlArbitros) {
             const selector = document.getElementById('selector-impresion-instancias');
 
             if (!selector?.value) {
@@ -245,11 +243,6 @@
 
             if (selector.value === 'arbitros') {
                 imprimirEnIframe(urlArbitros);
-                return;
-            }
-
-            if (selector.value === 'planilla_cobro') {
-                imprimirConTitulo(urlPlanillaCobro, 'Planilla de Cobro');
             }
         }
 

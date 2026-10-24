@@ -90,7 +90,8 @@ it('renderiza el encabezado de Instancias finales con x-ui.page-header y las acc
         ->assertSee('Imprimir')
         ->assertSee('Fixture')
         ->assertSee('Planilla Árbitros')
-        ->assertSee('Planilla de Cobro')
+        ->assertDontSee('Planilla de Cobro')
+        ->assertDontSee('planilla_cobro')
         ->assertSee('text-2xl font-bold text-gray-800', false);
 });
 

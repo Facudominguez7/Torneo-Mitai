@@ -48,14 +48,6 @@
                             'url' => route('admin.imprimir-fixture-arbitros-partidos', ['idEdicion' => $idEdicion]),
                             'filtro' => ['param' => 'horario', 'etiqueta' => 'Horario', 'vacio' => 'Todos los horarios', 'opciones' => $opcionesHorarios],
                         ],
-                        [
-                            'clave' => 'cobro',
-                            'nombre' => 'Planilla de cobro',
-                            'descripcion' => 'Horario, categoría y equipo, con columnas para Mercado Pago y efectivo y el cierre del día.',
-                            'nota' => 'Usa el último día con partidos.',
-                            'titulo' => 'Planilla de Cobro',
-                            'url' => route('admin.planilla-cobro', ['idEdicion' => $idEdicion]),
-                        ],
                     ],
                 ],
                 [

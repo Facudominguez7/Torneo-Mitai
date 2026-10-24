@@ -126,16 +126,15 @@ it('normaliza los horarios legacy sin duplicarlos con los de horario_datetime', 
     expect($opciones[1])->toBe(['09:00', '17:30', '19:30']);
 });
 
-it('la planilla de cobro solo recibe la edicion y avisa que usa el ultimo dia con partidos', function () {
+it('ya no ofrece la planilla de cobro impresa', function () {
     $contexto = crearContextoImpresiones();
 
     $html = verImpresiones($this, crearAdminImpresiones(), $contexto)->getContent();
-    $tarjeta = tarjetaImpresion($html, 'cobro');
 
-    expect($tarjeta)
-        ->toContain('data-print-url="'.route('admin.planilla-cobro', ['idEdicion' => $contexto['edicion']->id]).'"')
-        ->toContain('último día con partidos')
-        ->not->toContain('<select');
+    expect($html)->not->toContain('data-impresion="cobro"')
+        ->and($html)->not->toContain('Planilla de cobro')
+        ->and($html)->not->toContain('admin/planilla-cobro');
+    $this->actingAs(crearAdminImpresiones())->get('/Panel/admin/planilla-cobro?idEdicion='.$contexto['edicion']->id)->assertNotFound();
 });
 
 it('las listas de buena fe aceptan una categoria opcional de la edicion', function () {
