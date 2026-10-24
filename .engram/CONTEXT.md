@@ -2,15 +2,25 @@
 
 Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como para hacer commits y pushes. No mergees este rediseño a `main` sin una autorización nueva y explícita del usuario.
 
-Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
+Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
 
-## Continuidad actual: interfaz de cobros integrada
+## Continuidad actual (2026-10-24): cobros desde la planilla e identidad visual
+
+- Pagos desde la planilla del partido: badges en el dashboard, pago combinado efectivo + Mercado Pago (sin transferencia), impresión en el lugar y hoja A4 vertical. El estado se refresca por polling cada 1 s mientras la pestaña está visible; se descartó websockets porque no hay broadcasting configurado.
+- Exención de planilla desde el partido (ese cargo) y desde `/Panel/equipo` (toda la edición: política futura + deuda actual, con los pagos conservados). `eximirEdicion` toma primero el lock global de configuración de cobros para no interbloquearse. Se quitó la "Planilla de Cobro" impresa.
+- Identidad visual: AGENTS.md sección 10 (evitar AI-slop). Barlow es la tipografía. No quedan clases `indigo-*` (`PaletaMarcaTest`). Las pantallas de importar equipos de otra edición usan los componentes `x-ui.*`. El dashboard saluda según la hora.
+- En `mitai` local, con autorización del usuario, hay dos pagos reales del partido 2213 (Huracán). No se confirmó ninguna exención real.
+- Pendiente: resplandores `blur-3xl` del sitio público (decisión del usuario) y el buscador al lado de "Mitai Admin", que funciona como Consulta de jugador. La revisión nativa de cobros-planilla-partido sigue bloqueada. Hay 23 fallas 419 preexistentes en los tests de Auth/Profile.
+
+## Continuidad previa: interfaz de cobros integrada
+
+- Habilitación de desarrollo autorizada para el puerto 8000: se aplicaron únicamente las diez migraciones pendientes de cobros en `mitai`, con whitelist y guardia de base; todas terminaron correctamente. No se ejecutaron activación, seeders, backfill, pagos ni cambios de cuentas. La ruta `/Panel/cobros` responde y redirige al login. La comprobación SQL independiente posterior falló con `QueryException` sin resultados parciales: no prueba divergencia, pero falta confirmar el estado final. No reintentar ni operar sobre datos automáticamente; queda una decisión humana para diagnóstico de lectura. Seguimiento: `odd/tasks/cobros-development-8000.md`.
 
 - La consulta, pagos, crédito automático, exenciones, políticas futuras, configuración manual y detalle/historial están conectados al panel. Acceso desde menú y tarjetas de partidos; tabla desktop, tarjetas mobile y modales sin apilar; impresión filtrada.
 - Las altas regulares, interzonales y finales usan el motor transaccional existente. Inactivo no genera cargos; activar exige confirmación; no hay backfill. La tarifa histórica y los ingresos se conservan. No hay anulación de pagos implementada.
 - Verificación independiente: focal 55/458 y regresión 561 aprobadas con un fallo de aserción CSS global, corregido y revalidado con 1 test/13 aserciones; Pint y sintaxis JS pasan. No se ejecutó suite completa ni contención real.
 - Playwright MCP con Chrome visible: 1920×1080, 1280×720 y 390×844, sin overflow; teclado/foco/scroll, pagos parciales/excedentes, recuperación del mismo UUID tras respuesta perdida/recarga/500, motivos literales, exenciones, política futura, tarifa histórica, filtros, impresión y altas antes/después de activar comprobados. Capturas revisadas en storage/framework/testing/cobros-panel-browser (no publicar perfil ni datos de sesión).
-- Todas las escrituras y activaciones de verificación fueron sintéticas en mitai_testing, confirmada mediante SELECT DATABASE(); no se migró ni activó desarrollo. Dos intentos auxiliares fallaron por timeout (captura adicional y selector main inexistente); no se contaron como aprobados. La captura de detalle móvil y los flujos funcionales sí se completaron.
+- Durante la verificación inicial de implementación, todas las escrituras y activaciones fueron sintéticas en mitai_testing, confirmada mediante SELECT DATABASE(); todavía no se había migrado ni activado desarrollo. Dos intentos auxiliares fallaron por timeout (captura adicional y selector main inexistente); no se contaron como aprobados. La captura de detalle móvil y los flujos funcionales sí se completaron.
 - La evaluación nativa no pudo determinar reviewDue por archivos sin seguimiento ajenos; no afirmar aprobación nativa de estas unidades. No hay push ni merge autorizados. Seguimiento local: odd/tasks/cobros-panel.md.
 
 ## Continuidad previa: backend de cobros y exenciones

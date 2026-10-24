@@ -120,6 +120,14 @@
       "sessions": 12,
       "memories": 10,
       "prompts": 2
+    },
+    {
+      "id": "72ed15fc",
+      "created_by": "facundo",
+      "created_at": "2026-10-24T19:12:54.940657468Z",
+      "sessions": 127,
+      "memories": 471,
+      "prompts": 0
     }
   ]
 }
