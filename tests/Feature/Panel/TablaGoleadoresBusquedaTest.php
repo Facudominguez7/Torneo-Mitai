@@ -59,7 +59,7 @@ it('aplica busqueda case insensitive por nombre de jugador', function () {
     ]));
 
     $response->assertOk()
-        ->assertSee('PereZ LuCaS')
+        ->assertSee('Perez Lucas')
         ->assertDontSee('Gomez Martin');
 });
 
