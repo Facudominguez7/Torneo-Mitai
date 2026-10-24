@@ -592,7 +592,7 @@
             <div class="mt-4 flex flex-wrap items-center gap-2">
                 @if ($mostrarBotonCopiarLocal)
                     <button type="button" data-copy-previous-match="local" data-copy-previous-match-endpoint="{{ route('planilla.copiarPartidoAnterior') }}"
-                        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200">
+                        class="px-4 py-2 bg-brand-teal text-white rounded-md hover:bg-brand-teal/90 transition duration-200">
                         Copiar local desde partido anterior
                     </button>
                 @endif
@@ -864,7 +864,7 @@
             <div class="mt-4 flex flex-wrap items-center gap-2">
                 @if ($mostrarBotonCopiarVisitante)
                     <button type="button" data-copy-previous-match="visitante" data-copy-previous-match-endpoint="{{ route('planilla.copiarPartidoAnterior') }}"
-                        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200">
+                        class="px-4 py-2 bg-brand-teal text-white rounded-md hover:bg-brand-teal/90 transition duration-200">
                         Copiar visitante desde partido anterior
                     </button>
                 @endif

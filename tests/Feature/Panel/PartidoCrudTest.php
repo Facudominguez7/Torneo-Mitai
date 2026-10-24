@@ -1039,3 +1039,18 @@ it('conserva los parametros de retorno al crear un partido regular', function ()
 
     expect(hrefsDelContenido($contenido))->toContain($urlRegreso);
 });
+
+it('muestra el titulo de la seleccion de categoria legible sobre el fondo claro del panel', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+
+    $contenido = $this->actingAs($admin)->get(route('seleccionar-categoria', [
+        'idEdicion' => $contexto['edicion']->id,
+        'tipo' => 'partido',
+        'forzarSeleccion' => 1,
+    ]))->assertOk()->getContent();
+
+    expect($contenido)->toContain('<h1 class="text-2xl font-bold text-gray-800">Seleccionar contexto</h1>')
+        ->not->toContain('<h1 class="text-xl font-bold text-white">')
+        ->not->toContain('rounded-lg bg-white/10 p-3');
+});
