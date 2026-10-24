@@ -96,6 +96,27 @@ class ConsultaCobrosService
         ]]);
     }
 
+    /**
+     * Deuda de cada equipo por los partidos jugados hasta hoy, de mayor a menor.
+     *
+     * @return Collection<int, array{idEquipo: int, equipo: string, categoria: string, deuda_ars: int, cargos: int}>
+     */
+    public function deudoresPorEquipo(int $edicionId): Collection
+    {
+        return $this->consultar(['idEdicion' => $edicionId, 'estado' => 'deudores', 'periodo' => 'hasta_hoy'])['cargos']
+            ->groupBy('idEquipo')
+            ->map(function (Collection $filas): array {
+                $fila = $filas->first();
+
+                return [
+                    'idEquipo' => (int) $fila['idEquipo'], 'equipo' => $fila['nombre_vigente'] ?? $fila['equipo'],
+                    'categoria' => $fila['categoria'], 'deuda_ars' => (int) $filas->sum('deuda_ars'), 'cargos' => $filas->count(),
+                ];
+            })
+            ->sortByDesc('deuda_ars')
+            ->values();
+    }
+
     public function deudaCargo(int $cargoId): int
     {
         $cargos = CargoPlanilla::query()->whereKey($cargoId)->with(['parent', 'equipo', 'categoria'])->get();
