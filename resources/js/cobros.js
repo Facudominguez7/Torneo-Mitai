@@ -87,7 +87,7 @@
     if (seccion) {
         setInterval(() => {
             if (document.visibilityState === 'visible') refrescarSeccion();
-        }, 10000);
+        }, 1000);
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') refrescarSeccion();
         });
