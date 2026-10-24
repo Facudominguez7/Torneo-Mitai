@@ -83,6 +83,12 @@
             @else
                 @php
                     $nombreUsuarioActivoDashboard = auth()->user()?->name ?? 'Administrador';
+                    $horaActualDashboard = now()->hour;
+                    $saludoDashboard = match (true) {
+                        $horaActualDashboard >= 5 && $horaActualDashboard < 12 => 'Buen día',
+                        $horaActualDashboard >= 12 && $horaActualDashboard < 20 => 'Buenas tardes',
+                        default => 'Buenas noches',
+                    };
                     $partidosJugadosResumen = $resumenDashboard['partidosJugados'] ?? 0;
                     $partidosTotalesResumen = $resumenDashboard['partidosTotales'] ?? 0;
                     $jugadoresPorCategoriaResumen = $resumenDashboard['jugadoresPorCategoria'] ?? [];
@@ -92,7 +98,7 @@
                 {{-- Encabezado: saludo + edición activa + acciones secundarias --}}
                 <div class="mb-4 flex flex-col gap-3 px-3 sm:px-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">Buen día, {{ $nombreUsuarioActivoDashboard }}</h1>
+                        <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ $saludoDashboard }}, {{ $nombreUsuarioActivoDashboard }}</h1>
                         <p class="mt-1 text-sm text-gray-600">
                             Edición activa: <span class="font-semibold text-brand-navy">{{ $EdicionSeleccionada?->nombre }}</span>
                         </p>

@@ -257,3 +257,22 @@ it('muestra un estado vacio de proxima fecha cuando no quedan partidos por jugar
         ->assertSee('No hay partidos programados')
         ->assertSee(e(route('partido.index', ['idEdicion' => $contexto['edicion']->id])), false);
 });
+
+it('saluda segun la hora de Buenos Aires', function (string $hora, string $saludo) {
+    $admin = crearAdminDashboard();
+    $contexto = crearContextoDashboard();
+
+    $this->travelTo(Carbon::parse("2026-10-24 {$hora}", 'America/Argentina/Buenos_Aires'));
+
+    $this->actingAs($admin)
+        ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSee($saludo.', '.$admin->name);
+})->with([
+    'madrugada' => ['04:59', 'Buenas noches'],
+    'inicio de la mañana' => ['05:00', 'Buen día'],
+    'fin de la mañana' => ['11:59', 'Buen día'],
+    'mediodía' => ['12:00', 'Buenas tardes'],
+    'fin de la tarde' => ['19:59', 'Buenas tardes'],
+    'noche' => ['20:00', 'Buenas noches'],
+]);
