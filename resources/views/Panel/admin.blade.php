@@ -345,6 +345,7 @@
                                                             [$cobroVariant, $cobroLabel] = match ($cobro['cargo']['estado']) {
                                                                 'pagado' => ['success', 'Planilla pagada'],
                                                                 'exento' => ['info', 'Planilla exenta'],
+                                                                'no_vino' => ['neutral', 'Planilla: no vino'],
                                                                 'parcial' => ['warning', 'Pago parcial, debe $ '.$deudaCobro],
                                                                 default => ['danger', 'Debe planilla $ '.$deudaCobro],
                                                             };
