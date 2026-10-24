@@ -1,19 +1,18 @@
 @extends('Panel.admin')
 
 @section('contenido')
+    <x-ui.page-header title="Editar equipo de la edición" />
+
     @include('Panel.fragment._errores-formulario')
-    <div class="flex items-center justify-center p-12">
-        <div class="mx-auto w-full max-w-[550px]">
-            <form action="{{route('equipoedicion.update', $equipoedicion->id)}}" method="POST">
-                @method('PATCH')
-                @include('Panel.equipoedicion._form')
-                <div>
-                    <button type="submit"
-                        class="panel-form-submit">
-                        Editar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+
+    <form action="{{ route('equipoedicion.update', $equipoedicion->id) }}" method="POST" class="mt-6">
+        @method('PATCH')
+        <x-ui.form-card>
+            @include('Panel.equipoedicion._form')
+
+            <x-slot name="actions">
+                <x-ui.button type="submit" variant="primary">Editar</x-ui.button>
+            </x-slot>
+        </x-ui.form-card>
+    </form>
 @endsection

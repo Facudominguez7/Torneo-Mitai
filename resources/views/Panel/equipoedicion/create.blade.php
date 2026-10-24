@@ -1,18 +1,17 @@
 @extends('Panel.admin')
 
 @section('contenido')
+    <x-ui.page-header title="Agregar equipo de una edición anterior" />
+
     @include('Panel.fragment._errores-formulario')
-    <div class="flex items-center justify-center">
-        <div class="mx-auto w-full max-w-[550px]">
-            <form action="{{route('equipoedicion.store')}}" method="POST">
-                @include('Panel.equipoedicion._form')
-                <div>
-                    <button type="submit"
-                        class="panel-form-submit">
-                        Agregar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+
+    <form action="{{ route('equipoedicion.store') }}" method="POST" class="mt-6">
+        <x-ui.form-card>
+            @include('Panel.equipoedicion._form')
+
+            <x-slot name="actions">
+                <x-ui.button type="submit" variant="primary">Agregar</x-ui.button>
+            </x-slot>
+        </x-ui.form-card>
+    </form>
 @endsection
