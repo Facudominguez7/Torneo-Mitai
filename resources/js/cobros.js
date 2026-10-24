@@ -15,6 +15,7 @@
     const configuraciones = {
         pago: ['Registrar pago', 'pagos', ['importes']],
         exencion: ['Eximir deuda residual', 'exenciones', ['motivo']],
+        exencion_edicion: ['Exento de planilla en la edición', 'exenciones-edicion', ['motivo']],
         politica: ['Exención para cargos futuros', 'politicas', ['motivo']],
         tarifa: ['Guardar tarifa global', 'tarifa', ['tarifa_ars']],
         activar: ['Activar cobros globalmente', 'activar', ['confirmar']],
@@ -156,10 +157,11 @@
             elemento.querySelectorAll('input, select, textarea').forEach((input) => { input.disabled = !activo; });
         });
         titulo.textContent = nombre;
-        contexto.textContent = cargo ? `${cargo.equipo} · Cargo #${cargo.id} · Deuda $ ${cargo.deuda_ars.toLocaleString('es-AR')}. ` : '';
+        contexto.textContent = cargo ? `${cargo.equipo}${cargo.id ? ` · Cargo #${cargo.id}` : ''} · Deuda $ ${cargo.deuda_ars.toLocaleString('es-AR')}. ` : '';
         contexto.textContent += ({
             exencion: 'Exime solo el saldo pendiente de este cargo. No devuelve pagos ni genera crédito.',
             politica: 'Solo alcanza cargos futuros de este equipo en esta edición. No elimina deuda actual.',
+            exencion_edicion: `${cargo?.exento ? 'El equipo ya es exento para los partidos futuros.' : 'No pagará planilla en los partidos futuros de esta edición.'} Además se exime todo lo que debe hoy. Los pagos ya registrados se conservan y no se devuelven.`,
             tarifa: 'Afecta futuras altas de todas las ediciones. No cambia cargos históricos ni activa cobros.',
             activar: 'Acción global explícita. Revisá la tarifa antes de confirmar.',
         })[operacion] ?? '';
@@ -239,7 +241,10 @@
                 return;
             }
             const pagos = resultado.pagos ?? (resultado.pago ? [resultado.pago] : null);
-            const mensaje = pagos ? recibo(pagos) : 'Operación registrada. Saldos actualizados.';
+            const exento = resultado.exencion_edicion;
+            const mensaje = pagos ? recibo(pagos) : (exento
+                ? `${cargo.equipo} quedó exento de planilla en esta edición. Se eximieron ${exento.cargos_eximidos} cargos por ${ars(exento.eximido_ars)}.`
+                : 'Operación registrada. Saldos actualizados.');
             if (operacion === 'pago') {
                 sinConfirmar = null;
                 sessionStorage.removeItem('cobros-pago-sin-confirmar');

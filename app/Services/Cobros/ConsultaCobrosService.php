@@ -8,6 +8,7 @@ use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
 use App\Models\ExencionCobroPlanilla;
 use App\Models\PagoPlanilla;
+use App\Models\PoliticaExencionCobroPlanilla;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use RuntimeException;
@@ -71,6 +72,28 @@ class ConsultaCobrosService
             ->with(['parent', 'equipo', 'categoria'])->orderBy('id')->get();
 
         return $this->filas($cargos)->keyBy(fn (array $fila): string => $fila['partido'].'-'.$fila['idEquipo']);
+    }
+
+    /**
+     * Exención y deuda pendiente de cada equipo en la edición, indexadas por idEquipo.
+     *
+     * @param  array<int, int>  $equipos
+     * @return Collection<int, array{exento: bool, deuda_ars: int}>
+     */
+    public function estadoEquipos(int $edicionId, array $equipos): Collection
+    {
+        if ($equipos === []) {
+            return collect();
+        }
+
+        $cargos = CargoPlanilla::query()->where('idEdicion', $edicionId)->whereIn('idEquipo', $equipos)
+            ->with(['parent', 'equipo', 'categoria'])->orderBy('id')->get();
+        $deudas = $this->filas($cargos)->groupBy('idEquipo')->map(fn (Collection $filas): int => (int) $filas->sum('deuda_ars'));
+        $exentos = PoliticaExencionCobroPlanilla::query()->where('idEdicion', $edicionId)->whereIn('idEquipo', $equipos)->pluck('idEquipo')->flip();
+
+        return collect($equipos)->mapWithKeys(fn (int $equipo): array => [$equipo => [
+            'exento' => $exentos->has($equipo), 'deuda_ars' => (int) ($deudas[$equipo] ?? 0),
+        ]]);
     }
 
     public function deudaCargo(int $cargoId): int

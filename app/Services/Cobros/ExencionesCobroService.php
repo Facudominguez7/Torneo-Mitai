@@ -137,6 +137,39 @@ class ExencionesCobroService
         }
     }
 
+    /**
+     * Deja al equipo exento en toda la edición: registra la política para cargos futuros
+     * (si no existía) y exime el saldo pendiente de sus cargos actuales. Los pagos se conservan.
+     *
+     * @return array{politica_id: int, politica_nueva: bool, cargos_eximidos: int, eximido_ars: int}
+     */
+    public function eximirEdicion(User $actor, int $equipoId, int $edicionId, ?string $motivo = null): array
+    {
+        return DB::transaction(function () use ($actor, $equipoId, $edicionId, $motivo): array {
+            $this->resolverActorAdmin($actor);
+            $politica = PoliticaExencionCobroPlanilla::query()->where('idEquipo', $equipoId)->where('idEdicion', $edicionId)->lockForUpdate()->first();
+            $politicaNueva = $politica === null;
+            $politica ??= $this->registrarPolitica($actor, $equipoId, $edicionId, $motivo);
+
+            $pendientes = app(ConsultaCobrosService::class)->consultar([
+                'idEdicion' => $edicionId, 'idEquipo' => $equipoId, 'estado' => 'deudores', 'periodo' => 'todos',
+            ])['cargos'];
+            if (! $politicaNueva && $pendientes->isEmpty()) {
+                throw ValidationException::withMessages(['politica' => ['El equipo ya está exento en esta edición y no tiene deuda pendiente.']]);
+            }
+
+            $eximido = 0;
+            foreach ($pendientes as $cargo) {
+                $eximido += $this->eximirCargo($actor, $equipoId, (int) $cargo['id'], $motivo)->importe_ars;
+            }
+
+            return [
+                'politica_id' => (int) $politica->id, 'politica_nueva' => $politicaNueva,
+                'cargos_eximidos' => $pendientes->count(), 'eximido_ars' => $eximido,
+            ];
+        });
+    }
+
     private function resolverActorAdmin(User $actor): User
     {
         $mensaje = 'Solo un administrador puede eximir cargos de planillas.';

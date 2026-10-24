@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Equipo\StoreRequest;
 use App\Models\Categoria;
+use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\TablaPosicion;
+use App\Services\Cobros\ConsultaCobrosService;
 use App\Services\Panel\DetalleEquipo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,8 +55,12 @@ class ControladorEquipo extends Controller
 
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $categorias = Categoria::where('idEdicion', $idEdicion)->orderBy('nombreCategoria', 'desc')->get(); // Obtener categorías de la edición seleccionada
+        $configuracionCobros = ConfiguracionCobroPlanilla::query()->find(1);
+        $estadoCobros = $EdicionSeleccionada && $configuracionCobros?->activado_at
+            ? app(ConsultaCobrosService::class)->estadoEquipos($idEdicion, $equipos->getCollection()->pluck('id')->all())
+            : collect();
 
-        return view('Panel.equipo.index', compact('EdicionSeleccionada', 'ediciones', 'equipos', 'idEdicion', 'categorias', 'idCategoria', 'nombreEquipo'));
+        return view('Panel.equipo.index', compact('EdicionSeleccionada', 'ediciones', 'equipos', 'idEdicion', 'categorias', 'idCategoria', 'nombreEquipo', 'configuracionCobros', 'estadoCobros'));
     }
 
     /**

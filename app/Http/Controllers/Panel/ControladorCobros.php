@@ -84,6 +84,8 @@ class ControladorCobros extends Controller
                     case 'cobros.exenciones':
                         app(ExencionesCobroService::class)->eximirCargo($actor, $equipo, $cargo, $request->input('motivo'));
                         break;
+                    case 'cobros.exenciones-edicion':
+                        return ['exencion_edicion' => app(ExencionesCobroService::class)->eximirEdicion($actor, $equipo, $edicion, $request->input('motivo'))];
                     case 'cobros.politicas':
                         app(ExencionesCobroService::class)->registrarPolitica($actor, $equipo, $edicion, $request->input('motivo'));
                         break;
