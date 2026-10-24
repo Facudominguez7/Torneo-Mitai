@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('vallas_menos_vencidas')) {
+        if (! Schema::hasTable('vallas_menos_vencidas')) {
             Schema::create('vallas_menos_vencidas', function (Blueprint $table) {
-            $table->integer('id', true);
-            $table->integer('idEquipo')->index('idequipo');
-            $table->integer('idCategoria')->index('fkidcategoria');
-            $table->integer('idEdicion')->index('fkidediciones');
-            $table->string('nombre', 50)->nullable();
-        });
+                $table->integer('id', true);
+                $table->integer('idEquipo')->index('idequipo');
+                $table->integer('idCategoria')->index('fkidcategoria');
+                $table->integer('idEdicion')->index('fkidediciones');
+                $table->string('nombre', 50)->nullable();
+            });
         }
     }
 

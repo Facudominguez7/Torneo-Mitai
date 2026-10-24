@@ -46,7 +46,11 @@ it('renderiza el boton de limpiar filtros de partidos con x-ui.button', function
 
     $response->assertOk();
     $response->assertSee('id="reset-filters"', false);
-    $response->assertSee('bg-red-600', false);
+    // Rediseño del panel (T5): limpiar filtros no es destructivo, así que el
+    // botón deja de ser rojo y pasa a ser un link de texto.
+    preg_match('/<button[^>]*id="reset-filters"[^>]*>/', $response->getContent(), $botonLimpiar);
+    expect($botonLimpiar)->not->toBeEmpty()
+        ->and($botonLimpiar[0])->not->toContain('bg-red-600');
     $response->assertDontSee('btn-eliminar', false);
 });
 
@@ -107,7 +111,13 @@ it('elimina las reglas CSS legacy .btn y .card de app.css', function () {
         ->and($css)->toContain('.panel-admin-content');
 });
 
-it('migra el card legacy del formulario de tabla_goleador preservando el resultado visual', function () {
+it('migra el card legacy del formulario de tabla_goleador al estilo claro del panel (T8a)', function () {
+    // T8a (panel-admin-redesign) migró Panel/tabla_goleador/_form.blade.php
+    // sobre x-ui.form-card: el aviso de contexto dejó de ser el card oscuro
+    // "bg-gray-800 text-white" heredado del shell viejo (esta misma
+    // aserción pineaba ese resultado visual) y pasó a la tarjeta clara que
+    // ya usan el resto de los formularios migrados del panel, sin fondo
+    // oscuro, siguiendo el criterio de aceptación del rediseño.
     $html = Blade::render(
         File::get(resource_path('views/Panel/tabla_goleador/_form.blade.php')),
         [
@@ -125,6 +135,7 @@ it('migra el card legacy del formulario de tabla_goleador preservando el resulta
         ]
     );
 
-    expect($html)->toContain('p-6 rounded shadow-sm bg-gray-800 text-white mb-5')
+    expect($html)->toContain('rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700')
+        ->and($html)->not->toContain('bg-gray-800 text-white')
         ->and($html)->not->toMatch('/class="card[\s"]/');
 });

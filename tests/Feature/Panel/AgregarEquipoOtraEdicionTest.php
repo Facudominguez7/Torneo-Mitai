@@ -82,3 +82,37 @@ it('el alta asocia el equipo de la edicion anterior a la categoria equivalente d
     expect(EquipoEdicion::where('idEquipo', $equipo->id)->where('idEdicion', $destino->id)->value('idCategoria'))
         ->toBe($categoriaDestino->id);
 });
+
+// Regresión visual: estas pantallas conservaban labels text-white y ayudas
+// indigo del tema oscuro anterior, invisibles sobre el fondo claro del panel.
+it('seleccionar edicion muestra labels legibles sobre el fondo claro del panel', function () {
+    $edicion = Edicion::create(['nombre' => "Edicion Mita'i Legible"]);
+
+    $html = $this->actingAs(crearAdminOtraEdicion())
+        ->get(route('seleccionar-edicion', ['idEdicion' => $edicion->id, 'tipo' => 'equipoedicion']))
+        ->assertOk()
+        ->getContent();
+
+    expect($html)->toContain('for="buscarEquipoGlobal" class="mb-1 block text-sm font-medium text-gray-700"')
+        ->toContain('for="edicionfiltro" class="mb-1 block text-sm font-medium text-gray-700"')
+        ->toContain('for="idCategoria" class="mb-1 block text-sm font-medium text-gray-700"')
+        ->toContain(e("Edición destino: Edicion Mita'i Legible (ID {$edicion->id})"))
+        ->not->toContain('&amp;#039;')
+        ->not->toContain('indigo-')
+        ->not->toContain('font-medium text-white mb-');
+});
+
+it('el alta de equipo de otra edicion muestra labels legibles y el boton con la marca', function () {
+    $edicion = Edicion::create(['nombre' => 'Edicion Destino Alta Legible']);
+
+    $html = $this->actingAs(crearAdminOtraEdicion())
+        ->get(route('equipoedicion.create', ['idEdicion' => $edicion->id]))
+        ->assertOk()
+        ->getContent();
+
+    expect($html)->toContain('for="idEquipo" class="mb-1 block text-sm font-medium text-gray-700"')
+        ->toContain('bg-brand-navy text-white')
+        ->not->toContain('indigo-')
+        ->not->toContain('panel-form-submit')
+        ->not->toContain('font-medium text-white">');
+});

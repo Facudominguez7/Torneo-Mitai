@@ -31,12 +31,12 @@ class EmailVerificationNotificationController extends Controller
 
         try {
             $request->user()->sendEmailVerificationNotification();
-            
+
             return back()->with('status', 'verification-code-sent')
-                         ->with('email-success', 'Te enviamos un nuevo codigo de verificacion. Revisa tu bandeja de entrada y spam.');
+                ->with('email-success', 'Te enviamos un nuevo codigo de verificacion. Revisa tu bandeja de entrada y spam.');
         } catch (\Exception $e) {
-            \Log::error('Error al enviar email de verificación: ' . $e->getMessage());
-            
+            \Log::error('Error al enviar email de verificación: '.$e->getMessage());
+
             return back()->with('email-error', 'No pudimos enviar el codigo. Por favor, intenta de nuevo mas tarde.');
         }
     }

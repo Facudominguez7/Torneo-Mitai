@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('fechas')) {
+        if (! Schema::hasTable('fechas')) {
             Schema::create('fechas', function (Blueprint $table) {
-            $table->integer('id', true);
-            $table->integer('idCategoria')->nullable()->index('fkidcategoria');
-            $table->integer('idEdicion')->index('fkidediciones');
-            $table->string('nombre', 250);
-        });
+                $table->integer('id', true);
+                $table->integer('idCategoria')->nullable()->index('fkidcategoria');
+                $table->integer('idEdicion')->index('fkidediciones');
+                $table->string('nombre', 250);
+            });
         }
     }
 

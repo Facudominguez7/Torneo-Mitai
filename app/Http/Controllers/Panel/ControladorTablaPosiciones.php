@@ -13,6 +13,7 @@ use App\Models\TablaPosicion;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ControladorTablaPosiciones extends Controller
 {
@@ -119,15 +120,15 @@ class ControladorTablaPosiciones extends Controller
 
     /**
      * @return array{
-     *     ediciones:\Illuminate\Support\Collection,
-     *     EdicionSeleccionada:?\App\Models\Edicion,
-     *     CategoriaSeleccionada:?\App\Models\Categoria,
+     *     ediciones:Collection,
+     *     EdicionSeleccionada:?Edicion,
+     *     CategoriaSeleccionada:?Categoria,
      *     idEdicion:int,
      *     idCategoria:?int,
      *     idGrupo:?int,
-     *     categorias:\Illuminate\Support\Collection,
-     *     grupos:\Illuminate\Support\Collection,
-     *     equipos:\Illuminate\Support\Collection,
+     *     categorias:Collection,
+     *     grupos:Collection,
+     *     equipos:Collection,
      *     parametrosRegreso:array<string, mixed>
      * }
      */

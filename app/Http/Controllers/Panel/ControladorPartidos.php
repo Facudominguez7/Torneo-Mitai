@@ -12,6 +12,7 @@ use App\Models\Equipo;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Partido;
+use App\Services\Cobros\ProgramacionCobroService;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
 use Carbon\Carbon;
@@ -240,10 +241,10 @@ class ControladorPartidos extends Controller
     /**
      * Guarda un partido regular y regresa al listado preservando filtros activos.
      */
-    public function store(StoreRequest $request)
+    public function store(StoreRequest $request, ProgramacionCobroService $programacionCobroService)
     {
         $data = $request->validated();
-        Partido::create($data);
+        $programacionCobroService->crearPartido($request->user(), $data);
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $data['idEdicion'],
@@ -318,7 +319,7 @@ class ControladorPartidos extends Controller
     /**
      * Guardar un partido interzonal
      */
-    public function storeInterzonal(Request $request)
+    public function storeInterzonal(Request $request, ProgramacionCobroService $programacionCobroService)
     {
         $data = $request->validate([
             'idEdicion' => ['required', 'exists:ediciones,id'],
@@ -334,7 +335,7 @@ class ControladorPartidos extends Controller
         $data['idGrupo'] = null;
         $data['es_interzonal'] = true;
 
-        Partido::create($data);
+        $programacionCobroService->crearPartido($request->user(), $data);
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $data['idEdicion'],

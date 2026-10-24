@@ -2,10 +2,10 @@
 
 /**
  * Script para sincronizar la tabla migrations con las tablas existentes en producción
- * 
+ *
  * Este script verifica qué tablas existen en la base de datos y registra sus correspondientes
  * migraciones en la tabla 'migrations' si aún no están registradas.
- * 
+ *
  * USO: php sync_migrations.php
  */
 
@@ -100,11 +100,11 @@ foreach ($tableMigrationMap as $table => $migration) {
     if (Schema::hasTable($table)) {
         // Verificar si ya está registrada
         $exists = DB::table('migrations')->where('migration', $migration)->exists();
-        
-        if (!$exists) {
+
+        if (! $exists) {
             DB::table('migrations')->insert([
                 'migration' => $migration,
-                'batch' => 1
+                'batch' => 1,
             ]);
             echo "✅ Registrada: $migration (tabla: $table)\n";
             $registered++;
@@ -121,11 +121,11 @@ foreach ($tableMigrationMap as $table => $migration) {
 echo "\n🔗 Registrando migraciones de foreign keys...\n";
 foreach ($foreignKeyMigrations as $migration) {
     $exists = DB::table('migrations')->where('migration', $migration)->exists();
-    
-    if (!$exists) {
+
+    if (! $exists) {
         DB::table('migrations')->insert([
             'migration' => $migration,
-            'batch' => 1
+            'batch' => 1,
         ]);
         echo "✅ Registrada: $migration\n";
         $registered++;
@@ -139,11 +139,11 @@ foreach ($foreignKeyMigrations as $migration) {
 echo "\n🔧 Registrando otras migraciones aplicadas...\n";
 foreach ($otherAppliedMigrations as $migration) {
     $exists = DB::table('migrations')->where('migration', $migration)->exists();
-    
-    if (!$exists) {
+
+    if (! $exists) {
         DB::table('migrations')->insert([
             'migration' => $migration,
-            'batch' => 2
+            'batch' => 2,
         ]);
         echo "✅ Registrada: $migration\n";
         $registered++;
@@ -153,7 +153,7 @@ foreach ($otherAppliedMigrations as $migration) {
     }
 }
 
-echo "\n" . str_repeat("=", 50) . "\n";
+echo "\n".str_repeat('=', 50)."\n";
 echo "✅ Sincronización completada!\n";
 echo "📊 Estadísticas:\n";
 echo "   - Registros obsoletos eliminados: $deleted\n";

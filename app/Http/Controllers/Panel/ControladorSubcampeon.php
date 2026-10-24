@@ -16,28 +16,22 @@ use Illuminate\Http\Request;
 class ControladorSubcampeon extends Controller
 {
     use SeleccionarCategoriaTrait;
+
+    /**
+     * Subcampeones se fusionó con Campeones en Podio (T8b,
+     * panel-admin-redesign): el listado ahora vive ahí. Se conserva la ruta
+     * `subcampeon.index` (que usan `seleccionar-categoria` y los redirects de
+     * store/update/destroy) redirigiendo a Podio con el mismo idEdicion.
+     */
     public function index(Request $request)
     {
-        $ediciones = Edicion::all();
-        $idEdicion = $request->idEdicion;
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $subcampeones = Subcampeon::join('ediciones as ed', 'subcampeones.idEdicion', '=', 'ed.id')
-            ->join('equipos as e', 'subcampeones.idEquipo', '=', 'e.id')
-            ->join('copas as co', 'subcampeones.idCopa', '=', 'co.id')
-            ->join('categorias as cat', 'subcampeones.idCategoria', '=', 'cat.id')
-            ->select('subcampeones.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'co.nombre as nombreCopa', 'e.id as idEquipo')
-            ->where('subcampeones.idEdicion', $idEdicion)
-            ->orderBy('cat.nombreCategoria', 'desc')
-            ->paginate(7);
-        $subcampeones->appends(['idEdicion' => $idEdicion]);
-        $tipo = 'subcampeon';
-        return view('Panel.subcampeon.index', compact('tipo', 'ediciones', 'EdicionSeleccionada', 'subcampeones'));
+        return to_route('podio.index', array_filter(['idEdicion' => $request->idEdicion]));
     }
 
     public function create(Request $request)
     {
         $ediciones = Edicion::all();
-        $subcampeon = new Subcampeon();
+        $subcampeon = new Subcampeon;
         $ediciones = Edicion::all();
         $idEdicion = $request->input('idEdicion');
         $idCategoria = $request->input('idCategoria');
@@ -49,9 +43,9 @@ class ControladorSubcampeon extends Controller
             ->select('equipo_ediciones.*', 'e.nombre as nombreEquipo')
             ->get();
         $copas = Copa::orderByDesc('nombre')->get();
+
         return view('Panel.subcampeon.create', compact('ediciones', 'subcampeon', 'EdicionSeleccionada', 'equipos', 'copas', 'CategoriaSeleccionada'));
     }
-
 
     /**
      * Store a newly created resource in storage.
@@ -60,6 +54,7 @@ class ControladorSubcampeon extends Controller
     {
         $data = $request->validated();
         Subcampeon::create($data);
+
         return to_route('subcampeon.index', ['idEdicion' => $request->idEdicion])->with('status', 'Equipo Creado');
     }
 
@@ -68,7 +63,7 @@ class ControladorSubcampeon extends Controller
      */
     public function show(Request $request, Subcampeon $subcampeon)
     {
-       //
+        //
     }
 
     /**
@@ -84,6 +79,7 @@ class ControladorSubcampeon extends Controller
             ->where('idCategoria', $idCategoria)
             ->get();
         $copas = Copa::where('idEdicion', $idEdicion)->get();
+
         return view('Panel.subcampeon.edit', compact('ediciones', 'subcampeon', 'equipos', 'copas', 'idCategoria', 'EdicionSeleccionada'));
     }
 
@@ -94,6 +90,7 @@ class ControladorSubcampeon extends Controller
     {
         $data = $request->validated();
         $subcampeon->update($data);
+
         return to_route('subcampeon.index', ['idEdicion' => $request->idEdicion])->with('status', 'Equipo Actualizado');
     }
 
@@ -103,6 +100,7 @@ class ControladorSubcampeon extends Controller
     public function destroy(Request $request, Subcampeon $subcampeon)
     {
         $subcampeon->delete();
+
         return to_route('subcampeon.index', ['idEdicion' => $request->idEdicion])->with('status', 'Equipo Eliminado');
     }
 }

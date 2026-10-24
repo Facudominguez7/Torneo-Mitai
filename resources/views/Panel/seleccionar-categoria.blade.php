@@ -28,10 +28,10 @@
     @endphp
 
     <div class="mx-auto w-full max-w-2xl px-4 py-4">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white/10 p-3">
-            <h1 class="text-xl font-bold text-white">Seleccionar contexto</h1>
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h1 class="text-2xl font-bold text-gray-800">Seleccionar contexto</h1>
             <a href="{{ route($rutaIndice, $parametrosVolver) }}"
-                class="rounded-md bg-white/90 px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-white">
+                class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-100">
                 Volver al listado
             </a>
         </div>
@@ -63,7 +63,7 @@
                     @endif
                 @else
                     <select name="idCategoria" id="idCategoria"
-                        class="w-full rounded-md border border-gray-200 bg-white py-3 px-4 text-base font-medium text-gray-700 outline-none focus:border-indigo-500 focus:shadow-md">
+                        class="w-full rounded-md border border-gray-200 bg-white py-3 px-4 text-base font-medium text-gray-700 outline-none focus:border-brand-navy focus:shadow-md">
                         @foreach ($categorias as $categoria)
                             <option value="{{ $categoria->id }}"
                                 {{ $categoriaSeleccionada === (int) $categoria->id ? 'selected' : '' }}>
@@ -87,7 +87,7 @@
 
                                     @if ($tipo === 'partido')
                                         <a href="{{ route('partido.create-interzonal', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $categoriaSeleccionada]) }}"
-                                            class="inline-block rounded-md bg-indigo-700 px-4 py-2 text-white hover:bg-indigo-800">
+                                            class="inline-block rounded-md bg-brand-navy px-4 py-2 text-white hover:bg-brand-navy/90">
                                             Cargar partido interzonal
                                         </a>
                                     @endif
@@ -95,7 +95,7 @@
                             @endif
                         @else
                             <select name="idGrupo" id="idGrupo"
-                                class="w-full rounded-md border border-gray-200 bg-white py-3 px-4 text-base font-medium text-gray-700 outline-none focus:border-indigo-500 focus:shadow-md">
+                                class="w-full rounded-md border border-gray-200 bg-white py-3 px-4 text-base font-medium text-gray-700 outline-none focus:border-brand-navy focus:shadow-md">
                                 @foreach ($grupos as $grupo)
                                     <option value="{{ $grupo->id }}" {{ (int) request('idGrupo') === (int) $grupo->id ? 'selected' : '' }}>
                                         {{ $grupo->nombre }}
@@ -177,7 +177,7 @@
                 <div class="flex justify-center">
                     <button type="submit"
                         {{ $bloquearContinuar ? 'disabled' : '' }}
-                        class="rounded-lg bg-gray-800 px-5 py-2 text-white transition-all duration-300 hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-60">
+                        class="rounded-lg bg-brand-navy px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-navy/90 disabled:cursor-not-allowed disabled:opacity-60">
                         Continuar con carga manual
                     </button>
                 </div>

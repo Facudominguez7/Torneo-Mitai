@@ -43,7 +43,8 @@
 @endphp
 
 @if (filled($href))
-    <a href="{{ $href }}"
+    {{-- href="{{ }}" llega ya escapado: e($href, false) evita el doble escape, igual que x-ui.button. --}}
+    <a href="{!! e($href, false) !!}"
         @if ($active) aria-current="page" @endif
         {{ $attributes->merge(['class' => $classes]) }}
     >{{ $slot }}</a>

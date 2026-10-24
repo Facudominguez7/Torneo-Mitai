@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Panel;
 
-
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TablaGoleador\StoreRequest;
 use App\Models\Categoria;
@@ -15,6 +14,7 @@ use Illuminate\Http\Request;
 class ControladorTablaGoleadores extends Controller
 {
     use SeleccionarCategoriaTrait;
+
     // Mostrar todos los goleadores
     public function index(Request $request)
     {
@@ -23,9 +23,9 @@ class ControladorTablaGoleadores extends Controller
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $idCategoria = $request->idCategoria;
         $search_value = $request->search_value;
-        $tipo = "tabla_goleador";
+        $tipo = 'tabla_goleador';
 
-        if (!is_null($idCategoria)) {
+        if (! is_null($idCategoria)) {
             $goleadores_t = TablaGoleador::search($search_value)
                 ->join('ediciones as ed', 'tabla_goleadores.idEdicion', '=', 'ed.id')
                 ->join('equipos as e', 'tabla_goleadores.idEquipo', '=', 'e.id')
@@ -66,7 +66,7 @@ class ControladorTablaGoleadores extends Controller
     public function create(Request $request)
     {
         $ediciones = Edicion::all();
-        $goleador_t = new TablaGoleador();
+        $goleador_t = new TablaGoleador;
         $idEdicion = $request->input('idEdicion');
         $idCategoria = $request->input('idCategoria');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
@@ -74,7 +74,8 @@ class ControladorTablaGoleadores extends Controller
         $equipos = Equipo::where('idEdicion', $idEdicion)
             ->where('idCategoria', $idCategoria)
             ->get();
-        return view('Panel.tabla_goleador.create', compact('ediciones', 'goleador_t','idCategoria', 'EdicionSeleccionada', 'equipos', 'CategoriaSeleccionada'));
+
+        return view('Panel.tabla_goleador.create', compact('ediciones', 'goleador_t', 'idCategoria', 'EdicionSeleccionada', 'equipos', 'CategoriaSeleccionada'));
     }
 
     // Guardar nuevo goleador
@@ -82,6 +83,7 @@ class ControladorTablaGoleadores extends Controller
     {
         $data = $request->validated();
         TablaGoleador::create($data);
+
         return to_route('tabla_goleador.index', ['idEdicion' => $request->idEdicion])->with('status', 'Jugador Cargado');
     }
 
@@ -97,7 +99,8 @@ class ControladorTablaGoleadores extends Controller
             ->where('idCategoria', $idCategoria)
             ->get();
         $goleador_t = $tabla_goleador;
-        return view('Panel.tabla_goleador.edit', compact('ediciones', 'goleador_t', 'equipos','CategoriaSeleccionada', 'EdicionSeleccionada'));
+
+        return view('Panel.tabla_goleador.edit', compact('ediciones', 'goleador_t', 'equipos', 'CategoriaSeleccionada', 'EdicionSeleccionada'));
     }
 
     // Actualizar goleador
@@ -114,6 +117,7 @@ class ControladorTablaGoleadores extends Controller
         unset($data['nombre']);
 
         $tabla_goleador->update($data);
+
         return to_route('tabla_goleador.index', ['idEdicion' => $request->idEdicion])->with('status', 'Jugador Actualizado');
     }
 
@@ -121,6 +125,7 @@ class ControladorTablaGoleadores extends Controller
     public function destroy(TablaGoleador $tabla_goleador, Request $request)
     {
         $tabla_goleador->delete();
+
         return to_route('goleador.index', ['idEdicion' => $request->idEdicion])->with('status', 'Jugador Eliminado');
     }
 }

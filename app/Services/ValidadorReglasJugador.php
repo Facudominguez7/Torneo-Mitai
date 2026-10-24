@@ -301,8 +301,15 @@ class ValidadorReglasJugador
             }
 
             // "Subir" (jugador de categoría más joven jugando en categoría de mayor edad)
-            // es siempre válido. El bloqueo por edad ya se cubre en la validación
+            // es válido, pero si cruza instituciones se advierte sin bloquear.
+            // El bloqueo por edad ya se cubre en la validación
             // de anioNacimiento < anioEquipoActual (línea anterior).
+            if ($anioCategoriaJugador > $anioEquipoActual && $institucionOrigenId !== $institucionDestinoId) {
+                return [
+                    'type' => 'warning',
+                    'message' => $infoJugador.' Solo puede subir a una categoria de mayor edad como "'.$categoriaEquipoActual->nombreCategoria.'" dentro de la misma institucion.',
+                ];
+            }
         }
 
         return null;

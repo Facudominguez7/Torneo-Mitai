@@ -1,48 +1,45 @@
 @extends('Panel.admin')
 
 @section('contenido')
-    <div class="mb-5">
-        <div class="mb-6">
-            <label for="buscarEquipoGlobal" class="block text-base font-medium text-white mb-2">Buscar equipo (todas las ediciones)</label>
-            <input id="buscarEquipoGlobal" type="text" placeholder="Escribe el nombre del equipo..."
-                   class="w-full rounded-md border border-gray-200 bg-white py-3 px-4 text-base font-medium text-gray-700 outline-none focus:border-indigo-500 focus:shadow-md" />
-            <div id="resultadoBusqueda" class="mt-2 bg-white rounded-md shadow divide-y max-h-72 overflow-auto hidden"></div>
-            <p class="text-xs text-indigo-200 mt-1">Sugerencias ordenadas por edición (más reciente primero).</p>
-        </div>
-        <form action="{{ route($tipo . '.create') }}" method="GET" id="formSeleccion">
-            <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
-            <label class="block text-base font-medium text-white mb-1">Edición destino</label>
-            <p class="text-sm text-indigo-200 mb-4">{{ $EdicionSeleccionada->nombre }} (ID {{ $EdicionSeleccionada->id }})</p>
+    <x-ui.page-header title="Agregar equipo de una edición anterior"
+        :subtitle="'Edición destino: ' . $EdicionSeleccionada->nombre . ' (ID ' . $EdicionSeleccionada->id . ')'" />
 
-            <label for="edicionfiltro" class="block text-base font-medium text-white mb-2">Edición origen</label>
-            <select name="edicionfiltro" id="edicionfiltro"
-                class="w-full rounded-md border border-gray-200 bg-white py-3 px-6 text-base font-medium text-gray-600 outline-none focus:border-indigo-500 focus:shadow-md mb-4">
+    <x-ui.form-card class="mt-6">
+        <div>
+            <label for="buscarEquipoGlobal" class="mb-1 block text-sm font-medium text-gray-700">Buscar equipo (todas las ediciones)</label>
+            <div class="relative">
+                <input id="buscarEquipoGlobal" type="text" placeholder="Escribe el nombre del equipo..." autocomplete="off"
+                       class="block w-full rounded-md border-gray-300 bg-white py-2 px-3 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30" />
+                <div id="resultadoBusqueda" class="absolute inset-x-0 z-10 mt-1 hidden max-h-72 divide-y divide-gray-100 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg"></div>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">Sugerencias ordenadas por edición (más reciente primero). Al elegir un equipo se completan la edición y la categoría de origen.</p>
+        </div>
+
+        <form action="{{ route($tipo . '.create') }}" method="GET" id="formSeleccion" class="space-y-5">
+            <x-ui.select label="Edición origen" name="edicionfiltro" id="edicionfiltro">
                 <option value="">-- Seleccionar edición origen --</option>
                 @foreach ($ediciones as $e)
                     <option value="{{ $e->id }}" {{ request('edicionfiltro') == $e->id ? 'selected' : '' }}>
                         {{ $e->nombre }}
                     </option>
                 @endforeach
-            </select>
+            </x-ui.select>
 
-            <label for="idCategoria" class="block text-base font-medium text-white mb-2">Categoría origen</label>
-            <select name="idCategoria" id="idCategoria"
-                class="w-full rounded-md border border-gray-200 bg-white py-3 px-6 text-base font-medium text-gray-600 outline-none focus:border-indigo-500 focus:shadow-md mb-4" {{ request('edicionfiltro') ? '' : 'disabled' }}>
+            <x-ui.select label="Categoría origen" name="idCategoria" id="idCategoria" :disabled="! request('edicionfiltro')">
                 <option value="">-- Seleccionar categoría --</option>
                 @foreach ($categorias as $categoria)
                     <option value="{{ $categoria->id }}" {{ request('idCategoria') == $categoria->id ? 'selected' : '' }}>
                         {{ $categoria->nombreCategoria }}
                     </option>
                 @endforeach
-            </select>
-            <div class="flex justify-center mt-4">
-                <button type="submit" id="btnContinuar"
-                    class="bg-gray-800 hover:bg-gray-900 disabled:opacity-40 disabled:cursor-not-allowed text-white py-2 px-6 rounded-full transition-all duration-300">
-                    Continuar
-                </button>
+            </x-ui.select>
+
+            <div class="flex justify-end">
+                <x-ui.button type="submit" id="btnContinuar">Continuar</x-ui.button>
             </div>
+            <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
         </form>
-    </div>
+    </x-ui.form-card>
     <script>
         // --- Búsqueda global de equipos ---
         (function(){
@@ -61,7 +58,7 @@
                 items.forEach(it => {
                     const row = document.createElement('button');
                     row.type = 'button';
-                    row.className = 'w-full text-left px-3 py-2 hover:bg-indigo-50';
+                    row.className = 'w-full text-left px-3 py-2 hover:bg-brand-teal/10 focus:bg-brand-teal/10 focus:outline-none';
                     row.innerHTML = `<div class="font-medium text-gray-900">${it.nombreEquipo}</div>
                                      <div class="text-xs text-gray-600">Edición: ${it.nombreEdicion} (ID ${it.idEdicion}) • Categoría: ${it.nombreCategoria}</div>`;
                     row.addEventListener('click', () => {

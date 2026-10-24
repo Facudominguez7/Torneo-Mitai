@@ -11,6 +11,7 @@ use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\Fase;
 use App\Models\InstanciaFinal;
+use App\Services\Cobros\ProgramacionCobroService;
 use App\Services\EstadisticasService;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
@@ -178,10 +179,10 @@ class ControladorInstanciaFinal extends Controller
     /**
      * Guarda una instancia final y vuelve al listado con filtros activos.
      */
-    public function store(StoreRequest $request)
+    public function store(StoreRequest $request, ProgramacionCobroService $programacionCobroService)
     {
         $data = $request->validated();
-        InstanciaFinal::create($data);
+        $programacionCobroService->crearInstanciaFinal($request->user(), $data);
 
         // Tras crear, volver al listado sin filtros preseleccionados (solo el contexto de edición).
         return to_route('instancia_final.index', ['idEdicion' => $data['idEdicion']])

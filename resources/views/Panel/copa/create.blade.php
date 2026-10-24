@@ -1,18 +1,21 @@
 @extends('Panel.admin')
 
 @section('contenido')
+    <x-ui.page-header title="Agregar copa" />
+
     @include('Panel.fragment._errores-formulario')
-    <div class="flex items-center justify-center">
-        <div class="mx-auto w-full max-w-[550px]">
-            <form action="{{route('copa.store')}}" method="POST">
+
+    <form action="{{ route('copa.store') }}" method="POST" class="mt-6">
+        <x-ui.form-card>
+            <div>
                 @include('Panel.copa._form')
-                <div>
-                    <button type="submit"
-                        class="panel-form-submit">
-                        Agregar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+            </div>
+
+            <x-slot name="actions">
+                <x-ui.button type="submit" variant="primary">
+                    Crear copa
+                </x-ui.button>
+            </x-slot>
+        </x-ui.form-card>
+    </form>
 @endsection

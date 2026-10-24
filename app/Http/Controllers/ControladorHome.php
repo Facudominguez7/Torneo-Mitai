@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Campeon;
+use App\Models\CargoPlanilla;
 use App\Models\Categoria;
+use App\Models\Copa;
 use App\Models\Edicion;
 use App\Models\EquipoEdicion;
 use App\Models\Fase;
@@ -16,11 +18,14 @@ use App\Models\Subcampeon;
 use App\Models\TablaGoleador;
 use App\Models\TablaPosicion;
 use App\Models\VallaMenosVencida;
+use App\Services\Cobros\ConsultaCobrosService;
 use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use App\Services\FixtureExploradorService;
+use App\Services\Panel\ResumenDashboard;
+use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ControladorHome extends Controller
@@ -28,6 +33,7 @@ class ControladorHome extends Controller
     public function __construct(
         private readonly EquiposDeEdicionService $equiposDeEdicion,
         private readonly FixtureExploradorService $fixtureExplorador,
+        private readonly ResumenDashboard $resumenDashboard,
     ) {}
 
     public function index(Request $request)
@@ -56,7 +62,6 @@ class ControladorHome extends Controller
         if ($edicionActual) {
             $equiposDeLaEdicion = $this->equiposDeEdicion->participantes((int) $edicionActual->id);
         }
-
 
         return view('welcome', compact(
             'ediciones',
@@ -135,7 +140,7 @@ class ControladorHome extends Controller
                 ->whereNotNull('horario_datetime')
                 ->pluck('horario_datetime')
                 ->map(function ($datetime) {
-                    return \Carbon\Carbon::parse($datetime)->format('H:i');
+                    return Carbon::parse($datetime)->format('H:i');
                 })
                 ->unique()
                 ->sort()
@@ -175,13 +180,16 @@ class ControladorHome extends Controller
 
         $partidos = $partidosQuery->orderByDesc('f.id')
             ->orderByDesc('c.nombreCategoria')
-            ->when($partidosQuery->whereNotNull('partidos.horario_datetime'), function ($query) {
-                return $query->orderBy('partidos.horario_datetime', 'asc');
-            })
+            // Antes un when(whereNotNull(...)) filtraba sin querer los partidos sin horario_datetime.
+            ->orderBy('partidos.horario_datetime', 'asc')
             ->get()
             ->groupBy('nombre_categoria');
 
         $categorias = Categoria::where('idEdicion', $idEdicion)->get();
+
+        $cobrosPorPartido = $request->user()?->isAdmin()
+            ? app(ConsultaCobrosService::class)->cargosDePartidos(CargoPlanilla::TIPO_PARTIDO, $partidos->flatten(1)->pluck('id')->all())
+            : collect();
 
         // Obtener estadísticas de jugadores de las últimas dos fechas
         $estadisticasJugadores = null;
@@ -192,14 +200,23 @@ class ControladorHome extends Controller
             'total_pendientes' => 0,
             'equipos' => [],
         ];
+        $resumenDashboard = null;
         if ($idEdicion) {
-            $estadisticasService = new EstadisticasService();
+            $estadisticasService = new EstadisticasService;
             $estadisticasJugadores = $estadisticasService->obtenerJugadoresDosUltimasFechas($idEdicion);
             $jugadoresPorCategoria = $estadisticasService->obtenerJugadoresPorCategoriaDosUltimasFechas($idEdicion);
             $equiposSinAsistencia = $estadisticasService->obtenerEquiposSinAsistenciaUltimaFecha((int) $idEdicion, $horarioString);
         }
 
-        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion'));
+        // El resumen del dashboard se calcula sobre la edición activa que el
+        // layout resuelve (query o, en su defecto, sesión vía middleware) para
+        // no desincronizarse con el `$EdicionSeleccionada` que ve la vista.
+        $idEdicionResumen = $idEdicion ?: $request->attributes->get('panel.idEdicion');
+        if ($idEdicionResumen) {
+            $resumenDashboard = $this->resumenDashboard->obtenerResumen((int) $idEdicionResumen);
+        }
+
+        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion', 'resumenDashboard', 'cobrosPorPartido'));
     }
 
     public function campeones(Request $request)
@@ -340,7 +357,7 @@ class ControladorHome extends Controller
      * Los datos se obtienen de `equipo_ediciones.golesContra` que se actualiza
      * automáticamente al cargar resultados.
      *
-     * @return \Illuminate\Contracts\View\View
+     * @return View
      */
     public function tablaVallas(Request $request)
     {
@@ -697,7 +714,7 @@ class ControladorHome extends Controller
             ->join('equipos as e', 'tabla_goleadores.idEquipo', '=', 'e.id')
             ->join('categorias as cat', 'tabla_goleadores.idCategoria', '=', 'cat.id')
             ->join('jugadores as j', 'tabla_goleadores.dni_jugador', '=', 'j.dni')
-            ->select('tabla_goleadores.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo', \Illuminate\Support\Facades\DB::raw("CONCAT(j.apellido, ' ', j.nombre) as nombreJugador"))
+            ->select('tabla_goleadores.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo', DB::raw("CONCAT(j.apellido, ' ', j.nombre) as nombreJugador"))
             ->where('tabla_goleadores.idEdicion', $idEdicion);
 
         if ($searchValue !== '') {
@@ -705,7 +722,7 @@ class ControladorHome extends Controller
                 $likePattern = "%{$searchValue}%";
                 $query->where('j.nombre', 'like', $likePattern)
                     ->orWhere('j.apellido', 'like', $likePattern)
-                    ->orWhere(\Illuminate\Support\Facades\DB::raw("CONCAT(j.apellido, ' ', j.nombre)"), 'like', $likePattern);
+                    ->orWhere(DB::raw("CONCAT(j.apellido, ' ', j.nombre)"), 'like', $likePattern);
             });
         }
 
@@ -775,7 +792,7 @@ class ControladorHome extends Controller
         $selectedCategoria = $request->query('categoria');
 
         // Obtener las copas disponibles para el filtro (del torneo actual)
-        $copas = \App\Models\Copa::orderBy('nombre', 'asc')->get();
+        $copas = Copa::orderBy('nombre', 'asc')->get();
         $selectedCopa = $request->query('copa');
 
         // Obtener las fases disponibles para el filtro (del torneo actual)
@@ -1146,102 +1163,6 @@ class ControladorHome extends Controller
             ->get();
 
         return response()->json($grupos);
-    }
-
-    /**
-     * Planilla de cobro de planillas de equipos por partido, ordenados por horario ascendente.
-     */
-    public function planillaCobro(Request $request)
-    {
-        $idEdicion = $request->query('idEdicion');
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-
-        if (! $EdicionSeleccionada) {
-            return redirect()->back()->with('error', 'Debe seleccionar una edición');
-        }
-
-        // Última fecha calendario con partidos en esta edición
-        $ultimaFechaPartidos = Partido::where('idEdicion', $idEdicion)
-            ->whereNotNull('horario_datetime')
-            ->max(DB::raw('DATE(horario_datetime)'));
-
-        $ultimaFechaInstanciasFinales = InstanciaFinal::where('idEdicion', $idEdicion)
-            ->whereNotNull('horario')
-            ->max(DB::raw('DATE(horario)'));
-
-        $ultimaFechaCalendario = collect([$ultimaFechaPartidos, $ultimaFechaInstanciasFinales])
-            ->filter()
-            ->max();
-
-        if (! $ultimaFechaCalendario) {
-            return view('Panel.imprimir.planilla-cobro', [
-                'agrupado' => [],
-                'EdicionSeleccionada' => $EdicionSeleccionada,
-                'fechaJornada' => null,
-            ]);
-        }
-
-        $partidos = Partido::select(
-            'partidos.*',
-            'el.nombre as nombre_local',
-            'ev.nombre as nombre_visitante',
-            'cat.nombreCategoria as nombre_categoria'
-        )
-            ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
-            ->join('equipos as ev', 'partidos.idEquipoVisitante', '=', 'ev.id')
-            ->leftJoin('categorias as cat', 'partidos.idCategoria', '=', 'cat.id')
-            ->where('partidos.idEdicion', $idEdicion)
-            ->whereRaw('DATE(partidos.horario_datetime) = ?', [$ultimaFechaCalendario])
-            ->orderByRaw('TIME(partidos.horario_datetime) asc')
-            ->orderBy('cat.nombreCategoria', 'desc')
-            ->get();
-
-        $instanciasFinales = InstanciaFinal::select(
-            'instancias_finales.*',
-            'el.nombre as nombre_local',
-            'ev.nombre as nombre_visitante',
-            'cat.nombreCategoria as nombre_categoria'
-        )
-            ->join('equipos as el', 'instancias_finales.idEquipoLocal', '=', 'el.id')
-            ->join('equipos as ev', 'instancias_finales.idEquipoVisitante', '=', 'ev.id')
-            ->leftJoin('categorias as cat', 'instancias_finales.idCategoria', '=', 'cat.id')
-            ->where('instancias_finales.idEdicion', $idEdicion)
-            ->whereRaw('DATE(instancias_finales.horario) = ?', [$ultimaFechaCalendario])
-            ->orderByRaw('TIME(instancias_finales.horario) asc')
-            ->orderBy('cat.nombreCategoria', 'desc')
-            ->get();
-
-        $entradas = collect();
-
-        foreach ($partidos as $partido) {
-            $horario = $partido->horario_datetime
-                ? \Carbon\Carbon::parse($partido->horario_datetime)->format('H:i')
-                : 'Por definir';
-            $categoria = $partido->nombre_categoria ?? 'Sin categoría';
-
-            $entradas->push(['horario' => $horario, 'categoria' => $categoria, 'equipo' => $partido->nombre_local]);
-            $entradas->push(['horario' => $horario, 'categoria' => $categoria, 'equipo' => $partido->nombre_visitante]);
-        }
-
-        foreach ($instanciasFinales as $instanciaFinal) {
-            $horario = $instanciaFinal->horario
-                ? \Carbon\Carbon::parse($instanciaFinal->horario)->format('H:i')
-                : 'Por definir';
-            $categoria = $instanciaFinal->nombre_categoria ?? 'Sin categoría';
-
-            $entradas->push(['horario' => $horario, 'categoria' => $categoria, 'equipo' => $instanciaFinal->nombre_local]);
-            $entradas->push(['horario' => $horario, 'categoria' => $categoria, 'equipo' => $instanciaFinal->nombre_visitante]);
-        }
-
-        // Estructura agrupada: horario → categoria → [equipos]
-        $agrupado = [];
-        foreach ($entradas->sortBy('horario') as $entrada) {
-            $agrupado[$entrada['horario']][$entrada['categoria']][] = $entrada['equipo'];
-        }
-
-        $fechaJornada = \Carbon\Carbon::parse($ultimaFechaCalendario)->format('d/m/Y');
-
-        return view('Panel.imprimir.planilla-cobro', compact('agrupado', 'EdicionSeleccionada', 'fechaJornada'));
     }
 
     /**

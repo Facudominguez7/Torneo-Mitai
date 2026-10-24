@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('copas')) {
+        if (! Schema::hasTable('copas')) {
             Schema::create('copas', function (Blueprint $table) {
-            $table->integer('id', true);
-            $table->integer('idEdicion')->nullable()->index('fkidedicion');
-            $table->string('nombre', 75);
-        });
+                $table->integer('id', true);
+                $table->integer('idEdicion')->nullable()->index('fkidedicion');
+                $table->string('nombre', 75);
+            });
         }
     }
 

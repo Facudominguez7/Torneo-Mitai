@@ -16,7 +16,10 @@ use App\Services\ActualizadorIdentidadJugador;
 use App\Services\BajaJugadorService;
 use App\Services\EstadisticasService;
 use App\Services\ValidadorReglasJugador;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -47,7 +50,8 @@ class ControladorListaBuenaFe extends Controller
         $idCategoria = $request->get('idCategoria');
         $search = $request->get('search');
 
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : Edicion::latest()->first();
+        // Edicion no tiene timestamps: latest() fallaba sin idEdicion en la query.
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : Edicion::orderBy('id', 'desc')->first();
         $limiteJugadoresPorPlanilla = $this->obtenerLimiteJugadoresPorPlanilla($EdicionSeleccionada);
         $ediciones = Edicion::all();
 
@@ -72,7 +76,7 @@ class ControladorListaBuenaFe extends Controller
         $estadisticasJugadores = null;
         $jugadoresPorCategoria = null;
         if ($EdicionSeleccionada) {
-            $estadisticasService = new EstadisticasService();
+            $estadisticasService = new EstadisticasService;
             $estadisticasJugadores = $estadisticasService->obtenerJugadoresDosUltimasFechas($EdicionSeleccionada->id);
             $jugadoresPorCategoria = $estadisticasService->obtenerJugadoresPorCategoriaDosUltimasFechas($EdicionSeleccionada->id);
         }
@@ -138,7 +142,7 @@ class ControladorListaBuenaFe extends Controller
         $jugadoresInactivos = $jugadoresInactivosQuery->get();
 
         // Obtener estadísticas de jugadores
-        $estadisticasService = new EstadisticasService();
+        $estadisticasService = new EstadisticasService;
         $estadisticasJugadores = $estadisticasService->obtenerJugadoresDosUltimasFechas($idEdicion);
         $jugadoresPorCategoria = $estadisticasService->obtenerJugadoresPorCategoriaDosUltimasFechas($idEdicion);
 
@@ -262,7 +266,7 @@ class ControladorListaBuenaFe extends Controller
             ->activos()
             ->get();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('Panel.lista-buena-fe.pdf', compact(
+        $pdf = Pdf::loadView('Panel.lista-buena-fe.pdf', compact(
             'EdicionSeleccionada',
             'equipoSeleccionado',
             'jugadoresActivos'
@@ -678,7 +682,7 @@ class ControladorListaBuenaFe extends Controller
      * los datos del jugador (nombre, apellido, fecha de nacimiento, numero_camiseta)
      * para autocompletar el formulario de alta en Lista de Buena Fe.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function buscarPorDni(Request $request)
     {
@@ -724,7 +728,7 @@ class ControladorListaBuenaFe extends Controller
 
             if ($registroPlanilla) {
                 if (! $fechaNacimiento && $registroPlanilla->fecha_nacimiento) {
-                    $fechaNacimiento = $registroPlanilla->fecha_nacimiento instanceof \Carbon\Carbon
+                    $fechaNacimiento = $registroPlanilla->fecha_nacimiento instanceof Carbon
                         ? $registroPlanilla->fecha_nacimiento->format('Y-m-d')
                         : $registroPlanilla->fecha_nacimiento;
                 }

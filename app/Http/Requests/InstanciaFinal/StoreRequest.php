@@ -18,7 +18,7 @@ class StoreRequest extends FormRequest
             'idCopa' => 'nullable|exists:copas,id',
             'idEdicion' => 'required|exists:ediciones,id',
             'idEquipoLocal' => 'required|exists:equipos,id',
-            'idEquipoVisitante' => 'required|exists:equipos,id',
+            'idEquipoVisitante' => 'required|exists:equipos,id|different:idEquipoLocal',
             'idFase' => 'required|exists:fases,id',
             'horario' => 'required|date_format:Y-m-d\TH:i',
             'cancha' => 'required|integer',

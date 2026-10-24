@@ -7,6 +7,7 @@
     {{-- Preconnect para recursos externos (mejora LCP/FCP) --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap">
     <link rel="preconnect" href="https://kit.fontawesome.com" crossorigin>
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
 

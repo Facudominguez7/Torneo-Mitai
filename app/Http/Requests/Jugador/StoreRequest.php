@@ -1,9 +1,10 @@
 <?php
+
 namespace App\Http\Requests\Jugador;
 
+use App\Models\Jugador;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Models\Jugador;
 
 class StoreRequest extends FormRequest
 {
@@ -35,9 +36,9 @@ class StoreRequest extends FormRequest
 
             if ($jugador instanceof Jugador) {
                 // Preferimos ignorar por columna id si existe, en su defecto por dni
-                if (!is_null($jugador->id)) {
+                if (! is_null($jugador->id)) {
                     $dniUnique = $dniUnique->ignore($jugador->id, 'id');
-                } elseif (!is_null($jugador->dni)) {
+                } elseif (! is_null($jugador->dni)) {
                     $dniUnique = $dniUnique->ignore($jugador->dni, 'dni');
                 }
             } elseif (is_numeric($jugador)) {

@@ -11,21 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('tabla_posiciones')) {
+        if (! Schema::hasTable('tabla_posiciones')) {
             Schema::create('tabla_posiciones', function (Blueprint $table) {
-            $table->integer('id', true);
-            $table->integer('idGrupo')->index('fkidgrupo');
-            $table->integer('idEquipo')->index('fkidequipo');
-            $table->integer('idEdicion')->default(0);
-            $table->integer('puntos');
-            $table->integer('golesFavor');
-            $table->integer('golesContra');
-            $table->integer('diferenciaGoles');
-            $table->integer('jugado');
-            $table->integer('ganado');
-            $table->integer('perdido');
-            $table->integer('empatado');
-        });
+                $table->integer('id', true);
+                $table->integer('idGrupo')->index('fkidgrupo');
+                $table->integer('idEquipo')->index('fkidequipo');
+                $table->integer('idEdicion')->default(0);
+                $table->integer('puntos');
+                $table->integer('golesFavor');
+                $table->integer('golesContra');
+                $table->integer('diferenciaGoles');
+                $table->integer('jugado');
+                $table->integer('ganado');
+                $table->integer('perdido');
+                $table->integer('empatado');
+            });
         }
     }
 

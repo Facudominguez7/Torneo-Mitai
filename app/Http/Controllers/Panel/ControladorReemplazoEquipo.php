@@ -35,13 +35,13 @@ class ControladorReemplazoEquipo extends Controller
         $categoria = Categoria::query()->where('idEdicion', $idEdicion)->findOrFail($idCategoria);
         $equipoReemplazado = Equipo::findOrFail($idEquipo);
 
-        abort_unless(
-            EquipoEdicion::query()->where('idEquipo', $idEquipo)->where('idEdicion', $idEdicion)->where('idCategoria', $idCategoria)->exists(),
-            404,
-        );
+        // Hay equipos con fila en la tabla pero sin inscripción en la edición: se explica en vez de dar 404.
+        $estaInscripto = EquipoEdicion::query()->where('idEquipo', $idEquipo)->where('idEdicion', $idEdicion)->where('idCategoria', $idCategoria)->exists();
 
         $vistaPrevia = $this->reemplazador->vistaPrevia($idEdicion, $idCategoria, $idEquipo);
-        $motivoImposibilidad = $this->reemplazador->motivoImposibilidad($idEdicion, $idCategoria, $idEquipo);
+        $motivoImposibilidad = $estaInscripto
+            ? $this->reemplazador->motivoImposibilidad($idEdicion, $idCategoria, $idEquipo)
+            : 'Este equipo no está inscripto en esta edición y categoría. Inscribilo desde Equipos antes de reemplazarlo.';
         $equiposElegibles = $motivoImposibilidad === null
             ? $this->reemplazador->equiposElegibles($idEdicion, $idCategoria, $idEquipo)
             : collect();

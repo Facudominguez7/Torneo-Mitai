@@ -2,15 +2,16 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Institucion;
 use App\Models\Equipo;
+use App\Models\Institucion;
 use App\Services\NormalizadorInstituciones;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class MergeInstitucionesDuplicadas extends Command
 {
     protected $signature = 'instituciones:merge-duplicates {--dry-run : Solo muestra lo que haría}';
+
     protected $description = 'Detecta instituciones equivalentes por nombre normalizado y fusiona sus equipos en una sola.';
 
     public function handle(): int
@@ -31,14 +32,16 @@ class MergeInstitucionesDuplicadas extends Command
         DB::beginTransaction();
         try {
             foreach ($grupos as $base => $lista) {
-                if (count($lista) < 2) continue; // No hay duplicados
+                if (count($lista) < 2) {
+                    continue;
+                } // No hay duplicados
 
                 // Ordenar por id asc y conservar la primera como principal
-                usort($lista, fn($a,$b)=>$a->id <=> $b->id);
+                usort($lista, fn ($a, $b) => $a->id <=> $b->id);
                 $principal = array_shift($lista);
-                $idsDuplicados = array_map(fn($x)=>$x->id,$lista);
+                $idsDuplicados = array_map(fn ($x) => $x->id, $lista);
 
-                $this->line("Grupo '{$base}' -> principal: {$principal->id} ({$principal->nombre}) duplicados: " . implode(',', $idsDuplicados));
+                $this->line("Grupo '{$base}' -> principal: {$principal->id} ({$principal->nombre}) duplicados: ".implode(',', $idsDuplicados));
 
                 if ($dry) {
                     continue; // Solo mostrar
@@ -60,7 +63,8 @@ class MergeInstitucionesDuplicadas extends Command
             }
         } catch (\Throwable $e) {
             DB::rollBack();
-            $this->error('Error durante la fusión: ' . $e->getMessage());
+            $this->error('Error durante la fusión: '.$e->getMessage());
+
             return self::FAILURE;
         }
 

@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
-
 class LoginController extends Controller
 {
     public function callback()
@@ -30,13 +29,14 @@ class LoginController extends Controller
             if ($existingUser) {
                 if ($existingUser->google_id) {
                     Auth::login($existingUser);
+
                     return redirect()->intended(route('home'));
                 } else {
                     return redirect('login')->withErrors(['email' => 'El correo electrónico ya está en uso.']);
                 }
             } else {
                 $password = Str::random(12);
-                $user = new User();
+                $user = new User;
                 $user->google_id = $user_google->id;
                 $user->name = $user_google->name;
                 $user->email = $user_google->email;
@@ -58,5 +58,4 @@ class LoginController extends Controller
     {
         return Socialite::driver('google')->redirect();
     }
-    
 }

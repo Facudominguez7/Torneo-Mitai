@@ -35,4 +35,4 @@ class AddIdCategoriaToPartidosTable extends Migration
             $table->dropColumn('idCategoria');
         });
     }
-};
+}

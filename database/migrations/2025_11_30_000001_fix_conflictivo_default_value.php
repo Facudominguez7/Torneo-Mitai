@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -16,7 +16,7 @@ return new class extends Migration
         DB::table('lista_buena_fe')
             ->whereNull('conflictivo')
             ->update(['conflictivo' => false]);
-        
+
         // Luego, modificar la columna para asegurar que tenga default
         Schema::table('lista_buena_fe', function (Blueprint $table) {
             $table->boolean('conflictivo')->default(false)->change();

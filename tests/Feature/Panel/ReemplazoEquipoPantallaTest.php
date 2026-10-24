@@ -104,6 +104,11 @@ it('muestra la accion Reemplazar equipo en cada fila de la tabla de posiciones c
     foreach ([$c['viejo'], $c['rival']] as $equipo) {
         $response->assertSee(e(route('reemplazo-equipo.create', pantallaReemplazoQuery($c, $equipo))), false);
     }
+
+    // Redesign: la accion vive en la misma celda de acciones que Editar y Eliminar, una por fila.
+    $html = $response->getContent();
+    expect(substr_count($html, 'data-accion="reemplazar-equipo"'))->toBe(2);
+    expect($html)->toMatch('/<td[^>]*>\s*<div[^>]*>(?:(?!<\/td>).)*Editar(?:(?!<\/td>).)*Reemplazar equipo(?:(?!<\/td>).)*<\/td>/s');
 });
 
 it('muestra la pantalla con el nombre, la fila heredada y los conteos', function () {
@@ -156,6 +161,19 @@ it('muestra el motivo y no el formulario cuando el reemplazo es imposible', func
 
     $response->assertOk()
         ->assertSee('Tiene partidos a medio cargar')
+        ->assertDontSee('Confirmar reemplazo')
+        ->assertDontSee('name="origen"', false);
+});
+
+it('explica sin error 404 cuando el equipo de la tabla no esta inscripto en la edicion', function () {
+    $c = pantallaReemplazoContexto();
+    // Caso real: el equipo tiene fila en la tabla y lugar en el grupo, pero no inscripción.
+    EquipoEdicion::where('idEquipo', $c['viejo']->id)->delete();
+
+    $response = pantallaReemplazoAdmin($this)->get(route('reemplazo-equipo.create', pantallaReemplazoQuery($c, $c['viejo'])));
+
+    $response->assertOk()
+        ->assertSee('no está inscripto en esta edición')
         ->assertDontSee('Confirmar reemplazo')
         ->assertDontSee('name="origen"', false);
 });

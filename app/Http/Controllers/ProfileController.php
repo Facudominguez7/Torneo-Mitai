@@ -47,20 +47,20 @@ class ProfileController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         $user = $request->user();
-    
-        if (!isset($user->google_id)) {
+
+        if (! isset($user->google_id)) {
             $request->validateWithBag('userDeletion', [
                 'password' => ['required', 'current_password'],
             ]);
         }
-    
+
         Auth::logout();
-    
+
         $user->delete();
-    
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-    
+
         return Redirect::to('/');
     }
 }
