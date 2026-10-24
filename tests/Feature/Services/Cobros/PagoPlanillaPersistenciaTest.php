@@ -44,7 +44,12 @@ it('conserva el ingreso parcial sus relaciones y el medio sin alterar cargos', f
         ->and($this->cargo->fresh()->precio_original)->toBe(25000);
     $this->assertDatabaseCount('pago_planillas', 1);
     $this->assertDatabaseCount('historial_cobro_planillas', 0);
-})->with(['efectivo', 'transferencia', 'mercado_pago']);
+})->with(['efectivo', 'mercado_pago']);
+
+it('rechaza recibos nuevos por transferencia', function (): void {
+    expect(fn () => PagoPlanilla::create(array_replace($this->datos, ['medio' => 'transferencia'])))->toThrow(LogicException::class);
+    $this->assertDatabaseCount('pago_planillas', 0);
+});
 
 it('congela fecha servidor y nombre vigente ignorando snapshots suministrados', function (): void {
     $this->travelTo(Carbon::parse('2026-10-08 10:30:00'));

@@ -149,14 +149,14 @@ it('rechaza corrupción en lugar de ocultar deuda negativa', function (): void {
 });
 
 it('distingue pagado y exento sin convertir exenciones en ingresos', function (): void {
-    $pago = pagoConsulta($this->cargo, $this->admin, 5000, 'transferencia');
+    $pago = pagoConsulta($this->cargo, $this->admin, 5000, 'mercado_pago');
     AplicacionPagoPlanilla::create(['pago_id' => $pago->id, 'cargo_id' => $this->cargo->id, 'importe_ars' => 5000]);
     ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 20000]);
     $filtros = ['idEdicion' => $this->contexto['edicion']->id, 'estado' => 'exento'];
     $consulta = app(ConsultaCobrosService::class)->consultar($filtros);
     expect($consulta['cargos'])->toHaveCount(1)
         ->and($consulta['resumen'])->toMatchArray(['ingresos_ars' => 5000, 'credito_ars' => 0, 'deuda_ars' => 0, 'eximido_ars' => 20000])
-        ->and($consulta['resumen']['ingresos_por_medio'])->toBe(['transferencia' => 5000]);
+        ->and($consulta['resumen']['ingresos_por_medio'])->toBe(['mercado_pago' => 5000]);
     $this->actingAs($this->admin)->get(route('cobros.index', $filtros + ['recibido_hasta' => '2026-06-15']))
         ->assertOk()->assertSee('Exento');
     expect(app(ConsultaCobrosService::class)->consultar(array_merge($filtros, ['estado' => 'pagado']))['cargos'])->toHaveCount(0);

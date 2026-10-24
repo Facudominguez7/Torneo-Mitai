@@ -29,7 +29,7 @@ class PagosCobroService
 
     private const IMPORTE_MAXIMO = 2147483647;
 
-    private const MEDIOS = ['efectivo', 'transferencia', 'mercado_pago'];
+    public const MEDIOS = ['efectivo', 'mercado_pago'];
 
     public function registrarPago(User $actor, int $cargoId, mixed $importeArs, string $medio, string $claveIdempotencia): PagoPlanilla
     {
@@ -159,7 +159,7 @@ class PagosCobroService
         }
 
         if (! in_array($medio, self::MEDIOS, true)) {
-            throw ValidationException::withMessages(['medio' => ['El medio debe ser efectivo, transferencia o mercado_pago.']]);
+            throw ValidationException::withMessages(['medio' => ['El medio debe ser efectivo o mercado_pago.']]);
         }
 
         if (! Str::isUuid($claveIdempotencia)) {

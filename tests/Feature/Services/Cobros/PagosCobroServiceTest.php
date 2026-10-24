@@ -106,7 +106,7 @@ it('registra un pago parcial con aplicacion minima auditoria unica y credito cer
 });
 
 it('aplica el importe exacto y salda el cargo sin credito', function (): void {
-    $this->servicio->registrarPago($this->admin, $this->cargo->id, 25000, 'transferencia', $this->clave);
+    $this->servicio->registrarPago($this->admin, $this->cargo->id, 25000, 'mercado_pago', $this->clave);
 
     $evento = HistorialCobroPlanilla::query()->sole();
     expect((int) AplicacionPagoPlanilla::query()->sum('importe_ars'))->toBe(25000)
@@ -160,7 +160,7 @@ it('rechaza la clave reutilizada con otro payload sin ningun ingreso nuevo', fun
     [$cargoId, $importe, $medio, $actor] = match ($cambio) {
         'cargo' => [$otroCargo->id, 10000, 'efectivo', $this->admin],
         'importe' => [$this->cargo->id, 9999, 'efectivo', $this->admin],
-        'medio' => [$this->cargo->id, 10000, 'transferencia', $this->admin],
+        'medio' => [$this->cargo->id, 10000, 'mercado_pago', $this->admin],
         'actor' => [$this->cargo->id, 10000, 'efectivo', $otroAdmin],
     };
 
@@ -221,11 +221,11 @@ it('rechaza importes que no son enteros estrictos dentro del rango ARS', functio
         ->and(HistorialCobroPlanilla::query()->count())->toBe(0);
 })->with([0, -1, 1.5, true, '25000', null, 2147483648]);
 
-it('rechaza medios fuera de los tres codigos en minusculas', function (string $medio): void {
+it('rechaza medios fuera de los dos codigos vigentes en minusculas', function (string $medio): void {
     expect(fn () => $this->servicio->registrarPago($this->admin, $this->cargo->id, 1000, $medio, $this->clave))
         ->toThrow(ValidationException::class)
         ->and(PagoPlanilla::query()->count())->toBe(0);
-})->with(['cheque', 'EFECTIVO', 'Efectivo', '', 'mercado pago']);
+})->with(['cheque', 'transferencia', 'EFECTIVO', 'Efectivo', '', 'mercado pago']);
 
 it('rechaza claves de idempotencia que no son UUID validos', function (string $clave): void {
     expect(fn () => $this->servicio->registrarPago($this->admin, $this->cargo->id, 1000, 'efectivo', $clave))

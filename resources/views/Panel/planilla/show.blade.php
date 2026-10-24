@@ -172,6 +172,17 @@
             </form>
         </div>
 
+        @if ($cobrosPlanilla->isNotEmpty())
+            <section class="mb-6 rounded-lg border border-gray-200 bg-white p-4" aria-labelledby="cobro-planilla-titulo">
+                <h2 id="cobro-planilla-titulo" class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Cobro de planilla</h2>
+                <div class="mt-3" data-cobros-seccion aria-live="polite"
+                    data-url="{{ route('cobros.partido', ['idEdicion' => $partido->idEdicion, 'tipo' => $tipoCargo, 'partido' => $partido->id]) }}">
+                    @include('Panel.cobros.partido')
+                </div>
+                @include('Panel.cobros.modal', ['configuracion' => $configuracionCobros])
+            </section>
+        @endif
+
         @if (is_null($partido->golesEquipoLocal) && is_null($partido->golesEquipoVisitante))
             <div class="mb-4">
                 <a href="{{ $rutaCargarResultado }}"
@@ -1702,4 +1713,7 @@
         printFrame.src = url;
     }
 </script>
+@if ($cobrosPlanilla->isNotEmpty())
+    <script>{!! file_get_contents(resource_path('js/cobros.js')) !!}</script>
+@endif
 @endsection

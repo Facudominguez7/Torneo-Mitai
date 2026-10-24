@@ -8,8 +8,12 @@
     const error = document.querySelector('#cobros-error');
     const enviar = document.querySelector('#cobros-enviar');
     const aviso = document.querySelector('#cobros-aviso');
+    const total = document.querySelector('#cobros-total');
+    const seccion = document.querySelector('[data-cobros-seccion]');
+    const importes = ['importe_efectivo_ars', 'importe_mercado_pago_ars'];
+    const medios = { efectivo: 'Efectivo', mercado_pago: 'Mercado Pago', transferencia: 'Transferencia' };
     const configuraciones = {
-        pago: ['Registrar pago', 'pagos', ['importe_ars', 'medio']],
+        pago: ['Registrar pago', 'pagos', ['importes']],
         exencion: ['Eximir deuda residual', 'exenciones', ['motivo']],
         politica: ['Exención para cargos futuros', 'politicas', ['motivo']],
         tarifa: ['Guardar tarifa global', 'tarifa', ['tarifa_ars']],
@@ -23,6 +27,7 @@
     let origen;
     let controlador;
     let desbordamiento;
+    let refrescando = false;
     const leer = (nombre) => {
         try { return JSON.parse(sessionStorage.getItem(nombre)); } catch { return null; }
     };
@@ -36,7 +41,51 @@
         return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
     };
     const ars = (importe) => `$ ${Number(importe).toLocaleString('es-AR')} ARS`;
-    const recibo = (pago) => `Pago #${pago.id}: recibido ${ars(pago.importe_ars)} (un único ingreso). Aplicado ${ars(pago.aplicado_ars)}, de los cuales ${ars(pago.aplicado_origen_ars)} al cargo elegido. Deuda restante del cargo: ${ars(pago.deuda_cargo_ars)}. Crédito disponible del equipo en esta edición: ${ars(pago.credito_equipo_ars)} (de este pago: ${ars(pago.credito_pago_ars)}).`;
+    const sumar = (pagos, campo) => pagos.reduce((suma, pago) => suma + pago[campo], 0);
+    const recibo = (pagos) => {
+        const ultimo = pagos[pagos.length - 1];
+        const detalle = pagos.map((pago) => `#${pago.id} ${medios[pago.medio] ?? pago.medio} ${ars(pago.importe_ars)}`).join(' + ');
+        return `${pagos.length > 1 ? 'Pagos' : 'Pago'} ${detalle}: recibido ${ars(sumar(pagos, 'importe_ars'))}. Aplicado ${ars(sumar(pagos, 'aplicado_ars'))}, de los cuales ${ars(sumar(pagos, 'aplicado_origen_ars'))} al cargo elegido. Deuda restante del cargo: ${ars(ultimo.deuda_cargo_ars)}. Crédito disponible del equipo en esta edición: ${ars(ultimo.credito_equipo_ars)} (de este ingreso: ${ars(sumar(pagos, 'credito_pago_ars'))}).`;
+    };
+    const actualizarTotal = () => {
+        const suma = importes.reduce((acumulado, nombre) => acumulado + (Number.parseInt(form.elements.namedItem(nombre).value, 10) || 0), 0);
+        total.textContent = `Total recibido: ${ars(suma)}`;
+    };
+    form.addEventListener('input', (evento) => {
+        if (importes.includes(evento.target.name)) actualizarTotal();
+    });
+    const firma = (raiz) => [...raiz.querySelectorAll('[data-planilla-cobro]')]
+        .map((fila) => `${fila.dataset.planillaCobro}:${fila.dataset.deuda}:${fila.dataset.estado}`).join('|');
+    // Reemplaza solo la grilla de cobros: el resto de la planilla y el modal abierto no se tocan.
+    const refrescarSeccion = async (forzar = false) => {
+        if (!seccion || (refrescando && !forzar)) return;
+        refrescando = true;
+        try {
+            const respuesta = await fetch(seccion.dataset.url, { headers: { Accept: 'text/html' }, cache: 'no-store' });
+            if (!respuesta.ok) return;
+            const plantilla = document.createElement('template');
+            plantilla.innerHTML = (await respuesta.text()).trim();
+            if (firma(plantilla.content) === firma(seccion)) return;
+            seccion.replaceChildren(plantilla.content);
+            const fila = cargo ? seccion.querySelector(`[data-planilla-cobro="${cargo.id}"]`) : null;
+            if (modal.open && operacion === 'pago' && fila && !pendiente && !sinConfirmar && Number(fila.dataset.deuda) !== cargo.deuda_ars) {
+                cargo = { ...cargo, deuda_ars: Number(fila.dataset.deuda) };
+                contexto.textContent = `Otro usuario actualizó este cobro mientras lo cargabas. Deuda actual: ${ars(cargo.deuda_ars)}.${cargo.deuda_ars === 0 ? ' Ya no queda deuda: cerrá sin registrar.' : ''}`;
+            }
+        } catch {
+            // Sin conexión: se reintenta en la próxima consulta periódica.
+        } finally {
+            refrescando = false;
+        }
+    };
+    if (seccion) {
+        setInterval(() => {
+            if (document.visibilityState === 'visible') refrescarSeccion();
+        }, 10000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') refrescarSeccion();
+        });
+    }
     const restaurar = leer('cobros-actualizado');
     if (restaurar?.url === location.href) {
         sessionStorage.removeItem('cobros-actualizado');
@@ -58,7 +107,8 @@
         controlador?.abort();
         modal.close();
         document.body.style.overflow = desbordamiento;
-        origen?.focus({ preventScroll: true });
+        const destino = origen?.isConnected ? origen : (cargo && seccion?.querySelector(`[data-planilla-cobro="${cargo.id}"] button`)) || aviso;
+        destino?.focus({ preventScroll: true });
     };
     modal.querySelector('[data-cobros-cerrar]').addEventListener('click', cerrar);
     modal.addEventListener('cancel', (evento) => {
@@ -66,8 +116,10 @@
         cerrar();
     });
     const bloquearPago = () => {
-        form.elements.namedItem('importe_ars').readOnly = true;
-        form.elements.namedItem('medio').disabled = true;
+        importes.forEach((nombre) => { form.elements.namedItem(nombre).readOnly = true; });
+    };
+    const desbloquearPago = () => {
+        importes.forEach((nombre) => { form.elements.namedItem(nombre).readOnly = false; });
     };
     document.addEventListener('click', async (evento) => {
         const boton = evento.target.closest('[data-cobro]');
@@ -87,7 +139,7 @@
         clave = sinConfirmar && operacion === 'pago' ? sinConfirmar.datos.clave_idempotencia : uuid();
         const [nombre, , campos] = configuraciones[operacion];
         form.reset();
-        form.elements.namedItem('importe_ars').readOnly = false;
+        desbloquearPago();
         error.textContent = '';
         form.querySelectorAll('[data-error]').forEach((elemento) => { elemento.textContent = ''; });
         form.querySelectorAll('[aria-invalid]').forEach((elemento) => elemento.removeAttribute('aria-invalid'));
@@ -105,11 +157,16 @@
             activar: 'Acción global explícita. Revisá la tarifa antes de confirmar.',
         })[operacion] ?? '';
         if (sinConfirmar && operacion === 'pago') {
-            form.elements.namedItem('importe_ars').value = sinConfirmar.datos.importe_ars;
-            form.elements.namedItem('medio').value = sinConfirmar.datos.medio;
+            const anteriores = sinConfirmar.datos;
+            if ('importe_ars' in anteriores) {
+                form.elements.namedItem(anteriores.medio === 'mercado_pago' ? 'importe_mercado_pago_ars' : 'importe_efectivo_ars').value = anteriores.importe_ars;
+            } else {
+                importes.forEach((nombre) => { form.elements.namedItem(nombre).value = anteriores[nombre] ?? ''; });
+            }
             bloquearPago();
             contexto.textContent += ' Recuperación: se reenviará exactamente el pago anterior con la misma clave, sin duplicar el ingreso. Confirmalo antes de iniciar otro pago.';
         }
+        actualizarTotal();
         form.hidden = operacion === 'detalle';
         detalle.hidden = operacion !== 'detalle';
         detalle.replaceChildren();
@@ -160,8 +217,7 @@
                 if (respuesta.status === 422 && operacion === 'pago' && !recuperando) {
                     sinConfirmar = null;
                     sessionStorage.removeItem('cobros-pago-sin-confirmar');
-                    form.elements.namedItem('importe_ars').readOnly = false;
-                    form.elements.namedItem('medio').disabled = false;
+                    desbloquearPago();
                     clave = uuid();
                 }
                 error.textContent = respuesta.status === 422 ? 'Revisá los datos indicados.' : (respuesta.status === 419 ? 'La sesión venció. Recargá la página antes de continuar.' : 'No se pudo completar la operación. Intentá nuevamente.');
@@ -175,10 +231,19 @@
                 error.focus();
                 return;
             }
-            const mensaje = resultado.pago ? recibo(resultado.pago) : 'Operación registrada. Saldos actualizados.';
+            const pagos = resultado.pagos ?? (resultado.pago ? [resultado.pago] : null);
+            const mensaje = pagos ? recibo(pagos) : 'Operación registrada. Saldos actualizados.';
             if (operacion === 'pago') {
                 sinConfirmar = null;
                 sessionStorage.removeItem('cobros-pago-sin-confirmar');
+            }
+            if (seccion) {
+                pendiente = false;
+                cerrar();
+                await refrescarSeccion(true);
+                aviso.textContent = mensaje;
+                aviso.focus({ preventScroll: true });
+                return;
             }
             sessionStorage.setItem('cobros-actualizado', JSON.stringify({ url: location.href, scroll: window.scrollY, mensaje }));
             location.reload();

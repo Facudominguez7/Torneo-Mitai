@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Campeon;
+use App\Models\CargoPlanilla;
 use App\Models\Categoria;
 use App\Models\Copa;
 use App\Models\Edicion;
@@ -17,6 +18,7 @@ use App\Models\Subcampeon;
 use App\Models\TablaGoleador;
 use App\Models\TablaPosicion;
 use App\Models\VallaMenosVencida;
+use App\Services\Cobros\ConsultaCobrosService;
 use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use App\Services\FixtureExploradorService;
@@ -185,6 +187,10 @@ class ControladorHome extends Controller
 
         $categorias = Categoria::where('idEdicion', $idEdicion)->get();
 
+        $cobrosPorPartido = $request->user()?->isAdmin()
+            ? app(ConsultaCobrosService::class)->cargosDePartidos(CargoPlanilla::TIPO_PARTIDO, $partidos->flatten(1)->pluck('id')->all())
+            : collect();
+
         // Obtener estadísticas de jugadores de las últimas dos fechas
         $estadisticasJugadores = null;
         $jugadoresPorCategoria = null;
@@ -210,7 +216,7 @@ class ControladorHome extends Controller
             $resumenDashboard = $this->resumenDashboard->obtenerResumen((int) $idEdicionResumen);
         }
 
-        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion', 'resumenDashboard'));
+        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion', 'resumenDashboard', 'cobrosPorPartido'));
     }
 
     public function campeones(Request $request)

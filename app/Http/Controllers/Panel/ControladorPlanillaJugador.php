@@ -7,7 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Panel\ActualizarPlanillaJugadoresRequest;
 use App\Http\Requests\Panel\AplicarGolesArbitralesRequest;
 use App\Http\Requests\Panel\CopiarPlanillaPartidoAnteriorRequest;
+use App\Models\CargoPlanilla;
 use App\Models\Categoria;
+use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\Edicion;
 use App\Models\EquipoEdicion;
 use App\Models\InstanciaFinal;
@@ -18,6 +20,7 @@ use App\Models\PlanillaJugador;
 use App\Models\TablaGoleador;
 use App\Services\AplicarGolesArbitralesService;
 use App\Services\BajaJugadorService;
+use App\Services\Cobros\ConsultaCobrosService;
 use App\Services\CopiarPlanillaPartidoAnteriorService;
 use App\Services\GolesArbitrosService;
 use App\Services\PlanillaConfirmacionService;
@@ -42,6 +45,7 @@ class ControladorPlanillaJugador extends Controller
         private readonly BajaJugadorService $bajaJugadorService,
         private readonly PlanillaJugadorAutosaveService $planillaJugadorAutosaveService,
         private readonly CopiarPlanillaPartidoAnteriorService $copiarPlanillaPartidoAnteriorService,
+        private readonly ConsultaCobrosService $consultaCobrosService,
     ) {
         $this->validadorReglas = $validadorReglas;
     }
@@ -130,7 +134,13 @@ class ControladorPlanillaJugador extends Controller
         $mostrarBotonCopiarLocal = $disponibilidadCopiado['local'];
         $mostrarBotonCopiarVisitante = $disponibilidadCopiado['visitante'];
 
-        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado', 'contextoNavegacion', 'golesArbitrosResumen', 'candidatosArbitrales', 'equipoBloqueado', 'mostrarBotonCopiarLocal', 'mostrarBotonCopiarVisitante'));
+        $tipoCargo = PartidoConstants::isInstanciaFinal($tipoPartido) ? CargoPlanilla::TIPO_INSTANCIA_FINAL : CargoPlanilla::TIPO_PARTIDO;
+        $cobrosPlanilla = $request->user()?->isAdmin()
+            ? $this->consultaCobrosService->cargosDePartidos($tipoCargo, [(int) $partido->id])->keyBy('idEquipo')
+            : collect();
+        $configuracionCobros = $cobrosPlanilla->isNotEmpty() ? ConfiguracionCobroPlanilla::query()->find(1) : null;
+
+        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado', 'contextoNavegacion', 'golesArbitrosResumen', 'candidatosArbitrales', 'equipoBloqueado', 'mostrarBotonCopiarLocal', 'mostrarBotonCopiarVisitante', 'cobrosPlanilla', 'configuracionCobros', 'tipoCargo'));
     }
 
     /**

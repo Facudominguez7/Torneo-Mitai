@@ -51,7 +51,7 @@
             <div class="mt-4 flex flex-wrap gap-3">
                 <button class="min-h-11 rounded-md bg-blue-900 px-4 py-2 font-medium text-white focus:ring-2 focus:ring-blue-500">Aplicar filtros</button>
                 <a class="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 py-2 text-gray-700" href="{{ route('cobros.index', ['idEdicion' => $EdicionSeleccionada->id]) }}">Restablecer</a>
-                <a class="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 py-2 text-gray-700" href="{{ route('cobros.imprimir', $filtros) }}" target="_blank" rel="noopener">Imprimir / guardar PDF</a>
+                <a class="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 py-2 text-gray-700" href="{{ route('cobros.imprimir', $filtros) }}" data-cobros-imprimir onclick="event.preventDefault(); imprimirEnIframe(this.href)">Imprimir / guardar PDF</a>
             </div>
         </form>
         <section class="mt-6 rounded-lg border border-gray-200 bg-white p-4" aria-label="Configuración global">

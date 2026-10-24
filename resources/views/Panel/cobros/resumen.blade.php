@@ -22,7 +22,8 @@
 </div>
 <p class="mt-3 text-sm text-gray-600">ARS enteros. Los ingresos reales y el crédito abarcan toda la edición, no solo el equipo o partido filtrado. Las aplicaciones no son nuevos ingresos. El crédito no depende del rango de recepción.</p>
 <ul class="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-700" aria-label="Ingresos por medio">
-    @foreach (['efectivo' => 'Efectivo', 'transferencia' => 'Transferencia', 'mercado_pago' => 'Mercado Pago'] as $medio => $nombre)
+    @foreach (['efectivo' => 'Efectivo', 'mercado_pago' => 'Mercado Pago', 'transferencia' => 'Transferencia (histórico)'] as $medio => $nombre)
+        @continue($medio === 'transferencia' && empty($resumen['ingresos_por_medio'][$medio]))
         <li>{{ $nombre }}: $ {{ number_format($resumen['ingresos_por_medio'][$medio] ?? 0, 0, ',', '.') }}</li>
     @endforeach
 </ul>

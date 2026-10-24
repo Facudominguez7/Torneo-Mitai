@@ -307,6 +307,32 @@
                                                 </div>
                                             @endif
 
+                                            @php
+                                                $cobrosPartido = collect([
+                                                    ['equipo' => $p->nombre_local, 'condicion' => 'Local', 'cargo' => ($cobrosPorPartido ?? collect())->get($p->id.'-'.$p->idEquipoLocal)],
+                                                    ['equipo' => $p->nombre_visitante, 'condicion' => 'Visitante', 'cargo' => ($cobrosPorPartido ?? collect())->get($p->id.'-'.$p->idEquipoVisitante)],
+                                                ])->filter(fn (array $cobro): bool => $cobro['cargo'] !== null);
+                                            @endphp
+                                            @if ($cobrosPartido->isNotEmpty())
+                                                <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+                                                    @foreach ($cobrosPartido as $cobro)
+                                                        @php
+                                                            $deudaCobro = number_format($cobro['cargo']['deuda_ars'], 0, ',', '.');
+                                                            [$cobroVariant, $cobroLabel] = match ($cobro['cargo']['estado']) {
+                                                                'pagado' => ['success', 'Planilla pagada'],
+                                                                'exento' => ['info', 'Planilla exenta'],
+                                                                'parcial' => ['warning', 'Pago parcial, debe $ '.$deudaCobro],
+                                                                default => ['danger', 'Debe planilla $ '.$deudaCobro],
+                                                            };
+                                                        @endphp
+                                                        <x-ui.badge :variant="$cobroVariant" data-dashboard-cobro="{{ $cobro['cargo']['id'] }}">
+                                                            <span class="font-bold" aria-hidden="true">$</span>
+                                                            {{ $cobro['equipo'] }} ({{ $cobro['condicion'] }}): {{ $cobroLabel }}
+                                                        </x-ui.badge>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+
                                             <div class="mt-4 flex justify-center">
                                                 <x-ui.button size="sm" variant="secondary"
                                                     href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $idEdicionContexto, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0, 'origen' => 'admin', 'horario_filtro' => $horarioString]) }}">

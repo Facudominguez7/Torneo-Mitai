@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Cobros\PagosCobroService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -53,7 +54,7 @@ class PagoPlanilla extends Model
                 }
             }
 
-            if (! in_array($pago->medio, ['efectivo', 'transferencia', 'mercado_pago'], true)) {
+            if (! in_array($pago->medio, PagosCobroService::MEDIOS, true)) {
                 throw new LogicException('El medio de pago no está permitido.');
             }
             $clave = $atributos['clave_idempotencia'] ?? null;
