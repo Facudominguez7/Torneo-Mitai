@@ -37,6 +37,7 @@ class ConsultaRequest extends FormRequest
             'tipo' => ['nullable', Rule::in(array_keys(CargoPlanilla::TIPOS_FINANCIEROS))],
             'partido' => ['nullable', 'integer', 'min:1', 'required_with:tipo'],
             'page' => ['nullable', 'integer', 'min:1'],
+            'buscar' => ['nullable', 'string', 'max:150'],
         ];
     }
 
@@ -50,9 +51,10 @@ class ConsultaRequest extends FormRequest
                 && ! CargoPlanilla::query()->where('idEquipo', $this->integer('idEquipo'))->where('idEdicion', $this->integer('idEdicion'))->exists()) {
                 $validator->errors()->add('idEquipo', 'El equipo no pertenece a la edición seleccionada.');
             }
-            if ($this->filled('partido') && (! $this->filled('tipo') || ! CargoPlanilla::query()
-                ->where('idEdicion', $this->integer('idEdicion'))->where('tipo', $this->input('tipo'))->where('parent_id', $this->integer('partido'))->exists())) {
-                $validator->errors()->add('partido', 'El partido no tiene cargos en la edición seleccionada.');
+            $clase = CargoPlanilla::TIPOS_FINANCIEROS[$this->input('tipo')] ?? null;
+            if ($this->filled('partido') && ($clase === null || ! $clase::query()
+                ->where('idEdicion', $this->integer('idEdicion'))->whereKey($this->integer('partido'))->exists())) {
+                $validator->errors()->add('partido', 'El partido no pertenece a la edición seleccionada.');
             }
         }];
     }

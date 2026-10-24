@@ -40,6 +40,7 @@ class ConsultaCobrosService
                 'id' => $cargo->id, 'idEquipo' => $cargo->idEquipo, 'idCategoria' => $cargo->idCategoria,
                 'tipo' => $cargo->tipo, 'partido' => $cargo->parent_id,
                 'idFecha' => $padre?->idFechas ?? data_get($cargo->snapshot, 'partido.id_fecha'),
+                'nombre_vigente' => $cargo->equipo?->nombre,
                 'equipo' => data_get($cargo->snapshot, 'equipo.nombre') ?? $cargo->equipo?->nombre ?? 'Equipo eliminado',
                 'oponente' => data_get($cargo->snapshot, 'oponente.nombre', 'Sin rival histórico'),
                 'categoria' => data_get($cargo->snapshot, 'categoria.nombre') ?? $cargo->categoria?->nombreCategoria ?? 'Categoría eliminada',
@@ -72,10 +73,29 @@ class ConsultaCobrosService
                 'deuda_ars' => (int) $filas->sum('deuda_ars'),
                 'deudores' => $filas->where('deuda_ars', '>', 0)->unique('idEquipo')->count(),
                 'eximido_ars' => (int) $filas->sum('eximido_ars'),
+                'exenciones' => $filas->where('eximido_ars', '>', 0)->count(),
                 'recaudacion_asociada_ars' => (int) $filas->sum('aplicado_ars'),
                 'ingresos_ars' => (int) $recibidos->sum('importe_ars'), 'credito_ars' => (int) $credito,
                 'ingresos_por_medio' => $recibidos->groupBy('medio')->map(fn (Collection $grupo): int => (int) $grupo->sum('importe_ars'))->all(),
             ],
+        ];
+    }
+
+    public function resultadoPago(PagoPlanilla $pago): array
+    {
+        $cuenta = $pago->cuenta;
+        $filas = $this->consultar(['idEdicion' => $cuenta->idEdicion, 'idEquipo' => $cuenta->idEquipo, 'estado' => 'todos', 'periodo' => 'todos'])['cargos'];
+        $aplicaciones = AplicacionPagoPlanilla::query()->where('pago_id', $pago->id)->get();
+        $pagosCuenta = PagoPlanilla::query()->where('cuenta_id', $cuenta->id)->get();
+        $usado = AplicacionPagoPlanilla::query()->whereIn('pago_id', $pagosCuenta->modelKeys())->sum('importe_ars');
+
+        return [
+            'id' => $pago->id, 'importe_ars' => $pago->importe_ars,
+            'aplicado_ars' => (int) $aplicaciones->sum('importe_ars'),
+            'aplicado_origen_ars' => (int) $aplicaciones->where('cargo_id', $pago->cargo_origen_id)->sum('importe_ars'),
+            'deuda_cargo_ars' => $filas->firstWhere('id', $pago->cargo_origen_id)['deuda_ars'],
+            'credito_pago_ars' => $pago->importe_ars - (int) $aplicaciones->sum('importe_ars'),
+            'credito_equipo_ars' => (int) $pagosCuenta->sum('importe_ars') - (int) $usado,
         ];
     }
 
@@ -85,6 +105,9 @@ class ConsultaCobrosService
             if (isset($filtros[$clave]) && (string) $filtros[$clave] !== (string) $fila[$clave]) {
                 return false;
             }
+        }
+        if (isset($filtros['buscar']) && ! str_contains(mb_strtolower(($fila['nombre_vigente'] ?? '').' '.$fila['equipo']), mb_strtolower(trim($filtros['buscar'])))) {
+            return false;
         }
         $estado = $filtros['estado'] ?? 'deudores';
         if ($estado === 'deudores' ? $fila['deuda_ars'] === 0 : ($estado !== 'todos' && $estado !== $fila['estado'])) {

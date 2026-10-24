@@ -9,9 +9,9 @@ use App\Http\Controllers\Google\LoginController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\Panel\ControladorCampeon;
 use App\Http\Controllers\Panel\ControladorCategoria;
+use App\Http\Controllers\Panel\ControladorCobros;
 use App\Http\Controllers\Panel\ControladorConsultaJugador;
 use App\Http\Controllers\Panel\ControladorCopa;
-use App\Http\Controllers\Panel\ControladorCobros;
 use App\Http\Controllers\Panel\ControladorEdicion;
 use App\Http\Controllers\Panel\ControladorEquipo;
 use App\Http\Controllers\Panel\ControladorEquiposEdiciones;
@@ -71,6 +71,10 @@ Route::get('forgot-password/{restablecer?}', [PasswordResetLinkController::class
 Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAccesPanelMiddleware::class, PanelEdicionContextMiddleware::class]], function () {
     Route::get('cobros', [ControladorCobros::class, 'index'])->name('cobros.index');
     Route::get('cobros/imprimir', [ControladorCobros::class, 'imprimir'])->name('cobros.imprimir');
+    Route::get('cobros/detalle', [ControladorCobros::class, 'detalle'])->name('cobros.detalle');
+    foreach (['pagos', 'exenciones', 'politicas', 'tarifa', 'activar'] as $operacion) {
+        Route::post('cobros/'.$operacion, [ControladorCobros::class, 'operar'])->name('cobros.'.$operacion);
+    }
     Route::resource('equipo', ControladorEquipo::class);
     Route::resource('categoria', ControladorCategoria::class);
     Route::resource('edicion', ControladorEdicion::class);

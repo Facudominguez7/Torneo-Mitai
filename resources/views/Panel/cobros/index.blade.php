@@ -5,7 +5,7 @@
     <section class="mt-4 rounded-lg border border-gray-200 bg-white p-4" aria-labelledby="ayuda-cobros">
         <h2 id="ayuda-cobros" class="font-semibold text-gray-900">Consulta administrativa · {{ $configuracion?->activado_at ? 'Cobros activados' : 'Cobros sin activar' }}</h2>
         <p class="mt-2 text-sm text-gray-700">Abrir esta pantalla no activa cobros ni genera cargos. La activación es manual y solo alcanza altas futuras; guardar una tarifa no activa el sistema. Los pagos son manuales, admiten parciales y conservan excedentes como crédito de la misma edición. No existe anulación ni reversión de pagos.</p>
-        <p class="mt-2 text-sm text-gray-700">Esta entrega es de solo lectura: pago, exención y configuración todavía no están disponibles aquí. Una exención cubre deuda residual, no devuelve ingresos ni crea crédito. Las políticas de equipo-edición solo afectan cargos futuros.</p>
+        <p class="mt-2 text-sm text-gray-700">Usá las acciones de cada equipo para registrar pagos, consultar el historial o eximir deuda residual. Cerrá el detalle antes de abrir otra operación. Una exención cubre deuda residual, no devuelve ingresos ni crea crédito. Las políticas de equipo-edición solo afectan cargos futuros.</p>
     </section>
     @if (! $EdicionSeleccionada)
         <x-ui.empty-state class="mt-6" message="Seleccioná una edición" description="Elegí una edición en la barra superior para consultar sus cobros." />
@@ -18,6 +18,10 @@
             <h2 class="font-semibold text-gray-900">Filtros de cargos</h2>
             @if (isset($filtros['partido']))<p class="mt-2 text-sm">Partido #{{ $filtros['partido'] }} · {{ $filtros['tipo'] }}. Restablecé los filtros para salir de este partido.</p>@endif
             <div class="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div class="min-w-0"><label for="buscar" class="block text-sm font-medium text-gray-700">Buscar por nombre de equipo</label>
+                    <input id="buscar" name="buscar" value="{{ $filtros['buscar'] ?? '' }}" maxlength="150" class="mt-1 min-h-11 w-full rounded-md border-gray-300">
+                    @error('buscar')<p class="text-sm text-red-700">{{ $message }}</p>@enderror
+                </div>
                 @foreach ([
                     'idCategoria' => ['Categoría', $categorias->pluck('nombreCategoria', 'id')->all(), 'Todas'],
                     'idEquipo' => ['Equipo', $equipos->pluck('nombre', 'id')->all(), 'Todos'],
@@ -50,8 +54,21 @@
                 <a class="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 py-2 text-gray-700" href="{{ route('cobros.imprimir', $filtros) }}" target="_blank" rel="noopener">Imprimir / guardar PDF</a>
             </div>
         </form>
+        <section class="mt-6 rounded-lg border border-gray-200 bg-white p-4" aria-label="Configuración global">
+            <h2 class="font-semibold">Configuración global</h2>
+            <p class="mt-2 text-sm">Tarifa vigente: $ {{ number_format($configuracion?->tarifa_ars ?? 0, 0, ',', '.') }} ARS. Aplica a altas futuras; no cambia deuda histórica.</p>
+            <div class="mt-3 flex flex-wrap gap-3">
+                <button type="button" data-cobro="tarifa" class="min-h-11 rounded border border-gray-300 px-4 py-2">Cambiar tarifa global</button>
+                @unless ($configuracion?->activado_at)<button type="button" data-cobro="activar" class="min-h-11 rounded bg-blue-900 px-4 py-2 text-white">Activar cobros…</button>@endunless
+            </div>
+        </section>
+        @include('Panel.cobros.modal')
         <section class="mt-6" aria-label="Totales">@include('Panel.cobros.resumen')</section>
         <section class="mt-6" aria-label="Cargos">@include('Panel.cobros.listado')</section>
         <div class="mt-4">{{ $cargos->links() }}</div>
     @endif
+@endsection
+
+@section('scripts')
+    <script>{!! file_get_contents(resource_path('js/cobros.js')) !!}</script>
 @endsection

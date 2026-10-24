@@ -34,6 +34,16 @@ afterEach(function (): void {
     Carbon::setTestNow();
 });
 
+it('busca por nombre vigente o histórico y cuenta exenciones sin convertirlas en ingresos', function (): void {
+    ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 25000]);
+    foreach (['Equipo consulta', 'nombre HISTÓRICO'] as $nombre) {
+        $this->actingAs($this->admin)->get(route('cobros.index', [
+            'idEdicion' => $this->contexto['edicion']->id, 'estado' => 'todos', 'buscar' => $nombre,
+        ]))->assertOk()->assertViewHas('resumen', fn (array $resumen): bool => $resumen['exenciones'] === 1 && $resumen['ingresos_ars'] === 0);
+    }
+    expect(app(ConsultaCobrosService::class)->consultar(['idEdicion' => $this->contexto['edicion']->id, 'estado' => 'todos', 'buscar' => 'inexistente'])['cargos'])->toHaveCount(0);
+});
+
 it('consulta deuda histórica sin crear estado financiero', function (): void {
     $resultado = app(ConsultaCobrosService::class)->consultar(['idEdicion' => $this->contexto['edicion']->id]);
     expect($resultado['resumen']['deuda_ars'])->toBe(25000)
@@ -101,6 +111,21 @@ it('permite futuros y recupera filtros en lista e impresión sin escrituras', fu
             ->assertViewHas('cargos', fn ($filas): bool => count($filas) === 1);
     }
     expect($escrituras)->toBe([]);
+});
+
+it('acepta contexto de partido sin cargos y rechaza partido ajeno o tipo inválido', function (): void {
+    $sinCargos = Partido::create(crearDatosPartidoCargos($this->contexto, $this->equipo, crearEquipoCargos($this->contexto, 'Nuevo rival')));
+    $ajeno = crearContextoCargos('Partido ajeno');
+    $partidoAjeno = Partido::create(crearDatosPartidoCargos($ajeno, crearEquipoCargos($ajeno, 'Local ajeno'), crearEquipoCargos($ajeno, 'Rival ajeno')));
+    $this->actingAs($this->admin);
+    foreach (['cobros.index', 'cobros.imprimir'] as $ruta) {
+        $base = ['idEdicion' => $this->contexto['edicion']->id, 'tipo' => CargoPlanilla::TIPO_PARTIDO, 'partido' => $sinCargos->id];
+        $this->getJson(route($ruta, $base))->assertOk()->assertViewHas('cargos', fn ($cargos): bool => count($cargos) === 0);
+        foreach ([['partido' => $partidoAjeno->id], ['partido' => 999999], ['tipo' => 'inventado'], ['tipo' => null]] as $invalido) {
+            $this->getJson(route($ruta, array_replace($base, $invalido)))->assertUnprocessable();
+        }
+    }
+    $this->assertDatabaseCount('cargo_planillas', 1);
 });
 
 it('valida entradas y recursos de otra edición sin errores internos', function (): void {

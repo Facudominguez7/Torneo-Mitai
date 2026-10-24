@@ -15,6 +15,10 @@
         <p class="text-sm text-gray-600">Equipos deudores en los filtros</p>
         <p class="mt-1 text-xl font-semibold text-gray-900">{{ $resumen['deudores'] }}</p>
     </div>
+    <div class="rounded-lg border border-gray-200 bg-white p-4">
+        <p class="text-sm text-gray-600">Cantidad de cargos con exención en los filtros</p>
+        <p class="mt-1 text-xl font-semibold text-gray-900">{{ $resumen['exenciones'] }}</p>
+    </div>
 </div>
 <p class="mt-3 text-sm text-gray-600">ARS enteros. Los ingresos reales y el crédito abarcan toda la edición, no solo el equipo o partido filtrado. Las aplicaciones no son nuevos ingresos. El crédito no depende del rango de recepción.</p>
 <ul class="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-700" aria-label="Ingresos por medio">

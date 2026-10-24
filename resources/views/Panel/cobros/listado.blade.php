@@ -12,7 +12,7 @@
             <tbody class="divide-y divide-gray-200">
                 @foreach ($cargos as $cargo)
                     <tr>
-                        <td class="break-words p-3"><strong>{{ $cargo['equipo'] }}</strong><br>vs. {{ $cargo['oponente'] }}<br><span class="text-gray-600">{{ $cargo['categoria'] }} · {{ $cargo['fecha'] ?? 'Sin fecha' }} · #{{ $cargo['partido'] }} {{ $cargo['tipo'] === 'planilla_instancia_final' ? '(final)' : '' }}</span></td>
+                        <td class="break-words p-3"><strong>{{ $cargo['equipo'] }}</strong><br>vs. {{ $cargo['oponente'] }}<br><span class="text-gray-600">{{ $cargo['categoria'] }} · {{ $cargo['fecha'] ?? 'Sin fecha' }} · #{{ $cargo['partido'] }} {{ $cargo['tipo'] === 'planilla_instancia_final' ? '(final)' : '' }}</span>@unless ($impresion ?? false) @include('Panel.cobros.acciones') @endunless</td>
                         <td class="break-words p-3">{{ ucfirst($cargo['estado']) }}</td>
                         @foreach (['precio_ars', 'aplicado_ars', 'eximido_ars', 'deuda_ars'] as $campo)
                             <td class="break-words p-3 text-right tabular-nums">$ {{ number_format($cargo[$campo], 0, ',', '.') }}</td>
@@ -35,6 +35,7 @@
                             <div class="min-w-0"><dt class="text-gray-600">{{ $nombre }}</dt><dd class="break-words font-semibold">$ {{ number_format($cargo[$campo], 0, ',', '.') }}</dd></div>
                         @endforeach
                     </dl>
+                    @include('Panel.cobros.acciones')
                 </article>
             @endforeach
         </div>

@@ -665,7 +665,15 @@ it('la vista index muestra el formulario de eliminacion con confirmacion y filtr
     // rounded-full" hand-typed.
     $firmaBotonSm = 'inline-flex items-center justify-center gap-2 font-semibold transition focus:outline-none focus-visible:ring-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 text-xs';
     expect(substr_count($contenido, $firmaBotonSm))->toBe(4);
-    expect($contenido)->not->toContain('min-h-11');
+    $documento = new DOMDocument;
+    @$documento->loadHTML($contenido);
+    $xpath = new DOMXPath($documento);
+    $accionesLegacy = $xpath->query('//div[contains(concat(" ", normalize-space(@class), " "), " md:grid-cols-4 ")]')->item(0);
+    expect($accionesLegacy)->not->toBeNull();
+    expect($xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " min-h-11 ")]', $accionesLegacy)->length)->toBe(0);
+    $enlaceCobros = $xpath->query('//a[normalize-space(.)="Cobros de este partido"]');
+    expect($enlaceCobros->length)->toBe(1);
+    expect(explode(' ', $enlaceCobros->item(0)->getAttribute('class')))->toContain('min-h-11');
 });
 
 it('la vista edit deshabilita los equipos solo cuando el partido tiene actividad', function () {
