@@ -199,7 +199,7 @@ it('adquiere bloqueos FOR UPDATE en orden compatible', function (): void {
 
             return $coincidencia[1];
         }, $bloqueos);
-        expect($tablas)->toBe(['users', 'configuracion_cobro_planillas', 'cuenta_cobro_planillas', 'cuenta_cobro_planillas', 'cargo_planillas', 'aplicacion_pago_planillas', 'exencion_cobro_planillas']);
+        expect($tablas)->toBe(['users', 'configuracion_cobro_planillas', 'cuenta_cobro_planillas', 'cuenta_cobro_planillas', 'cargo_planillas', 'aplicacion_pago_planillas', 'exencion_cobro_planillas', 'ausencia_cobro_planillas']);
     } finally {
         DB::disableQueryLog();
     }

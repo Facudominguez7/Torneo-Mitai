@@ -3,6 +3,7 @@
 namespace App\Services\Cobros;
 
 use App\Models\AplicacionPagoPlanilla;
+use App\Models\AusenciaCobroPlanilla;
 use App\Models\CargoPlanilla;
 use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
@@ -71,9 +72,10 @@ class PagosCobroService
 
                 $aplicado = (int) AplicacionPagoPlanilla::query()->where('cargo_id', (int) $cargo->id)->lockForUpdate()->sum('importe_ars');
                 $exencion = ExencionCobroPlanilla::query()->where('cargo_id', (int) $cargo->id)->lockForUpdate()->first();
+                $ausente = AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', (int) $cargo->id)->lockForUpdate()->exists();
                 $pendiente = (new DistribucionCreditoService)->calcularDeuda([
                     'precio_original' => (int) $cargo->precio_original, 'aplicado_ars' => $aplicado,
-                    'eximido_ars' => $exencion === null ? 0 : $exencion->importe_ars,
+                    'eximido_ars' => $exencion === null ? 0 : $exencion->importe_ars, 'ausente' => $ausente,
                 ], (int) $cargo->id);
                 if ($pendiente === 0) {
                     throw ValidationException::withMessages(['cargo' => ['El cargo no registra deuda pendiente; no se admiten anticipos.']]);

@@ -3,6 +3,7 @@
 namespace App\Services\Cobros;
 
 use App\Models\AplicacionPagoPlanilla;
+use App\Models\AusenciaCobroPlanilla;
 use App\Models\CargoPlanilla;
 use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
@@ -134,12 +135,14 @@ class ConsultaCobrosService
             ->selectRaw('cargo_id, SUM(importe_ars) as total')->groupBy('cargo_id')->pluck('total', 'cargo_id');
         $eximidos = ExencionCobroPlanilla::query()->whereIn('cargo_id', $cargos->modelKeys())
             ->selectRaw('cargo_id, SUM(importe_ars) as total')->groupBy('cargo_id')->pluck('total', 'cargo_id');
+        $ausentes = AusenciaCobroPlanilla::query()->vigentes()->whereIn('cargo_id', $cargos->modelKeys())->pluck('cargo_id')->flip();
 
-        return $cargos->map(function (CargoPlanilla $cargo) use ($aplicados, $eximidos): array {
+        return $cargos->map(function (CargoPlanilla $cargo) use ($aplicados, $eximidos, $ausentes): array {
             $aplicado = (int) ($aplicados[$cargo->id] ?? 0);
             $eximido = (int) ($eximidos[$cargo->id] ?? 0);
+            $ausente = $ausentes->has($cargo->id);
             $deuda = (new DistribucionCreditoService)->calcularDeuda([
-                'precio_original' => $cargo->precio_original, 'aplicado_ars' => $aplicado, 'eximido_ars' => $eximido,
+                'precio_original' => $cargo->precio_original, 'aplicado_ars' => $aplicado, 'eximido_ars' => $eximido, 'ausente' => $ausente,
             ], $cargo->id);
             $padre = $cargo->parent;
             $fecha = $padre?->horario_datetime ?? $padre?->horario ?? data_get($cargo->snapshot, 'fecha_partido');
@@ -155,7 +158,7 @@ class ConsultaCobrosService
                 'fecha' => $fecha ? Carbon::parse($fecha)->format('Y-m-d H:i') : null,
                 'precio_ars' => $cargo->precio_original, 'aplicado_ars' => $aplicado,
                 'eximido_ars' => $eximido, 'deuda_ars' => $deuda,
-                'estado' => $deuda > 0 ? ($aplicado > 0 ? 'parcial' : 'pendiente') : ($eximido > 0 ? 'exento' : 'pagado'),
+                'estado' => $ausente ? 'no_vino' : ($deuda > 0 ? ($aplicado > 0 ? 'parcial' : 'pendiente') : ($eximido > 0 ? 'exento' : 'pagado')),
             ];
         });
     }
