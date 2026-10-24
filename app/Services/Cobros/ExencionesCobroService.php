@@ -147,6 +147,9 @@ class ExencionesCobroService
     {
         return DB::transaction(function () use ($actor, $equipoId, $edicionId, $motivo): array {
             $this->resolverActorAdmin($actor);
+            // La configuración global es el mutex común de cobros: se bloquea antes que la política
+            // para que dos exenciones simultáneas se serialicen en lugar de interbloquearse.
+            $this->exigirConfiguracionActiva();
             $politica = PoliticaExencionCobroPlanilla::query()->where('idEquipo', $equipoId)->where('idEdicion', $edicionId)->lockForUpdate()->first();
             $politicaNueva = $politica === null;
             $politica ??= $this->registrarPolitica($actor, $equipoId, $edicionId, $motivo);
