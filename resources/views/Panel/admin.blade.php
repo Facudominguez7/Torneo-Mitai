@@ -32,7 +32,7 @@
     <header data-panel-edicion-header
         class="z-30 flex w-full flex-col justify-center gap-2 border-b border-slate-200 bg-white/90 px-3 py-2 text-slate-700 shadow-sm backdrop-blur-sm sm:px-4 lg:ml-64 lg:h-16 lg:w-auto lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
         <div data-panel-header-primary-row class="flex w-full min-w-0 items-center justify-between gap-2 lg:w-auto lg:flex-1">
-            <div class="flex min-w-0 items-center gap-2">
+            <div class="flex min-w-0 flex-1 items-center gap-2">
                 <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
                     aria-controls="sidebar-multi-level-sidebar" type="button" aria-label="Abrir menú"
                     :aria-expanded="sidebarAbierto.toString()" @click="sidebarAbierto = true"
@@ -45,6 +45,22 @@
                     </svg>
                 </button>
                 <span class="whitespace-nowrap text-sm font-bold tracking-wide text-slate-800 sm:text-base">Mitaí Admin</span>
+                {{-- Buscador de jugador por DNI: sin JS hace el mismo POST que Consulta de jugador; con JS muestra el resultado en un modal. --}}
+                <form data-buscador-jugador data-url-rapida="{{ route('jugador.consulta-rapida') }}" action="{{ route('jugador.buscar') }}" method="POST" role="search"
+                    class="ml-1 flex min-w-0 flex-1 items-center gap-1 sm:ml-3 lg:max-w-xs">
+                    @csrf
+                    <input type="hidden" name="idEdicion" value="{{ $edicionActivaHeader?->id }}">
+                    <label for="buscador-jugador-dni" class="sr-only">Buscar jugador por DNI</label>
+                    <input id="buscador-jugador-dni" name="dni" type="text" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required
+                        placeholder="DNI del jugador" title="Ingresá el DNI solo con números"
+                        class="h-10 w-full min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30">
+                    <button type="submit" aria-label="Buscar jugador"
+                        class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300">
+                        <svg class="h-5 w-5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                        </svg>
+                    </button>
+                </form>
             </div>
         </div>
         <form data-panel-header-edition-row data-panel-edicion-form action="{{ route('admin') }}" method="GET"
@@ -67,6 +83,16 @@
             </button>
         </form>
     </header>
+    <style>#buscador-jugador-modal::backdrop { background: rgb(0 0 0 / .5); }</style>
+    <dialog id="buscador-jugador-modal" aria-labelledby="buscador-jugador-titulo" style="width:calc(100% - 2rem);max-height:90vh"
+        class="m-auto max-w-5xl overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 p-0 text-gray-900">
+        <div class="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-5 py-3">
+            <h2 id="buscador-jugador-titulo" tabindex="-1" class="min-w-0 break-words text-lg font-bold text-gray-800 focus:outline-none">Consulta de jugador</h2>
+            <button type="button" data-buscador-jugador-cerrar
+                class="min-h-11 flex-shrink-0 rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">Cerrar</button>
+        </div>
+        <div id="buscador-jugador-contenido" aria-live="polite" class="px-5 pb-5 pt-4"></div>
+    </dialog>
     <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-6 pt-4 sm:pt-6 lg:pl-64">
         @php
             $idEdicionContexto = $idEdicionActual;
@@ -684,6 +710,85 @@
                 cerrarModalFixtureImpresion();
             }
         });
+    </script>
+    <script>
+        // Buscador de jugador del header: trae el mismo resultado que Consulta de jugador y lo muestra en el modal.
+        (() => {
+            const formulario = document.querySelector('[data-buscador-jugador]');
+            const modal = document.getElementById('buscador-jugador-modal');
+            if (!formulario || !modal || typeof modal.showModal !== 'function') {
+                return;
+            }
+
+            const contenido = document.getElementById('buscador-jugador-contenido');
+            const titulo = document.getElementById('buscador-jugador-titulo');
+            const campoDni = document.getElementById('buscador-jugador-dni');
+            let consultaActual = 0;
+
+            const mostrarAviso = (texto) => {
+                const aviso = document.createElement('p');
+                aviso.setAttribute('role', 'alert');
+                aviso.className = 'rounded-lg border border-red-300 bg-red-50 p-4 text-red-800';
+                aviso.textContent = texto;
+                contenido.replaceChildren(aviso);
+            };
+
+            formulario.addEventListener('submit', async (evento) => {
+                evento.preventDefault();
+                const dni = campoDni.value.trim();
+                const numeroConsulta = ++consultaActual;
+
+                titulo.textContent = `Consulta de jugador · DNI ${dni}`;
+                const cargando = document.createElement('p');
+                cargando.className = 'text-sm text-gray-600';
+                cargando.textContent = 'Buscando jugador…';
+                contenido.replaceChildren(cargando);
+                if (!modal.open) {
+                    modal.showModal();
+                }
+                titulo.focus();
+
+                const url = new URL(formulario.dataset.urlRapida, window.location.origin);
+                url.searchParams.set('dni', dni);
+                const idEdicion = formulario.elements.idEdicion.value;
+                if (idEdicion) {
+                    url.searchParams.set('idEdicion', idEdicion);
+                }
+
+                try {
+                    const respuesta = await fetch(url, {
+                        credentials: 'same-origin',
+                        headers: { Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+                    if (numeroConsulta !== consultaActual) {
+                        return;
+                    }
+                    if (respuesta.redirected) {
+                        mostrarAviso('Tu sesión expiró. Recargá la página para volver a ingresar.');
+                        return;
+                    }
+                    if (!respuesta.ok && respuesta.status !== 422) {
+                        throw new Error(`HTTP ${respuesta.status}`);
+                    }
+                    contenido.innerHTML = await respuesta.text();
+                } catch (error) {
+                    if (numeroConsulta === consultaActual) {
+                        mostrarAviso('No se pudo completar la búsqueda. Probá de nuevo.');
+                    }
+                }
+            });
+
+            modal.querySelector('[data-buscador-jugador-cerrar]').addEventListener('click', () => modal.close());
+            modal.addEventListener('click', (evento) => {
+                if (evento.target === modal) {
+                    modal.close();
+                }
+            });
+            modal.addEventListener('close', () => {
+                consultaActual++;
+                campoDni.focus();
+            });
+        })();
     </script>
     @yield('scripts')
 </body>

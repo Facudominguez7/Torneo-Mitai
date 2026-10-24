@@ -41,6 +41,7 @@ class ControladorCobros extends Controller
         $datos['cargos'] = new LengthAwarePaginator($filas->forPage($pagina, 25), $filas->count(), 25, $pagina, [
             'path' => $request->url(), 'query' => $request->query(),
         ]);
+        $datos['deudores'] = $datos['EdicionSeleccionada'] ? $consulta->deudoresPorEquipo((int) $datos['EdicionSeleccionada']->id) : collect();
 
         return view('Panel.cobros.index', $datos);
     }
@@ -150,6 +151,8 @@ class ControladorCobros extends Controller
     private function datos(ConsultaRequest $request, ConsultaCobrosService $consulta): array
     {
         $filtros = array_filter($request->validated(), fn (mixed $valor): bool => $valor !== null && $valor !== '');
+        // La pantalla abre con todos los cargos, exentos y pagados incluidos.
+        $filtros += ['estado' => 'todos'];
         $idEdicion = $filtros['idEdicion'] ?? null;
 
         return $consulta->consultar($filtros) + [

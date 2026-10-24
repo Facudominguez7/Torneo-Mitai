@@ -171,6 +171,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     // Consulta de jugador
     Route::get('/consulta-jugador', [ControladorConsultaJugador::class, 'index'])->name('jugador.consulta');
     Route::post('/consulta-jugador/buscar', [ControladorConsultaJugador::class, 'buscar'])->name('jugador.buscar');
+    Route::get('/consulta-jugador/rapida', [ControladorConsultaJugador::class, 'consultaRapida'])->name('jugador.consulta-rapida');
 
     // Gestión de Instituciones
     Route::prefix('instituciones')->group(function () {

@@ -3,6 +3,7 @@
 use App\Models\AplicacionPagoPlanilla;
 use App\Models\CargoPlanilla;
 use App\Models\CuentaCobroPlanilla;
+use App\Models\Equipo;
 use App\Models\ExencionCobroPlanilla;
 use App\Models\PagoPlanilla;
 use App\Models\Partido;
@@ -182,4 +183,75 @@ it('aísla ingresos por edición y detecta crédito negativo aun con deudas vál
         AplicacionPagoPlanilla::create(['pago_id' => $pago->id, 'cargo_id' => $cargo->id, 'importe_ars' => 10000]);
     }
     expect(fn () => app(ConsultaCobrosService::class)->consultar($filtros))->toThrow(RuntimeException::class);
+});
+
+it('carga la consulta con el estado Todos por defecto e incluye los cargos exentos', function (): void {
+    ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 25000]);
+    $filtros = ['idEdicion' => $this->contexto['edicion']->id];
+
+    $this->actingAs($this->admin)->get(route('cobros.index', $filtros))
+        ->assertOk()
+        ->assertViewHas('cargos', fn ($cargos): bool => $cargos->count() === 1 && $cargos->first()['estado'] === 'exento')
+        ->assertSee('<option value="todos" selected', false)
+        ->assertDontSee('<option value="deudores" selected', false)
+        ->assertSee('Al entrar: todos los cargos de hoy y días anteriores, incluidos pagados y exentos.')
+        ->assertDontSee('Al entrar: solo deudores');
+
+    $this->actingAs($this->admin)->get(route('cobros.imprimir', $filtros))
+        ->assertOk()
+        ->assertSee('Estado: todos')
+        ->assertSee('Exento');
+});
+
+it('el filtro Deudores elegido a mano sigue ocultando los cargos exentos', function (): void {
+    ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 25000]);
+
+    $this->actingAs($this->admin)->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id, 'estado' => 'deudores']))
+        ->assertOk()
+        ->assertViewHas('cargos', fn ($cargos): bool => $cargos->count() === 0)
+        ->assertSee('<option value="deudores" selected', false);
+});
+
+function cargoDeudorConsulta(array $contexto, Equipo $equipo, Equipo $rival, int $precio, string $horario = '2026-04-05 10:00:00'): CargoPlanilla
+{
+    $partido = Partido::create(crearDatosPartidoCargos($contexto, $equipo, $rival, ['horario_datetime' => $horario]));
+
+    return CargoPlanilla::create([
+        'tipo' => CargoPlanilla::TIPO_PARTIDO, 'parent_type' => Partido::class, 'parent_id' => $partido->id,
+        'idEquipo' => $equipo->id, 'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id, 'precio_original' => $precio,
+        'snapshot' => ['equipo' => ['nombre' => $equipo->nombre]],
+    ]);
+}
+
+it('muestra una tarjeta por equipo deudor con lo que debe hoy, de mayor a menor deuda', function (): void {
+    $grande = crearEquipoCargos($this->contexto, 'Equipo grande');
+    $exento = crearEquipoCargos($this->contexto, 'Equipo exento');
+    $rival = crearEquipoCargos($this->contexto, 'Rival tarjetas');
+    cargoDeudorConsulta($this->contexto, $grande, $rival, 20000);
+    cargoDeudorConsulta($this->contexto, $grande, $rival, 15000);
+    cargoDeudorConsulta($this->contexto, $grande, $rival, 99000, '2026-07-01 10:00:00');
+    $cargoExento = cargoDeudorConsulta($this->contexto, $exento, $rival, 25000);
+    ExencionCobroPlanilla::create(['cargo_id' => $cargoExento->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 25000]);
+
+    $html = $this->actingAs($this->admin)->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSee('Equipos que deben planillas')
+        ->assertSeeInOrder(['data-cobros-deudor="'.$grande->id.'"', $grande->nombre, '$ 35.000', '2 planillas pendientes',
+            'data-cobros-deudor="'.$this->equipo->id.'"', $this->equipo->nombre, '$ 25.000', '1 planilla pendiente'], false)
+        ->assertDontSee('data-cobros-deudor="'.$exento->id.'"', false)
+        ->assertDontSee('Consulta administrativa')
+        ->assertSee('Configuración global · Cobros sin activar')
+        ->getContent();
+
+    expect($html)->toContain('href="'.e(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id, 'idEquipo' => $grande->id, 'estado' => 'deudores'])).'"');
+});
+
+it('avisa cuando ningun equipo debe planillas', function (): void {
+    ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 25000]);
+
+    $this->actingAs($this->admin)->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSee('Ningún equipo debe planillas a hoy.')
+        ->assertDontSee('data-cobros-deudor=', false);
 });
