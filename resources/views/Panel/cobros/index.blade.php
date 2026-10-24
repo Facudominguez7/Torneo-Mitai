@@ -22,7 +22,7 @@
                     'idCategoria' => ['Categoría', $categorias->pluck('nombreCategoria', 'id')->all(), 'Todas'],
                     'idEquipo' => ['Equipo', $equipos->pluck('nombre', 'id')->all(), 'Todos'],
                     'idFecha' => ['Fecha del torneo', $fechas->pluck('nombre', 'id')->all(), 'Todas'],
-                    'estado' => ['Estado', ['deudores' => 'Deudores (pendiente y parcial)', 'todos' => 'Todos', 'pendiente' => 'Pendiente', 'parcial' => 'Parcial', 'pagado' => 'Pagado', 'exento' => 'Exento'], null],
+                    'estado' => ['Estado', ['deudores' => 'Deudores (pendiente y parcial)', 'todos' => 'Todos', 'pendiente' => 'Pendiente', 'parcial' => 'Parcial', 'pagado' => 'Pagado', 'exento' => 'Exento', 'no_vino' => 'No vino'], null],
                     'periodo' => ['Período del partido', ['hasta_hoy' => 'Hoy y anteriores', 'futuros' => 'Futuros', 'todos' => 'Todos (incluye sin fecha)'], null],
                 ] as $clave => [$etiqueta, $opciones, $vacio])
                     <div class="min-w-0">

@@ -73,7 +73,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
     Route::get('cobros/imprimir', [ControladorCobros::class, 'imprimir'])->name('cobros.imprimir');
     Route::get('cobros/detalle', [ControladorCobros::class, 'detalle'])->name('cobros.detalle');
     Route::get('cobros/partido', [ControladorCobros::class, 'partido'])->name('cobros.partido');
-    foreach (['pagos', 'exenciones', 'exenciones-edicion', 'politicas', 'tarifa', 'activar'] as $operacion) {
+    foreach (['pagos', 'exenciones', 'exenciones-edicion', 'politicas', 'no-vino', 'no-vino-deshacer', 'tarifa', 'activar'] as $operacion) {
         Route::post('cobros/'.$operacion, [ControladorCobros::class, 'operar'])->name('cobros.'.$operacion);
     }
     Route::resource('equipo', ControladorEquipo::class);

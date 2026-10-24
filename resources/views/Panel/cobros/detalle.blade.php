@@ -2,7 +2,7 @@
     <section aria-label="Cargos del equipo">
         <h3 class="font-semibold">Cargos de esta edición · todos los estados y fechas</h3>
         @forelse ($cargos as $cargo)
-            <p class="mt-2 break-words text-sm">{{ $cargo['equipo'] }} · Cargo #{{ $cargo['id'] }} · {{ $cargo['fecha'] ?? 'Sin fecha' }} · {{ ucfirst($cargo['estado']) }}<br>Original $ {{ number_format($cargo['precio_ars'], 0, ',', '.') }} · Aplicado $ {{ number_format($cargo['aplicado_ars'], 0, ',', '.') }} · Eximido $ {{ number_format($cargo['eximido_ars'], 0, ',', '.') }} · Deuda $ {{ number_format($cargo['deuda_ars'], 0, ',', '.') }}</p>
+            <p class="mt-2 break-words text-sm">{{ $cargo['equipo'] }} · Cargo #{{ $cargo['id'] }} · {{ $cargo['fecha'] ?? 'Sin fecha' }} · {{ str_replace('_', ' ', ucfirst($cargo['estado'])) }}<br>Original $ {{ number_format($cargo['precio_ars'], 0, ',', '.') }} · Aplicado $ {{ number_format($cargo['aplicado_ars'], 0, ',', '.') }} · Eximido $ {{ number_format($cargo['eximido_ars'], 0, ',', '.') }} · Deuda $ {{ number_format($cargo['deuda_ars'], 0, ',', '.') }}</p>
         @empty <p>No hay cargos.</p> @endforelse
     </section>
     <section aria-label="Ingresos del equipo">
