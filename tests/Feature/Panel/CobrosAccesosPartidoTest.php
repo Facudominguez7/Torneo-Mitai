@@ -125,6 +125,7 @@ it('entrega el estado de cobro del partido para refrescar la planilla sin recarg
     $planilla->assertSee('data-cobros-seccion', false)->assertSee(e(route('cobros.partido', $parametros)), false);
 
     $this->get(route('cobros.partido', $parametros))->assertOk()
+        ->assertSee('data-cobros-grilla', false)
         ->assertSee('data-deuda="25000"', false)->assertDontSee('id="cobros-modal"', false);
 
     aplicarPagoAccesos($this->cargos[$this->local->id], 25000, $this->admin->id);

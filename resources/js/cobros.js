@@ -28,6 +28,7 @@
     let controlador;
     let desbordamiento;
     let refrescando = false;
+    let ultimaConsulta = 0;
     const leer = (nombre) => {
         try { return JSON.parse(sessionStorage.getItem(nombre)); } catch { return null; }
     };
@@ -60,13 +61,18 @@
     const refrescarSeccion = async (forzar = false) => {
         if (!seccion || (refrescando && !forzar)) return;
         refrescando = true;
+        const consulta = ++ultimaConsulta;
         try {
             const respuesta = await fetch(seccion.dataset.url, { headers: { Accept: 'text/html' }, cache: 'no-store' });
-            if (!respuesta.ok) return;
+            // Una sesión vencida redirige al login: nunca se inserta otra página en la planilla.
+            if (!respuesta.ok || respuesta.redirected) return;
             const plantilla = document.createElement('template');
             plantilla.innerHTML = (await respuesta.text()).trim();
+            if (consulta !== ultimaConsulta || !plantilla.content.querySelector('[data-cobros-grilla]')) return;
             if (firma(plantilla.content) === firma(seccion)) return;
+            const filaEnfocada = seccion.contains(document.activeElement) ? document.activeElement.closest('[data-planilla-cobro]')?.dataset.planillaCobro : null;
             seccion.replaceChildren(plantilla.content);
+            if (filaEnfocada) seccion.querySelector(`[data-planilla-cobro="${filaEnfocada}"] button`)?.focus({ preventScroll: true });
             const fila = cargo ? seccion.querySelector(`[data-planilla-cobro="${cargo.id}"]`) : null;
             if (modal.open && operacion === 'pago' && fila && !pendiente && !sinConfirmar && Number(fila.dataset.deuda) !== cargo.deuda_ars) {
                 cargo = { ...cargo, deuda_ars: Number(fila.dataset.deuda) };
@@ -99,6 +105,7 @@
         recuperar.className = 'min-h-11 rounded border border-gray-300 px-3 py-2 text-sm';
         recuperar.textContent = 'Recuperar pago sin confirmar';
         recuperar.dataset.cobro = 'pago';
+        recuperar.dataset.cobrosRecuperar = '';
         recuperar.dataset.cargo = JSON.stringify(sinConfirmar.cargo);
         aviso.after(recuperar);
     }
@@ -238,6 +245,7 @@
                 sessionStorage.removeItem('cobros-pago-sin-confirmar');
             }
             if (seccion) {
+                document.querySelector('[data-cobros-recuperar]')?.remove();
                 pendiente = false;
                 cerrar();
                 await refrescarSeccion(true);

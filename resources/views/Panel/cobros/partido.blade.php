@@ -1,4 +1,4 @@
-<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+<div class="grid grid-cols-1 gap-3 md:grid-cols-2" data-cobros-grilla>
     @foreach ([[$partido->idEquipoLocal, $partido->equipoLocal->nombre, 'Local'], [$partido->idEquipoVisitante, $partido->equipoVisitante->nombre, 'Visitante']] as [$idEquipoCobro, $nombreEquipoCobro, $condicionCobro])
         @php
             $cargoCobro = $cobrosPlanilla->get($idEquipoCobro);
