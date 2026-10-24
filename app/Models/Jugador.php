@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Jugador extends Model
 {
@@ -28,6 +30,22 @@ class Jugador extends Model
         'goles_totales',
         'tarjetas_rojas_totales',
     ];
+
+    /** Nombre y apellido se guardan con la inicial de cada palabra en mayúscula: "JUAN pablo" → "Juan Pablo". */
+    public static function capitalizarNombre(?string $valor): ?string
+    {
+        return $valor === null ? null : Str::title(trim($valor));
+    }
+
+    protected function nombre(): Attribute
+    {
+        return Attribute::make(set: fn (?string $valor): ?string => self::capitalizarNombre($valor));
+    }
+
+    protected function apellido(): Attribute
+    {
+        return Attribute::make(set: fn (?string $valor): ?string => self::capitalizarNombre($valor));
+    }
 
     public function planillas()
     {
