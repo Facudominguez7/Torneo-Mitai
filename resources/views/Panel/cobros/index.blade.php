@@ -30,7 +30,7 @@
                         <select id="{{ $clave }}" name="{{ $clave }}" class="mt-1 min-h-11 w-full rounded-md border-gray-300 text-sm focus:border-blue-600 focus:ring-blue-600">
                             @if ($vacio)<option value="">{{ $vacio }}</option>@endif
                             @foreach ($opciones as $valor => $nombre)
-                                <option value="{{ $valor }}" @selected((string) ($filtros[$clave] ?? ($clave === 'estado' ? 'todos' : ($clave === 'periodo' ? 'hasta_hoy' : ''))) === (string) $valor)>{{ $nombre }}</option>
+                                <option value="{{ $valor }}" @selected((string) ($filtros[$clave] ?? ($clave === 'estado' ? 'todos' : ($clave === 'periodo' ? 'todos' : ''))) === (string) $valor)>{{ $nombre }}</option>
                             @endforeach
                         </select>
                         @error($clave)<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
@@ -43,7 +43,7 @@
                     </div>
                 @endforeach
             </div>
-            <p class="mt-3 text-sm text-gray-600">Al entrar: todos los cargos de hoy y días anteriores, incluidos pagados y exentos. Para buscar futuros o cargos sin fecha, cambiá el período. El rango de recepción afecta solo ingresos reales por medio.</p>
+            <p class="mt-3 text-sm text-gray-600">Al entrar: todos los cargos, incluidos partidos futuros, sin fecha, pagados y exentos. Para ver solo hasta hoy, cambiá el período. El rango de recepción afecta solo ingresos reales por medio.</p>
             <div class="mt-4 flex flex-wrap gap-3">
                 <button class="min-h-11 rounded-md bg-blue-900 px-4 py-2 font-medium text-white focus:ring-2 focus:ring-blue-500">Aplicar filtros</button>
                 <a class="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 py-2 text-gray-700" href="{{ route('cobros.index', ['idEdicion' => $EdicionSeleccionada->id]) }}">Restablecer</a>

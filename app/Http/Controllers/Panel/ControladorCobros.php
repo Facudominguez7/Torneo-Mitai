@@ -158,8 +158,8 @@ class ControladorCobros extends Controller
     private function datos(ConsultaRequest $request, ConsultaCobrosService $consulta): array
     {
         $filtros = array_filter($request->validated(), fn (mixed $valor): bool => $valor !== null && $valor !== '');
-        // La pantalla abre con todos los cargos, exentos y pagados incluidos.
-        $filtros += ['estado' => 'todos'];
+        // La pantalla abre con todos los cargos: exentos, pagados, futuros y sin fecha incluidos.
+        $filtros += ['estado' => 'todos', 'periodo' => 'todos'];
         $idEdicion = $filtros['idEdicion'] ?? null;
 
         return $consulta->consultar($filtros) + [

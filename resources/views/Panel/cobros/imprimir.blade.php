@@ -19,7 +19,7 @@
     </div>
     <h1 class="text-2xl font-semibold">Cobros de planilla · {{ $EdicionSeleccionada?->nombre ?? 'Sin edición' }}</h1>
     <p class="mt-2 text-sm">Emitido: {{ now()->format('d/m/Y H:i') }} · Importes en ARS enteros · Solo consulta.</p>
-    <p class="mt-2 text-sm">Estado: {{ $filtros['estado'] ?? 'todos' }} · Período: {{ $filtros['periodo'] ?? 'hasta_hoy' }} · Categoría: {{ $categorias->firstWhere('id', $filtros['idCategoria'] ?? null)?->nombreCategoria ?? 'Todas' }} · Equipo: {{ $equipos->firstWhere('id', $filtros['idEquipo'] ?? null)?->nombre ?? 'Todos' }} · Fecha del torneo: {{ $fechas->firstWhere('id', $filtros['idFecha'] ?? null)?->nombre ?? 'Todas' }} · Día: {{ $filtros['fecha'] ?? 'Todos' }} · Partido: {{ $filtros['partido'] ?? 'Todos' }} {{ $filtros['tipo'] ?? '' }}</p>
+    <p class="mt-2 text-sm">Estado: {{ $filtros['estado'] ?? 'todos' }} · Período: {{ $filtros['periodo'] ?? 'todos' }} · Categoría: {{ $categorias->firstWhere('id', $filtros['idCategoria'] ?? null)?->nombreCategoria ?? 'Todas' }} · Equipo: {{ $equipos->firstWhere('id', $filtros['idEquipo'] ?? null)?->nombre ?? 'Todos' }} · Fecha del torneo: {{ $fechas->firstWhere('id', $filtros['idFecha'] ?? null)?->nombre ?? 'Todas' }} · Día: {{ $filtros['fecha'] ?? 'Todos' }} · Partido: {{ $filtros['partido'] ?? 'Todos' }} {{ $filtros['tipo'] ?? '' }}</p>
     <p class="mt-2 text-sm">Recepción de ingresos: {{ $filtros['recibido_desde'] ?? 'Sin inicio' }} a {{ $filtros['recibido_hasta'] ?? 'Sin fin' }}. El detalle incluye todos los cargos filtrados, sin paginación.</p>
     <section class="mt-4">@include('Panel.cobros.resumen')</section>
     <section class="mt-4">@include('Panel.cobros.listado', ['impresion' => true])</section>
