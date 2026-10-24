@@ -10,6 +10,36 @@ use Illuminate\Validation\ValidationException;
 
 require_once __DIR__.'/FixturesCargos.php';
 
+it('entrega la cancha textual intacta a persistencia sin convertir etiquetas en cero', function (string $cancha) {
+    $admin = crearAdminCargos();
+    activarCobrosCargos();
+    $contexto = crearContextoCargos();
+    $datos = crearDatosPartidoCargos($contexto, crearEquipoCargos($contexto, 'Local'), crearEquipoCargos($contexto, 'Visitante'), ['cancha' => $cancha]);
+    $despachador = Partido::getEventDispatcher();
+    Partido::setEventDispatcher(clone $despachador);
+    $observado = null;
+    Partido::creating(function (Partido $partido) use (&$observado) {
+        $observado = $partido->cancha;
+        throw new RuntimeException('Detener antes de persistencia');
+    });
+    try {
+        expect(fn () => (new ProgramacionCobroService)->crearPartido($admin, $datos))->toThrow(RuntimeException::class, 'Detener antes de persistencia');
+        expect($observado)->toBe($cancha)->and(CargoPlanilla::query()->count())->toBe(0);
+    } finally {
+        Partido::setEventDispatcher($despachador);
+    }
+})->with(['Cancha Norte 02', '02', '-1']);
+
+it('conserva los enteros con signo del formulario final sin normalizar su texto', function (string $cancha) {
+    $admin = crearAdminCargos();
+    activarCobrosCargos();
+    $contexto = crearContextoCargos();
+    $datos = crearDatosFinalCargos($contexto, crearEquipoCargos($contexto, 'Local'), crearEquipoCargos($contexto, 'Visitante'), ['cancha' => $cancha]);
+    $final = (new ProgramacionCobroService)->crearInstanciaFinal($admin, $datos);
+    expect($final->fresh()->cancha)->toBe($cancha)
+        ->and(CargoPlanilla::query()->first()->snapshot['cancha'])->toBe($cancha);
+})->with(['-1', '+1', '0']);
+
 it('acepta el interzonal real con grupo fecha y cancha sin definir', function (bool $activo) {
     $admin = crearAdminCargos();
     if ($activo) {

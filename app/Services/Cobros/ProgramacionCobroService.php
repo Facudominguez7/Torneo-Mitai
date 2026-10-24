@@ -28,8 +28,8 @@ use RuntimeException;
  * dos cuotas atómicas dentro de una única transacción.
  *
  * Los cargos sólo nacen junto a un alta nueva: no existe una vía para
- * generar cargos de partidos anteriores. El motor no está conectado a
- * rutas todavía; el actor será provisto por un controller futuro.
+ * generar cargos de partidos anteriores. Las altas HTTP proveen el actor
+ * autenticado, que el motor vuelve a autorizar dentro de la transacción.
  */
 class ProgramacionCobroService
 {
@@ -259,8 +259,8 @@ class ProgramacionCobroService
                 'idEdicion' => $contexto['idEdicion'],
                 'idCategoria' => $contexto['idCategoria'],
                 'horario_datetime' => $this->fechaHora($datos, 'horario_datetime', ! $interzonal),
-                'cancha' => $interzonal ? $this->enteroOpcional($datos, 'cancha', 0) : $this->enteroRequerido($datos, 'cancha', 0),
-                'jugado' => $this->enteroOpcional($datos, 'jugado', 0) ?? 0,
+                'cancha' => $this->canchaPartido($datos, $interzonal),
+                'jugado' => $this->enteroFormulario($datos, 'jugado', false) ?? 0,
                 'golesEquipoLocal' => $this->enteroOpcional($datos, 'golesEquipoLocal', 0),
                 'golesEquipoVisitante' => $this->enteroOpcional($datos, 'golesEquipoVisitante', 0),
                 'es_interzonal' => $interzonal,
@@ -275,7 +275,7 @@ class ProgramacionCobroService
             'idEquipoLocal' => $contexto['idEquipoLocal'],
             'idEquipoVisitante' => $contexto['idEquipoVisitante'],
             'horario' => $this->fechaHora($datos, 'horario'),
-            'cancha' => (string) $this->enteroRequerido($datos, 'cancha', 0),
+            'cancha' => (string) $this->enteroFormulario($datos, 'cancha', true),
         ];
     }
 
@@ -399,6 +399,31 @@ class ProgramacionCobroService
         if (! $evento->exists) {
             throw new RuntimeException('No se pudo registrar el historial de cobros.');
         }
+    }
+
+    /**
+     * Conserva la cancha legacy sin coerción; la columna mantiene su contrato
+     * de persistencia y cualquier rechazo revierte también los cargos.
+     */
+    private function canchaPartido(array $datos, bool $opcional): string|int|null
+    {
+        $valor = $datos['cancha'] ?? null;
+        if (is_int($valor)) {
+            return $valor;
+        }
+
+        Validator::make(['cancha' => $valor], ['cancha' => [$opcional ? 'nullable' : 'required', 'string']])->validate();
+
+        return $valor;
+    }
+
+    /** Enteros de formulario no monetarios: admite también el signo legacy. */
+    private function enteroFormulario(array $datos, string $clave, bool $requerido): int|string|null
+    {
+        $valor = $datos[$clave] ?? null;
+        Validator::make([$clave => $valor], [$clave => [$requerido ? 'required' : 'nullable', 'integer']])->validate();
+
+        return $valor;
     }
 
     private function enteroRequerido(array $datos, string $clave, int $minimo = 1): int
