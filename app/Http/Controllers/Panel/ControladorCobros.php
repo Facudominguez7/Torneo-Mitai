@@ -17,6 +17,7 @@ use App\Models\Fecha;
 use App\Models\HistorialCobroPlanilla;
 use App\Models\PagoPlanilla;
 use App\Models\PoliticaExencionCobroPlanilla;
+use App\Services\Cobros\AusenciasCobroService;
 use App\Services\Cobros\ConfiguracionCobroService;
 use App\Services\Cobros\ConsultaCobrosService;
 use App\Services\Cobros\CreditosCobroService;
@@ -87,6 +88,12 @@ class ControladorCobros extends Controller
                         break;
                     case 'cobros.exenciones-edicion':
                         return ['exencion_edicion' => app(ExencionesCobroService::class)->eximirEdicion($actor, $equipo, $edicion, $request->input('motivo'))];
+                    case 'cobros.no-vino':
+                        app(AusenciasCobroService::class)->marcarNoVino($actor, $equipo, $cargo, $request->input('motivo'));
+                        break;
+                    case 'cobros.no-vino-deshacer':
+                        app(AusenciasCobroService::class)->deshacerNoVino($actor, $equipo, $cargo);
+                        break;
                     case 'cobros.politicas':
                         app(ExencionesCobroService::class)->registrarPolitica($actor, $equipo, $edicion, $request->input('motivo'));
                         break;
@@ -151,8 +158,8 @@ class ControladorCobros extends Controller
     private function datos(ConsultaRequest $request, ConsultaCobrosService $consulta): array
     {
         $filtros = array_filter($request->validated(), fn (mixed $valor): bool => $valor !== null && $valor !== '');
-        // La pantalla abre con todos los cargos, exentos y pagados incluidos.
-        $filtros += ['estado' => 'todos'];
+        // La pantalla abre con todos los cargos: exentos, pagados, futuros y sin fecha incluidos.
+        $filtros += ['estado' => 'todos', 'periodo' => 'todos'];
         $idEdicion = $filtros['idEdicion'] ?? null;
 
         return $consulta->consultar($filtros) + [

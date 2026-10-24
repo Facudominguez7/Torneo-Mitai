@@ -68,6 +68,7 @@ class AplicacionPagoPlanilla extends Model
                     'precio_original' => (int) $cargo->precio_original,
                     'aplicado_ars' => (int) static::query()->where('cargo_id', (int) $cargo->id)->sum('importe_ars'),
                     'eximido_ars' => $exencion === null ? 0 : $exencion->importe_ars,
+                    'ausente' => AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', (int) $cargo->id)->exists(),
                 ], (int) $cargo->id);
             } catch (RuntimeException $error) {
                 throw new LogicException('El cargo registra deuda efectiva corrupta.', 0, $error);

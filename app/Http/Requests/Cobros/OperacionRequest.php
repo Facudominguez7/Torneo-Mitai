@@ -47,7 +47,7 @@ class OperacionRequest extends FormRequest
         return [
             'idEdicion' => [$configuracion ? 'nullable' : 'required', 'integer', 'exists:ediciones,id'],
             'idEquipo' => [$configuracion ? 'nullable' : 'required', 'integer', 'exists:equipos,id'],
-            'cargo_id' => [in_array($operacion, ['cobros.pagos', 'cobros.exenciones'], true) ? 'required' : 'nullable', 'integer', 'exists:cargo_planillas,id'],
+            'cargo_id' => [in_array($operacion, ['cobros.pagos', 'cobros.exenciones', 'cobros.no-vino', 'cobros.no-vino-deshacer'], true) ? 'required' : 'nullable', 'integer', 'exists:cargo_planillas,id'],
             'importe_ars' => [$pagoSimple ? 'required' : 'nullable', $arsEnteros, 'regex:/^[0-9]+$/D', 'integer', 'min:1', 'max:2147483647'],
             'importe_efectivo_ars' => ['nullable', $arsEnteros, 'regex:/^[0-9]+$/D', 'integer', 'min:0', 'max:2147483647'],
             'importe_mercado_pago_ars' => ['nullable', $arsEnteros, 'regex:/^[0-9]+$/D', 'integer', 'min:0', 'max:2147483647'],

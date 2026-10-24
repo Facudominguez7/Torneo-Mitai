@@ -17,6 +17,8 @@
         exencion: ['Eximir deuda residual', 'exenciones', ['motivo']],
         exencion_edicion: ['Exento de planilla en la edición', 'exenciones-edicion', ['motivo']],
         politica: ['Exención para cargos futuros', 'politicas', ['motivo']],
+        no_vino: ['El equipo no vino', 'no-vino', ['motivo']],
+        deshacer_no_vino: ['Deshacer no vino', 'no-vino-deshacer', []],
         tarifa: ['Guardar tarifa global', 'tarifa', ['tarifa_ars']],
         activar: ['Activar cobros globalmente', 'activar', ['confirmar']],
         detalle: ['Detalle e historial del equipo', 'detalle', []],
@@ -161,6 +163,8 @@
         contexto.textContent += ({
             exencion: 'Exime solo el saldo pendiente de este cargo. No devuelve pagos ni genera crédito.',
             politica: 'Solo alcanza cargos futuros de este equipo en esta edición. No elimina deuda actual.',
+            no_vino: 'El equipo no se presentó: no paga la planilla de este partido y no queda debiendo. No es una exención y se puede deshacer.',
+            deshacer_no_vino: 'Vuelve a cobrarse la planilla de este partido: el equipo queda debiendo el precio original.',
             exencion_edicion: `${cargo?.exento ? 'El equipo ya es exento para los partidos futuros.' : 'No pagará planilla en los partidos futuros de esta edición.'} Además se exime todo lo que debe hoy. Los pagos ya registrados se conservan y no se devuelven.`,
             tarifa: 'Afecta futuras altas de todas las ediciones. No cambia cargos históricos ni activa cobros.',
             activar: 'Acción global explícita. Revisá la tarifa antes de confirmar.',
@@ -244,7 +248,10 @@
             const exento = resultado.exencion_edicion;
             const mensaje = pagos ? recibo(pagos) : (exento
                 ? `${cargo.equipo} quedó exento de planilla en esta edición. Se eximieron ${exento.cargos_eximidos} cargos por ${ars(exento.eximido_ars)}.`
-                : 'Operación registrada. Saldos actualizados.');
+                : ({
+                    no_vino: `${cargo.equipo} figura como que no vino: no debe la planilla de este partido.`,
+                    deshacer_no_vino: `Se deshizo "No vino": ${cargo.equipo} vuelve a deber ${ars(cargo.precio_ars)} por este partido.`,
+                })[operacion] ?? 'Operación registrada. Saldos actualizados.');
             if (operacion === 'pago') {
                 sinConfirmar = null;
                 sessionStorage.removeItem('cobros-pago-sin-confirmar');

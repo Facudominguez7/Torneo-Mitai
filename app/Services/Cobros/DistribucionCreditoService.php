@@ -21,7 +21,7 @@ class DistribucionCreditoService
      * Calcula el plan de aplicaciones sin mutar las filas recibidas.
      *
      * Cada fila respeta la forma:
-     * array{id: int, precio_original: int, aplicado_ars: int, eximido_ars?: int, fecha_vigente: ?string, padre_valido: bool}
+     * array{id: int, precio_original: int, aplicado_ars: int, eximido_ars?: int, ausente?: bool, fecha_vigente: ?string, padre_valido: bool}
      *
      * @param  array<int, array<string, mixed>>  $cargos
      * @param  int  $cargoId  cargo elegido por el usuario
@@ -110,7 +110,7 @@ class DistribucionCreditoService
     }
 
     /**
-     * Deuda pendiente del cargo; cero significa saldado.
+     * Deuda pendiente del cargo; cero significa saldado o que el equipo no vino.
      *
      * @param  array<string, mixed>  $fila
      */
@@ -131,6 +131,15 @@ class DistribucionCreditoService
         $eximido = array_key_exists('eximido_ars', $fila) ? $fila['eximido_ars'] : 0;
         if (! is_int($eximido) || $eximido < 0 || $eximido > self::IMPORTE_MAXIMO || $eximido > $precio - $aplicado) {
             throw new RuntimeException("El cargo {$id} tiene un eximido_ars inválido o supera la deuda pendiente.");
+        }
+
+        // "No vino": el equipo no pagó, pero no debe. Nunca convive con pagos ni exenciones.
+        if (($fila['ausente'] ?? false) === true) {
+            if ($aplicado > 0 || $eximido > 0) {
+                throw new RuntimeException("El cargo {$id} figura como que no vino pero registra pagos o exención.");
+            }
+
+            return 0;
         }
 
         return $precio - $aplicado - $eximido;

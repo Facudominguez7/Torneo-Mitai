@@ -32,7 +32,7 @@ class ConsultaRequest extends FormRequest
             'fecha' => ['nullable', 'date_format:Y-m-d'],
             'recibido_desde' => ['nullable', 'date_format:Y-m-d'],
             'recibido_hasta' => ['nullable', 'date_format:Y-m-d', Rule::when($this->filled('recibido_desde'), ['after_or_equal:recibido_desde'])],
-            'estado' => ['nullable', Rule::in(['deudores', 'todos', 'pendiente', 'parcial', 'pagado', 'exento'])],
+            'estado' => ['nullable', Rule::in(['deudores', 'todos', 'pendiente', 'parcial', 'pagado', 'exento', 'no_vino'])],
             'periodo' => ['nullable', Rule::in(['hasta_hoy', 'futuros', 'todos'])],
             'tipo' => ['nullable', Rule::in(array_keys(CargoPlanilla::TIPOS_FINANCIEROS))],
             'partido' => ['nullable', 'integer', 'min:1', 'required_with:tipo'],

@@ -6,6 +6,7 @@ use App\Models\CuentaCobroPlanilla;
 use App\Models\ExencionCobroPlanilla;
 use App\Models\PagoPlanilla;
 use App\Models\Partido;
+use App\Services\Cobros\AusenciasCobroService;
 use App\Services\Cobros\ConfiguracionCobroService;
 use Illuminate\Support\Str;
 
@@ -61,6 +62,15 @@ it('distingue deuda total y parcial en el dashboard', function (): void {
     $this->actingAs($this->admin)->get(route('admin', ['idEdicion' => $this->contexto['edicion']->id]))
         ->assertOk()
         ->assertSeeInOrder([$this->local->nombre.' (Local): Debe planilla $ 25.000', $this->visitante->nombre.' (Visitante): Pago parcial, debe $ 15.000']);
+});
+
+it('muestra en el dashboard al equipo que no vino sin deuda', function (): void {
+    app(AusenciasCobroService::class)->marcarNoVino($this->admin, $this->local->id, $this->cargos[$this->local->id]->id);
+
+    $this->actingAs($this->admin)->get(route('admin', ['idEdicion' => $this->contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSeeInOrder([$this->local->nombre.' (Local): Planilla: no vino', $this->visitante->nombre.' (Visitante): Debe planilla $ 25.000'])
+        ->assertDontSee('Debe planilla $ 0');
 });
 
 it('omite el estado de pago en el dashboard para partidos sin cargos', function (): void {

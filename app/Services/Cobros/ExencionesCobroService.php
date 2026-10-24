@@ -3,6 +3,7 @@
 namespace App\Services\Cobros;
 
 use App\Models\AplicacionPagoPlanilla;
+use App\Models\AusenciaCobroPlanilla;
 use App\Models\CargoPlanilla;
 use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
@@ -51,9 +52,10 @@ class ExencionesCobroService
 
                 $aplicado = (int) AplicacionPagoPlanilla::query()->where('cargo_id', $cargoId)->lockForUpdate()->sum('importe_ars');
                 $previa = ExencionCobroPlanilla::query()->where('cargo_id', $cargoId)->lockForUpdate()->first();
+                $ausente = AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', $cargoId)->lockForUpdate()->exists();
                 $pendiente = (new DistribucionCreditoService)->calcularDeuda([
                     'precio_original' => (int) $cargo->precio_original, 'aplicado_ars' => $aplicado,
-                    'eximido_ars' => $previa === null ? 0 : $previa->importe_ars,
+                    'eximido_ars' => $previa === null ? 0 : $previa->importe_ars, 'ausente' => $ausente,
                 ], $cargoId);
                 if ($previa !== null || $pendiente === 0) {
                     throw ValidationException::withMessages(['cargo' => ['El cargo ya tiene una exención o no registra deuda pendiente.']]);
