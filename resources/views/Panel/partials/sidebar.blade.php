@@ -24,6 +24,11 @@
                     'activo' => request()->routeIs('partido.*', 'cargar-resultado', 'planilla.*'),
                 ],
                 [
+                    'label' => 'Cobros de planilla',
+                    'route' => route('cobros.index', $parametrosEdicionActual),
+                    'activo' => request()->routeIs('cobros.*'),
+                ],
+                [
                     'label' => 'Planillas e impresiones',
                     'route' => route('impresiones.index', $parametrosEdicionActual),
                     'activo' => request()->routeIs('impresiones.*'),

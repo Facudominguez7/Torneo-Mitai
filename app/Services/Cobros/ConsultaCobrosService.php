@@ -1,0 +1,101 @@
+<?php
+
+namespace App\Services\Cobros;
+
+use App\Models\AplicacionPagoPlanilla;
+use App\Models\CargoPlanilla;
+use App\Models\ConfiguracionCobroPlanilla;
+use App\Models\CuentaCobroPlanilla;
+use App\Models\ExencionCobroPlanilla;
+use App\Models\PagoPlanilla;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use RuntimeException;
+
+class ConsultaCobrosService
+{
+    /**
+     * Los ingresos se consultan por recepción; las aplicaciones por cargo.
+     * Nunca se suman pagos a través de un join con sus aplicaciones.
+     */
+    public function consultar(array $filtros): array
+    {
+        $edicion = $filtros['idEdicion'] ?? null;
+        $cargos = CargoPlanilla::query()->where('idEdicion', $edicion)
+            ->with(['parent', 'equipo', 'categoria'])->orderBy('id')->get();
+        $aplicados = AplicacionPagoPlanilla::query()->whereIn('cargo_id', $cargos->modelKeys())
+            ->selectRaw('cargo_id, SUM(importe_ars) as total')->groupBy('cargo_id')->pluck('total', 'cargo_id');
+        $eximidos = ExencionCobroPlanilla::query()->whereIn('cargo_id', $cargos->modelKeys())
+            ->selectRaw('cargo_id, SUM(importe_ars) as total')->groupBy('cargo_id')->pluck('total', 'cargo_id');
+        $filas = $cargos->map(function (CargoPlanilla $cargo) use ($aplicados, $eximidos): array {
+            $aplicado = (int) ($aplicados[$cargo->id] ?? 0);
+            $eximido = (int) ($eximidos[$cargo->id] ?? 0);
+            $deuda = (new DistribucionCreditoService)->calcularDeuda([
+                'precio_original' => $cargo->precio_original, 'aplicado_ars' => $aplicado, 'eximido_ars' => $eximido,
+            ], $cargo->id);
+            $padre = $cargo->parent;
+            $fecha = $padre?->horario_datetime ?? $padre?->horario ?? data_get($cargo->snapshot, 'fecha_partido');
+
+            return [
+                'id' => $cargo->id, 'idEquipo' => $cargo->idEquipo, 'idCategoria' => $cargo->idCategoria,
+                'tipo' => $cargo->tipo, 'partido' => $cargo->parent_id,
+                'idFecha' => $padre?->idFechas ?? data_get($cargo->snapshot, 'partido.id_fecha'),
+                'equipo' => data_get($cargo->snapshot, 'equipo.nombre') ?? $cargo->equipo?->nombre ?? 'Equipo eliminado',
+                'oponente' => data_get($cargo->snapshot, 'oponente.nombre', 'Sin rival histórico'),
+                'categoria' => data_get($cargo->snapshot, 'categoria.nombre') ?? $cargo->categoria?->nombreCategoria ?? 'Categoría eliminada',
+                'fecha' => $fecha ? Carbon::parse($fecha)->format('Y-m-d H:i') : null,
+                'precio_ars' => $cargo->precio_original, 'aplicado_ars' => $aplicado,
+                'eximido_ars' => $eximido, 'deuda_ars' => $deuda,
+                'estado' => $deuda > 0 ? ($aplicado > 0 ? 'parcial' : 'pendiente') : ($eximido > 0 ? 'exento' : 'pagado'),
+            ];
+        })->filter(fn (array $fila): bool => $this->coincide($fila, $filtros))->values();
+
+        $cuentas = CuentaCobroPlanilla::query()->where('idEdicion', $edicion)->pluck('id');
+        $pagos = PagoPlanilla::query()->whereIn('cuenta_id', $cuentas)->get();
+        $usoPagos = AplicacionPagoPlanilla::query()->whereIn('pago_id', $pagos->modelKeys())
+            ->selectRaw('pago_id, SUM(importe_ars) as total')->groupBy('pago_id')->pluck('total', 'pago_id');
+        $credito = $pagos->sum(function (PagoPlanilla $pago) use ($usoPagos): int {
+            $saldo = $pago->importe_ars - (int) ($usoPagos[$pago->id] ?? 0);
+            if ($saldo < 0) {
+                throw new RuntimeException('Un pago registra aplicaciones superiores a su importe.');
+            }
+
+            return $saldo;
+        });
+        $recibidos = $pagos->filter(fn (PagoPlanilla $pago): bool => (! isset($filtros['recibido_desde']) || $pago->recibido_at->toDateString() >= $filtros['recibido_desde'])
+            && (! isset($filtros['recibido_hasta']) || $pago->recibido_at->toDateString() <= $filtros['recibido_hasta']));
+
+        return [
+            'cargos' => $filas,
+            'configuracion' => ConfiguracionCobroPlanilla::query()->find(1),
+            'resumen' => [
+                'deuda_ars' => (int) $filas->sum('deuda_ars'),
+                'deudores' => $filas->where('deuda_ars', '>', 0)->unique('idEquipo')->count(),
+                'eximido_ars' => (int) $filas->sum('eximido_ars'),
+                'recaudacion_asociada_ars' => (int) $filas->sum('aplicado_ars'),
+                'ingresos_ars' => (int) $recibidos->sum('importe_ars'), 'credito_ars' => (int) $credito,
+                'ingresos_por_medio' => $recibidos->groupBy('medio')->map(fn (Collection $grupo): int => (int) $grupo->sum('importe_ars'))->all(),
+            ],
+        ];
+    }
+
+    private function coincide(array $fila, array $filtros): bool
+    {
+        foreach (['idCategoria', 'idEquipo', 'idFecha', 'tipo', 'partido'] as $clave) {
+            if (isset($filtros[$clave]) && (string) $filtros[$clave] !== (string) $fila[$clave]) {
+                return false;
+            }
+        }
+        $estado = $filtros['estado'] ?? 'deudores';
+        if ($estado === 'deudores' ? $fila['deuda_ars'] === 0 : ($estado !== 'todos' && $estado !== $fila['estado'])) {
+            return false;
+        }
+        if (isset($filtros['fecha']) && substr($fila['fecha'] ?? '', 0, 10) !== $filtros['fecha']) {
+            return false;
+        }
+        $periodo = $filtros['periodo'] ?? 'hasta_hoy';
+        $dia = $fila['fecha'] ? substr($fila['fecha'], 0, 10) : null;
+
+        return $periodo === 'todos' || ($dia !== null && ($periodo === 'futuros' ? $dia > today()->toDateString() : $dia <= today()->toDateString()));
+    }
+}

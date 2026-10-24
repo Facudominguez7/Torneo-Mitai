@@ -11,6 +11,7 @@ use App\Http\Controllers\Panel\ControladorCampeon;
 use App\Http\Controllers\Panel\ControladorCategoria;
 use App\Http\Controllers\Panel\ControladorConsultaJugador;
 use App\Http\Controllers\Panel\ControladorCopa;
+use App\Http\Controllers\Panel\ControladorCobros;
 use App\Http\Controllers\Panel\ControladorEdicion;
 use App\Http\Controllers\Panel\ControladorEquipo;
 use App\Http\Controllers\Panel\ControladorEquiposEdiciones;
@@ -68,6 +69,8 @@ Route::get('/instancias-finales', [ControladorHome::class, 'instanciasFinales'])
 Route::get('forgot-password/{restablecer?}', [PasswordResetLinkController::class, 'create'])->name('password.request');
 
 Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAccesPanelMiddleware::class, PanelEdicionContextMiddleware::class]], function () {
+    Route::get('cobros', [ControladorCobros::class, 'index'])->name('cobros.index');
+    Route::get('cobros/imprimir', [ControladorCobros::class, 'imprimir'])->name('cobros.imprimir');
     Route::resource('equipo', ControladorEquipo::class);
     Route::resource('categoria', ControladorCategoria::class);
     Route::resource('edicion', ControladorEdicion::class);
