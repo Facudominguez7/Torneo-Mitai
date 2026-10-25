@@ -43,6 +43,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'requires_email_verification_for_notifications',
         'restablecer_password',
         'last_notification_at',
+        'terminos_aceptados_at',
     ];
 
     /**
@@ -123,6 +124,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'last_notification_at' => 'datetime',
+            'terminos_aceptados_at' => 'datetime',
             'password' => 'hashed',
             'email_subscribed' => 'boolean',
             'requires_email_verification_for_notifications' => 'boolean',
