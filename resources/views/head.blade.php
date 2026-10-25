@@ -25,7 +25,9 @@
     <meta name="application-name" content="Torneo Mitai">
     <meta name="description" content="{{ $seo['descripcion'] }}">
     <meta name="robots" content="{{ $seo['indexar'] ? 'index, follow' : 'noindex, nofollow' }}">
-    <link rel="canonical" href="{{ $seo['canonica'] }}">
+    @if ($seo['canonica'])
+        <link rel="canonical" href="{{ $seo['canonica'] }}">
+    @endif
 
     {{-- Vista previa al compartir en redes y mensajería --}}
     <meta property="og:type" content="website">
@@ -33,7 +35,9 @@
     <meta property="og:locale" content="es_AR">
     <meta property="og:title" content="{{ $seo['titulo'] }}">
     <meta property="og:description" content="{{ $seo['descripcion'] }}">
-    <meta property="og:url" content="{{ $seo['canonica'] }}">
+    @if ($seo['canonica'])
+        <meta property="og:url" content="{{ $seo['canonica'] }}">
+    @endif
     <meta property="og:image" content="{{ $seo['imagen'] }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">

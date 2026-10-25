@@ -33,11 +33,14 @@ class SeoComposer
             default => $pagina['descripcion_general'] ?? $configuracion['descripcion'],
         };
 
+        $indexar = ! $this->request->is('Panel*') && ! ($ruta && Str::is($configuracion['sin_indexar'], $ruta));
+
         $view->with('seo', [
             'titulo' => $titulo,
             'descripcion' => $descripcion,
-            'canonica' => $this->urlCanonica($configuracion['parametros_canonicos']),
-            'indexar' => ! $this->request->is('Panel*') && ! ($ruta && Str::is($configuracion['sin_indexar'], $ruta)),
+            // Una página fuera del índice no necesita canónica, y así no se repiten en el HTML parámetros que nadie validó.
+            'canonica' => $indexar ? $this->urlCanonica($configuracion['parametros_canonicos']) : null,
+            'indexar' => $indexar,
             'imagen' => asset($configuracion['imagen']),
             'sitio' => $configuracion['sitio'],
             'datosEstructurados' => $ruta === 'home' ? $this->datosEstructurados($configuracion) : null,

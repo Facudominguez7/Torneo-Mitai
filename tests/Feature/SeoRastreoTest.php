@@ -34,7 +34,9 @@ it('lista en el sitemap las paginas publicas y cada edicion', function (): void 
 
 it('pide no indexar el acceso y las paginas privadas', function (string $ruta): void {
     $this->get($ruta)->assertOk()
-        ->assertSee('<meta name="robots" content="noindex, nofollow">', false);
+        ->assertSee('<meta name="robots" content="noindex, nofollow">', false)
+        ->assertDontSee('rel="canonical"', false)
+        ->assertDontSee('property="og:url"', false);
 })->with(['/login', '/register', '/forgot-password']);
 
 it('deja indexar las paginas publicas', function (): void {
