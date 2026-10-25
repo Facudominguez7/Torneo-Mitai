@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // sin token CSRF, por lo que debe estar excluida.
         $middleware->validateCsrfTokens(except: [
             'email/baja',
+            'suscripcion/*/baja',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
