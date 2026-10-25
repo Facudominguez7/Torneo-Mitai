@@ -5,6 +5,7 @@ use App\Http\Controllers\ControladorEquipoSeguido;
 use App\Http\Controllers\ControladorHome;
 use App\Http\Controllers\ControladorNotificacionesEmail;
 use App\Http\Controllers\ControladorPlanillaPublica;
+use App\Http\Controllers\ControladorSeo;
 use App\Http\Controllers\Google\LoginController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\Panel\ControladorCampeon;
@@ -66,6 +67,8 @@ Route::get('/tabla-de-posiciones', [ControladorHome::class, 'tablaPosiciones'])-
 Route::get('/tabla-de-goleadores', [ControladorHome::class, 'tablaGoleadores'])->name('tabla-goleadores');
 Route::get('/tabla-de-vallas', [ControladorHome::class, 'tablaVallas'])->name('tabla-vallas');
 Route::get('/instancias-finales', [ControladorHome::class, 'instanciasFinales'])->name('instancias-finales');
+Route::get('/robots.txt', [ControladorSeo::class, 'robots'])->name('robots');
+Route::get('/sitemap.xml', [ControladorSeo::class, 'sitemap'])->name('sitemap');
 Route::view('/terminos-y-condiciones', 'legales.terminos')->name('terminos');
 Route::view('/politica-de-privacidad', 'legales.privacidad')->name('privacidad');
 Route::get('forgot-password/{restablecer?}', [PasswordResetLinkController::class, 'create'])->name('password.request');

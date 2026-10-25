@@ -24,10 +24,14 @@ class SeoComposer
         $configuracion = config('seo');
         $ruta = $this->request->route()?->getName();
         $pagina = $configuracion['paginas'][$ruta] ?? null;
-        $edicion = $pagina ? $this->nombreEdicion($view) : null;
+        $edicion = $pagina ? $this->nombreEdicion($view, $pagina['ultima_por_defecto'] ?? false) : null;
 
-        $titulo = $pagina ? $this->reemplazarEdicion($pagina['titulo'], $edicion) : $configuracion['sitio'];
-        $descripcion = $pagina ? $this->reemplazarEdicion($pagina['descripcion'], $edicion) : $configuracion['descripcion'];
+        $titulo = $pagina ? str_replace(':edicion', $edicion ?? $configuracion['sitio'], $pagina['titulo']) : $configuracion['sitio'];
+        $descripcion = match (true) {
+            $pagina === null => $configuracion['descripcion'],
+            $edicion !== null => str_replace(':edicion', $edicion, $pagina['descripcion']),
+            default => $pagina['descripcion_general'] ?? $configuracion['descripcion'],
+        };
 
         $view->with('seo', [
             'titulo' => $titulo,
@@ -40,22 +44,16 @@ class SeoComposer
         ]);
     }
 
-    private function nombreEdicion(View $view): ?string
+    /** La edición que muestra la página: la elegida por el controlador o, si la página la usa por defecto, la última. */
+    private function nombreEdicion(View $view, bool $ultimaPorDefecto): ?string
     {
         $edicion = $view->getData()['EdicionSeleccionada'] ?? null;
 
-        if (! $edicion instanceof Edicion) {
-            $idEdicion = $this->request->query('idEdicion');
-            $edicion = $idEdicion ? Edicion::query()->find($idEdicion) : null;
-            $edicion ??= Edicion::query()->latest('id')->first();
+        if (! $edicion instanceof Edicion && $ultimaPorDefecto) {
+            $edicion = Edicion::query()->latest('id')->first();
         }
 
-        return $edicion?->nombre;
-    }
-
-    private function reemplazarEdicion(string $texto, ?string $edicion): string
-    {
-        return str_replace(':edicion', $edicion ?? config('seo.sitio'), $texto);
+        return $edicion instanceof Edicion ? $edicion->nombre : null;
     }
 
     /** @param  list<string>  $parametros */

@@ -21,21 +21,43 @@ it('titula la home con la edicion y describe el torneo', function (): void {
         ->assertSee('<meta name="twitter:card" content="summary_large_image">', false);
 });
 
-it('usa un titulo y una descripcion propios en cada pagina publica', function (string $url, string $titulo): void {
-    seoEdicion();
+it('usa un titulo propio con la edicion elegida en cada pagina publica', function (string $ruta, string $seccion): void {
+    $edicion = seoEdicion();
+    $titulo = "{$seccion} · 21° Edición Torneos Mita'í";
 
-    $this->get($url)->assertOk()
+    $this->get($ruta.'?idEdicion='.$edicion->id)->assertOk()
         ->assertSee('<title>'.e($titulo).'</title>', false)
         ->assertSee('<meta property="og:title" content="'.e($titulo).'">', false);
 })->with([
-    'fixture' => ['/fixture', "Fixture y resultados · 21° Edición Torneos Mita'í"],
-    'posiciones' => ['/tabla-de-posiciones', "Tabla de posiciones · 21° Edición Torneos Mita'í"],
-    'goleadores' => ['/tabla-de-goleadores', "Tabla de goleadores · 21° Edición Torneos Mita'í"],
-    'vallas' => ['/tabla-de-vallas', "Vallas menos vencidas · 21° Edición Torneos Mita'í"],
-    'campeones' => ['/campeones', "Campeones · 21° Edición Torneos Mita'í"],
-    'instancias finales' => ['/instancias-finales', "Instancias finales · 21° Edición Torneos Mita'í"],
-    'terminos' => ['/terminos-y-condiciones', "Términos y condiciones · Torneos Mita'í"],
+    'fixture' => ['/fixture', 'Fixture y resultados'],
+    'posiciones' => ['/tabla-de-posiciones', 'Tabla de posiciones'],
+    'goleadores' => ['/tabla-de-goleadores', 'Tabla de goleadores'],
+    'vallas' => ['/tabla-de-vallas', 'Vallas menos vencidas'],
+    'campeones' => ['/campeones', 'Campeones'],
+    'instancias finales' => ['/instancias-finales', 'Instancias finales'],
 ]);
+
+it('no nombra una edicion cuando la pagina solo muestra el selector', function (): void {
+    seoEdicion();
+
+    $this->get('/campeones')->assertOk()
+        ->assertSee('<title>'.e("Campeones · Torneos Mita'í").'</title>', false)
+        ->assertSee('<meta name="description" content="'.e("Los campeones de cada copa y categoría en todas las ediciones de Torneos Mita'í, fútbol infantil en Posadas, Misiones.").'">', false)
+        ->assertDontSee('21° Edición Torneos Mita&#039;í · ', false);
+});
+
+it('nombra la ultima edicion en las paginas que la muestran por defecto', function (): void {
+    seoEdicion('20° Edición Torneos Mita\'í');
+    seoEdicion();
+
+    $this->get('/instancias-finales')->assertOk()
+        ->assertSee('<title>'.e("Instancias finales · 21° Edición Torneos Mita'í").'</title>', false);
+});
+
+it('titula las paginas legales con el nombre del sitio', function (): void {
+    $this->get('/terminos-y-condiciones')->assertOk()
+        ->assertSee('<title>'.e("Términos y condiciones · Torneos Mita'í").'</title>', false);
+});
 
 it('nombra la edicion elegida y la conserva en la canonica sin los filtros de presentacion', function (): void {
     seoEdicion();
