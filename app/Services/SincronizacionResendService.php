@@ -57,12 +57,13 @@ class SincronizacionResendService
                     'segments' => [['id' => $segmento]],
                     'topics' => $this->topicos($suscriptor),
                 ]);
-                $suscriptor->resend_contacto_id = $contacto->id;
+                $suscriptor->forceFill(['resend_contacto_id' => $contacto->id])->save();
 
                 return;
             }
 
-            $suscriptor->resend_contacto_id = $idContacto;
+            // Se guarda ya: si falla un paso siguiente, una baja posterior tiene que encontrar este contacto.
+            $suscriptor->forceFill(['resend_contacto_id' => $idContacto])->save();
             $this->resend->contacts->update($idContacto, ['unsubscribed' => false]);
             $this->resend->contacts->segments->add($idContacto, $segmento);
         } else {
@@ -72,12 +73,20 @@ class SincronizacionResendService
         $this->resend->contacts->topics->update($idContacto, $this->topicos($suscriptor));
     }
 
-    /** Un suscriptor que nunca llegó a Resend no tiene nada que dar de baja allá. */
+    /**
+     * Sin id guardado igual se busca por correo: el contacto puede existir allá aunque la respuesta
+     * de un alta anterior se haya perdido (timeout) o venir de otra fuente.
+     */
     private function marcarBaja(Suscriptor $suscriptor): void
     {
-        if ($suscriptor->resend_contacto_id !== null) {
-            $this->resend->contacts->update($suscriptor->resend_contacto_id, ['unsubscribed' => true]);
+        $idContacto = $suscriptor->resend_contacto_id ?? $this->contactoExistente($suscriptor->email);
+
+        if ($idContacto === null) {
+            return;
         }
+
+        $suscriptor->forceFill(['resend_contacto_id' => $idContacto])->save();
+        $this->resend->contacts->update($idContacto, ['unsubscribed' => true]);
     }
 
     private function contactoExistente(string $email): ?string

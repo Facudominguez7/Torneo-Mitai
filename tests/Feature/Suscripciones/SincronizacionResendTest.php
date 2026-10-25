@@ -5,9 +5,11 @@
 use App\Models\Suscriptor;
 use App\Services\SuscripcionService;
 use GuzzleHttp\Client as ClienteGuzzle;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\Log;
 use Resend\Client;
@@ -184,4 +186,70 @@ it('el comando termina con error si algun suscriptor no se pudo sincronizar', fu
     $this->artisan('suscripciones:sincronizar')
         ->expectsOutput('Sincronizados: 0. Con error: 1.')
         ->assertFailed();
+});
+
+it('guarda el contacto encontrado aunque falle un paso posterior, y la baja llega a ese contacto', function (): void {
+    resendFalso([
+        respuestaResend(['object' => 'contact', 'id' => 'contacto-previo']),
+        respuestaResend(['object' => 'contact', 'id' => 'contacto-previo']),
+        respuestaResend(['id' => 'segmento-sitio']),
+        respuestaResend(['statusCode' => 429, 'name' => 'rate_limit_exceeded', 'message' => 'Too many requests'], 429),
+    ]);
+    $suscriptor = Suscriptor::factory()->pendiente()->create(['email' => 'tio@correo.com']);
+    app(SuscripcionService::class)->confirmar($suscriptor, now()->getTimestamp());
+
+    $suscriptor->refresh();
+    expect($suscriptor->resend_contacto_id)->toBe('contacto-previo')
+        ->and($suscriptor->resend_sincronizado_at)->toBeNull();
+
+    $historial = resendFalso([respuestaResend(['object' => 'contact', 'id' => 'contacto-previo'])]);
+    app(SuscripcionService::class)->darDeBaja($suscriptor);
+
+    expect($historial)->toHaveCount(1)
+        ->and(pedidoResend($historial, 0))->toBe(['metodo' => 'PATCH', 'ruta' => '/contacts/contacto-previo', 'cuerpo' => ['unsubscribed' => true]])
+        ->and($suscriptor->fresh()->resend_sincronizado_at)->not->toBeNull();
+});
+
+it('busca el contacto por correo al dar de baja si no tiene id guardado', function (): void {
+    resendFalso([
+        respuestaResend(['statusCode' => 404, 'name' => 'not_found', 'message' => 'Contact not found'], 404),
+        new ConnectException('Timeout', new Request('POST', 'contacts')),
+    ]);
+    $suscriptor = Suscriptor::factory()->pendiente()->create(['email' => 'sobrino@correo.com']);
+    app(SuscripcionService::class)->confirmar($suscriptor, now()->getTimestamp());
+    expect($suscriptor->fresh()->resend_contacto_id)->toBeNull();
+
+    $historial = resendFalso([
+        respuestaResend(['object' => 'contact', 'id' => 'contacto-remoto']),
+        respuestaResend(['object' => 'contact', 'id' => 'contacto-remoto']),
+    ]);
+    app(SuscripcionService::class)->darDeBaja($suscriptor->fresh());
+
+    expect($historial)->toHaveCount(2)
+        ->and(pedidoResend($historial, 0))->toMatchArray(['metodo' => 'GET', 'ruta' => '/contacts/sobrino@correo.com'])
+        ->and(pedidoResend($historial, 1))->toBe(['metodo' => 'PATCH', 'ruta' => '/contacts/contacto-remoto', 'cuerpo' => ['unsubscribed' => true]])
+        ->and($suscriptor->fresh()->resend_contacto_id)->toBe('contacto-remoto');
+});
+
+it('no marca nada en resend si quien se da de baja nunca llego a ser contacto', function (): void {
+    $historial = resendFalso([respuestaResend(['statusCode' => 404, 'name' => 'not_found', 'message' => 'Contact not found'], 404)]);
+    $suscriptor = Suscriptor::factory()->activo()->create(['email' => 'nuera@correo.com']);
+
+    app(SuscripcionService::class)->darDeBaja($suscriptor);
+
+    expect($historial)->toHaveCount(1)
+        ->and(pedidoResend($historial, 0)['metodo'])->toBe('GET')
+        ->and($suscriptor->fresh()->resend_sincronizado_at)->not->toBeNull();
+});
+
+it('el comando avisa que la sincronizacion esta apagada sin tocar a nadie', function (): void {
+    config(['suscripciones.resend.sincronizar' => false]);
+    $historial = resendFalso([]);
+    Suscriptor::factory()->activo()->create();
+
+    $this->artisan('suscripciones:sincronizar')
+        ->expectsOutput('La sincronización con Resend está apagada (el mailer de suscriptores no es resend).')
+        ->assertSuccessful();
+
+    expect($historial)->toHaveCount(0);
 });

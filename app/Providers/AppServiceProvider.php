@@ -7,6 +7,7 @@ use App\Models\Edicion;
 use App\Services\EmailDeliverabilityHeaders;
 use App\View\Composers\NavigationComposer;
 use App\View\Composers\SeoComposer;
+use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -21,6 +22,10 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View as ViewContract;
 use Resend\Client;
+use Resend\Transporters\HttpTransporter;
+use Resend\ValueObjects\ApiKey;
+use Resend\ValueObjects\Transporter\BaseUri;
+use Resend\ValueObjects\Transporter\Headers;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,7 +34,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(Client::class, fn (): Client => \Resend::client((string) config('services.resend.key')));
+        // Igual que Resend::client(), pero con timeout: la sincronización corre dentro de la petición del usuario.
+        $this->app->singleton(Client::class, fn (): Client => new Client(new HttpTransporter(
+            new GuzzleClient(['timeout' => 5, 'connect_timeout' => 3]),
+            BaseUri::from(getenv('RESEND_BASE_URL') ?: 'api.resend.com'),
+            Headers::withAuthorization(ApiKey::from((string) config('services.resend.key'))),
+        )));
     }
 
     /**

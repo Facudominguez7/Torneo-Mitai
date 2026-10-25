@@ -23,6 +23,12 @@ class SincronizarSuscriptoresResend extends Command
 
     public function handle(SincronizacionResendService $sincronizacion): int
     {
+        if (! config('suscripciones.resend.sincronizar')) {
+            $this->warn('La sincronización con Resend está apagada (el mailer de suscriptores no es resend).');
+
+            return self::SUCCESS;
+        }
+
         $sincronizados = 0;
         $conError = 0;
         $pausa = (int) config('suscripciones.resend.pausa_ms') * 1000;
