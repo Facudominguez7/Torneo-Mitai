@@ -39,6 +39,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return redirect()->route('login')
                 ->withInput($request->only('email'))
-                ->withErrors(['email' => 'La sesión expiró. Volvé a intentar.']);
+                ->with('aviso', 'La sesión expiró. Volvé a intentar.');
         });
     })->create();

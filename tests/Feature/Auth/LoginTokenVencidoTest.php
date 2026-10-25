@@ -14,7 +14,7 @@ it('vuelve al login con el email cargado y un aviso cuando el token vencio', fun
     $respuesta = $this->post('/login', ['_token' => 'token-viejo', 'email' => 'socio@example.com', 'password' => 'secreta']);
 
     $respuesta->assertRedirect(route('login'))
-        ->assertSessionHasErrors(['email' => 'La sesión expiró. Volvé a intentar.'])
+        ->assertSessionHas('aviso', 'La sesión expiró. Volvé a intentar.')
         ->assertSessionHasInput('email', 'socio@example.com')
         ->assertSessionMissing('_old_input.password');
     $this->assertGuest();
@@ -37,6 +37,12 @@ it('responde 419 en JSON cuando el login se pide por API con el token vencido', 
     $this->postJson('/login', ['_token' => 'token-viejo', 'email' => 'socio@example.com', 'password' => 'secreta'])
         ->assertStatus(419)
         ->assertJsonStructure(['message']);
+});
+
+it('muestra el aviso de sesion expirada en el login', function (): void {
+    $this->withSession(['aviso' => 'La sesión expiró. Volvé a intentar.'])->get('/login')
+        ->assertOk()
+        ->assertSeeText('La sesión expiró. Volvé a intentar.');
 });
 
 it('deshabilita el boton Acceder al enviar el formulario', function (): void {

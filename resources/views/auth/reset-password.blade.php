@@ -1,39 +1,24 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('password.store') }}">
+    <div class="flex flex-col gap-1.5">
+        <h1 class="text-[26px] font-bold leading-tight sm:text-[28px]">Elegí tu contraseña nueva</h1>
+        <p class="text-[15px] text-white/75">Usá una contraseña que no uses en otros sitios.</p>
+    </div>
+
+    <form method="POST" action="{{ route('password.store') }}" class="flex flex-col gap-4"
+        x-data="{ enviando: false }" x-on:submit="enviando = true" x-on:pageshow.window="enviando = false">
         @csrf
 
-        <!-- Password Reset Token -->
         <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+        <x-acceso.campo id="email" label="Correo electrónico" type="email" name="email" :value="old('email', $request->email)"
+            :errores="$errors->get('email')" required autofocus autocomplete="username" />
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+        <x-acceso.campo id="password" label="Contraseña nueva" name="password" revelable
+            :errores="$errors->get('password')" required autocomplete="new-password" />
 
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
+        <x-acceso.campo id="password_confirmation" label="Confirmar contraseña" name="password_confirmation" revelable
+            :errores="$errors->get('password_confirmation')" required autocomplete="new-password" />
 
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                                type="password"
-                                name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Reset Password') }}
-            </x-primary-button>
-        </div>
+        <x-acceso.boton x-bind:disabled="enviando">Guardar contraseña</x-acceso.boton>
     </form>
 </x-guest-layout>

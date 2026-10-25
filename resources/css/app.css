@@ -34,6 +34,9 @@
         --brand-navy: 14 75 94;
         --brand-teal: 42 109 129;
         --brand-gold: 247 242 128;
+        /* Pantallas de acceso (diseño "Cancha nocturna"): superficie navy profunda y teal claro legible sobre ella. */
+        --brand-navy-deep: 8 47 59;
+        --brand-teal-light: 155 211 226;
     }
 }
 
