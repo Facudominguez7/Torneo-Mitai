@@ -8,11 +8,14 @@ use App\Services\EmailDeliverabilityHeaders;
 use App\View\Composers\NavigationComposer;
 use App\View\Composers\SeoComposer;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event as FacadesEvent;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -33,6 +36,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Pedidos de suscripción por IP: cada uno puede mandar un correo y el cupo diario de Resend es chico.
+        RateLimiter::for('suscripcion', fn (Request $request): array => [
+            Limit::perMinute(5)->by('suscripcion-minuto:'.$request->ip()),
+            Limit::perDay((int) config('suscripciones.pedidos_por_dia'))->by('suscripcion-dia:'.$request->ip()),
+        ]);
+
         // Registrar listener para logear emails enviados
         FacadesEvent::listen(
             NotificationSent::class,

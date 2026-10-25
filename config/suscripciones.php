@@ -13,6 +13,10 @@ return [
     // Horas de validez del enlace de confirmación.
     'horas_confirmacion' => 72,
 
+    // El plan gratuito de Resend permite 100 correos individuales por día: estos topes cuidan ese cupo.
+    'minutos_entre_confirmaciones' => 10,
+    'pedidos_por_dia' => 20,
+
     'max_equipos' => 5,
 
     // Avisos que se pueden elegir y su columna en suscriptores.

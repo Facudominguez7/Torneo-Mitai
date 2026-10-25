@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Testing\TestResponse;
 
 beforeEach(function (): void {
+    // El .env local puede apuntar a MailHog; los tests fijan el mailer de producción.
+    config(['suscripciones.mailer' => 'resend']);
     Mail::fake();
 });
 
@@ -121,15 +123,62 @@ it('no cambia las preferencias de un suscriptor activo desde el formulario publi
     Mail::assertNothingSent();
 });
 
-it('vuelve a pedir confirmacion a quien se habia dado de baja', function (): void {
+it('vuelve a pedir confirmacion a quien se habia dado de baja y la baja sigue hasta que confirme', function (): void {
     $suscriptor = Suscriptor::factory()->deBaja()->create(['email' => 'tia@correo.com']);
+    $this->travel(1)->minute();
 
     suscribirse(['email' => 'tia@correo.com']);
 
-    $suscriptor->refresh();
-    expect($suscriptor->baja_at)->toBeNull()
-        ->and($suscriptor->confirmado_at)->toBeNull();
-    Mail::assertSent(ConfirmacionSuscripcionMail::class, fn (ConfirmacionSuscripcionMail $mail): bool => $mail->hasTo('tia@correo.com'));
+    expect($suscriptor->fresh()->baja_at)->not->toBeNull();
+    $enlace = null;
+    Mail::assertSent(ConfirmacionSuscripcionMail::class, function (ConfirmacionSuscripcionMail $mail) use (&$enlace): bool {
+        $enlace = $mail->urlConfirmacion;
+
+        return $mail->hasTo('tia@correo.com');
+    });
+
+    $this->get($enlace)->assertSessionHas('suscripcion', '¡Listo! Ya estás suscripto a los avisos de Torneos Mita\'í.');
+    expect($suscriptor->fresh()->estaActivo())->toBeTrue();
+});
+
+it('no reactiva con un enlace de confirmacion anterior a la baja', function (): void {
+    suscribirse(['email' => 'primo@correo.com']);
+    $enlace = null;
+    Mail::assertSent(ConfirmacionSuscripcionMail::class, function (ConfirmacionSuscripcionMail $mail) use (&$enlace): bool {
+        $enlace = $mail->urlConfirmacion;
+
+        return true;
+    });
+    $suscriptor = Suscriptor::query()->sole();
+    $this->get($enlace);
+    $this->travel(1)->minute();
+    $this->post(URL::signedRoute('suscripcion.baja', $suscriptor), ['_token' => 'x']);
+
+    $this->get($enlace)
+        ->assertRedirect('/')
+        ->assertSessionHas('suscripcion', 'Ese enlace ya no sirve. Volvé a suscribirte para recibir uno nuevo.');
+
+    expect($suscriptor->fresh()->estaActivo())->toBeFalse();
+});
+
+it('no manda otro correo de confirmacion al mismo email hasta que pase la espera', function (): void {
+    suscribirse(['email' => 'vecino@correo.com']);
+    suscribirse(['email' => 'vecino@correo.com']);
+    Mail::assertSentCount(1);
+
+    $this->travel(11)->minutes();
+    suscribirse(['email' => 'vecino@correo.com']);
+    Mail::assertSentCount(2);
+});
+
+it('limita los pedidos de suscripcion por dia desde la misma ip', function (): void {
+    foreach (range(1, 20) as $numero) {
+        suscribirse(['email' => "persona{$numero}@correo.com"])->assertRedirect('/');
+        $this->travel(13)->minutes();
+    }
+
+    suscribirse(['email' => 'persona21@correo.com'])->assertTooManyRequests();
+    Mail::assertSentCount(20);
 });
 
 it('suscribe sin confirmacion al usuario que ingreso con su email verificado', function (): void {
@@ -153,6 +202,7 @@ it('valida el correo y los equipos', function (array $datos, string $campo): voi
 })->with([
     'sin email' => [['email' => ''], 'email'],
     'email invalido' => [['email' => 'no-es-un-correo'], 'email'],
+    'email como lista' => [['email' => ['a@correo.com']], 'email'],
     'dominio bloqueado' => [['email' => 'prueba@example.com'], 'email'],
     'equipo inexistente' => [['email' => 'a@correo.com', 'equipos' => [999999]], 'equipos.0'],
     'aviso desconocido' => [['email' => 'a@correo.com', 'avisos' => ['spam']], 'avisos.0'],

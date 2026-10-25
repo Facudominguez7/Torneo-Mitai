@@ -6,6 +6,7 @@ use App\Http\Requests\Suscripcion\SuscribirRequest;
 use App\Models\Suscriptor;
 use App\Services\SuscripcionService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class ControladorSuscripcion extends Controller
 {
@@ -30,11 +31,13 @@ class ControladorSuscripcion extends Controller
             : "Te enviamos un correo a {$email}. Abrilo y confirmá la suscripción.");
     }
 
-    public function confirmar(Suscriptor $suscriptor): RedirectResponse
+    public function confirmar(Request $request, Suscriptor $suscriptor): RedirectResponse
     {
-        $this->suscripciones->confirmar($suscriptor);
+        $confirmado = $this->suscripciones->confirmar($suscriptor, $request->integer('emitido'));
 
-        return redirect('/')->with('suscripcion', self::MENSAJE_ACTIVO);
+        return redirect('/')->with('suscripcion', $confirmado
+            ? self::MENSAJE_ACTIVO
+            : 'Ese enlace ya no sirve. Volvé a suscribirte para recibir uno nuevo.');
     }
 
     public function baja(Suscriptor $suscriptor): RedirectResponse

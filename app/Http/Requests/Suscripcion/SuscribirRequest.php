@@ -10,7 +10,9 @@ class SuscribirRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
-        $this->merge(['email' => mb_strtolower(trim((string) $this->input('email')))]);
+        if (is_string($this->input('email'))) {
+            $this->merge(['email' => mb_strtolower(trim($this->input('email')))]);
+        }
     }
 
     /**
@@ -25,7 +27,7 @@ class SuscribirRequest extends FormRequest
                 'email',
                 'max:255',
                 function (string $attribute, mixed $value, \Closure $fail): void {
-                    if (EmailDomainGuard::isBlocked((string) $value)) {
+                    if (is_string($value) && EmailDomainGuard::isBlocked($value)) {
                         $fail(EmailDomainGuard::validationMessage());
                     }
                 },

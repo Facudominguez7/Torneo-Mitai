@@ -7,6 +7,7 @@ use App\Models\Suscriptor;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 
 /**
@@ -17,6 +18,7 @@ class SuscripcionService
     /**
      * Registra el pedido de suscripción. Un suscriptor activo no se modifica desde acá:
      * cualquiera puede escribir un correo ajeno, así que sus preferencias solo cambian con su enlace firmado.
+     * Por la misma razón, una baja sigue vigente hasta que se confirme el pedido nuevo.
      *
      * @param  list<int>  $idsEquipos
      * @param  list<string>|null  $avisos  null = todos los avisos
@@ -34,33 +36,47 @@ class SuscripcionService
             && mb_strtolower((string) $usuario->email) === $email
             && $usuario->hasVerifiedEmail();
 
+        $claveEspera = 'suscripcion-confirmacion:'.sha1($email);
+        if (! $verificadoPorCuenta && RateLimiter::tooManyAttempts($claveEspera, 1)) {
+            return false;
+        }
+
         DB::transaction(function () use ($suscriptor, $idsEquipos, $avisos, $usuario, $verificadoPorCuenta): void {
             foreach (config('suscripciones.avisos') as $aviso => $columna) {
                 $suscriptor->{$columna} = $avisos === null || in_array($aviso, $avisos, true);
             }
-            $suscriptor->usuario_id = $verificadoPorCuenta ? $usuario->id : $suscriptor->usuario_id;
-            $suscriptor->forceFill([
-                'confirmado_at' => $verificadoPorCuenta ? now() : null,
-                'baja_at' => null,
-            ])->save();
+            if ($verificadoPorCuenta) {
+                $suscriptor->usuario_id = $usuario->id;
+                $suscriptor->forceFill(['confirmado_at' => now(), 'baja_at' => null]);
+            }
+            $suscriptor->save();
             $suscriptor->equipos()->sync($idsEquipos);
         });
 
         if (! $verificadoPorCuenta) {
             // El mailer se elige acá: Mail::to()->send() pisa el que defina la mailable con el mailer por defecto.
             Mail::mailer(config('suscripciones.mailer'))->to($suscriptor->email)->send(new ConfirmacionSuscripcionMail($this->urlConfirmacion($suscriptor)));
+            RateLimiter::hit($claveEspera, (int) config('suscripciones.minutos_entre_confirmaciones') * 60);
         }
 
         return $verificadoPorCuenta;
     }
 
-    public function confirmar(Suscriptor $suscriptor): void
+    /**
+     * @param  int  $emitido  momento (timestamp) en que se generó el enlace
+     * @return bool false si el enlace es anterior a la baja: esa baja no se deshace con un correo viejo
+     */
+    public function confirmar(Suscriptor $suscriptor, int $emitido): bool
     {
-        if ($suscriptor->baja_at === null && $suscriptor->confirmado_at !== null) {
-            return;
+        if ($suscriptor->baja_at !== null && $suscriptor->baja_at->getTimestamp() >= $emitido) {
+            return false;
         }
 
-        $suscriptor->forceFill(['confirmado_at' => now(), 'baja_at' => null])->save();
+        if (! $suscriptor->estaActivo()) {
+            $suscriptor->forceFill(['confirmado_at' => now(), 'baja_at' => null])->save();
+        }
+
+        return true;
     }
 
     public function darDeBaja(Suscriptor $suscriptor): void
@@ -75,7 +91,7 @@ class SuscripcionService
         return URL::temporarySignedRoute(
             'suscripcion.confirmar',
             now()->addHours((int) config('suscripciones.horas_confirmacion')),
-            $suscriptor,
+            ['suscriptor' => $suscriptor, 'emitido' => now()->getTimestamp()],
         );
     }
 
