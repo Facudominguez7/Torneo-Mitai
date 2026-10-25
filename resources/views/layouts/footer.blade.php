@@ -5,7 +5,7 @@
         <span aria-hidden="true" class="text-white/50">·</span>
         <a href="{{ route('privacidad') }}" class="text-white/80 underline-offset-4 hover:text-white hover:underline">Política de privacidad</a>
     </nav>
-    <p class="text-sm md:text-base mt-2">Sitio desarrollado por <span class="font-semibold">Facundo Díaz Domínguez</span>.</p>
+    <p class="text-sm md:text-base mt-2">Sitio desarrollado por el <span class="font-semibold">Ing. Facundo Díaz Domínguez</span>.</p>
     <p class="mt-4">
         <a 
             href="https://www.linkedin.com/in/facundo-diaz-dominguez-0a826b230" 

@@ -20,6 +20,7 @@ it('muestra la politica de privacidad con los datos que guarda el sitio', functi
 
 it('enlaza las paginas legales desde el pie del sitio', function (): void {
     $this->blade("@include('layouts.footer')")
+        ->assertSeeText('Sitio desarrollado por el Ing. Facundo Díaz Domínguez.')
         ->assertSee(route('terminos'), false)
         ->assertSee(route('privacidad'), false);
 });
