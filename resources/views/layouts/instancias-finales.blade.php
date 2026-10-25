@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="es">
 @include('head')
 
 <body class="bg-[--color-primary] text-white">
@@ -201,3 +203,5 @@
         </div>
     </div>
 </body>
+
+</html>

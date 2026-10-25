@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="es">
 @include('head')
 
 {{-- Pantallas de acceso, diseño "Cancha nocturna": fondo navy con las líneas de la cancha y una sola tarjeta. --}}
