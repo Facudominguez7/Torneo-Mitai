@@ -15,7 +15,8 @@
         <x-auth-session-status :status="session('status')"
             class="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200" />
 
-        <form method="POST" action="{{ route('login') }}" class="space-y-5">
+        <form method="POST" action="{{ route('login') }}" class="space-y-5"
+            x-data="{ enviando: false }" x-on:submit="enviando = true" x-on:pageshow.window="enviando = false">
             @csrf
 
             <div class="space-y-2">
@@ -32,7 +33,7 @@
             </div>
 
             <div class="space-y-4">
-                <x-primary-button class="w-full justify-center">
+                <x-primary-button class="w-full justify-center disabled:cursor-wait disabled:opacity-60" x-bind:disabled="enviando">
                     {{ __('Acceder') }}
                 </x-primary-button>
 
