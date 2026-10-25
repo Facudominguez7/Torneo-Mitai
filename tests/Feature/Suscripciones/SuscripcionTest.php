@@ -195,7 +195,7 @@ it('suscribe sin confirmacion al usuario que ingreso con su email verificado', f
 });
 
 it('valida el correo y los equipos', function (array $datos, string $campo): void {
-    suscribirse($datos)->assertSessionHasErrors($campo);
+    suscribirse($datos)->assertSessionHasErrors($campo, null, 'suscripcion');
 
     expect(Suscriptor::query()->count())->toBe(0);
     Mail::assertNothingSent();
@@ -211,5 +211,5 @@ it('valida el correo y los equipos', function (array $datos, string $campo): voi
 it('limita la cantidad de equipos seguidos', function (): void {
     $equipos = collect(range(1, 6))->map(fn (int $numero): int => suscripcionEquipo("Equipo {$numero}")->id)->all();
 
-    suscribirse(['email' => 'a@correo.com', 'equipos' => $equipos])->assertSessionHasErrors('equipos');
+    suscribirse(['email' => 'a@correo.com', 'equipos' => $equipos])->assertSessionHasErrors('equipos', null, 'suscripcion');
 });

@@ -70,6 +70,7 @@ Route::get('/tabla-de-vallas', [ControladorHome::class, 'tablaVallas'])->name('t
 Route::get('/instancias-finales', [ControladorHome::class, 'instanciasFinales'])->name('instancias-finales');
 Route::get('/robots.txt', [ControladorSeo::class, 'robots'])->name('robots');
 Route::get('/sitemap.xml', [ControladorSeo::class, 'sitemap'])->name('sitemap');
+Route::get('/suscripcion', [ControladorSuscripcion::class, 'create'])->name('suscripcion.create');
 Route::post('/suscripcion', [ControladorSuscripcion::class, 'store'])->middleware('throttle:suscripcion')->name('suscripcion.store');
 Route::get('/suscripcion/{suscriptor}/confirmar', [ControladorSuscripcion::class, 'confirmar'])->middleware(['signed', 'throttle:10,1'])->name('suscripcion.confirmar');
 Route::post('/suscripcion/{suscriptor}/baja', [ControladorSuscripcion::class, 'baja'])->middleware(['signed', 'throttle:10,1'])->name('suscripcion.baja');

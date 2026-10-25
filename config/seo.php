@@ -108,6 +108,10 @@ return [
             'titulo' => "Términos y condiciones · Torneos Mita'í",
             'descripcion' => "Condiciones de uso del sitio de Torneos Mita'í: cuentas, información del torneo y panel de administración.",
         ],
+        'suscripcion.create' => [
+            'titulo' => "Avisos por correo · Torneos Mita'í",
+            'descripcion' => "Recibí por correo el resumen de cada fecha, la próxima fecha y los avisos de Torneos Mita'í.",
+        ],
         'privacidad' => [
             'titulo' => "Política de privacidad · Torneos Mita'í",
             'descripcion' => "Qué datos guarda el sitio de Torneos Mita'í, para qué se usan y cómo pedir su acceso o eliminación.",

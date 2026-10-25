@@ -5,9 +5,13 @@ namespace App\Http\Requests\Suscripcion;
 use App\Services\EmailDomainGuard;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class SuscribirRequest extends FormRequest
 {
+    /** Bolsa propia: el formulario vive en la home junto a otros formularios. */
+    protected $errorBag = 'suscripcion';
+
     protected function prepareForValidation(): void
     {
         if (is_string($this->input('email'))) {
@@ -34,8 +38,21 @@ class SuscribirRequest extends FormRequest
             ],
             'equipos' => ['sometimes', 'array', 'max:'.config('suscripciones.max_equipos')],
             'equipos.*' => ['integer', 'distinct', Rule::exists('equipos', 'id')],
-            'avisos' => ['sometimes', 'array'],
+            // El formulario manda "avisos" vacío cuando no se marca ninguno; sin la clave se reciben todos.
+            'avisos' => ['sometimes', 'nullable', 'array'],
             'avisos.*' => ['string', Rule::in(array_keys(config('suscripciones.avisos')))],
+        ];
+    }
+
+    /** @return list<\Closure> */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if ($this->has('avisos') && empty($this->input('avisos')) && empty($this->input('equipos'))) {
+                    $validator->errors()->add('avisos', 'Elegí al menos un aviso.');
+                }
+            },
         ];
     }
 

@@ -86,6 +86,18 @@
             </div>
         @endif
 
+        @if (session('suscripcion') || $errors->suscripcion->any())
+            <div id="suscripcion-aviso" class="mx-auto max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
+                @if (session('suscripcion'))
+                    <x-acceso.aviso tipo="exito">{{ session('suscripcion') }}</x-acceso.aviso>
+                @else
+                    <x-acceso.aviso tipo="error">
+                        <a href="#seguir-equipo-bloque" class="underline underline-offset-4">Revisá los datos de la suscripción.</a>
+                    </x-acceso.aviso>
+                @endif
+            </div>
+        @endif
+
         @php
             $edicionActual = $EdicionSeleccionada ?? $ultimaEdicion;
         @endphp
@@ -167,6 +179,12 @@
                     </div>
                 </div>
                 <script type="application/json" id="seguir-equipo-datos">@json($equiposDeLaEdicion->values())</script>
+                {{-- welcome.js lo copia en la tarjeta del equipo elegido y completa su id y su nombre. --}}
+                <template id="seguir-equipo-suscripcion">
+                    <div class="mt-6 border-t border-white/10 pt-6">
+                        <x-suscripcion.formulario :con-equipo="true" />
+                    </div>
+                </template>
             </section>
         @endif
 
@@ -336,6 +354,13 @@
     <footer class="mt-10 border-t border-white/10 bg-black/80">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-white/80">
             <p class="text-sm md:text-base">&copy; Mita'í {{ date('Y') }}. Todos los derechos reservados.</p>
+            <nav aria-label="Legales y avisos" class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm">
+                <a href="{{ route('terminos') }}" class="text-white/80 underline-offset-4 hover:text-white hover:underline">Términos y condiciones</a>
+                <span aria-hidden="true" class="text-white/50">·</span>
+                <a href="{{ route('privacidad') }}" class="text-white/80 underline-offset-4 hover:text-white hover:underline">Política de privacidad</a>
+                <span aria-hidden="true" class="text-white/50">·</span>
+                <a href="{{ route('suscripcion.create') }}" class="text-white/80 underline-offset-4 hover:text-white hover:underline">Avisos por correo</a>
+            </nav>
             <p class="mt-2 text-sm md:text-base">Sitio desarrollado por <span class="font-semibold text-white">Ing. Facundo Díaz
                     Domínguez</span>.</p>
             <p class="mt-4">

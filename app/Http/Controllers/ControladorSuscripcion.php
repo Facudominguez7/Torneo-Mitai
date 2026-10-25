@@ -7,12 +7,19 @@ use App\Models\Suscriptor;
 use App\Services\SuscripcionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ControladorSuscripcion extends Controller
 {
     private const MENSAJE_ACTIVO = "¡Listo! Ya estás suscripto a los avisos de Torneos Mita'í.";
 
     public function __construct(private readonly SuscripcionService $suscripciones) {}
+
+    /** Página para suscribirse sin seguir un equipo (los resultados se eligen desde "Seguir mi equipo"). */
+    public function create(): View
+    {
+        return view('suscripcion.create');
+    }
 
     public function store(SuscribirRequest $request): RedirectResponse
     {
@@ -21,7 +28,7 @@ class ControladorSuscripcion extends Controller
         $activo = $this->suscripciones->suscribir(
             $email,
             array_map('intval', $request->validated('equipos', [])),
-            $request->has('avisos') ? $request->validated('avisos', []) : null,
+            $request->has('avisos') ? ($request->validated('avisos') ?? []) : null,
             $request->user(),
         );
 

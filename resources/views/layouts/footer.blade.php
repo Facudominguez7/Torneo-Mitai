@@ -4,6 +4,8 @@
         <a href="{{ route('terminos') }}" class="text-white/80 underline-offset-4 hover:text-white hover:underline">Términos y condiciones</a>
         <span aria-hidden="true" class="text-white/50">·</span>
         <a href="{{ route('privacidad') }}" class="text-white/80 underline-offset-4 hover:text-white hover:underline">Política de privacidad</a>
+        <span aria-hidden="true" class="text-white/50">·</span>
+        <a href="{{ route('suscripcion.create') }}" class="text-white/80 underline-offset-4 hover:text-white hover:underline">Avisos por correo</a>
     </nav>
     <p class="text-sm md:text-base mt-2">Sitio desarrollado por el <span class="font-semibold">Ing. Facundo Díaz Domínguez</span>.</p>
     <p class="mt-4">
