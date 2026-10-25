@@ -14,7 +14,7 @@ use Illuminate\Testing\TestResponse;
 
 beforeEach(function (): void {
     // El .env local puede apuntar a MailHog; los tests fijan el mailer de producción.
-    config(['suscripciones.mailer' => 'resend']);
+    config(['suscripciones.mailer' => 'resend', 'suscripciones.resend.sincronizar' => false]);
     Mail::fake();
 });
 

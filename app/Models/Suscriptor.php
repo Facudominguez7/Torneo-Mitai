@@ -26,6 +26,7 @@ class Suscriptor extends Model
             'recibe_proxima_fecha' => 'boolean',
             'confirmado_at' => 'datetime',
             'baja_at' => 'datetime',
+            'resend_sincronizado_at' => 'datetime',
         ];
     }
 

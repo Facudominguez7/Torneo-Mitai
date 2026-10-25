@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Suscriptor;
+use Illuminate\Support\Facades\Log;
+use Resend\Client;
+use Resend\Exceptions\ErrorException;
+use Throwable;
+
+/**
+ * Lleva el estado de cada suscriptor a Resend: contacto, segmento de los masivos y tópicos de cada aviso.
+ * Corre en la misma petición (producción no tiene worker); si falla, el suscriptor queda pendiente
+ * y el comando suscripciones:sincronizar lo reintenta.
+ */
+class SincronizacionResendService
+{
+    public function __construct(private readonly Client $resend) {}
+
+    /** @return bool true si Resend quedó con el estado actual del suscriptor */
+    public function sincronizar(Suscriptor $suscriptor): bool
+    {
+        if (! config('suscripciones.resend.sincronizar') || $suscriptor->confirmado_at === null) {
+            return false;
+        }
+
+        try {
+            $suscriptor->estaActivo() ? $this->publicar($suscriptor) : $this->marcarBaja($suscriptor);
+        } catch (Throwable $error) {
+            // Sin el mensaje de Resend: puede incluir el correo del suscriptor.
+            Log::warning('No se pudo sincronizar el suscriptor con Resend.', [
+                'suscriptor_id' => $suscriptor->id,
+                'error' => $error::class,
+                'codigo' => $error->getCode(),
+            ]);
+
+            return false;
+        }
+
+        $suscriptor->forceFill(['resend_sincronizado_at' => now()])->save();
+
+        return true;
+    }
+
+    private function publicar(Suscriptor $suscriptor): void
+    {
+        $segmento = (string) config('suscripciones.resend.segmento');
+        $idContacto = $suscriptor->resend_contacto_id;
+
+        if ($idContacto === null) {
+            $idContacto = $this->contactoExistente($suscriptor->email);
+
+            if ($idContacto === null) {
+                $contacto = $this->resend->contacts->create([
+                    'email' => $suscriptor->email,
+                    'unsubscribed' => false,
+                    'segments' => [['id' => $segmento]],
+                    'topics' => $this->topicos($suscriptor),
+                ]);
+                $suscriptor->resend_contacto_id = $contacto->id;
+
+                return;
+            }
+
+            $suscriptor->resend_contacto_id = $idContacto;
+            $this->resend->contacts->update($idContacto, ['unsubscribed' => false]);
+            $this->resend->contacts->segments->add($idContacto, $segmento);
+        } else {
+            $this->resend->contacts->update($idContacto, ['unsubscribed' => false]);
+        }
+
+        $this->resend->contacts->topics->update($idContacto, $this->topicos($suscriptor));
+    }
+
+    /** Un suscriptor que nunca llegó a Resend no tiene nada que dar de baja allá. */
+    private function marcarBaja(Suscriptor $suscriptor): void
+    {
+        if ($suscriptor->resend_contacto_id !== null) {
+            $this->resend->contacts->update($suscriptor->resend_contacto_id, ['unsubscribed' => true]);
+        }
+    }
+
+    private function contactoExistente(string $email): ?string
+    {
+        try {
+            return $this->resend->contacts->get($email)->id;
+        } catch (ErrorException $error) {
+            if ($error->getErrorCode() === 404) {
+                return null;
+            }
+
+            throw $error;
+        }
+    }
+
+    /** @return list<array{id: string, subscription: string}> */
+    private function topicos(Suscriptor $suscriptor): array
+    {
+        $topicos = [];
+        foreach (config('suscripciones.avisos') as $aviso => $columna) {
+            $topicos[] = [
+                'id' => (string) config("suscripciones.resend.topicos.{$aviso}"),
+                'subscription' => $suscriptor->{$columna} ? 'opt_in' : 'opt_out',
+            ];
+        }
+
+        return $topicos;
+    }
+}
