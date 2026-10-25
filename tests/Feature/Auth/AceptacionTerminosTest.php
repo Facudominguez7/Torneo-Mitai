@@ -74,3 +74,7 @@ it('no cambia la aceptacion de una cuenta de Google que ya existia', function ()
     $this->assertAuthenticatedAs($usuario);
     expect($usuario->fresh()->terminos_aceptados_at)->toBeNull();
 });
+
+it('no permite que un formulario escriba la fecha de aceptacion', function (): void {
+    expect((new User)->isFillable('terminos_aceptados_at'))->toBeFalse();
+});

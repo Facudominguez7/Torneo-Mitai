@@ -52,7 +52,8 @@ class RegisteredUserController extends Controller
             'terminos.accepted' => 'Tenés que aceptar los Términos y condiciones y la Política de privacidad.',
         ]);
 
-        $user = User::create([
+        // forceCreate: terminos_aceptados_at queda fuera de $fillable para que ningún formulario pueda escribirlo.
+        $user = User::forceCreate([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
