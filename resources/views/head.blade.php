@@ -23,7 +23,28 @@
     <meta name="apple-mobile-web-app-title" content="Torneo Mitai">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Torneo Mitai">
-    <meta name="description" content="Sistema de gestión del Torneo Mitai de fútbol infantil">
+    <meta name="description" content="{{ $seo['descripcion'] }}">
+    <meta name="robots" content="{{ $seo['indexar'] ? 'index, follow' : 'noindex, nofollow' }}">
+    @if ($seo['canonica'])
+        <link rel="canonical" href="{{ $seo['canonica'] }}">
+    @endif
+
+    {{-- Vista previa al compartir en redes y mensajería --}}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ $seo['sitio'] }}">
+    <meta property="og:locale" content="es_AR">
+    <meta property="og:title" content="{{ $seo['titulo'] }}">
+    <meta property="og:description" content="{{ $seo['descripcion'] }}">
+    @if ($seo['canonica'])
+        <meta property="og:url" content="{{ $seo['canonica'] }}">
+    @endif
+    <meta property="og:image" content="{{ $seo['imagen'] }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    @if ($seo['datosEstructurados'])
+        <script type="application/ld+json">{!! json_encode($seo['datosEstructurados'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
+    @endif
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
@@ -31,7 +52,7 @@
     <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}">
 
-    <title>Torneo Mitai</title>
+    <title>{{ $seo['titulo'] }}</title>
     <link rel="shortcut icon" type="image/png" href="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}">
 
     @php

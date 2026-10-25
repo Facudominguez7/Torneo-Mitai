@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="es">
 @include('head')
 <body class="font-sans antialiased ">
     <div class="min-h-screen bg-[--color-primary] flex flex-col">
@@ -9,3 +11,5 @@
         @include('layouts.footer')
     </div>
 </body>
+
+</html>

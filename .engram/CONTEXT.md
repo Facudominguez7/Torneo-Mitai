@@ -4,7 +4,16 @@ Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como par
 
 Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
 
-## Continuidad actual (2026-10-24): cobros desde la planilla e identidad visual
+## SEO del sitio público (2026-10-25, rama `feat/seo-publico`)
+
+- `config/seo.php` y `SeoComposer` (vista `head`) generan el título, la descripción, la canónica (conserva solo `idEdicion`, `idCategoria`, `idGrupo` y `tipo`), Open Graph/Twitter y robots. El título nombra la edición solo cuando la página la muestra. Sin `idEdicion`, solo `/` e `/instancias-finales` muestran la última edición; el resto muestra el selector y usa `descripcion_general`.
+- `/robots.txt` y `/sitemap.xml` son rutas (`ControladorSeo`). Se eliminó `public/robots.txt`. El sitemap lista cada página `por_edicion` una vez por edición, porque el selector no es rastreable. El panel, el acceso, el perfil, las planillas públicas y `email.*` llevan `noindex` y no tienen canónica.
+- La imagen para compartir está en `public/og-torneos-mitai.jpg`, porque `/public/fotos` está ignorado por Git. La home tiene JSON-LD (SportsOrganization + WebSite, Posadas/Misiones/AR).
+- Los 11 layouts públicos declaran doctype y `lang="es"`: pasaron del modo quirks al modo estándar, con desplazamientos de 6 a 16 px revisados visualmente.
+- Blade interpreta `<?xml` como apertura de PHP: la declaración XML se arma en el controlador.
+- Después del deploy hay que cargar el sitemap en Search Console.
+
+## Continuidad previa (2026-10-24): cobros desde la planilla e identidad visual
 
 - Pagos desde la planilla del partido: badges en el dashboard, pago combinado efectivo + Mercado Pago (sin transferencia), impresión en el lugar y hoja A4 vertical. El estado se refresca por polling cada 1 s mientras la pestaña está visible; se descartó websockets porque no hay broadcasting configurado.
 - Exención de planilla desde el partido (ese cargo) y desde `/Panel/equipo` (toda la edición: política futura + deuda actual, con los pagos conservados). `eximirEdicion` toma primero el lock global de configuración de cobros para no interbloquearse. Se quitó la "Planilla de Cobro" impresa.

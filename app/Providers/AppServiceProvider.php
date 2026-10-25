@@ -6,6 +6,7 @@ use App\Listeners\LogNotificacionEnviada;
 use App\Models\Edicion;
 use App\Services\EmailDeliverabilityHeaders;
 use App\View\Composers\NavigationComposer;
+use App\View\Composers\SeoComposer;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -82,6 +83,9 @@ class AppServiceProvider extends ServiceProvider
          * `EdicionSeleccionada` ni un `ultimaEdicion` ya presente.
          */
         View::composer('layouts.navigation', NavigationComposer::class);
+
+        // Título, descripción, canónica y Open Graph de cada página (config/seo.php).
+        View::composer('head', SeoComposer::class);
 
         View::composer('Panel.admin', function (ViewContract $view): void {
             $ediciones = Edicion::orderByDesc('id')->get();

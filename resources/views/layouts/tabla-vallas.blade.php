@@ -5,6 +5,8 @@ Muestra los equipos ordenados por menor cantidad de goles recibidos
 en tiempo real. Considera goles de fase de grupos e instancias finales.
 Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
 --}}
+<!DOCTYPE html>
+<html lang="es">
 @include('head')
 
 <body class="bg-[--color-primary] text-white">
@@ -324,3 +326,5 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
 
     </script>
 </body>
+
+</html>
