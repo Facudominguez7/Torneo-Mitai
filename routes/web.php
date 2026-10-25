@@ -66,6 +66,8 @@ Route::get('/tabla-de-posiciones', [ControladorHome::class, 'tablaPosiciones'])-
 Route::get('/tabla-de-goleadores', [ControladorHome::class, 'tablaGoleadores'])->name('tabla-goleadores');
 Route::get('/tabla-de-vallas', [ControladorHome::class, 'tablaVallas'])->name('tabla-vallas');
 Route::get('/instancias-finales', [ControladorHome::class, 'instanciasFinales'])->name('instancias-finales');
+Route::view('/terminos-y-condiciones', 'legales.terminos')->name('terminos');
+Route::view('/politica-de-privacidad', 'legales.privacidad')->name('privacidad');
 Route::get('forgot-password/{restablecer?}', [PasswordResetLinkController::class, 'create'])->name('password.request');
 
 Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAccesPanelMiddleware::class, PanelEdicionContextMiddleware::class]], function () {

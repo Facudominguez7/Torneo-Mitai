@@ -1,117 +1,59 @@
 <x-guest-layout>
-    <div class="space-y-6">
-        <div class="space-y-1 text-center">
-            <h2 class="text-2xl font-bold text-white">Verificá tu email</h2>
-            <p class="text-sm text-white/60">Para activar las notificaciones por email, ingresá el código que te enviamos.</p>
-        </div>
-
-        <div class="text-sm text-white/80 space-y-3">
-            <p>
-                Te enviamos un código de 6 dígitos a <strong>{{ auth()->user()->email }}</strong>. Ingresalo abajo para verificar tu cuenta.
-            </p>
-            <p class="text-white/60">
-                📧 Si no recibiste el email, revisá tu carpeta de <strong>spam</strong> o pedí un nuevo código.
-            </p>
-        </div>
-
-        @if (session('status') === 'verification-code-sent')
-            <div class="rounded-lg bg-green-500/20 border border-green-500/30 p-4">
-                <p class="text-sm text-green-300 flex items-center gap-2">
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>
-                    {{ session('email-success', 'Te enviamos un nuevo código de verificación.') }}
-                </p>
-                <p class="text-xs text-green-200/70 mt-2 ml-7">
-                    📬 Revisá tu bandeja de entrada y también la <strong>carpeta de spam</strong> si no lo encontrás.
-                </p>
-            </div>
-        @endif
-
-        @if (session('warning'))
-            <div class="rounded-lg bg-amber-500/20 border border-amber-500/30 p-4 text-sm text-amber-100">
-                {{ session('warning') }}
-            </div>
-        @endif
-
-        @if (session('email-error'))
-            <div class="rounded-lg bg-red-500/20 border border-red-500/30 p-4">
-                <p class="text-sm text-red-300 flex items-center gap-2">
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                    </svg>
-                    {{ session('email-error') }}
-                </p>
-            </div>
-        @endif
-
-        <div class="space-y-4">
-            <form method="POST" action="{{ route('verification.code') }}" class="space-y-3">
-                @csrf
-
-                <div class="space-y-2">
-                    <x-input-label for="code" :value="__('Código de verificación')" />
-                    <x-text-input
-                        id="code"
-                        name="code"
-                        type="text"
-                        :value="old('code')"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
-                        maxlength="6"
-                        autocomplete="one-time-code"
-                        placeholder="123456"
-                        required
-                    />
-                    <x-input-error :messages="$errors->get('code')" class="text-sm text-red-400" />
-                </div>
-
-                <button type="submit"
-                    class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-yellow-300 via-amber-300 to-yellow-400 px-6 py-3 text-sm font-semibold text-black shadow-lg shadow-yellow-500/40 transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-yellow-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-300 active:scale-95">
-                    Confirmar código
-                </button>
-            </form>
-
-            <form method="POST" action="{{ route('verification.send') }}" id="verify-form">
-                @csrf
-                <button type="submit" id="verify-btn"
-                    class="group inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 disabled:opacity-70 disabled:cursor-not-allowed">
-                    <svg id="verify-spinner" class="hidden animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span id="verify-text">Reenviar código</span>
-                </button>
-            </form>
-
-            <a class="block text-center text-sm font-semibold text-white/60 transition hover:text-white"
-                href="{{ route('home') }}">
-                ← Volver al inicio
-            </a>
-        </div>
-
-        <div class="mt-6 p-4 rounded-lg bg-white/5 border border-white/10">
-            <h4 class="text-sm font-semibold text-white mb-2">¿Por qué verificar?</h4>
-            <ul class="text-xs text-white/60 space-y-1">
-                <li>✉️ Recibir resultados de partidos por email</li>
-                <li>📅 Enterarte de nuevos partidos programados</li>
-                <li>📢 Recibir anuncios importantes del torneo</li>
-            </ul>
-            <p class="text-xs text-white/40 mt-2">
-                Podés darte de baja en cualquier momento desde el email.
-            </p>
-        </div>
+    <div class="flex flex-col gap-1.5">
+        <h1 class="text-[26px] font-bold leading-tight sm:text-[28px]">Verificá tu correo</h1>
+        <p class="text-[15px] text-white/75">
+            Te enviamos un código de 6 dígitos a <strong class="text-white">{{ auth()->user()->email }}</strong>.
+            Si no lo ves, revisá la carpeta de spam o pedí uno nuevo.
+        </p>
     </div>
 
-    <script>
-        document.getElementById('verify-form').addEventListener('submit', function() {
-            const btn = document.getElementById('verify-btn');
-            const spinner = document.getElementById('verify-spinner');
-            const text = document.getElementById('verify-text');
+    @if (session('status') === 'verification-code-sent')
+        <x-acceso.aviso tipo="exito">
+            <p>{{ session('email-success', 'Te enviamos un nuevo código de verificación.') }}</p>
+            <p class="text-sm font-normal text-emerald-200/90">Revisá tu bandeja de entrada y también la carpeta de spam.</p>
+        </x-acceso.aviso>
+    @endif
 
-            btn.disabled = true;
-            spinner.classList.remove('hidden');
-            text.textContent = 'Enviando...';
-        });
-    </script>
+    @if (session('warning'))
+        <x-acceso.aviso>{{ session('warning') }}</x-acceso.aviso>
+    @endif
+
+    @if (session('email-error'))
+        <x-acceso.aviso tipo="error">{{ session('email-error') }}</x-acceso.aviso>
+    @endif
+
+    <form method="POST" action="{{ route('verification.code') }}" class="flex flex-col gap-[18px]">
+        @csrf
+
+        <x-acceso.campo id="code" label="Código de verificación" name="code" :value="old('code')"
+            :errores="$errors->get('code')" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+            autocomplete="one-time-code" placeholder="123456" required />
+
+        <x-acceso.boton>Confirmar código</x-acceso.boton>
+    </form>
+
+    <form method="POST" action="{{ route('verification.send') }}"
+        x-data="{ enviando: false }" x-on:submit="enviando = true" x-on:pageshow.window="enviando = false">
+        @csrf
+        <x-acceso.boton variante="secundario" x-bind:disabled="enviando">
+            <span x-show="! enviando">Reenviar código</span>
+            <span x-show="enviando" x-cloak>Enviando…</span>
+        </x-acceso.boton>
+    </form>
+
+    <div class="flex flex-col gap-2 rounded-[10px] border border-white/10 bg-white/[0.04] p-4 text-[15px] text-white/80">
+        <h2 class="font-semibold text-white">¿Para qué verificar?</h2>
+        <ul class="flex list-disc flex-col gap-1 pl-5">
+            <li>Recibir los resultados de los partidos por correo.</li>
+            <li>Enterarte de los partidos programados.</li>
+            <li>Recibir los anuncios del torneo.</li>
+        </ul>
+        <p class="text-sm text-white/75">Podés darte de baja en cualquier momento desde el correo.</p>
+    </div>
+
+    <x-slot:pie>
+        <p class="text-center text-[15px]">
+            <a href="{{ route('home') }}" class="font-bold text-brand-teal-light underline-offset-4 hover:text-brand-gold hover:underline">Volver al inicio</a>
+        </p>
+    </x-slot:pie>
 </x-guest-layout>

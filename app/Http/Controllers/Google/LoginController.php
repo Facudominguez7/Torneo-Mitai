@@ -41,6 +41,8 @@ class LoginController extends Controller
                 $user->name = $user_google->name;
                 $user->email = $user_google->email;
                 $user->email_verified_at = Carbon::now();
+                // Crear la cuenta con Google implica aceptar los términos, como indica la pantalla de registro.
+                $user->terminos_aceptados_at = Carbon::now();
                 $user->google_avatar = $user_google->avatar;
                 $user->password = Hash::make($password); // Opcional
 

@@ -56,6 +56,8 @@ export default {
           navy: "rgb(var(--brand-navy) / <alpha-value>)",
           teal: "rgb(var(--brand-teal) / <alpha-value>)",
           gold: "rgb(var(--brand-gold) / <alpha-value>)",
+          "navy-deep": "rgb(var(--brand-navy-deep) / <alpha-value>)",
+          "teal-light": "rgb(var(--brand-teal-light) / <alpha-value>)",
         },
         // Panel form accent/border tokens (issue #110, Phase 2.B): the
         // ~48 Panel/**/_form|create|edit.blade.php files hardcoded these two
