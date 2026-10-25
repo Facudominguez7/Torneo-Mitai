@@ -11,6 +11,13 @@ return [
 
     'imagen' => 'og-torneos-mitai.jpg',
 
+    // Datos de la organización para el JSON-LD de la home (schema.org SportsOrganization).
+    'organizacion' => [
+        'logo' => 'fotos/Logo_Mitai_SinFondo.png',
+        'deporte' => 'Fútbol',
+        'resumen' => 'Torneo de fútbol infantil en Posadas, Misiones.',
+    ],
+
     'ubicacion' => [
         'localidad' => 'Posadas',
         'region' => 'Misiones',

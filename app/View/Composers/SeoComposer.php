@@ -40,7 +40,7 @@ class SeoComposer
             'indexar' => ! $this->request->is('Panel*') && ! ($ruta && Str::is($configuracion['sin_indexar'], $ruta)),
             'imagen' => asset($configuracion['imagen']),
             'sitio' => $configuracion['sitio'],
-            'esInicio' => $ruta === 'home',
+            'datosEstructurados' => $ruta === 'home' ? $this->datosEstructurados($configuracion) : null,
         ]);
     }
 
@@ -54,6 +54,47 @@ class SeoComposer
         }
 
         return $edicion instanceof Edicion ? $edicion->nombre : null;
+    }
+
+    /**
+     * Organización y sitio en schema.org, para que Google muestre el torneo con su logo, ubicación y redes.
+     *
+     * @param  array<string, mixed>  $configuracion
+     * @return array<string, mixed>
+     */
+    private function datosEstructurados(array $configuracion): array
+    {
+        $inicio = url('/');
+        $idOrganizacion = $inicio.'#organizacion';
+
+        return [
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'SportsOrganization',
+                    '@id' => $idOrganizacion,
+                    'name' => $configuracion['sitio'],
+                    'url' => $inicio,
+                    'logo' => asset($configuracion['organizacion']['logo']),
+                    'sport' => $configuracion['organizacion']['deporte'],
+                    'description' => $configuracion['organizacion']['resumen'],
+                    'address' => [
+                        '@type' => 'PostalAddress',
+                        'addressLocality' => $configuracion['ubicacion']['localidad'],
+                        'addressRegion' => $configuracion['ubicacion']['region'],
+                        'addressCountry' => $configuracion['ubicacion']['pais'],
+                    ],
+                    'sameAs' => $configuracion['redes'],
+                ],
+                [
+                    '@type' => 'WebSite',
+                    'name' => $configuracion['sitio'],
+                    'url' => $inicio,
+                    'inLanguage' => 'es-AR',
+                    'publisher' => ['@id' => $idOrganizacion],
+                ],
+            ],
+        ];
     }
 
     /** @param  list<string>  $parametros */

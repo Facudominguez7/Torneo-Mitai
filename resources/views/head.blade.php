@@ -38,6 +38,9 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
+    @if ($seo['datosEstructurados'])
+        <script type="application/ld+json">{!! json_encode($seo['datosEstructurados'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
+    @endif
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
