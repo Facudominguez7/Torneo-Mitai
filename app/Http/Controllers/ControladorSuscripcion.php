@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Suscripcion\PreferenciasRequest;
 use App\Http\Requests\Suscripcion\SuscribirRequest;
+use App\Models\Edicion;
 use App\Models\Suscriptor;
+use App\Services\EquiposDeEdicionService;
 use App\Services\SuscripcionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,6 +48,44 @@ class ControladorSuscripcion extends Controller
         return redirect('/')->with('suscripcion', $confirmado
             ? self::MENSAJE_ACTIVO
             : 'Ese enlace ya no sirve. Volvé a suscribirte para recibir uno nuevo.');
+    }
+
+    public function preferencias(Suscriptor $suscriptor, EquiposDeEdicionService $equiposDeEdicion): View
+    {
+        $suscriptor->load('equipos.categoria:id,nombreCategoria');
+        $ultimaEdicion = Edicion::query()->latest('id')->first();
+        $seguidos = $suscriptor->equipos->pluck('id')->all();
+
+        return view('suscripcion.preferencias', [
+            'suscriptor' => $suscriptor,
+            'equiposDisponibles' => $ultimaEdicion
+                ? $equiposDeEdicion->participantes((int) $ultimaEdicion->id)->reject(fn (array $equipo): bool => in_array($equipo['id'], $seguidos, true))
+                : collect(),
+            'urlPreferencias' => $this->suscripciones->urlPreferencias($suscriptor),
+            'urlBaja' => $this->suscripciones->urlBaja($suscriptor),
+        ]);
+    }
+
+    public function actualizarPreferencias(PreferenciasRequest $request, Suscriptor $suscriptor): RedirectResponse
+    {
+        $this->suscripciones->actualizarPreferencias(
+            $suscriptor,
+            array_map('intval', $request->validated('equipos', [])),
+            $request->validated('avisos') ?? [],
+        );
+
+        return redirect()->to($this->suscripciones->urlPreferencias($suscriptor))
+            ->with('suscripcion', 'Guardamos tus preferencias.');
+    }
+
+    /** Página del enlace de baja del pie del correo: confirma con un botón para que un clic accidental no dé de baja. */
+    public function confirmarBaja(Suscriptor $suscriptor): View
+    {
+        return view('suscripcion.baja', [
+            'suscriptor' => $suscriptor,
+            'urlBaja' => $this->suscripciones->urlBaja($suscriptor),
+            'urlPreferencias' => $this->suscripciones->urlPreferencias($suscriptor),
+        ]);
     }
 
     public function baja(Suscriptor $suscriptor): RedirectResponse

@@ -36,6 +36,7 @@ return [
     'sin_indexar' => [
         'login', 'register', 'password.*', 'verification.*', 'profile.*', 'dashboard',
         'planillas-publicas.*', 'equipo-seguido', 'email.*',
+        'suscripcion.confirmar', 'suscripcion.preferencias*', 'suscripcion.baja*',
     ],
 
     /*

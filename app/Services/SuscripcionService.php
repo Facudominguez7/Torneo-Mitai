@@ -84,6 +84,30 @@ class SuscripcionService
         return true;
     }
 
+    /**
+     * Cambia avisos y equipos desde el enlace firmado del correo, que prueba que el correo es suyo:
+     * por eso guardar también reactiva a quien se había dado de baja.
+     *
+     * @param  list<int>  $idsEquipos
+     * @param  list<string>  $avisos
+     */
+    public function actualizarPreferencias(Suscriptor $suscriptor, array $idsEquipos, array $avisos): void
+    {
+        DB::transaction(function () use ($suscriptor, $idsEquipos, $avisos): void {
+            foreach (config('suscripciones.avisos') as $aviso => $columna) {
+                $suscriptor->{$columna} = in_array($aviso, $avisos, true);
+            }
+            $suscriptor->forceFill([
+                'confirmado_at' => $suscriptor->confirmado_at ?? now(),
+                'baja_at' => null,
+                'resend_sincronizado_at' => null,
+            ])->save();
+            $suscriptor->equipos()->sync($idsEquipos);
+        });
+
+        $this->resend->sincronizar($suscriptor);
+    }
+
     public function darDeBaja(Suscriptor $suscriptor): void
     {
         if ($suscriptor->baja_at === null) {
@@ -101,7 +125,16 @@ class SuscripcionService
         );
     }
 
-    /** Enlace permanente para la baja en un clic (va en cada correo y en el encabezado List-Unsubscribe). */
+    /** Enlace permanente a las preferencias (va en cada correo). */
+    public function urlPreferencias(Suscriptor $suscriptor): string
+    {
+        return URL::signedRoute('suscripcion.preferencias', $suscriptor);
+    }
+
+    /**
+     * Enlace permanente de baja: en el pie de cada correo abre la página que pide confirmar (GET)
+     * y en el encabezado List-Unsubscribe da de baja en un clic (POST).
+     */
     public function urlBaja(Suscriptor $suscriptor): string
     {
         return URL::signedRoute('suscripcion.baja', $suscriptor);
