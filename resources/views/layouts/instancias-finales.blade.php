@@ -1,3 +1,5 @@
+@section('tituloSeo', 'Instancias Finales | Torneo Mitai')
+@section('descripcionSeo', 'Resultados de las instancias finales de cada edición del Torneo Mitai')
 @include('head')
 
 <body class="bg-[--color-primary] text-white">

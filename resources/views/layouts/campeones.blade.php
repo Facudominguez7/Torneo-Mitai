@@ -1,3 +1,5 @@
+@section('tituloSeo', 'Campeones | Torneo Mitai')
+@section('descripcionSeo', 'Todos los campeones por categoría y edición del Torneo Mitai')
 @include('head')
 
 <body class="bg-[--color-primary] text-white">

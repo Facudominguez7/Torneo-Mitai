@@ -1,3 +1,5 @@
+@section('tituloSeo', 'Goleadores | Torneo Mitai')
+@section('descripcionSeo', 'Los máximos goleadores de cada edición del Torneo Mitai')
 @include('head')
 
 <body class="bg-[--color-primary] text-white">

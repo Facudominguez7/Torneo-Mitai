@@ -1,3 +1,5 @@
+@section('tituloSeo', 'Tabla de Posiciones | Torneo Mitai')
+@section('descripcionSeo', 'Posiciones por grupo y categoría en cada edición del Torneo Mitai')
 @include('head')
 
 <body class="bg-[--color-primary] text-white">

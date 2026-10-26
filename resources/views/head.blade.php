@@ -22,7 +22,14 @@
     <meta name="apple-mobile-web-app-title" content="Torneo Mitai">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Torneo Mitai">
-    <meta name="description" content="Sistema de gestión del Torneo Mitai de fútbol infantil">
+    <meta name="description" content="@yield('descripcionSeo', 'Sistema de gestión del Torneo Mitai de fútbol infantil')">
+    @yield('metaRobots')
+    @php
+        // Canónica determinista: host fijo de APP_URL + ruta sin query,
+        // para consolidar variantes http/https, www y parámetros.
+        $urlCanonicaPorDefecto = rtrim(config('app.url'), '/').request()->getPathInfo();
+    @endphp
+    <link rel="canonical" href="@yield('urlCanonica', $urlCanonicaPorDefecto)">
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
@@ -30,7 +37,7 @@
     <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}">
 
-    <title>Torneo Mitai</title>
+    <title>@yield('tituloSeo', 'Torneo Mitai | Fútbol Infantil')</title>
     <link rel="shortcut icon" type="image/png" href="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}">
 
     @php

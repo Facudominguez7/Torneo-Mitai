@@ -1,3 +1,4 @@
+@section('metaRobots', '<meta name="robots" content="noindex, follow">')
 @include('head')
 
 <body class="bg-[--color-primary] text-white">

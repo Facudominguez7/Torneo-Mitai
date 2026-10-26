@@ -1,3 +1,5 @@
+@section('tituloSeo', 'Vallas Menos Vencidas | Torneo Mitai')
+@section('descripcionSeo', 'Los arqueros con menos goles recibidos de cada edición del Torneo Mitai')
 @include('head')
 
 <body class="bg-[--color-primary] text-white">

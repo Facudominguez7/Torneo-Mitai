@@ -1,3 +1,5 @@
+@section('tituloSeo', 'Torneo Mitai | Fútbol Infantil')
+@section('descripcionSeo', 'Fixture, tablas de posiciones, goleadores y campeones del Torneo Mitai de fútbol infantil')
 <!DOCTYPE html>
 <html lang="es">
 @include('head')

@@ -5,6 +5,8 @@ Muestra los equipos ordenados por menor cantidad de goles recibidos
 en tiempo real. Considera goles de fase de grupos e instancias finales.
 Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
 --}}
+@section('tituloSeo', 'Tabla de Vallas | Torneo Mitai')
+@section('descripcionSeo', 'Tabla completa de vallas menos vencidas por categoría y edición del Torneo Mitai')
 @include('head')
 
 <body class="bg-[--color-primary] text-white">
