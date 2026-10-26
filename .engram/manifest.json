@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "chunks": [
     {
       "id": "d52b368f",
@@ -16,6 +16,14 @@
       "sessions": 9,
       "memories": 20,
       "prompts": 13
+    },
+    {
+      "id": "22206aae",
+      "created_by": "facu",
+      "created_at": "2026-10-26T17:22:54.004542824Z",
+      "sessions": 237,
+      "memories": 453,
+      "prompts": 0
     }
   ]
 }
