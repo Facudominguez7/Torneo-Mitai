@@ -5,6 +5,7 @@ use App\Http\Controllers\ControladorEquipoSeguido;
 use App\Http\Controllers\ControladorHome;
 use App\Http\Controllers\ControladorNotificacionesEmail;
 use App\Http\Controllers\ControladorPlanillaPublica;
+use App\Http\Controllers\ControladorSitemap;
 use App\Http\Controllers\Google\LoginController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\Panel\ControladorCampeon;
@@ -48,6 +49,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/', [ControladorHome::class, 'index'])->name('home');
+Route::get('/sitemap.xml', [ControladorSitemap::class, 'index'])->name('sitemap');
 Route::get('/campeones', [ControladorHome::class, 'campeones'])->name('campeones');
 Route::get('/subcampeones', [ControladorHome::class, 'subcampeones'])->name('subcampeones');
 Route::get('/goleadores', [ControladorHome::class, 'goleadores'])->name('goleadores');
