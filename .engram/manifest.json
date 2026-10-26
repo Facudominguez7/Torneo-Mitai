@@ -168,6 +168,14 @@
       "sessions": 4,
       "memories": 45,
       "prompts": 0
+    },
+    {
+      "id": "d4107490",
+      "created_by": "facu",
+      "created_at": "2026-10-26T18:00:11.749620117Z",
+      "sessions": 8,
+      "memories": 10,
+      "prompts": 0
     }
   ]
 }
