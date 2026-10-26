@@ -23,7 +23,10 @@ it('removes the Web Push UI and routes while keeping email notifications', funct
 
 it('requires authentication for the email subscription status endpoint', function (): void {
     $this->getJson('/email/estado')->assertUnauthorized();
-    $this->get('/Panel/notificaciones')->assertRedirect('/login');
+    // El panel no es superficie pública: los invitados reciben 404
+    // (antes redirigía a /login, lo que acumulaba URLs con redirección
+    // en Search Console).
+    $this->get('/Panel/notificaciones')->assertNotFound();
 });
 
 it('returns the authenticated user email subscription status', function (): void {
