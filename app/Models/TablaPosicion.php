@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class TablaPosicion extends Model
 {
     use HasFactory;
+
     protected $table = 'tabla_posiciones';
+
     public $timestamps = false;
+
     protected $fillable = [
         'idGrupo',
         'idEquipo',
@@ -23,14 +26,17 @@ class TablaPosicion extends Model
         'perdido',
         'empatado',
     ];
+
     public function equipo()
     {
         return $this->belongsTo(Equipo::class, 'idEquipo');
     }
+
     public function grupo()
     {
         return $this->belongsTo(Grupo::class, 'idGrupo');
     }
+
     public function edicion()
     {
         return $this->belongsTo(Edicion::class, 'idEdicion');

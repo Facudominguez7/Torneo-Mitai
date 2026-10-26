@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Equipo\StoreRequest;
 use App\Models\Categoria;
+use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\TablaPosicion;
+use App\Services\Cobros\ConsultaCobrosService;
+use App\Services\Panel\DetalleEquipo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -52,8 +55,12 @@ class ControladorEquipo extends Controller
 
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $categorias = Categoria::where('idEdicion', $idEdicion)->orderBy('nombreCategoria', 'desc')->get(); // Obtener categorías de la edición seleccionada
+        $configuracionCobros = ConfiguracionCobroPlanilla::query()->find(1);
+        $estadoCobros = $EdicionSeleccionada && $configuracionCobros?->activado_at
+            ? app(ConsultaCobrosService::class)->estadoEquipos($idEdicion, $equipos->getCollection()->pluck('id')->all())
+            : collect();
 
-        return view('Panel.equipo.index', compact('EdicionSeleccionada', 'ediciones', 'equipos', 'idEdicion', 'categorias', 'idCategoria', 'nombreEquipo'));
+        return view('Panel.equipo.index', compact('EdicionSeleccionada', 'ediciones', 'equipos', 'idEdicion', 'categorias', 'idCategoria', 'nombreEquipo', 'configuracionCobros', 'estadoCobros'));
     }
 
     /**
@@ -62,7 +69,7 @@ class ControladorEquipo extends Controller
     public function create(Request $request)
     {
         $ediciones = Edicion::all();
-        $equipo = new Equipo();
+        $equipo = new Equipo;
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
         $categorias = Categoria::where('idEdicion', $idEdicion)
@@ -100,24 +107,28 @@ class ControladorEquipo extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Equipo $equipo)
+    public function show(Request $request, Equipo $equipo, DetalleEquipo $detalleEquipo)
     {
         $ediciones = Edicion::all();
-        $idEdicion = $request->idEdicion;
+        // Sin idEdicion en la URL, la edición elegida en el panel (query o sesión, vía PanelEdicionContextMiddleware).
+        $idEdicion = $request->idEdicion ?: $request->attributes->get('panel.idEdicion');
         $idCategoria = $request->idCategoria;
 
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
 
-        // Filtrar equipos por categoría si se selecciona una
+        // Filtrar equipos por categoría y edición. EquipoEdicion ya guarda
+        // idEdicion en la propia fila, así que se filtra directamente en
+        // lugar de un whereHas contra una relación inexistente (bug
+        // preexistente: EquipoEdicion no define ediciones(), solo edicion()).
         $equipos = EquipoEdicion::where('idCategoria', $idCategoria)
-            ->whereHas('ediciones', function ($query) use ($idEdicion) {
-                $query->where('idEdicion', $idEdicion);
-            })
+            ->where('idEdicion', $idEdicion)
             ->get();
 
         $categorias = Categoria::where('idEdicion', $idEdicion)->get();
 
-        return view('Panel.equipo.show', compact('equipo', 'ediciones', 'idEdicion', 'EdicionSeleccionada', 'categorias', 'equipos', 'idCategoria'));
+        $detalle = $detalleEquipo->obtener($equipo, $idEdicion ? (int) $idEdicion : null);
+
+        return view('Panel.equipo.show', compact('equipo', 'ediciones', 'idEdicion', 'EdicionSeleccionada', 'categorias', 'equipos', 'idCategoria', 'detalle'));
     }
 
     /**

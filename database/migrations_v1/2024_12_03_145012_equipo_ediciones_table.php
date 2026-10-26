@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->Integer('idEdicion');
             $table->Integer('idEquipo');
-            
+
             $table->foreign('idEdicion')->references('id')->on('ediciones')->onDelete('cascade');
             $table->foreign('idEquipo')->references('id')->on('equipos')->onDelete('cascade');
             $table->timestamps();

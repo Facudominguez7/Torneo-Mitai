@@ -12,9 +12,7 @@ class VerifyEmailCodeNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(private readonly string $code)
-    {
-    }
+    public function __construct(private readonly string $code) {}
 
     public function via(object $notifiable): array
     {

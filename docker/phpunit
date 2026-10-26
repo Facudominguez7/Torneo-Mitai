@@ -1,0 +1,47 @@
+#!/bin/sh
+# phpunit shim for pi-lens: maps a host repository test path into the app
+# container and runs Pest through docker compose. No PHP runs on the host.
+set -u
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 1
+ROOT=$(dirname -- "$SCRIPT_DIR")
+
+die() {
+  printf 'docker/phpunit: %s\n' "$1" >&2
+  exit 2
+}
+
+[ "$#" -ge 1 ] || die "usage: phpunit <absolute path to a test file under $ROOT/tests>"
+
+host_path=$1
+
+case $host_path in
+  /*) ;;
+  *) die "test path must be absolute, got: $host_path" ;;
+esac
+
+command -v realpath >/dev/null 2>&1 ||
+  die "required 'realpath' utility not found in PATH"
+
+[ -f "$ROOT/docker-compose.yml" ] || die "docker-compose.yml not found next to this shim ($ROOT)"
+
+tests_dir=$(realpath -e -- "$ROOT/tests" 2>/dev/null) ||
+  die "cannot resolve tests directory: $ROOT/tests"
+
+# Canonicalize (resolves '..' segments and symlinks) so the containment check
+# below cannot be bypassed by traversal or escape links; -e requires the
+# target to exist.
+resolved_path=$(realpath -e -- "$host_path" 2>/dev/null) ||
+  die "cannot resolve test file: $host_path"
+
+[ -f "$resolved_path" ] || die "not a regular test file: $host_path"
+
+case $resolved_path in
+  "$tests_dir"/*) ;;
+  *) die "resolved test path is outside $tests_dir: $resolved_path" ;;
+esac
+
+relative_path=${resolved_path#"$tests_dir"/}
+container_path="/var/www/html/tests/$relative_path"
+
+exec docker compose -f "$ROOT/docker-compose.yml" --project-directory "$ROOT" exec -T app ./vendor/bin/pest "$container_path"

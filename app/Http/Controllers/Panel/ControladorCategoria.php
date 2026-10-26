@@ -1,11 +1,12 @@
 <?php
+
 namespace App\Http\Controllers\Panel;
+
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Categoria\StoreRequest;
 use App\Models\Categoria;
 use App\Models\Edicion;
 use Illuminate\Http\Request;
-
 
 class ControladorCategoria extends Controller
 {
@@ -21,6 +22,7 @@ class ControladorCategoria extends Controller
             ->paginate(7);
         $categorias->appends(['idEdicion' => $idEdicion]);
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.categoria.index', compact('EdicionSeleccionada', 'categorias', 'ediciones'));
     }
 
@@ -32,7 +34,8 @@ class ControladorCategoria extends Controller
         $ediciones = Edicion::all();
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $categoria = new Categoria();
+        $categoria = new Categoria;
+
         return view('Panel.categoria.create', compact('ediciones', 'categoria', 'EdicionSeleccionada'));
     }
 
@@ -43,7 +46,8 @@ class ControladorCategoria extends Controller
     {
         $data = $request->validated();
         Categoria::create($data);
-        return to_route('categoria.index', ['idEdicion' => $request->idEdicion])->with('status', 'Categoria creada.');;
+
+        return to_route('categoria.index', ['idEdicion' => $request->idEdicion])->with('status', 'Categoria creada.');
     }
 
     /**
@@ -55,6 +59,7 @@ class ControladorCategoria extends Controller
         $categoria = $categorium;
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.categoria.show', compact('categoria', 'ediciones', 'EdicionSeleccionada'));
     }
 
@@ -78,8 +83,9 @@ class ControladorCategoria extends Controller
     {
         $data = $request->validated();
         $categoria = $categorium;
-        
+
         $categoria->update($data);
+
         return to_route('categoria.index', ['idEdicion' => $request->idEdicion]);
     }
 
@@ -90,6 +96,7 @@ class ControladorCategoria extends Controller
     {
         $categoria = $categorium;
         $categoria->delete();
+
         return to_route('categoria.index', ['idEdicion' => $request->idEdicion]);
     }
 }

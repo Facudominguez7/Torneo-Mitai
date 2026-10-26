@@ -172,6 +172,17 @@
             </form>
         </div>
 
+        @if ($cobrosPlanilla->isNotEmpty())
+            <section class="mb-6 rounded-lg border border-gray-200 bg-white p-4" aria-labelledby="cobro-planilla-titulo">
+                <h2 id="cobro-planilla-titulo" class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Cobro de planilla</h2>
+                <div class="mt-3" data-cobros-seccion aria-live="polite"
+                    data-url="{{ route('cobros.partido', ['idEdicion' => $partido->idEdicion, 'tipo' => $tipoCargo, 'partido' => $partido->id]) }}">
+                    @include('Panel.cobros.partido')
+                </div>
+                @include('Panel.cobros.modal', ['configuracion' => $configuracionCobros])
+            </section>
+        @endif
+
         @if (is_null($partido->golesEquipoLocal) && is_null($partido->golesEquipoVisitante))
             <div class="mb-4">
                 <a href="{{ $rutaCargarResultado }}"
@@ -187,10 +198,10 @@
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Planilla arbitral</p>
                     <h2 class="text-lg font-semibold text-gray-900">Dato oficial vs. dato reportado por arbitros</h2>
                     <div class="mt-2 flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Solo visual</span>
-                        <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">No impacta estadísticas</span>
+                        <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Aplicación al guardar</span>
+                        <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Solo goles válidos</span>
                     </div>
-                    <p class="mt-2 text-sm text-gray-600">La planilla oficial sigue siendo la fuente de verdad. Lo arbitral se guarda aparte, marca inconsistencias cuando una camiseta no existe o no puede vincularse y <span class="font-semibold text-gray-800">no modifica goles ni estadísticas oficiales de jugadores</span>.</p>
+                    <p class="mt-2 text-sm text-gray-600">Los goles arbitrales vinculados a jugadores presentes <span class="font-semibold text-gray-800">se aplican al guardar y actualizan sus estadísticas</span>, siempre que el equipo no tenga goles oficiales cargados. Los registros sin vinculación válida quedan como inconsistencias.</p>
                 </div>
             </div>
 
@@ -581,7 +592,7 @@
             <div class="mt-4 flex flex-wrap items-center gap-2">
                 @if ($mostrarBotonCopiarLocal)
                     <button type="button" data-copy-previous-match="local" data-copy-previous-match-endpoint="{{ route('planilla.copiarPartidoAnterior') }}"
-                        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200">
+                        class="px-4 py-2 bg-brand-teal text-white rounded-md hover:bg-brand-teal/90 transition duration-200">
                         Copiar local desde partido anterior
                     </button>
                 @endif
@@ -853,7 +864,7 @@
             <div class="mt-4 flex flex-wrap items-center gap-2">
                 @if ($mostrarBotonCopiarVisitante)
                     <button type="button" data-copy-previous-match="visitante" data-copy-previous-match-endpoint="{{ route('planilla.copiarPartidoAnterior') }}"
-                        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200">
+                        class="px-4 py-2 bg-brand-teal text-white rounded-md hover:bg-brand-teal/90 transition duration-200">
                         Copiar visitante desde partido anterior
                     </button>
                 @endif
@@ -1702,4 +1713,7 @@
         printFrame.src = url;
     }
 </script>
+@if ($cobrosPlanilla->isNotEmpty())
+    <script>{!! file_get_contents(resource_path('js/cobros.js')) !!}</script>
+@endif
 @endsection

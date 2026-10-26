@@ -9,7 +9,9 @@ use App\Models\Grupo;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
+use App\Models\ReemplazoEquipo;
 use App\Models\TablaPosicion;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 
 class PartidoService
@@ -23,6 +25,8 @@ class PartidoService
         DB::transaction(function () use ($partido, $golesEquipoLocal, $golesEquipoVisitante) {
             // Bloquear el partido para evitar condiciones de carrera
             $partido = Partido::where('id', $partido->id)->lockForUpdate()->first();
+
+            $this->asegurarResultadoEditable($partido);
 
             $resultadoPrevioDisponible = $partido->jugado && $partido->golesEquipoLocal !== null && $partido->golesEquipoVisitante !== null;
 
@@ -269,6 +273,82 @@ class PartidoService
     }
 
     /**
+     * Una instancia final está pendiente si no tiene goles ni planillas cargadas.
+     */
+    public function instanciaFinalPendiente(InstanciaFinal $instanciaFinal): bool
+    {
+        if ($instanciaFinal->golesEquipoLocal !== null || $instanciaFinal->golesEquipoVisitante !== null) {
+            return false;
+        }
+
+        return ! PlanillaJugador::query()
+            ->where('partido_type', InstanciaFinal::class)
+            ->where('partido_id', $instanciaFinal->id)
+            ->exists();
+    }
+
+    /**
+     * Un partido regular está pendiente cuando nada impide cambiar sus equipos.
+     */
+    public function partidoPendiente(Partido $partido): bool
+    {
+        return $this->razonesBloqueoCambioEquipos($partido) === [];
+    }
+
+    /**
+     * Indica si el equipo fue reemplazado en la edición y categoría (queda registrado en reemplazos_equipos).
+     */
+    public function equipoFueReemplazado(int $idEquipo, int $idEdicion, int $idCategoria): bool
+    {
+        return ReemplazoEquipo::query()
+            ->where('idEdicion', $idEdicion)
+            ->where('idCategoria', $idCategoria)
+            ->where('idEquipoReemplazado', $idEquipo)
+            ->exists();
+    }
+
+    /**
+     * Indica si el resultado del partido o instancia final ya impactó en las posiciones:
+     * partido con `jugado` y ambos goles; instancia final con ambos goles.
+     */
+    public function resultadoAplicado(Partido|InstanciaFinal $partido): bool
+    {
+        $conGoles = $partido->golesEquipoLocal !== null && $partido->golesEquipoVisitante !== null;
+
+        return $partido instanceof Partido ? ($conGoles && (bool) $partido->jugado) : $conGoles;
+    }
+
+    /**
+     * Un partido o instancia final con resultado aplicado donde juega un
+     * equipo reemplazado conserva su resultado: la fila de posiciones ya fue
+     * heredada y editarlo la dejaría desactualizada.
+     */
+    public function resultadoBloqueadoPorReemplazo(Partido|InstanciaFinal $partido): bool
+    {
+        if (! $this->resultadoAplicado($partido)) {
+            return false;
+        }
+
+        foreach ([$partido->idEquipoLocal, $partido->idEquipoVisitante] as $idEquipo) {
+            if ($this->equipoFueReemplazado((int) $idEquipo, (int) $partido->idEdicion, (int) $partido->idCategoria)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @throws DomainException cuando el resultado quedó bloqueado por un reemplazo de equipo
+     */
+    public function asegurarResultadoEditable(Partido|InstanciaFinal $partido): void
+    {
+        if ($this->resultadoBloqueadoPorReemplazo($partido)) {
+            throw new DomainException('Este partido no se puede modificar ni eliminar: incluye a un equipo reemplazado y su resultado quedó fijado en el historial.');
+        }
+    }
+
+    /**
      * Elimina un partido regular revirtiendo en una misma transacción:
      * tabla de posiciones, historial de equipos, estadísticas de jugadores
      * y goleadores (por delta, preservando datos manuales), reportes
@@ -281,6 +361,8 @@ class PartidoService
                 ->whereKey($partido->id)
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            $this->asegurarResultadoEditable($partido);
 
             $resultadoAplicado = (bool) $partido->jugado
                 && $partido->golesEquipoLocal !== null

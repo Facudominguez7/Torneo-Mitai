@@ -7,6 +7,14 @@ Actúa como un Arquitecto de Software Senior y Orquestador SDD para el proyecto 
 - **Errores y bugs:** cuando resuelvas un error reportado por el usuario, registra la causa y la solución en Engram, y consúltala en implementaciones futuras para no repetirlo.
 - **Al finalizar:** cierra la sesión con `mem_session_summary`; sin ese resumen, la próxima sesión arranca sin contexto.
 
+### Sincronización obligatoria de `.engram/` con Git
+- Ejecuta los comandos de Engram desde la raíz de este repositorio. `.engram/` contiene la memoria compartida versionada; no debe confundirse con la base local de Engram ni con la sincronización cloud.
+- **Antes de cada `git push`:** guarda las decisiones y el resumen del trabajo que se va a publicar, luego ejecuta `engram sync` para exportar la memoria local del proyecto a `.engram/`. Revisa `git diff -- .engram/` y `git status --short -- .engram/`, incluyendo los chunks nuevos sin seguimiento. Si hay cambios, inclúyelos en un commit autorizado junto con el trabajo o en un commit específico de memoria antes del push; exportar sin commitear no publica la memoria.
+- **Después de cada `git pull` exitoso:** ejecuta `engram sync --import` para incorporar los chunks recibidos a la memoria local, luego consulta `mem_context` antes de continuar trabajando. Esto también aplica si el pull no trajo cambios de código.
+- **Verificación:** ejecuta `engram sync --status` después de exportar o importar. Antes del push, verifica además que no queden cambios pendientes de commit en `.engram/`; después del pull, verifica que no queden chunks pendientes de importación.
+- **Errores y conflictos:** si falla la sincronización, detén el flujo y reporta el error; no hagas el push ni continúes trabajando después del pull como si la memoria estuviera sincronizada. Si el pull falla o deja conflictos, resuélvelos primero sin descartar cambios locales de `.engram/` y recién entonces importa. No borres chunks ni sobrescribas el manifest para eludir conflictos.
+- **Alcance y permisos:** sincroniza solo la memoria de este proyecto; no uses `--all` ni `--cloud` para este flujo. Estas reglas no autorizan commits, push, pull ni resolución destructiva de conflictos por sí solas: respeta los permisos del usuario y, si falta autorización para el commit de memoria, pedila antes del push.
+
 ## 2. FLUJO DE TRABAJO
 Antes de implementar, entiende el código afectado y el contexto guardado en Engram, y acuerda el alcance cuando el pedido sea ambiguo. Escala el proceso al tamaño del cambio: un ajuste puntual no necesita un plan formal; un cambio de varios archivos se divide en tareas verificables.
 - Cambia solo lo necesario, no reviertas trabajo ajeno y no hagas refactors masivos sin pedido explícito.
@@ -332,3 +340,41 @@ it('has emails', function (string $email) {
   - Aserciones de DOM/estado: scripts Node con `page.evaluate` (elementos visibles, clases, posición sticky, contadores).
 - Mínimo a verificar en cada cambio de UI: desktop (1280px) y mobile (390px), comportamiento con scroll (sticky/fixed), y los flujos puntuales afectados. Revisar las capturas con `read` antes de reportar.
 - Si el toolbox no existe, recrearlo (npm init + `npm install playwright-core`) antes de tocar UI; usar el Chrome del sistema (`executablePath: /usr/bin/google-chrome-stable`), sin descargar browsers.
+
+## 9. CONTEXTO COMPARTIDO DEL REDISEÑO
+
+- Antes de continuar el rediseño, leer `.engram/CONTEXT.md` y contrastarlo con el estado actual de Git y la memoria de Engram.
+- Todo el trabajo y los pushes del rediseño deben quedar en `feat/panel-admin-redesign`. No mergear a `main` sin autorización nueva y explícita.
+- Actualizar el resumen compartido al cerrar cambios o decisiones, sin incluir credenciales, tokens, datos privados ni conversaciones completas.
+
+### Verificación obligatoria de UX/UI
+
+- Siempre que se modifique la experiencia de usuario o la interfaz (UX/UI), comprobar el flujo afectado en un navegador real mediante el MCP Playwright antes de dar el cambio por verificado.
+- Usar un navegador con ventana visible y llevar la pestaña de prueba al frente para que el usuario pueda observar las acciones en tiempo real. No sustituirlo silenciosamente por ejecución sin ventana; si no se puede mostrar, informar el bloqueo.
+- Comprobar las interacciones, los estados de error y la presentación en escritorio y móvil; registrar URL, tamaños de pantalla, escenarios y resultados observados.
+- Tamaños de pantalla obligatorios: en escritorio, *1920×1080 y 1280×720, que son los más utilizados; en móvil, **390×844*. En ambos tamaños de escritorio no debe haber desplazamiento horizontal ni textos de controles recortados. Indicar estos tamaños como criterio al delegar escritura o verificación de UX/UI.
+- Las pruebas unitarias, los contratos de fuente y el DOM simulado complementan esta comprobación, pero no la reemplazan.
+- Si el MCP Playwright no está disponible, registrar el bloqueo y dejar la verificación UX/UI pendiente; no declarar el cambio completamente verificado.
+
+## 10. DISEÑO CON IDENTIDAD PROPIA (EVITAR AI-SLOP)
+
+Fuente del concepto: https://www.operativaia.com/post/el-prompt-que-evita-que-tu-web-se-vea-como-todas-las-demas-hechas-con-ia/
+
+- **Concepto:** sin una dirección explícita, la IA elige lo más esperable (la fuente más segura, la paleta más común y los componentes más previsibles) y el resultado se parece a cualquier otro sitio generado con IA. En Mitai, cada decisión visual debe justificarse en la identidad del torneo y no en el valor por defecto del modelo, del framework o de un kit.
+- **Identidad vigente:** el diseño aprobado del rediseño tiene prioridad. Los colores salen de los tokens `--brand-navy` (dominante), `--brand-teal` (secundario) y `--brand-gold` (acento puntual), definidos en `resources/css/app.css` y expuestos en Tailwind como `brand-*`, `primary` y `secondary`. No se introducen colores, fuentes ni sombras fuera de esos tokens sin aprobación del usuario.
+- **Evitar como opción por defecto:**
+  - Fuentes genéricas como identidad: Inter, Roboto, Arial, Space Grotesk o la fuente del sistema. Una fuente declarada debe cargarse de verdad; si no carga, el sitio cae en la fuente del sistema operativo. Las impresiones y los emails pueden usar fuentes del sistema por compatibilidad.
+  - Gradientes violeta o índigo sobre fondo blanco y los colores por defecto de kits, como el `indigo-*` heredado de Breeze.
+  - La tarjeta centrada con sombra suave como solución para todo, los resplandores difusos decorativos (`blur-3xl`) y los emojis como decoración.
+  - Paletas tímidas repartidas en partes iguales. Va mejor un color dominante con un acento marcado.
+  - Textos de marketing genéricos. Los textos de la interfaz usan el vocabulario del torneo: planilla, fecha, edición, categoría, cancha.
+- **Hacer:**
+  - Comprometerse con una estética coherente basada en variables CSS.
+  - Usar fondos con contexto (cancha, texturas del torneo) en lugar de gradientes al azar.
+  - Si hay movimiento, concentrarlo en un único momento de alto impacto, solo con CSS y respetando `prefers-reduced-motion`.
+- **Proceso:** antes de diseñar una pantalla o un componente visual nuevo, proponer 2 o 3 variantes de paleta y tipografía ancladas en esta identidad y esperar la aprobación del usuario antes de escribir el resto. Los ajustes puntuales del panel siguen los componentes `x-ui.*` existentes y no requieren variantes.
+- **Verificación:** al revisar una UI con Playwright (sección 9), comprobar también que no aparezcan los patrones de la lista anterior.
+- **Deuda detectada (2026-10-24):**
+  - Resuelto: la tipografía es Barlow, cargada en `head.blade.php` (`tests/Feature/TipografiaTest.php`).
+  - Resuelto: no quedan clases `indigo-*` en las vistas Blade (`tests/Feature/PaletaMarcaTest.php`). Las pantallas de importar equipos de otra edición pasaron a los componentes `x-ui.*`.
+  - Pendiente: hay resplandores `blur-3xl` decorativos en vistas públicas (`welcome`, `layouts/campeones`, `layouts/goleadores`, `layouts/vallas`, `layouts/fixture`).

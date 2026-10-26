@@ -23,7 +23,7 @@ class AuthenticatedSessionController extends Controller
 
     /**
      * Handle an incoming authentication request.
-     * 
+     *
      * Valida credenciales, verifica si necesita restablecer contraseña,
      * y advierte si el email no está verificado para recibir notificaciones.
      */
@@ -65,7 +65,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('verification.notice')
                 ->with('warning', 'Tu email todavia no esta verificado. Usa el ultimo codigo enviado o pedi uno nuevo en unos segundos.');
         }
-    
+
         return redirect()->intended(route('home', absolute: false));
     }
 

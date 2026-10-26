@@ -1,13 +1,18 @@
 <?php
+
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class VallaMenosVencida extends Model
 {
     use HasFactory;
+
     public $timestamps = false;
+
     protected $table = 'vallas_menos_vencidas';
+
     protected $fillable = ['idEquipo', 'idCategoria', 'idEdicion', 'nombre'];
 
     public function equipo()

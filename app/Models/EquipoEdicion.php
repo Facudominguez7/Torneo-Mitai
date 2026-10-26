@@ -8,20 +8,23 @@ use Illuminate\Database\Eloquent\Model;
 class EquipoEdicion extends Model
 {
     use HasFactory;
+
     protected $table = 'equipo_ediciones';
+
     protected $primaryKey = 'id';
 
     protected $fillable = [
         'idEquipo',
         'idEdicion',
         'idCategoria',
-        'golesContra'
+        'golesContra',
     ];
 
     public function equipo()
     {
         return $this->belongsTo(Equipo::class, 'idEquipo');
     }
+
     public function edicion()
     {
         return $this->belongsTo(Edicion::class, 'idEdicion');

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer('dni')->unique();
             $table->integer('numeroCamiseta');
             $table->timestamps();
-        
+
             $table->foreign('idEquipo')->references('id')->on('equipos')->onDelete('cascade');
             $table->foreign('idCategoria')->references('id')->on('categorias')->onDelete('cascade');
             $table->unique(['idEquipo', 'dni']); // Evita duplicar jugadores en un mismo equipo

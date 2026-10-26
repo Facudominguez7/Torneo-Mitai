@@ -68,7 +68,13 @@
         : null;
 @endphp
 
+@php
+    $tipoCobro = $tipoPartido === 'instancia_final' ? \App\Models\CargoPlanilla::TIPO_INSTANCIA_FINAL : \App\Models\CargoPlanilla::TIPO_PARTIDO;
+@endphp
 <article class="{{ $clasesTarjeta }}" data-jugado="{{ (int) $estaFinalizado }}" data-horario="{{ $hayHorario ? \Carbon\Carbon::parse($partido->horario_datetime)->toIso8601String() : '' }}" data-local="{{ strtolower($partido->nombre_local) }}" data-visitante="{{ strtolower($partido->nombre_visitante) }}" id="partido-{{ $partido->id }}">
+    @if (auth()->user()?->isAdmin())
+        <a class="mb-3 inline-flex min-h-11 items-center rounded border border-white/50 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-white" href="{{ route('cobros.index', ['idEdicion' => $partido->idEdicion, 'tipo' => $tipoCobro, 'partido' => $partido->id, 'periodo' => 'todos', 'estado' => 'todos']) }}">Cobros de este partido</a>
+    @endif
     <div class="flex flex-wrap items-center justify-between gap-3">
         @if ($interzonal)
             <div class="flex items-center gap-2">

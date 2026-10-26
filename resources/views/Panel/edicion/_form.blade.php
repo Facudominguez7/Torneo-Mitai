@@ -1,23 +1,29 @@
 @csrf
-<div class="mb-5">
-    <label for="nombre" class="mb-3 block text-base font-medium text-white">Nombre de la Edición</label>
-    <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $edicion->nombre) }}"
-        class="w-full rounded-md border border-gray-300 bg-white py-2 px-4 text-base font-medium text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200" />
-    @if (request()->routeIs('edicion.create'))
-        <p class="mt-2 text-xs text-indigo-200">
-            Los equipos de ediciones anteriores se agregan luego desde Equipos con el botón
-            "Agregar Equipo de una Edición Anterior".
-        </p>
-    @endif
-</div>
+<div class="space-y-5">
+    <div>
+        <label for="nombre" class="mb-1 block text-sm font-medium text-gray-700">
+            Nombre de la Edición
+        </label>
+        <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $edicion->nombre) }}"
+            class="panel-form-input" />
+        @if (request()->routeIs('edicion.create'))
+            <p class="mt-2 text-xs text-gray-500">
+                Los equipos de ediciones anteriores se agregan luego desde Equipos con el botón
+                "Agregar Equipo de una Edición Anterior".
+            </p>
+        @endif
+    </div>
 
-<div class="mb-5">
-    <label for="jugadores_por_planilla" class="mb-3 block text-base font-medium text-white">Jugadores por Planilla</label>
-    <input type="number" name="jugadores_por_planilla" id="jugadores_por_planilla"
-        value="{{ old('jugadores_por_planilla', $edicion->jugadores_por_planilla ?? 18) }}" min="1" max="40"
-        class="w-full rounded-md border border-gray-300 bg-white py-2 px-4 text-base font-medium text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200" />
-    <p class="mt-2 text-xs text-indigo-200">
-        Este valor define cuántas filas tendrá la planilla de partido y también el límite de jugadores activos
-        permitidos por equipo en esta edición.
-    </p>
+    <div>
+        <label for="jugadores_por_planilla" class="mb-1 block text-sm font-medium text-gray-700">
+            Jugadores por Planilla
+        </label>
+        <input type="number" name="jugadores_por_planilla" id="jugadores_por_planilla"
+            value="{{ old('jugadores_por_planilla', $edicion->jugadores_por_planilla ?? 18) }}" min="1" max="40"
+            class="panel-form-input" />
+        <p class="mt-2 text-xs text-gray-500">
+            Este valor define cuántas filas tendrá la planilla de partido y también el límite de jugadores activos
+            permitidos por equipo en esta edición.
+        </p>
+    </div>
 </div>

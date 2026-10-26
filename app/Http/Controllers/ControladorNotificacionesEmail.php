@@ -104,6 +104,8 @@ class ControladorNotificacionesEmail extends Controller
 
         $usuarios = $query->paginate(20)->withQueryString();
 
+        $totalSinVerificar = User::query()->whereNull('email_verified_at')->count();
+
         // Variables necesarias para el layout admin.blade.php
         $ediciones = Edicion::orderBy('id', 'desc')->get();
         $EdicionSeleccionada = $ediciones->firstWhere('id', (int) $request->query('idEdicion')) ?? $ediciones->first();
@@ -144,7 +146,8 @@ class ControladorNotificacionesEmail extends Controller
             'resumenIdEdicion',
             'resumenNombreEdicion',
             'resumenIdCategoria',
-            'resumenIdFecha'
+            'resumenIdFecha',
+            'totalSinVerificar'
         ));
     }
 

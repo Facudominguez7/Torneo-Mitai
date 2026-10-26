@@ -131,8 +131,11 @@ it('mantiene visible la accion para editar resultado cuando la instancia final y
             'estado' => 'jugado',
         ]));
 
+    // "Editar resultado" en sentence case: T6 (panel-admin-redesign) migró el
+    // botón a x-ui.button, que sigue la convención de copy del rediseño
+    // (botones en sentence case, igual que en el card de Partidos, T5).
     $response->assertOk()
-        ->assertSee('Editar Resultado')
+        ->assertSee('Editar resultado')
         ->assertSee('cargar-resultado-instancia')
         ->assertSee('idPartido='.$contexto['partido']->id, false)
         ->assertSee('estado=jugado', false);
@@ -150,10 +153,11 @@ it('preserva solo los filtros de regreso al cargar resultado de instancia final'
         'horario' => '10:00',
     ];
 
+    // "Cargar resultado" en sentence case: mismo cambio de copy que arriba.
     $this->actingAs($admin)
         ->get(route('instancia_final.index', $filtros))
         ->assertOk()
-        ->assertSee('Cargar Resultado')
+        ->assertSee('Cargar resultado')
         ->assertSee('idPartido='.$contexto['partido']->id, false)
         ->assertSee('estado=pendiente', false)
         ->assertSee('busqueda=Mitai', false);

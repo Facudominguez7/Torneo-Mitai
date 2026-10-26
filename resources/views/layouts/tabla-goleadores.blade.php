@@ -1,5 +1,5 @@
-@section('tituloSeo', 'Tabla de Goleadores | Torneo Mitai')
-@section('descripcionSeo', 'Tabla completa de goleadores por categoría y edición del Torneo Mitai')
+<!DOCTYPE html>
+<html lang="es">
 @include('head')
 
 <body class="bg-[--color-primary] text-white">
@@ -369,3 +369,5 @@
         });
     </script>
 </body>
+
+</html>

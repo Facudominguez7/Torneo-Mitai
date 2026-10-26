@@ -1,53 +1,34 @@
 @csrf
-<div class="mb-5">
-    <label for="idEquipo" class="mb-3 block text-base font-medium text-white">
-        Seleccionar Equipo
-    </label>
-    <select name="idEquipo" id="idEquipo"
-        class="panel-form-input">
+<div class="space-y-5">
+    <x-ui.select label="Seleccionar equipo" name="idEquipo" id="idEquipo">
+        {{-- create() pasa EquipoEdicion (idEquipo, nombreEquipo) y edit() pasa Equipo (id, nombre). --}}
         @foreach ($equipos as $equipo)
-            <option value="{{ $equipo->idEquipo }}"
-                {{ old('idEquipo', $subcampeon->idEquipo) == $equipo->idEquipo ? 'selected' : '' }}>
-                {{ $equipo->nombreEquipo }}
+            @php($idOpcion = $equipo->idEquipo ?? $equipo->id)
+            <option value="{{ $idOpcion }}"
+                {{ old('idEquipo', $subcampeon->idEquipo) == $idOpcion ? 'selected' : '' }}>
+                {{ $equipo->nombreEquipo ?? $equipo->nombre }}
             </option>
         @endforeach
-    </select>
-</div>
-<div class="mb-5">
-    <label for="idCopa" class="mb-3 block text-base font-medium text-white">
-        Seleccionar Copa
-    </label>
-    <select name="idCopa" id="idCopa"
-        class="panel-form-input">
+    </x-ui.select>
+
+    <x-ui.select label="Seleccionar copa" name="idCopa" id="idCopa">
         @foreach ($copas as $copa)
             <option value="{{ $copa->id }}" {{ old('idCopa', $subcampeon->idCopa) == $copa->id ? 'selected' : '' }}>
                 {{ $copa->nombre }}
             </option>
         @endforeach
-    </select>
-</div>
-<div class="mb-5">
-    <label for="nombre" class="mb-3 block text-base font-medium text-white">
-        Edicion
-    </label>
-    <select name="idEdicion" id="idEdicion"
-        class="panel-form-input">
+    </x-ui.select>
 
+    <x-ui.select label="Edición" name="idEdicion" id="idEdicion">
         <option value="{{ $EdicionSeleccionada->id }}" selected>{{ $EdicionSeleccionada->nombre }}</option>
-    </select>
-</div>
-@if (isset($CategoriaSeleccionada))
-    <div class="mb-5">
-        <label for="nombre" class="mb-3 block text-base font-medium text-white">
-            Categoria
-        </label>
-        <select name="idCategoria" id="idCategoria"
-            class="panel-form-input">
+    </x-ui.select>
 
+    @if (isset($CategoriaSeleccionada))
+        <x-ui.select label="Categoría" name="idCategoria" id="idCategoria">
             <option value="{{ $CategoriaSeleccionada->id }}" selected>{{ $CategoriaSeleccionada->nombreCategoria }}
             </option>
-        </select>
-    </div>
-@else
-    <input class="hidden" type="number" name="idCategoria" id="idCategoria" value="{{ $idCategoria }}">
-@endif
+        </x-ui.select>
+    @else
+        <input class="hidden" type="number" name="idCategoria" id="idCategoria" value="{{ $idCategoria }}">
+    @endif
+</div>

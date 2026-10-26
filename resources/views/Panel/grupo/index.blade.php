@@ -1,102 +1,80 @@
 @extends('Panel.admin')
 
 @section('contenido')
-<div class="flex justify-center px-2 sm:px-4">
-    @if (isset($EdicionSeleccionada))
-        <div class="mb-2 grid w-full max-w-3xl grid-cols-1 gap-2 sm:grid-cols-2">
-            <div class="min-w-0">
-            <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada, 'tipo' => $tipo]) }}">
-                    <button
-                        class="mt-2 mb-2 w-full rounded-lg bg-gray-800 px-4 py-2 text-sm text-white transition-all duration-300 hover:bg-gray-900 sm:text-base md:py-3 md:px-6">
-                        Agregar Grupo
-                    </button>
-                </a>
-            </div>
-            <div class="min-w-0">
-                <a href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada, 'tipo' => 'equipogrupo']) }}">
-                    <button
-                        class="mt-2 mb-2 w-full rounded-lg bg-gray-800 px-4 py-2 text-sm text-white transition-all duration-300 hover:bg-gray-900 sm:text-base md:py-3 md:px-6">
-                        Agregar Equipo a Grupo
-                    </button>
-                </a>
-            </div>
-        </div>
-    @endif
-</div>
-<div class="mx-auto flex w-full max-w-4xl justify-center items-stretch px-2 pb-2 sm:px-4 lg:px-6">
-    <div class="w-full overflow-x-auto rounded-lg bg-white shadow-sm">
-    <table class="mt-2 w-full min-w-[640px] border-collapse">
-        <thead>
+    <x-ui.page-header title="Grupos" subtitle="Grupos de la edición seleccionada">
+        @if (isset($EdicionSeleccionada))
+            <x-slot name="actions">
+                <x-ui.button
+                    href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada, 'tipo' => $tipo]) }}"
+                    variant="primary">
+                    Agregar grupo
+                </x-ui.button>
+                <x-ui.button
+                    href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada, 'tipo' => 'equipogrupo']) }}"
+                    variant="secondary">
+                    Agregar equipo a grupo
+                </x-ui.button>
+            </x-slot>
+        @endif
+    </x-ui.page-header>
+
+    <x-ui.data-table class="mt-6" :empty="$grupos->isEmpty()">
+        <x-slot name="emptyState">
+            <x-ui.empty-state message="Todavía no hay grupos en esta edición">
+                @if (isset($EdicionSeleccionada))
+                    <x-slot name="actions">
+                        <x-ui.button
+                            href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada, 'tipo' => $tipo]) }}"
+                            variant="primary" size="sm">
+                            Agregar grupo
+                        </x-ui.button>
+                    </x-slot>
+                @endif
+            </x-ui.empty-state>
+        </x-slot>
+
+        <x-slot name="head">
             <tr>
-                <th class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
-                    Id
-                </th>
-                <th class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
-                    Nombre
-                </th>
-                <th class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
-                    Categoria
-                </th>
-                <th class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
-                    Accion
-                </th>
+                <th scope="col">Id</th>
+                <th scope="col">Nombre</th>
+                <th scope="col">Categoría</th>
+                <th scope="col">Acción</th>
             </tr>
-        </thead>
-        <tbody>
-            @if ($grupos->isempty())
-            <tr class="mb-4 flex flex-row flex-wrap bg-white lg:mb-0 lg:table-row lg:flex-row lg:flex-no-wrap lg:hover:bg-gray-100">
-                <td colspan="5" class="w-full lg:w-auto p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                    No existen registros
-                </td>
-            </tr>
-            @endif
+        </x-slot>
+
+        <x-slot name="body">
             @foreach ($grupos as $g)
-            <tr class="mb-4 flex flex-row flex-wrap bg-white lg:mb-0 lg:table-row lg:flex-row lg:flex-no-wrap lg:hover:bg-gray-100">
-                <td class="w-full lg:w-auto p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                    <span class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Id
-                    </span>
-                    {{ $g->id }}
-                </td>
-                <td class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                    <span class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">nombre
-                    </span>
-                    {{ $g->nombre }}
-                </td>
-                <td class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
-                    <span class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">nombre
-                    </span>
-                    {{ $g->categoria->nombreCategoria }}
-                </td>
-                <td class="w-full lg:w-full p-3 text-gray-800 text-center border border-b  block lg:table-cell relative lg:static">
-                    <span class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Accion
-                    </span>
-                    <div class="lg:flex lg:justify-center lg:space-x-4 lg:flex-row flex justify-center flex-col">
-                        <x-ui.button
-                            href="{{ route('grupos.edit', ['grupo' => $g, 'idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada]) }}"
-                            variant="success" class="mb-1 lg:mb-0">
-                            Editar
-                        </x-ui.button>
-                        <x-ui.button
-                            href="{{ route('grupos.show', ['grupo' => $g, 'idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada]) }}"
-                            variant="primary" class="mb-1 lg:mb-0">
-                            Detalle
-                        </x-ui.button>
-                        <form class="mb-0" action="{{ route('grupos.destroy', $g) }}" method="post">
-                            @method('DELETE')
-                            @csrf
-                            <input type="number" id="idEdicion" name="idEdicion" class="hidden"
-                                        value="{{ $EdicionSeleccionada->id }}">
-                            <x-ui.button type="submit" variant="danger">Eliminar</x-ui.button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
+                <tr>
+                    <td>{{ $g->id }}</td>
+                    <td>{{ $g->nombre }}</td>
+                    <td>{{ $g->categoria->nombreCategoria }}</td>
+                    <td>
+                        <div class="flex flex-wrap items-center justify-center gap-2">
+                            <x-ui.button
+                                href="{{ route('grupos.edit', ['grupo' => $g, 'idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada]) }}"
+                                variant="success" size="sm">
+                                Editar
+                            </x-ui.button>
+                            <x-ui.button
+                                href="{{ route('grupos.show', ['grupo' => $g, 'idEdicion' => $EdicionSeleccionada->id ?? $EdicionSeleccionada]) }}"
+                                variant="primary" size="sm">
+                                Detalle
+                            </x-ui.button>
+                            <x-ui.confirm-delete size="sm"
+                                action="{{ route('grupos.destroy', $g) }}"
+                                entity="el grupo {{ $g->nombre }}"
+                                :fields="['idEdicion' => $EdicionSeleccionada->id]"
+                            />
+                        </div>
+                    </td>
+                </tr>
             @endforeach
-        </tbody>
-    </table>
-    </div>
-</div>
-<div class="flex justify-center">
-    {{ $grupos->links() }}
-</div>
+        </x-slot>
+
+        <x-slot name="footer">
+            <div class="flex justify-center">
+                {{ $grupos->links() }}
+            </div>
+        </x-slot>
+    </x-ui.data-table>
 @endsection

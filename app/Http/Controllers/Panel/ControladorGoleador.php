@@ -9,30 +9,23 @@ use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
 use App\Models\Goleador;
+use App\Models\TablaGoleador;
 use App\Traits\SeleccionarCategoriaTrait;
 use Illuminate\Http\Request;
 
 class ControladorGoleador extends Controller
 {
     use SeleccionarCategoriaTrait;
+
     /**
-     * Display a listing of the resource.
+     * Goleador se fusionó con Valla en Premios individuales (T8c,
+     * panel-admin-redesign): el listado ahora vive ahí. Se conserva la ruta
+     * `goleador.index` (que usan `seleccionar-categoria` y los redirects de
+     * store/update/destroy) redirigiendo a Premios con el mismo idEdicion.
      */
     public function index(Request $request)
     {
-        $ediciones = Edicion::all();
-        $idEdicion = $request->idEdicion;
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $goleadores = Goleador::join('ediciones as ed', 'goleadores.idEdicion', '=', 'ed.id')
-            ->join('equipos as e', 'goleadores.idEquipo', '=', 'e.id')
-            ->join('categorias as cat', 'goleadores.idCategoria', '=', 'cat.id')
-            ->select('goleadores.*', 'e.nombre as nombreEquipo', 'cat.nombreCategoria as nombreCategoria', 'e.id as idEquipo')
-            ->where('goleadores.idEdicion', $idEdicion)
-            ->orderBy('cat.nombreCategoria', 'desc')
-            ->paginate(7);
-        $goleadores->appends(['idEdicion' => $idEdicion]);
-        $tipo = 'goleador';
-        return view('Panel.goleador.index', compact('tipo', 'ediciones', 'EdicionSeleccionada', 'goleadores'));
+        return to_route('premios.index', array_filter(['idEdicion' => $request->idEdicion]));
     }
 
     /**
@@ -41,7 +34,7 @@ class ControladorGoleador extends Controller
     public function create(Request $request)
     {
         $ediciones = Edicion::all();
-        $goleador = new Goleador();
+        $goleador = new Goleador;
         $idEdicion = $request->input('idEdicion');
         $idCategoria = $request->input('idCategoria');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
@@ -55,7 +48,7 @@ class ControladorGoleador extends Controller
         // Obtener todos los goleadores ordenados por cantidad de goles para el SELECT
         $listaGoleadores = collect();
         if ($idEdicion && $idCategoria) {
-            $listaGoleadores = \App\Models\TablaGoleador::where('idEdicion', $idEdicion)
+            $listaGoleadores = TablaGoleador::where('idEdicion', $idEdicion)
                 ->where('idCategoria', $idCategoria)
                 ->with(['jugador', 'equipo'])
                 ->orderByDesc('cantidadGoles')
@@ -72,6 +65,7 @@ class ControladorGoleador extends Controller
     {
         $data = $request->validated();
         Goleador::create($data);
+
         return to_route('goleador.index', ['idEdicion' => $request->idEdicion])->with('status', 'Goleador Cargado');
     }
 
@@ -95,6 +89,7 @@ class ControladorGoleador extends Controller
         $equipos = Equipo::where('idEdicion', $idEdicion)
             ->where('idCategoria', $idCategoria)
             ->get();
+
         return view('Panel.goleador.edit', compact('ediciones', 'goleador', 'equipos', 'idCategoria', 'EdicionSeleccionada'));
     }
 
@@ -105,6 +100,7 @@ class ControladorGoleador extends Controller
     {
         $data = $request->validated();
         $goleador->update($data);
+
         return to_route('goleador.index', ['idEdicion' => $request->idEdicion])->with('status', 'Goleador Actualizado');
     }
 
@@ -114,6 +110,7 @@ class ControladorGoleador extends Controller
     public function destroy(Goleador $goleador, Request $request)
     {
         $goleador->delete();
+
         return to_route('goleador.index', ['idEdicion' => $request->idEdicion])->with('status', 'Goleador Eliminado');
     }
 }

@@ -1,5 +1,5 @@
-@section('tituloSeo', 'Fixture | Torneo Mitai')
-@section('descripcionSeo', 'Fechas, horarios y partidos de todas las categorías del Torneo Mitai')
+<!DOCTYPE html>
+<html lang="es">
 @include('head')
 
 <body class="bg-[--color-primary] text-white">
@@ -378,3 +378,5 @@
         })();
     </script>
 </body>
+
+</html>

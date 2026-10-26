@@ -1,11 +1,12 @@
 <?php
+
 namespace App\Http\Controllers\Panel;
+
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Copa\StoreRequest;
 use App\Models\Copa;
 use App\Models\Edicion;
 use Illuminate\Http\Request;
-
 
 class ControladorCopa extends Controller
 {
@@ -18,6 +19,7 @@ class ControladorCopa extends Controller
         $idEdicion = $request->idEdicion;
         $copas = Copa::all();
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.copa.index', compact('ediciones', 'EdicionSeleccionada', 'copas'));
     }
 
@@ -27,9 +29,10 @@ class ControladorCopa extends Controller
     public function create(Request $request)
     {
         $ediciones = Edicion::all();
-        $copa = new Copa();
+        $copa = new Copa;
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.copa.create', compact('ediciones', 'copa', 'EdicionSeleccionada'));
     }
 
@@ -40,7 +43,8 @@ class ControladorCopa extends Controller
     {
         $data = $request->validated();
         Copa::create($data);
-        return to_route('copa.index',['idEdicion' => $request->idEdicion])->with('status', 'Copa Creada');
+
+        return to_route('copa.index', ['idEdicion' => $request->idEdicion])->with('status', 'Copa Creada');
     }
 
     /**
@@ -49,6 +53,7 @@ class ControladorCopa extends Controller
     public function show(Request $request, Copa $copa)
     {
         $ediciones = Edicion::all();
+
         return view('Panel.copa.show', compact('ediciones'));
     }
 
@@ -60,6 +65,7 @@ class ControladorCopa extends Controller
         $ediciones = Edicion::all();
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.copa.edit', compact('ediciones', 'copa', 'EdicionSeleccionada'));
     }
 
@@ -71,6 +77,7 @@ class ControladorCopa extends Controller
         $data = $request->validated();
         $copa->update($data);
         $idEdicion = $request->idEdicion;
+
         return to_route('copa.index', ['idEdicion' => $idEdicion]);
     }
 
@@ -80,6 +87,7 @@ class ControladorCopa extends Controller
     public function destroy(Request $request, Copa $copa)
     {
         $copa->delete();
+
         return to_route('copa.index', ['idEdicion' => $request->idEdicion])->with('status', 'Copa Eliminada');
     }
 }

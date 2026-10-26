@@ -1,5 +1,5 @@
-@section('tituloSeo', 'Tabla de Posiciones | Torneo Mitai')
-@section('descripcionSeo', 'Posiciones por grupo y categoría en cada edición del Torneo Mitai')
+<!DOCTYPE html>
+<html lang="es">
 @include('head')
 
 <body class="bg-[--color-primary] text-white">
@@ -188,3 +188,5 @@
         </div>
     </div>
 </body>
+
+</html>

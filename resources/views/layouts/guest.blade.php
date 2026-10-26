@@ -1,65 +1,50 @@
-@section('metaRobots', '<meta name="robots" content="noindex, follow">')
+<!DOCTYPE html>
+<html lang="es">
 @include('head')
 
-<body class="bg-[--color-primary] text-white">
-    <div class="relative isolate flex min-h-screen flex-col overflow-hidden">
-        <div class="absolute inset-0">
-            <img src="{{ asset('fotos/fondo_en_cancha.webp') }}" alt="Cancha de fútbol"
-                class="h-full w-full object-cover object-center">
-            <div class="absolute inset-0 bg-gradient-to-b from-black/85 via-black/80 to-black/90"></div>
-        </div>
-
-        <main class="relative flex flex-1 items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-            <div class="w-full max-w-5xl">
-                <div class="grid gap-8 lg:grid-cols-[1.05fr,1fr] items-stretch">
-                    <section
-                        class="rounded-3xl border border-white/10 bg-white/[0.08] p-8 sm:p-10 shadow-[0_25px_60px_-35px_rgba(0,0,0,0.8)] backdrop-blur">
-                        <a href="{{ route('home') }}" class="inline-flex items-center gap-4">
-                            <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="Logo Torneo Mita'í"
-                                class="h-16 w-16 object-contain">
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">Torneo
-                                    mita'í</p>
-                                <h1 class="text-2xl font-bold text-white">Fútbol formativo con estadísticas
-                                    en vivo</h1>
-                            </div>
-                        </a>
-                        <p class="mt-6 text-sm text-white/70 sm:text-base">
-                            Ingresá a tu cuenta para seguir fixtures, resultados y protagonistas de todas las categorías.
-                            Si todavía no formás parte, registrate en minutos y comenzá a disfrutar la experiencia
-                            completa del torneo.
-                        </p>
-                        <div class="mt-8 grid gap-3 text-sm text-white/70">
-                            <div class="flex items-center gap-3 rounded-2xl bg-black/30 px-4 py-3">
-                                <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/10 text-lg text-white shadow-[0_12px_30px_-18px_rgba(255,255,255,0.45)]">
-                                    <i class="fa-solid fa-stopwatch"></i>
-                                </span>
-                                <div>
-                                    <p class="font-semibold text-white">Actualizaciones al instante</p>
-                                    <p class="text-xs text-white/60">Resultados, tablas y jugadores destacados en
-                                        un solo lugar.</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3 rounded-2xl bg-black/30 px-4 py-3">
-                                <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/10 text-lg text-white shadow-[0_12px_30px_-18px_rgba(255,255,255,0.45)]">
-                                    <i class="fa-solid fa-mobile-screen-button"></i>
-                                </span>
-                                <div>
-                                    <p class="font-semibold text-white">Experiencia multipantalla</p>
-                                    <p class="text-xs text-white/60">Optimizamos cada sección para móviles, tablets y
-                                        escritorio.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                    <section
-                        class="rounded-3xl border border-white/10 bg-black/70 p-8 sm:p-10 shadow-[0_30px_80px_-40px_rgba(250,204,21,0.35)] backdrop-blur">
-                        {{ $slot }}
-                    </section>
-                </div>
-            </div>
-        </main>
+{{-- Pantallas de acceso, diseño "Cancha nocturna": fondo navy con las líneas de la cancha y una sola tarjeta. --}}
+<body class="bg-brand-navy font-sans text-white antialiased">
+    <div aria-hidden="true" class="pointer-events-none fixed inset-0 overflow-hidden">
+        {{-- Cancha horizontal en escritorio --}}
+        <div class="absolute inset-10 hidden rounded border-2 border-white/[0.08] lg:block"></div>
+        <div class="absolute inset-y-10 left-1/2 hidden w-0.5 -translate-x-1/2 bg-white/[0.08] lg:block"></div>
+        <div class="absolute left-1/2 top-1/2 hidden h-[440px] w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/[0.08] lg:block"></div>
+        <div class="absolute left-10 top-1/2 hidden h-[340px] w-40 -translate-y-1/2 border-2 border-l-0 border-white/[0.08] lg:block"></div>
+        <div class="absolute left-10 top-1/2 hidden h-[180px] w-[60px] -translate-y-1/2 border-2 border-l-0 border-white/[0.08] lg:block"></div>
+        <div class="absolute right-10 top-1/2 hidden h-[340px] w-40 -translate-y-1/2 border-2 border-r-0 border-white/[0.08] lg:block"></div>
+        <div class="absolute right-10 top-1/2 hidden h-[180px] w-[60px] -translate-y-1/2 border-2 border-r-0 border-white/[0.08] lg:block"></div>
+        {{-- Cancha vertical en mobile y tablet --}}
+        <div class="absolute inset-3 rounded border-2 border-white/[0.08] lg:hidden"></div>
+        <div class="absolute inset-x-3 top-1/2 h-0.5 -translate-y-1/2 bg-white/[0.08] lg:hidden"></div>
+        <div class="absolute left-1/2 top-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/[0.08] lg:hidden"></div>
+        <div class="absolute left-1/2 top-3 h-[70px] w-[200px] -translate-x-1/2 border-2 border-t-0 border-white/[0.08] lg:hidden"></div>
+        <div class="absolute bottom-3 left-1/2 h-[70px] w-[200px] -translate-x-1/2 border-2 border-b-0 border-white/[0.08] lg:hidden"></div>
     </div>
+
+    <main class="relative flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
+        <div class="flex w-full max-w-md flex-col gap-5">
+            <a href="{{ route('home') }}"
+                class="flex items-center gap-3.5 self-start rounded-lg px-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-gold sm:px-0">
+                <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="" class="h-12 w-12 object-contain sm:h-14 sm:w-14">
+                <span class="flex flex-col gap-0.5">
+                    <span class="text-xl font-bold leading-tight sm:text-[22px]">Torneo Mita'í</span>
+                    <span class="text-sm text-white/80 sm:text-[15px]">Fútbol formativo</span>
+                </span>
+            </a>
+
+            <section class="flex flex-col gap-5 rounded-2xl border border-white/[0.08] bg-brand-navy-deep p-6 sm:p-9">
+                {{ $slot }}
+            </section>
+
+            {{ $pie ?? '' }}
+
+            <nav aria-label="Legales" class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm">
+                <a href="{{ route('terminos') }}" class="text-white/80 underline-offset-4 hover:text-white hover:underline">Términos y condiciones</a>
+                <span aria-hidden="true" class="text-white/50">·</span>
+                <a href="{{ route('privacidad') }}" class="text-white/80 underline-offset-4 hover:text-white hover:underline">Política de privacidad</a>
+            </nav>
+        </div>
+    </main>
 </body>
 
 </html>

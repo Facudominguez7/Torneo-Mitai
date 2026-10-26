@@ -2,13 +2,18 @@
 
 namespace App\Providers;
 
+use App\Listeners\LogNotificacionEnviada;
 use App\Models\Edicion;
 use App\Services\EmailDeliverabilityHeaders;
 use App\View\Composers\NavigationComposer;
-use Illuminate\Console\Scheduling\Event;
+use App\View\Composers\SeoComposer;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event as FacadesEvent;
-use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View as ViewContract;
@@ -25,21 +30,20 @@ class AppServiceProvider extends ServiceProvider
 
     /**
      * Bootstrap any application services.
-     * @return void
      */
     public function boot(): void
     {
         // Registrar listener para logear emails enviados
-        \Illuminate\Support\Facades\Event::listen(
-            \Illuminate\Notifications\Events\NotificationSent::class,
-            \App\Listeners\LogNotificacionEnviada::class
+        FacadesEvent::listen(
+            NotificationSent::class,
+            LogNotificacionEnviada::class
         );
 
         // Personalizar URL de verificación para usar query parameters (evita 403 Forbidden)
-        \Illuminate\Auth\Notifications\VerifyEmail::createUrlUsing(function (object $notifiable) {
-            return \Illuminate\Support\Facades\URL::temporarySignedRoute(
+        VerifyEmail::createUrlUsing(function (object $notifiable) {
+            return URL::temporarySignedRoute(
                 'verification.verify',
-                \Illuminate\Support\Carbon::now()->addMinutes(\Illuminate\Support\Facades\Config::get('auth.verification.expire', 60)),
+                Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
                 [
                     'id' => $notifiable->getKey(),
                     'hash' => sha1($notifiable->getEmailForVerification()),
@@ -47,7 +51,7 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        \Illuminate\Auth\Notifications\VerifyEmail::toMailUsing(function (object $notifiable, string $verificationUrl) {
+        VerifyEmail::toMailUsing(function (object $notifiable, string $verificationUrl) {
             return (new MailMessage)
                 ->from(EmailDeliverabilityHeaders::fromAddress(), EmailDeliverabilityHeaders::fromName())
                 ->replyTo(EmailDeliverabilityHeaders::replyToAddress(), EmailDeliverabilityHeaders::replyToName())
@@ -63,8 +67,8 @@ class AppServiceProvider extends ServiceProvider
                 });
         });
 
-        if($this->app->environment('production')) {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
         }
 
         /**
@@ -80,16 +84,23 @@ class AppServiceProvider extends ServiceProvider
          */
         View::composer('layouts.navigation', NavigationComposer::class);
 
+        // Título, descripción, canónica y Open Graph de cada página (config/seo.php).
+        View::composer('head', SeoComposer::class);
+
         View::composer('Panel.admin', function (ViewContract $view): void {
             $ediciones = Edicion::orderByDesc('id')->get();
 
-            $idEdicionActual = request()->attributes->get('panel.idEdicion');
-            if (!$idEdicionActual) {
-                $idEdicionActual = request()->query('idEdicion') ?: request()->session()->get('panel.idEdicion');
-            }
+            $request = request();
+
+            // Si el middleware ya resolvió el contexto (atributo presente,
+            // incluso null), se confía en él; el fallback a query/sesión
+            // aplica solo para render directo de la vista sin middleware.
+            $idEdicionActual = $request->attributes->has('panel.idEdicion')
+                ? $request->attributes->get('panel.idEdicion')
+                : ($request->query('idEdicion') ?: $request->session()->get('panel.idEdicion'));
 
             $edicionSeleccionada = request()->attributes->get('panel.edicion');
-            if (!$edicionSeleccionada && $idEdicionActual) {
+            if (! $edicionSeleccionada && $idEdicionActual) {
                 $edicionSeleccionada = $ediciones->firstWhere('id', (int) $idEdicionActual);
             }
 

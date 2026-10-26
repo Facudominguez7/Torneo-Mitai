@@ -12,9 +12,11 @@ use App\Models\Equipo;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Partido;
+use App\Services\Cobros\ProgramacionCobroService;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
 use Carbon\Carbon;
+use DomainException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -239,10 +241,10 @@ class ControladorPartidos extends Controller
     /**
      * Guarda un partido regular y regresa al listado preservando filtros activos.
      */
-    public function store(StoreRequest $request)
+    public function store(StoreRequest $request, ProgramacionCobroService $programacionCobroService)
     {
         $data = $request->validated();
-        Partido::create($data);
+        $programacionCobroService->crearPartido($request->user(), $data);
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $data['idEdicion'],
@@ -317,7 +319,7 @@ class ControladorPartidos extends Controller
     /**
      * Guardar un partido interzonal
      */
-    public function storeInterzonal(Request $request)
+    public function storeInterzonal(Request $request, ProgramacionCobroService $programacionCobroService)
     {
         $data = $request->validate([
             'idEdicion' => ['required', 'exists:ediciones,id'],
@@ -333,7 +335,7 @@ class ControladorPartidos extends Controller
         $data['idGrupo'] = null;
         $data['es_interzonal'] = true;
 
-        Partido::create($data);
+        $programacionCobroService->crearPartido($request->user(), $data);
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $data['idEdicion'],
@@ -453,6 +455,8 @@ class ControladorPartidos extends Controller
 
         try {
             $this->partidoService->eliminarPartido($partido);
+        } catch (DomainException $error) {
+            return to_route('partido.index', $parametrosRegreso)->with('error', $error->getMessage());
         } catch (Throwable $error) {
             Log::error('No se pudo eliminar el partido', [
                 'partido_id' => $partido->id,
@@ -493,7 +497,16 @@ class ControladorPartidos extends Controller
             $golesEquipoLocal = (int) $datosValidados['golesEquipoLocal'];
             $golesEquipoVisitante = (int) $datosValidados['golesEquipoVisitante'];
 
-            $this->partidoService->actualizarResultado($partido, $golesEquipoLocal, $golesEquipoVisitante);
+            try {
+                $this->partidoService->actualizarResultado($partido, $golesEquipoLocal, $golesEquipoVisitante);
+            } catch (DomainException $error) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $error->getMessage()], 422);
+                }
+
+                return redirect()->to($rutaRegreso)->with('error', $error->getMessage());
+            }
+
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoLocal, $partido->idEdicion, $partido->idGrupo);
             $this->partidoService->actualizarGolesContraEquipoEdicion($partido->idEquipoVisitante, $partido->idEdicion, $partido->idGrupo);
 

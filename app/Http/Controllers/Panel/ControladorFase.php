@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Fase\StoreRequest;
 use App\Models\Edicion;
-use Illuminate\Http\Request;
 use App\Models\Fase;
-
+use Illuminate\Http\Request;
 
 class ControladorFase extends Controller
 {
@@ -20,6 +19,7 @@ class ControladorFase extends Controller
         $ediciones = Edicion::all();
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.fase.index', compact('EdicionSeleccionada', 'fases', 'ediciones'));
     }
 
@@ -29,9 +29,10 @@ class ControladorFase extends Controller
     public function create(Request $request)
     {
         $ediciones = Edicion::all();
-        $fase = new Fase();
+        $fase = new Fase;
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.fase.create', compact('ediciones', 'fase', 'EdicionSeleccionada'));
     }
 
@@ -42,7 +43,8 @@ class ControladorFase extends Controller
     {
         $data = $request->validated();
         Fase::create($data);
-        return to_route('fase.index',['idEdicion' => $request->idEdicion])->with('status', 'Fase Creada');
+
+        return to_route('fase.index', ['idEdicion' => $request->idEdicion])->with('status', 'Fase Creada');
     }
 
     /**
@@ -53,6 +55,7 @@ class ControladorFase extends Controller
         $ediciones = Edicion::all();
         $idEdicion = $request->idEdicion;
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+
         return view('Panel.fase.edit', compact('ediciones', 'fase', 'EdicionSeleccionada'));
     }
 
@@ -64,6 +67,7 @@ class ControladorFase extends Controller
         $data = $request->validated();
         $fase->update($data);
         $idEdicion = $request->idEdicion;
+
         return to_route('fase.index', ['idEdicion' => $idEdicion]);
     }
 
@@ -73,6 +77,7 @@ class ControladorFase extends Controller
     public function destroy(Request $request, Fase $fase)
     {
         $fase->delete();
+
         return to_route('fase.index', ['idEdicion' => $request->idEdicion]);
     }
 }

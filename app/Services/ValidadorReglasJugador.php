@@ -5,9 +5,12 @@ namespace App\Services;
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
 use App\Models\PlanillaJugador;
+use App\Models\ReemplazoEquipo;
+use Carbon\Carbon;
 
 /**
  * Servicio de Validación de Reglas de Negocio para Jugadores
@@ -125,12 +128,17 @@ class ValidadorReglasJugador
     }
 
     /**
-     * Validar si el jugador ya jugó para otro equipo en la misma categoría y edición
+     * Validar si el jugador ya jugó para otro equipo en la misma categoría y edición.
+     *
+     * Un reemplazo de equipo (incluidos los encadenados) no cuenta como "otro equipo":
+     * el jugador del reemplazado puede anotarse en el reemplazante y viceversa.
      */
     private function validarEquipoUnicoPorCategoria($dni_jugador, $idEquipo, $idEdicion, $idCategoria)
     {
+        $equiposEquivalentes = ReemplazoEquipo::equiposEquivalentes((int) $idEquipo, (int) $idEdicion, (int) $idCategoria);
+
         $jugadorEnOtroEquipo = PlanillaJugador::where('dni_jugador', $dni_jugador)
-            ->where('idEquipo', '!=', $idEquipo)
+            ->whereNotIn('idEquipo', $equiposEquivalentes)
             ->where('idEdicion', $idEdicion)
             ->where('idCategoria', $idCategoria)
             ->first();
@@ -224,7 +232,7 @@ class ValidadorReglasJugador
 
         // Calcular edad del jugador
         $anioActual = (int) date('Y');
-        $anioNacimiento = (int) \Carbon\Carbon::parse($fecha_nacimiento)->year;
+        $anioNacimiento = (int) Carbon::parse($fecha_nacimiento)->year;
         $edadJugador = $anioActual - $anioNacimiento;
 
         $categoriaEquipoActual = Categoria::find($idCategoria);
@@ -252,7 +260,7 @@ class ValidadorReglasJugador
             if ($anioNacimiento < $anioEquipoActual) {
                 return [
                     'type' => 'error',
-                    'message' => $infoJugador.' (nacido el '.\Carbon\Carbon::parse($fecha_nacimiento)->format('d/m/Y').') no puede jugar en '.$infoEquipo.' "'.$categoriaEquipoActual->nombreCategoria.'". El jugador es mayor que la edad permitida.',
+                    'message' => $infoJugador.' (nacido el '.Carbon::parse($fecha_nacimiento)->format('d/m/Y').') no puede jugar en '.$infoEquipo.' "'.$categoriaEquipoActual->nombreCategoria.'". El jugador es mayor que la edad permitida.',
                 ];
             }
         } else {
@@ -293,8 +301,15 @@ class ValidadorReglasJugador
             }
 
             // "Subir" (jugador de categoría más joven jugando en categoría de mayor edad)
-            // es siempre válido. El bloqueo por edad ya se cubre en la validación
+            // es válido, pero si cruza instituciones se advierte sin bloquear.
+            // El bloqueo por edad ya se cubre en la validación
             // de anioNacimiento < anioEquipoActual (línea anterior).
+            if ($anioCategoriaJugador > $anioEquipoActual && $institucionOrigenId !== $institucionDestinoId) {
+                return [
+                    'type' => 'warning',
+                    'message' => $infoJugador.' Solo puede subir a una categoria de mayor edad como "'.$categoriaEquipoActual->nombreCategoria.'" dentro de la misma institucion.',
+                ];
+            }
         }
 
         return null;
@@ -335,7 +350,7 @@ class ValidadorReglasJugador
     private function obtenerLimiteJugadores($idEquipo, $idEdicion)
     {
         // Prioridad: límite de la categoría → límite de la edición → default 18
-        $equipoEdicion = \App\Models\EquipoEdicion::where('idEquipo', $idEquipo)
+        $equipoEdicion = EquipoEdicion::where('idEquipo', $idEquipo)
             ->where('idEdicion', $idEdicion)
             ->with('categoria')
             ->first();

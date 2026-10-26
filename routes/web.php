@@ -5,11 +5,12 @@ use App\Http\Controllers\ControladorEquipoSeguido;
 use App\Http\Controllers\ControladorHome;
 use App\Http\Controllers\ControladorNotificacionesEmail;
 use App\Http\Controllers\ControladorPlanillaPublica;
-use App\Http\Controllers\ControladorSitemap;
+use App\Http\Controllers\ControladorSeo;
 use App\Http\Controllers\Google\LoginController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\Panel\ControladorCampeon;
 use App\Http\Controllers\Panel\ControladorCategoria;
+use App\Http\Controllers\Panel\ControladorCobros;
 use App\Http\Controllers\Panel\ControladorConsultaJugador;
 use App\Http\Controllers\Panel\ControladorCopa;
 use App\Http\Controllers\Panel\ControladorEdicion;
@@ -21,15 +22,20 @@ use App\Http\Controllers\Panel\ControladorFase;
 use App\Http\Controllers\Panel\ControladorFecha;
 use App\Http\Controllers\Panel\ControladorGoleador;
 use App\Http\Controllers\Panel\ControladorGrupos;
+use App\Http\Controllers\Panel\ControladorImpresiones;
 use App\Http\Controllers\Panel\ControladorInstanciaFinal;
 use App\Http\Controllers\Panel\ControladorInstitucion;
 use App\Http\Controllers\Panel\ControladorListaBuenaFe;
 use App\Http\Controllers\Panel\ControladorPartidos;
 use App\Http\Controllers\Panel\ControladorPlanillaJugador;
+use App\Http\Controllers\Panel\ControladorPodio;
+use App\Http\Controllers\Panel\ControladorPremios;
+use App\Http\Controllers\Panel\ControladorReemplazoEquipo;
 use App\Http\Controllers\Panel\ControladorSubcampeon;
 use App\Http\Controllers\Panel\ControladorTablaGoleadores;
 use App\Http\Controllers\Panel\ControladorTablaPosiciones;
 use App\Http\Controllers\Panel\ControladorValla;
+use App\Http\Controllers\Panel\ControladorVallasRanking;
 use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\PanelEdicionContextMiddleware;
 use App\Http\Middleware\UserAccesPanelMiddleware;
@@ -49,7 +55,6 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/', [ControladorHome::class, 'index'])->name('home');
-Route::get('/sitemap.xml', [ControladorSitemap::class, 'index'])->name('sitemap');
 Route::get('/campeones', [ControladorHome::class, 'campeones'])->name('campeones');
 Route::get('/subcampeones', [ControladorHome::class, 'subcampeones'])->name('subcampeones');
 Route::get('/goleadores', [ControladorHome::class, 'goleadores'])->name('goleadores');
@@ -62,19 +67,40 @@ Route::get('/tabla-de-posiciones', [ControladorHome::class, 'tablaPosiciones'])-
 Route::get('/tabla-de-goleadores', [ControladorHome::class, 'tablaGoleadores'])->name('tabla-goleadores');
 Route::get('/tabla-de-vallas', [ControladorHome::class, 'tablaVallas'])->name('tabla-vallas');
 Route::get('/instancias-finales', [ControladorHome::class, 'instanciasFinales'])->name('instancias-finales');
+Route::get('/robots.txt', [ControladorSeo::class, 'robots'])->name('robots');
+Route::get('/sitemap.xml', [ControladorSeo::class, 'sitemap'])->name('sitemap');
+Route::view('/terminos-y-condiciones', 'legales.terminos')->name('terminos');
+Route::view('/politica-de-privacidad', 'legales.privacidad')->name('privacidad');
 Route::get('forgot-password/{restablecer?}', [PasswordResetLinkController::class, 'create'])->name('password.request');
 
 Route::group(['prefix' => 'Panel', 'middleware' => [UserAccesPanelMiddleware::class, 'auth', 'verified', PanelEdicionContextMiddleware::class]], function () {
+    Route::get('cobros', [ControladorCobros::class, 'index'])->name('cobros.index');
+    Route::get('cobros/imprimir', [ControladorCobros::class, 'imprimir'])->name('cobros.imprimir');
+    Route::get('cobros/detalle', [ControladorCobros::class, 'detalle'])->name('cobros.detalle');
+    Route::get('cobros/partido', [ControladorCobros::class, 'partido'])->name('cobros.partido');
+    foreach (['pagos', 'exenciones', 'exenciones-edicion', 'politicas', 'no-vino', 'no-vino-deshacer', 'tarifa', 'activar'] as $operacion) {
+        Route::post('cobros/'.$operacion, [ControladorCobros::class, 'operar'])->name('cobros.'.$operacion);
+    }
     Route::resource('equipo', ControladorEquipo::class);
     Route::resource('categoria', ControladorCategoria::class);
     Route::resource('edicion', ControladorEdicion::class);
     Route::resource('campeon', ControladorCampeon::class);
     Route::resource('subcampeon', ControladorSubcampeon::class);
+    Route::get('podio', [ControladorPodio::class, 'index'])->name('podio.index');
+    Route::post('podio/confirmar', [ControladorPodio::class, 'confirmar'])->name('podio.confirmar');
+    Route::get('impresiones', [ControladorImpresiones::class, 'index'])->name('impresiones.index');
     Route::resource('copa', ControladorCopa::class);
     Route::resource('fecha', ControladorFecha::class);
     Route::resource('goleador', ControladorGoleador::class);
     Route::resource('valla', ControladorValla::class);
+    Route::get('premios', [ControladorPremios::class, 'index'])->name('premios.index');
+    Route::post('premios/goleador', [ControladorPremios::class, 'guardarGoleador'])->name('premios.goleador');
+    Route::post('premios/valla', [ControladorPremios::class, 'guardarValla'])->name('premios.valla');
+    Route::get('vallas', [ControladorVallasRanking::class, 'index'])->name('vallas.index');
     Route::resource('tabla_posicion', ControladorTablaPosiciones::class);
+    Route::get('reemplazo-equipo/crear', [ControladorReemplazoEquipo::class, 'create'])->name('reemplazo-equipo.create');
+    Route::get('reemplazo-equipo/buscar-otra-edicion', [ControladorReemplazoEquipo::class, 'buscarOtraEdicion'])->name('reemplazo-equipo.buscar-otra-edicion');
+    Route::post('reemplazo-equipo', [ControladorReemplazoEquipo::class, 'store'])->name('reemplazo-equipo.store');
     Route::resource('grupos', ControladorGrupos::class);
     Route::resource('equipogrupo', ControladorEquiposGrupos::class);
     Route::post('equipogrupo/asignar-pendientes', [ControladorEquiposGrupos::class, 'asignarPendientes'])
@@ -105,8 +131,6 @@ Route::group(['prefix' => 'Panel', 'middleware' => [UserAccesPanelMiddleware::cl
         ->name('admin.imprimir-fixture-arbitros');
     Route::get('/admin/imprimir-fixture-arbitros-partidos', [ControladorHome::class, 'imprimirFixtureArbitrosPartidos'])
         ->name('admin.imprimir-fixture-arbitros-partidos');
-    Route::get('/admin/planilla-cobro', [ControladorHome::class, 'planillaCobro'])
-        ->name('admin.planilla-cobro');
     Route::get('/admin/grupos-por-categoria/{idCategoria}', [ControladorHome::class, 'gruposPorCategoria'])
         ->name('admin.grupos-por-categoria');
     Route::get('/admin/fechas-por-categoria/{idCategoria}', [ControladorHome::class, 'fechasPorCategoria'])
@@ -152,6 +176,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => [UserAccesPanelMiddleware::cl
     // Consulta de jugador
     Route::get('/consulta-jugador', [ControladorConsultaJugador::class, 'index'])->name('jugador.consulta');
     Route::post('/consulta-jugador/buscar', [ControladorConsultaJugador::class, 'buscar'])->name('jugador.buscar');
+    Route::get('/consulta-jugador/rapida', [ControladorConsultaJugador::class, 'consultaRapida'])->name('jugador.consulta-rapida');
 
     // Gestión de Instituciones
     Route::prefix('instituciones')->group(function () {

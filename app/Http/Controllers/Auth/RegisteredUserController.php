@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
@@ -26,7 +27,7 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
@@ -46,14 +47,19 @@ class RegisteredUserController extends Controller
                 },
             ],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'terminos' => ['accepted'],
+        ], [
+            'terminos.accepted' => 'Tenés que aceptar los Términos y condiciones y la Política de privacidad.',
         ]);
 
-        $user = User::create([
+        // forceCreate: terminos_aceptados_at queda fuera de $fillable para que ningún formulario pueda escribirlo.
+        $user = User::forceCreate([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'requires_email_verification_for_notifications' => true,
             'restablecer_password' => 'innecesario', // Usuario recién creado por sí mismo, no requiere reset
+            'terminos_aceptados_at' => now(),
         ]);
 
         event(new Registered($user));

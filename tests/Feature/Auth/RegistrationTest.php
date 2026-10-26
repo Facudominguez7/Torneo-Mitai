@@ -18,6 +18,7 @@ test('new users can register', function () {
         'email' => 'test@gmail.com',
         'password' => 'password',
         'password_confirmation' => 'password',
+        'terminos' => '1',
     ]);
 
     $user = User::query()->where('email', 'test@gmail.com')->firstOrFail();

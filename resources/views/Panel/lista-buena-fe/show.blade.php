@@ -1,31 +1,54 @@
 @extends('Panel.admin')
 
 @section('detalle')
-    <div class="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
-        <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 class="text-2xl font-bold text-white sm:text-3xl">📋 Lista de Buena Fe</h1>
-            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:space-x-4 sm:gap-0">
-                <button
-                    onclick="printExternal('{{ route('lista-buena-fe.imprimir-planilla', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}')"
-                    class="inline-flex w-full items-center justify-center rounded bg-green-500 px-4 py-2 font-bold text-white hover:bg-green-600 sm:w-auto">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
-                        </path>
-                    </svg>
-                    <span>Imprimir Planilla</span>
-                </button>
-                <a href="{{ route('lista-buena-fe.index', ['idEdicion' => $EdicionSeleccionada->id]) }}"
-                    class="flex items-center justify-center font-medium text-white hover:text-blue-500 sm:justify-start">
-                    &larr; Volver a Equipos
-                </a>
-            </div>
+    @php
+        $rutaDetalle = route('lista-buena-fe.show', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]);
+        $cupoCompleto = $cantidadActivos >= $limiteJugadoresPorPlanilla;
+        $excedeCupo = $cantidadActivos > $limiteJugadoresPorPlanilla;
+        $lugaresLibres = max($limiteJugadoresPorPlanilla - $cantidadActivos, 0);
+        $busquedaServidor = filled($buscarDni ?? '');
+
+        // Shared mobile-card label: each cell shows its column name above the value below md.
+        $etiquetaMovil = 'max-md:before:mb-0.5 max-md:before:block max-md:before:text-[11px] max-md:before:font-semibold max-md:before:uppercase max-md:before:tracking-wide max-md:before:text-gray-500 max-md:before:content-[attr(data-label)]';
+    @endphp
+
+    <div class="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
+        <a href="{{ route('lista-buena-fe.index', ['idEdicion' => $EdicionSeleccionada->id]) }}"
+            class="mb-3 inline-flex items-center gap-1 rounded text-sm font-semibold text-brand-teal transition hover:text-brand-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/50">
+            <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M12.78 4.22a.75.75 0 0 1 0 1.06L8.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06l-5.25-5.25a.75.75 0 0 1 0-1.06l5.25-5.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
+            </svg>
+            Volver a equipos
+        </a>
+
+        <x-ui.page-header :title="$equipoSeleccionado->equipo->nombre"
+            :subtitle="'Lista de buena fe · '.$equipoSeleccionado->categoria->nombreCategoria.' · '.$EdicionSeleccionada->nombre">
+            <x-slot name="actions">
+                <x-ui.button variant="primary"
+                    onclick="printExternal('{{ route('lista-buena-fe.imprimir-planilla', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}')">
+                    Imprimir Planilla
+                </x-ui.button>
+                <x-ui.button href="{{ route('lista-buena-fe.pdf', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}"
+                    variant="secondary">
+                    Descargar PDF
+                </x-ui.button>
+            </x-slot>
+        </x-ui.page-header>
+
+        <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-contador-jugadores>
+            <x-ui.badge :variant="$excedeCupo ? 'danger' : ($cupoCompleto ? 'success' : 'neutral')">
+                {{ $cantidadActivos }}/{{ $limiteJugadoresPorPlanilla }} jugadores activos{{ $cupoCompleto && ! $excedeCupo ? ' · Lista completa' : '' }}
+            </x-ui.badge>
+            @if ($excedeCupo)
+                <span class="text-sm text-gray-500">Excede el tope por {{ $cantidadActivos - $limiteJugadoresPorPlanilla }}.</span>
+            @elseif (! $cupoCompleto)
+                <span class="text-sm text-gray-500">{{ $lugaresLibres === 1 ? 'Queda 1 lugar' : "Quedan {$lugaresLibres} lugares" }}</span>
+            @endif
         </div>
 
         {{-- Mensajes de éxito/error --}}
         @if (session('success'))
-            <div id="success-message" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            <div id="success-message" role="status" class="mt-6 rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-green-800">
                 {{ session('success') }}
             </div>
             <script>
@@ -37,7 +60,7 @@
         @endif
 
         @if (session('error'))
-            <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div id="error-message" role="alert" class="mt-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-red-800">
                 {{ session('error') }}
             </div>
             <script>
@@ -49,7 +72,7 @@
         @endif
 
         @if ($errors->any())
-            <div id="validation-message" class="mb-4 rounded border border-red-300 bg-red-50 px-4 py-3 text-red-700">
+            <div id="validation-message" role="alert" class="mt-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-red-800">
                 {{ $errors->first() }}
             </div>
             <script>
@@ -60,353 +83,306 @@
             </script>
         @endif
 
-        {{-- Información del Equipo --}}
-        <div class="mb-6 flex flex-col gap-4 rounded-lg border-l-4 border-blue-500 bg-white p-4 shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-6">
-            <div>
-                <h2 class="mb-1 text-xl font-bold text-gray-800 sm:text-2xl">
-                    {{ $equipoSeleccionado->equipo->nombre }}
-                </h2>
-                <p class="mb-2 text-base font-medium text-blue-600 sm:text-lg">
-                    {{ $equipoSeleccionado->categoria->nombreCategoria }}
-                </p>
-                <p class="text-sm text-gray-500 sm:text-base">
-                    Edición: <span class="font-semibold">{{ $EdicionSeleccionada->nombre }}</span> |
-                    Jugadores Activos: <span
-                        class="font-semibold {{ $jugadoresActivos->count() >= $limiteJugadoresPorPlanilla ? 'text-red-600' : 'text-green-600' }}">{{ $jugadoresActivos->count() }}/{{ $limiteJugadoresPorPlanilla }}</span>
-                </p>
-            </div>
-
-            {{-- Botón PDF --}}
-            <div>
-                <a href="{{ route('lista-buena-fe.pdf', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}"
-                    class="flex w-full items-center justify-center rounded-md bg-red-600 px-4 py-2 text-white shadow transition hover:bg-red-700 sm:w-auto">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 2H7a2 2 0 00-2 2v14a2 2 0 002 2z">
-                        </path>
-                    </svg>
-                    Descargar PDF
-                </a>
-            </div>
-        </div>
-
-        <div class="mb-6 rounded-lg bg-white p-4 shadow-md sm:p-6">
-            <form method="GET" action="{{ route('lista-buena-fe.show', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}"
-                class="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
-                <div>
-                    <label for="buscar_dni" class="mb-1 block text-sm font-medium text-gray-700">Buscar por DNI</label>
-                    <input type="text" name="buscar_dni" id="buscar_dni" value="{{ $buscarDni ?? '' }}" inputmode="numeric"
-                        pattern="\d*" maxlength="8"
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="Ej: 12345678">
-                </div>
-
-                <button type="submit"
-                    class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700">
-                    Buscar
-                </button>
-
-                <a href="{{ route('lista-buena-fe.show', ['idEquipo' => $equipoSeleccionado->idEquipo, 'idEdicion' => $EdicionSeleccionada->id]) }}"
-                    class="inline-flex items-center justify-center rounded-md bg-slate-200 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-300">
-                    Limpiar
-                </a>
-            </form>
-        </div>
-
         {{-- Botón de Migración --}}
-        @if ($jugadoresActivos->isEmpty())
-            <div class="bg-yellow-50 border border-yellow-300 p-4 rounded-lg mb-6">
-                <h3 class="font-semibold text-yellow-800 mb-2">⚠️ No hay jugadores en la Lista de Buena Fe</h3>
-                <p class="text-sm text-yellow-700 mb-3">
+        @if ($cantidadActivos === 0)
+            <div class="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4">
+                <h2 class="mb-2 font-semibold text-amber-800">No hay jugadores en la Lista de Buena Fe</h2>
+                <p class="mb-3 text-sm text-amber-700">
                     Puedes migrar automáticamente los jugadores que ya han jugado partidos para este equipo.
                 </p>
                 <form method="POST" action="{{ route('lista-buena-fe.migrar') }}" class="inline">
                     @csrf
                     <input type="hidden" name="idEquipo" value="{{ $equipoSeleccionado->idEquipo }}">
                     <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
-                    <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md"
+                    <x-ui.button type="submit" variant="secondary"
                         onclick="return confirm('¿Deseas migrar todos los jugadores de partidos anteriores a la Lista de Buena Fe?')">
-                        🔄 Migrar Jugadores Existentes
-                    </button>
+                        Migrar Jugadores Existentes
+                    </x-ui.button>
                 </form>
             </div>
         @endif
 
         {{-- Formulario para Agregar Jugador --}}
-        @if ($jugadoresActivos->count() < $limiteJugadoresPorPlanilla)
-            <div class="mb-6 rounded-lg bg-white p-4 shadow-md sm:p-6">
-                <details class="mb-4">
+        @if (! $cupoCompleto)
+            <div class="mt-6 rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+                <details>
                     <summary
-                        class="cursor-pointer rounded-md bg-gray-200 p-3 text-base font-medium text-gray-700 transition hover:bg-gray-300 sm:text-lg">
-                        ➕ Agregar Jugador a la Lista de Buena Fe
+                        class="cursor-pointer rounded-md bg-gray-100 p-3 text-base font-medium text-gray-700 transition hover:bg-gray-200 sm:text-lg">
+                        Agregar jugador a la Lista de Buena Fe
                     </summary>
 
                     <form method="POST" action="{{ route('lista-buena-fe.agregar') }}" id="formAgregarJugador"
-                        class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                         @csrf
                         <input type="hidden" name="idEquipo" value="{{ $equipoSeleccionado->idEquipo }}">
                         <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
                         <input type="hidden" name="idCategoria" value="{{ $equipoSeleccionado->idCategoria }}">
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">DNI del Jugador:</label>
+                            <label for="dni_jugador" class="mb-1 block text-sm font-medium text-gray-700">DNI del Jugador:</label>
                             <input type="text" name="dni_jugador" id="dni_jugador" required pattern="\d{7,8}"
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                                 placeholder="Ej: 12345678" autocomplete="off">
                             {{-- Indicador de estado de búsqueda --}}
-                            <div id="dni_status" class="mt-1 text-sm hidden">
-                                <span id="dni_buscando" class="text-blue-600 hidden">
-                                    <svg class="animate-spin inline h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
+                            <div id="dni_status" class="mt-1 hidden text-sm">
+                                <span id="dni_buscando" class="hidden text-brand-navy">
                                     Buscando...
                                 </span>
-                                <span id="dni_encontrado" class="text-green-600 hidden">
-                                    ✅ <span id="dni_mensaje_encontrado"></span>
+                                <span id="dni_encontrado" class="hidden text-green-600">
+                                    <span id="dni_mensaje_encontrado"></span>
                                 </span>
-                                <span id="dni_no_encontrado" class="text-gray-500 hidden">
-                                    ℹ️ DNI no registrado - Complete los datos manualmente
+                                <span id="dni_no_encontrado" class="hidden text-gray-500">
+                                    DNI no registrado - Complete los datos manualmente
                                 </span>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre:</label>
+                            <label for="nombre_jugador" class="mb-1 block text-sm font-medium text-gray-700">Nombre:</label>
                             <input type="text" name="nombre_jugador" id="nombre_jugador" required
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                                 placeholder="Nombre del jugador">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Apellido:</label>
+                            <label for="apellido_jugador" class="mb-1 block text-sm font-medium text-gray-700">Apellido:</label>
                             <input type="text" name="apellido_jugador" id="apellido_jugador" required
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                                 placeholder="Apellido del jugador">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento:</label>
+                            <label for="fecha_nacimiento" class="mb-1 block text-sm font-medium text-gray-700">Fecha de Nacimiento:</label>
                             <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" required
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de Camiseta: <span class="text-gray-400 font-normal">(opcional)</span></label>
+                            <label for="numero_camiseta" class="mb-1 block text-sm font-medium text-gray-700">
+                                Número de Camiseta: <span class="font-normal text-gray-400">(opcional)</span>
+                            </label>
                             <input type="number" name="numero_camiseta" id="numero_camiseta" min="0" max="999"
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                                 placeholder="Ej: 10">
                         </div>
 
                         <div class="md:col-span-2">
-                            <button type="submit"
-                                class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md font-medium transition">
+                            <x-ui.button type="submit" variant="primary" class="w-full justify-center">
                                 Agregar a Lista de Buena Fe
-                            </button>
+                            </x-ui.button>
                         </div>
                     </form>
                 </details>
             </div>
         @else
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-center">
-                <p class="text-red-700 font-semibold">
-                    ⛔ Este equipo ha alcanzado el límite de {{ $limiteJugadoresPorPlanilla }} jugadores.
-                </p>
-            </div>
+            <p class="mt-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                <span class="font-semibold text-gray-800">La lista está completa.</span>
+                Para sumar a alguien, primero da de baja a un jugador.
+            </p>
         @endif
 
-        {{-- Tabla de Jugadores Activos --}}
-        <div class="mb-6 overflow-hidden rounded-lg bg-white shadow-md">
-            <div class="bg-green-600 text-white px-6 py-3">
-                <h3 class="text-xl font-semibold">✅ Jugadores Activos</h3>
+        {{-- Jugadores activos --}}
+        <section class="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white" aria-labelledby="titulo-jugadores-activos">
+            <div class="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div>
+                    <h2 id="titulo-jugadores-activos" class="text-lg font-semibold text-gray-800">Jugadores activos</h2>
+                    <p class="text-sm text-gray-500" data-filtro-resumen aria-live="polite">
+                        @if ($busquedaServidor)
+                            Resultados para el DNI {{ $buscarDni }} ·
+                            <a href="{{ $rutaDetalle }}" class="font-semibold text-brand-teal underline-offset-2 hover:underline">Ver todos</a>
+                        @endif
+                    </p>
+                </div>
+
+                @if ($cantidadActivos > 0 || $jugadoresInactivos->isNotEmpty())
+                    <form method="GET" action="{{ $rutaDetalle }}" role="search" class="w-full sm:w-72"
+                        data-filtro-jugadores data-busqueda-servidor="{{ $busquedaServidor ? '1' : '0' }}">
+                        <x-ui.search label="Buscar jugador por DNI o nombre" :label-hidden="true" name="buscar_dni" id="buscar_dni"
+                            :value="$buscarDni ?? ''" placeholder="Buscar por DNI o nombre" autocomplete="off" />
+                    </form>
+                @endif
             </div>
 
             @if ($jugadoresActivos->isEmpty())
                 <div class="p-6 text-center text-gray-500">
-                    {{ filled($buscarDni ?? '') ? 'No hay jugadores activos que coincidan con el DNI buscado.' : 'No hay jugadores activos en la Lista de Buena Fe.' }}
+                    {{ $busquedaServidor ? 'No hay jugadores activos que coincidan con el DNI buscado.' : 'No hay jugadores activos en la Lista de Buena Fe.' }}
                 </div>
             @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-[880px] divide-y divide-gray-200 sm:min-w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DNI</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre Completo</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Nac.</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Camiseta</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Alta</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Suspendido</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach ($jugadoresActivos as $jugador)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                        {{ $jugador->dni_jugador }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $jugador->jugador?->nombre ?? 'Sin nombre' }} {{ $jugador->jugador?->apellido ?? '' }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('d/m/Y') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ !is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '-' }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $jugador->fecha_alta->format('d/m/Y') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                <table class="block w-full text-left text-sm text-gray-700 md:table">
+                    <thead class="hidden bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-600 md:table-header-group [&>tr>th]:px-5 [&>tr>th]:py-3">
+                        <tr>
+                            <th scope="col">Jugador</th>
+                            <th scope="col">Camiseta</th>
+                            <th scope="col">Nacimiento</th>
+                            <th scope="col">Alta</th>
+                            <th scope="col" class="text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="block divide-y divide-gray-100 md:table-row-group">
+                        @foreach ($jugadoresActivos as $jugador)
+                            @php
+                                $nombreCompleto = trim(($jugador->jugador?->nombre ?? 'Sin nombre').' '.($jugador->jugador?->apellido ?? ''));
+                            @endphp
+                            <tr data-filtro-fila="activo"
+                                data-buscar="{{ Str::lower(Str::ascii($jugador->dni_jugador.' '.$nombreCompleto)) }}"
+                                class="grid grid-cols-3 gap-x-3 gap-y-3 px-4 py-4 md:table-row md:p-0 md:[&>td]:px-5 md:[&>td]:py-3 md:[&>td]:align-middle">
+                                <td data-celda="jugador" class="col-span-3">
+                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <span class="font-semibold text-gray-900">{{ $nombreCompleto }}</span>
                                         @if ($jugador->estaSuspendido())
-                                            <span class="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">
-                                                🟥 SÍ
-                                            </span>
-                                        @else
-                                            <span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
-                                                ✅ NO
-                                            </span>
+                                            <x-ui.badge variant="danger">Suspendido</x-ui.badge>
                                         @endif
-                                    </td>
-                                    <td class="px-6 py-4 align-middle text-center text-sm font-medium">
-                                        <div class="flex items-center justify-center gap-2">
-                                            <button type="button"
-                                                class="js-editar-jugador inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded bg-amber-500 px-3 text-xs leading-none text-white hover:bg-amber-600"
-                                                data-action="{{ route('lista-buena-fe.actualizar', $jugador->id) }}"
-                                                data-estado="activo"
-                                                data-dni="{{ $jugador->dni_jugador }}"
-                                                data-nombre="{{ $jugador->jugador?->nombre ?? '' }}"
-                                                data-apellido="{{ $jugador->jugador?->apellido ?? '' }}"
-                                                data-fecha="{{ $jugador->fecha_nacimiento ? $jugador->fecha_nacimiento->format('Y-m-d') : '' }}"
-                                                data-camiseta="{{ !is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '' }}">
-                                                ✏️ Editar
-                                            </button>
+                                        @if ($jugador->conflictivo && ! $jugador->resuelto)
+                                            <x-ui.badge variant="warning">En revisión</x-ui.badge>
+                                        @endif
+                                    </div>
+                                    <div class="mt-0.5 text-xs tabular-nums text-gray-500">DNI {{ $jugador->dni_jugador }}</div>
+                                </td>
+                                <td data-label="Camiseta" class="tabular-nums {{ $etiquetaMovil }}">
+                                    {{ ! is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '-' }}
+                                </td>
+                                <td data-label="Nacimiento" class="tabular-nums {{ $etiquetaMovil }}">
+                                    {{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('d/m/Y') }}
+                                </td>
+                                <td data-label="Alta" class="tabular-nums {{ $etiquetaMovil }}">
+                                    {{ $jugador->fecha_alta->format('d/m/Y') }}
+                                </td>
+                                <td class="col-span-3 md:text-right">
+                                    <div class="flex gap-2 md:justify-end">
+                                        <x-ui.button size="sm" variant="secondary" type="button"
+                                            class="js-editar-jugador max-md:flex-1 max-md:py-2.5"
+                                            data-action="{{ route('lista-buena-fe.actualizar', $jugador->id) }}"
+                                            data-estado="activo"
+                                            data-dni="{{ $jugador->dni_jugador }}"
+                                            data-nombre="{{ $jugador->jugador?->nombre ?? '' }}"
+                                            data-apellido="{{ $jugador->jugador?->apellido ?? '' }}"
+                                            data-fecha="{{ $jugador->fecha_nacimiento ? $jugador->fecha_nacimiento->format('Y-m-d') : '' }}"
+                                            data-camiseta="{{ ! is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '' }}"
+                                            aria-label="Editar a {{ $nombreCompleto }}">
+                                            Editar
+                                        </x-ui.button>
 
-                                            <form method="POST" action="{{ route('lista-buena-fe.dar-baja', $jugador->id) }}"
-                                                class="contents">
+                                        {{-- Outlined on purpose: the solid red is kept for the confirm button inside the dialog. --}}
+                                        <button type="button"
+                                            class="js-dar-baja inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 max-md:flex-1 max-md:py-2.5"
+                                            data-action="{{ route('lista-buena-fe.dar-baja', $jugador->id) }}"
+                                            data-nombre-completo="{{ $nombreCompleto }}"
+                                            aria-label="Dar de baja a {{ $nombreCompleto }}">
+                                            Dar de baja
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+                <p id="filtro-sin-resultados" class="hidden px-6 py-6 text-center text-sm text-gray-500">
+                    Ningún jugador activo coincide con la búsqueda.
+                </p>
+            @endif
+        </section>
+
+        {{-- Historial de bajas --}}
+        @if ($jugadoresInactivos->isNotEmpty())
+            <details id="historial-bajas" class="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <summary
+                    class="flex cursor-pointer items-center justify-between gap-3 bg-gray-50 px-4 py-3 text-gray-700 transition hover:bg-gray-100 sm:px-6">
+                    <span class="text-base font-semibold">Historial · Jugadores dados de baja</span>
+                    <x-ui.badge data-contador-historial>{{ $jugadoresInactivos->count() }}</x-ui.badge>
+                </summary>
+
+                <table class="block w-full text-left text-sm text-gray-700 md:table">
+                    <thead class="hidden bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-600 md:table-header-group [&>tr>th]:px-5 [&>tr>th]:py-3">
+                        <tr>
+                            <th scope="col">Jugador</th>
+                            <th scope="col">Camiseta</th>
+                            <th scope="col">Alta</th>
+                            <th scope="col">Baja</th>
+                            <th scope="col">Motivo</th>
+                            <th scope="col" class="text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="block divide-y divide-gray-100 border-t border-gray-100 md:table-row-group">
+                        @foreach ($jugadoresInactivos as $jugador)
+                            @php
+                                $nombreCompleto = trim(($jugador->jugador?->nombre ?? 'Sin nombre').' '.($jugador->jugador?->apellido ?? ''));
+                            @endphp
+                            <tr data-filtro-fila="inactivo"
+                                data-buscar="{{ Str::lower(Str::ascii($jugador->dni_jugador.' '.$nombreCompleto)) }}"
+                                class="grid grid-cols-3 gap-x-3 gap-y-3 px-4 py-4 text-gray-600 md:table-row md:p-0 md:[&>td]:px-5 md:[&>td]:py-3 md:[&>td]:align-middle">
+                                <td class="col-span-3">
+                                    <div class="font-semibold text-gray-800">{{ $nombreCompleto }}</div>
+                                    <div class="mt-0.5 text-xs tabular-nums text-gray-500">DNI {{ $jugador->dni_jugador }}</div>
+                                </td>
+                                <td data-label="Camiseta" class="tabular-nums {{ $etiquetaMovil }}">
+                                    {{ ! is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '-' }}
+                                </td>
+                                <td data-label="Alta" class="tabular-nums {{ $etiquetaMovil }}">{{ $jugador->fecha_alta->format('d/m/Y') }}</td>
+                                <td data-label="Baja" class="tabular-nums {{ $etiquetaMovil }}">
+                                    {{ $jugador->fecha_baja ? $jugador->fecha_baja->format('d/m/Y') : '-' }}
+                                </td>
+                                <td data-label="Motivo" class="col-span-3 {{ $etiquetaMovil }}">{{ $jugador->motivo_baja ?? 'Sin especificar' }}</td>
+                                <td class="col-span-3 md:text-right">
+                                    <div class="flex items-center gap-2 md:justify-end">
+                                        <x-ui.button size="sm" variant="secondary" type="button"
+                                            class="js-editar-jugador max-md:flex-1 max-md:py-2.5"
+                                            data-action="{{ route('lista-buena-fe.actualizar', $jugador->id) }}"
+                                            data-estado="inactivo"
+                                            data-dni="{{ $jugador->dni_jugador }}"
+                                            data-nombre="{{ $jugador->jugador?->nombre ?? '' }}"
+                                            data-apellido="{{ $jugador->jugador?->apellido ?? '' }}"
+                                            data-fecha="{{ $jugador->fecha_nacimiento ? $jugador->fecha_nacimiento->format('Y-m-d') : '' }}"
+                                            data-camiseta="{{ ! is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '' }}"
+                                            aria-label="Editar a {{ $nombreCompleto }}">
+                                            Editar
+                                        </x-ui.button>
+
+                                        @if (! $cupoCompleto)
+                                            <form method="POST" action="{{ route('lista-buena-fe.reactivar', $jugador->id) }}" class="contents">
                                                 @csrf
                                                 @method('PUT')
-                                                <input type="text" name="motivo_baja" placeholder="Motivo (opcional)"
-                                                    class="h-8 w-36 rounded border-gray-300 px-2 text-xs leading-none">
-                                                <button type="submit"
-                                                    class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded bg-red-500 px-3 text-xs leading-none text-white hover:bg-red-600"
-                                                    onclick="return confirm('¿Dar de baja a este jugador?')">
-                                                    🗑️ Baja
-                                                </button>
+                                                <x-ui.button size="sm" variant="primary" type="submit" class="max-md:flex-1 max-md:py-2.5"
+                                                    onclick="return confirm('¿Reactivar a este jugador?')"
+                                                    aria-label="Reactivar a {{ $nombreCompleto }}">
+                                                    Reactivar
+                                                </x-ui.button>
                                             </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
-        </div>
+                                        @else
+                                            <span class="text-xs font-semibold text-gray-500 max-md:flex-1 max-md:text-center">Lista completa</span>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
 
-        {{-- Tabla de Jugadores Inactivos (Historial) --}}
-        @if ($jugadoresInactivos->isNotEmpty())
-            <div class="overflow-hidden rounded-lg bg-white shadow-md">
-                <details>
-                    <summary
-                        class="flex cursor-pointer flex-col gap-2 bg-gray-500 px-4 py-3 text-white transition hover:bg-gray-600 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                        <span class="text-base font-semibold sm:text-xl">📜 Historial - Jugadores Dados de Baja</span>
-                        <span class="bg-gray-700 px-2 py-1 rounded text-sm">{{ $jugadoresInactivos->count() }}</span>
-                    </summary>
-
-                    <div class="overflow-x-auto">
-                        <table class="min-w-[900px] divide-y divide-gray-200 sm:min-w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DNI</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Camiseta</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Alta</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Baja</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Motivo</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($jugadoresInactivos as $jugador)
-                                    <tr class="hover:bg-gray-50 opacity-75">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $jugador->dni_jugador }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $jugador->jugador?->nombre ?? 'Sin nombre' }} {{ $jugador->jugador?->apellido ?? '' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ !is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '-' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $jugador->fecha_alta->format('d/m/Y') }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $jugador->fecha_baja ? $jugador->fecha_baja->format('d/m/Y') : '-' }}
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-gray-500">
-                                            {{ $jugador->motivo_baja ?? 'Sin especificar' }}
-                                        </td>
-                                        <td class="px-6 py-4 align-middle whitespace-nowrap text-center">
-                                            <div class="flex items-center justify-center gap-2">
-                                                <button type="button"
-                                                    class="js-editar-jugador inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded bg-amber-500 px-3 text-xs leading-none text-white hover:bg-amber-600"
-                                                    data-action="{{ route('lista-buena-fe.actualizar', $jugador->id) }}"
-                                                    data-estado="inactivo"
-                                                    data-dni="{{ $jugador->dni_jugador }}"
-                                                    data-nombre="{{ $jugador->jugador?->nombre ?? '' }}"
-                                                    data-apellido="{{ $jugador->jugador?->apellido ?? '' }}"
-                                                    data-fecha="{{ $jugador->fecha_nacimiento ? $jugador->fecha_nacimiento->format('Y-m-d') : '' }}"
-                                                    data-camiseta="{{ !is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '' }}">
-                                                    ✏️ Editar
-                                                </button>
-
-                                                @if ($jugadoresActivos->count() < $limiteJugadoresPorPlanilla)
-                                                    <form method="POST" action="{{ route('lista-buena-fe.reactivar', $jugador->id) }}"
-                                                        class="contents">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <button type="submit"
-                                                            class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded bg-green-500 px-3 text-xs leading-none text-white hover:bg-green-600"
-                                                            onclick="return confirm('¿Reactivar a este jugador?')">
-                                                            ♻️ Reactivar
-                                                        </button>
-                                                    </form>
-                                                @else
-                                                    <span class="text-xs text-red-500 font-semibold">Límite alcanzado</span>
-                                                @endif
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </details>
-            </div>
+                <p id="historial-sin-resultados" class="hidden border-t border-gray-100 px-6 py-6 text-center text-sm text-gray-500">
+                    Ninguna baja coincide con la búsqueda.
+                </p>
+            </details>
         @endif
 
-        @if (filled($buscarDni ?? '') && $jugadoresActivos->isEmpty() && $jugadoresInactivos->isEmpty())
+        @if ($busquedaServidor && $jugadoresActivos->isEmpty() && $jugadoresInactivos->isEmpty())
             <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
                 No se encontraron jugadores activos ni inactivos para el DNI <span class="font-semibold">{{ $buscarDni }}</span>.
             </div>
         @endif
 
-        <div id="modal-editar-jugador"
-            class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm">
+        <div id="modal-editar-jugador" role="dialog" aria-modal="true" aria-labelledby="modal-editar-titulo"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/70 p-4 backdrop-blur-sm">
             <div class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
-                <div class="flex items-start justify-between border-b border-slate-200 px-5 py-4">
+                <div class="flex items-start justify-between border-b border-gray-200 px-5 py-4">
                     <div>
-                        <h3 id="modal-editar-titulo" class="text-lg font-semibold text-slate-900">Editar jugador</h3>
-                        <p id="modal-editar-subtitulo" class="text-sm text-slate-500">
+                        <h2 id="modal-editar-titulo" class="text-lg font-semibold text-gray-900">Editar jugador</h2>
+                        <p id="modal-editar-subtitulo" class="text-sm text-gray-500">
                             Corrige identidad y datos operativos sin salir de la Lista de Buena Fe.
                         </p>
                     </div>
 
-                    <button type="button" id="cerrar-modal-editar"
-                        class="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                    <button type="button" id="cerrar-modal-editar" data-cerrar-modal
+                        class="rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
                         aria-label="Cerrar modal de edición">
                         ✕
                     </button>
@@ -419,28 +395,28 @@
                     <div>
                         <label for="editar_dni_jugador" class="mb-1 block text-sm font-medium text-gray-700">DNI del Jugador:</label>
                         <input type="text" name="dni_jugador" id="editar_dni_jugador" required pattern="\d{7,8}"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                             placeholder="Ej: 12345678">
                     </div>
 
                     <div>
                         <label for="editar_nombre_jugador" class="mb-1 block text-sm font-medium text-gray-700">Nombre:</label>
                         <input type="text" name="nombre_jugador" id="editar_nombre_jugador" required
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                             placeholder="Nombre del jugador">
                     </div>
 
                     <div>
                         <label for="editar_apellido_jugador" class="mb-1 block text-sm font-medium text-gray-700">Apellido:</label>
                         <input type="text" name="apellido_jugador" id="editar_apellido_jugador" required
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                             placeholder="Apellido del jugador">
                     </div>
 
                     <div>
                         <label for="editar_fecha_nacimiento" class="mb-1 block text-sm font-medium text-gray-700">Fecha de Nacimiento:</label>
                         <input type="date" name="fecha_nacimiento" id="editar_fecha_nacimiento" required
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30">
                     </div>
 
                     <div class="md:col-span-2">
@@ -448,26 +424,62 @@
                             Número de Camiseta: <span class="font-normal text-gray-400">(opcional)</span>
                         </label>
                         <input type="number" name="numero_camiseta" id="editar_numero_camiseta" min="0" max="999"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                             placeholder="Ej: 10">
                     </div>
 
-                    <div class="md:col-span-2 flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-                        <button type="button" id="cancelar-edicion"
-                            class="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                    <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end md:col-span-2">
+                        <button type="button" id="cancelar-edicion" data-cerrar-modal
+                            class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
                             Cancelar
                         </button>
-                        <button type="submit"
-                            class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700">
+                        <x-ui.button type="submit" variant="primary">
                             Guardar cambios
+                        </x-ui.button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="modal-baja-jugador" role="dialog" aria-modal="true" aria-labelledby="modal-baja-titulo"
+            aria-describedby="modal-baja-descripcion"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/70 p-4 backdrop-blur-sm">
+            <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+                <form method="POST" id="formBajaJugador" class="flex flex-col gap-4 p-5">
+                    @csrf
+                    @method('PUT')
+
+                    <div>
+                        <h2 id="modal-baja-titulo" class="text-lg font-semibold text-gray-900">
+                            Dar de baja a <span data-baja-nombre></span>
+                        </h2>
+                        <p id="modal-baja-descripcion" class="mt-1 text-sm text-gray-500">
+                            Pasa al historial y libera su lugar en la lista. Podés reactivarlo mientras haya cupo.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="motivo_baja" class="mb-1 block text-sm font-medium text-gray-700">
+                            Motivo <span class="font-normal text-gray-400">(opcional)</span>
+                        </label>
+                        <input type="text" name="motivo_baja" id="motivo_baja" maxlength="255" autocomplete="off"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            placeholder="Ej: pase a otro club">
+                    </div>
+
+                    <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <button type="button" data-cerrar-modal
+                            class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+                            Cancelar
                         </button>
+                        <x-ui.button type="submit" variant="danger">
+                            Dar de baja
+                        </x-ui.button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    </div>
-
 @endsection
 
 @section('scripts')
@@ -645,76 +657,197 @@
             }
         });
 
+        /**
+         * Shared dialog behavior: opens over the page, closes with Escape, the
+         * backdrop or any [data-cerrar-modal] button, and gives focus back to
+         * the button that opened it.
+         */
+        function crearModal(modal) {
+            let disparador = null;
+
+            function cerrar() {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.classList.remove('overflow-hidden');
+                disparador?.focus();
+                disparador = null;
+            }
+
+            function abrir(boton, campoInicial) {
+                disparador = boton;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('overflow-hidden');
+                campoInicial?.focus();
+            }
+
+            modal.querySelectorAll('[data-cerrar-modal]').forEach(function(boton) {
+                boton.addEventListener('click', cerrar);
+            });
+
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    cerrar();
+                }
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    cerrar();
+                }
+            });
+
+            return { abrir, cerrar };
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('modal-editar-jugador');
             const form = document.getElementById('formEditarJugador');
             const titulo = document.getElementById('modal-editar-titulo');
             const subtitulo = document.getElementById('modal-editar-subtitulo');
-            const cerrar = document.getElementById('cerrar-modal-editar');
-            const cancelar = document.getElementById('cancelar-edicion');
             const botonesEditar = document.querySelectorAll('.js-editar-jugador');
 
             if (!modal || !form || botonesEditar.length === 0) {
                 return;
             }
 
+            const dialogo = crearModal(modal);
             const dniInput = document.getElementById('editar_dni_jugador');
             const nombreInput = document.getElementById('editar_nombre_jugador');
             const apellidoInput = document.getElementById('editar_apellido_jugador');
             const fechaInput = document.getElementById('editar_fecha_nacimiento');
             const camisetaInput = document.getElementById('editar_numero_camiseta');
 
-            function abrirModal(button) {
-                form.action = button.dataset.action || '';
-                dniInput.value = button.dataset.dni || '';
-                nombreInput.value = button.dataset.nombre || '';
-                apellidoInput.value = button.dataset.apellido || '';
-                fechaInput.value = button.dataset.fecha || '';
-                camisetaInput.value = button.dataset.camiseta || '';
-
-                const estado = button.dataset.estado === 'inactivo' ? 'inactivo' : 'activo';
-                titulo.textContent = `Editar jugador ${estado}`;
-                subtitulo.textContent = estado === 'inactivo'
-                    ? 'Actualiza datos históricos antes de una posible reactivación.'
-                    : 'Corrige identidad y datos operativos del jugador activo.';
-
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                document.body.classList.add('overflow-hidden');
-            }
-
-            function cerrarModal() {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                document.body.classList.remove('overflow-hidden');
-            }
-
             botonesEditar.forEach(function(button) {
                 button.addEventListener('click', function() {
-                    abrirModal(button);
+                    form.action = button.dataset.action || '';
+                    dniInput.value = button.dataset.dni || '';
+                    nombreInput.value = button.dataset.nombre || '';
+                    apellidoInput.value = button.dataset.apellido || '';
+                    fechaInput.value = button.dataset.fecha || '';
+                    camisetaInput.value = button.dataset.camiseta || '';
+
+                    const estado = button.dataset.estado === 'inactivo' ? 'inactivo' : 'activo';
+                    titulo.textContent = `Editar jugador ${estado}`;
+                    subtitulo.textContent = estado === 'inactivo'
+                        ? 'Actualiza datos históricos antes de una posible reactivación.'
+                        : 'Corrige identidad y datos operativos del jugador activo.';
+
+                    dialogo.abrir(button, nombreInput);
+                });
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('modal-baja-jugador');
+            const form = document.getElementById('formBajaJugador');
+            const botonesBaja = document.querySelectorAll('.js-dar-baja');
+
+            if (!modal || !form || botonesBaja.length === 0) {
+                return;
+            }
+
+            const dialogo = crearModal(modal);
+            const nombre = modal.querySelector('[data-baja-nombre]');
+            const motivo = document.getElementById('motivo_baja');
+            const enviar = form.querySelector('[type="submit"]');
+
+            botonesBaja.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    form.action = button.dataset.action || '';
+                    nombre.textContent = button.dataset.nombreCompleto || 'este jugador';
+                    motivo.value = '';
+                    dialogo.abrir(button, motivo);
                 });
             });
 
-            [cerrar, cancelar].filter(Boolean).forEach(function(button) {
-                button.addEventListener('click', cerrarModal);
-            });
-
-            modal.addEventListener('click', function(event) {
-                if (event.target === modal) {
-                    cerrarModal();
-                }
-            });
-
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
-                    cerrarModal();
-                }
+            // One click is one baja: block a second submit while the page reloads.
+            form.addEventListener('submit', function() {
+                enviar.disabled = true;
             });
         });
 
         /**
+         * Instant filter by DNI or name over the active and inactive rows. The
+         * rows are already on the page, so typing never reloads it; a page that
+         * arrived filtered by the server (?buscar_dni=) keeps the normal submit.
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            const formulario = document.querySelector('[data-filtro-jugadores]');
+            const campo = document.getElementById('buscar_dni');
+
+            if (!formulario || !campo) {
+                return;
+            }
+
+            const filasActivas = Array.from(document.querySelectorAll('[data-filtro-fila="activo"]'));
+            const filasInactivas = Array.from(document.querySelectorAll('[data-filtro-fila="inactivo"]'));
+            const sinActivos = document.getElementById('filtro-sin-resultados');
+            const sinInactivos = document.getElementById('historial-sin-resultados');
+            const resumen = document.querySelector('[data-filtro-resumen]');
+            const historial = document.getElementById('historial-bajas');
+            const contadorHistorial = document.querySelector('[data-contador-historial]');
+            const busquedaServidor = formulario.dataset.busquedaServidor === '1';
+            const resumenInicial = resumen?.innerHTML ?? '';
+
+            const normalizar = (texto) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+            // Inline display, not the hidden class: md:table-row would override it on desktop.
+            function filtrar(filas, terminos) {
+                let visibles = 0;
+
+                filas.forEach(function(fila) {
+                    const coincide = terminos.every((termino) => fila.dataset.buscar.includes(termino));
+                    fila.style.display = coincide ? '' : 'none';
+                    visibles += coincide ? 1 : 0;
+                });
+
+                return visibles;
+            }
+
+            function aplicar() {
+                const terminos = normalizar(campo.value).split(/\s+/).filter(Boolean);
+                const activos = filtrar(filasActivas, terminos);
+                const inactivos = filtrar(filasInactivas, terminos);
+                const filtrando = terminos.length > 0;
+
+                sinActivos?.classList.toggle('hidden', !filtrando || activos > 0 || filasActivas.length === 0);
+                sinInactivos?.classList.toggle('hidden', !filtrando || inactivos > 0);
+
+                if (contadorHistorial) {
+                    contadorHistorial.textContent = filtrando ? `${inactivos} de ${filasInactivas.length}` : String(filasInactivas.length);
+                }
+
+                if (historial && filtrando && inactivos > 0 && activos === 0) {
+                    historial.open = true;
+                }
+
+                if (resumen && !busquedaServidor) {
+                    resumen.textContent = filtrando ? `Mostrando ${activos} de ${filasActivas.length}` : '';
+                } else if (resumen && !filtrando) {
+                    resumen.innerHTML = resumenInicial;
+                }
+            }
+
+            campo.addEventListener('input', aplicar);
+
+            // Capture phase: cancel before the global loader (components/loader) sees the submit.
+            document.addEventListener('submit', function(event) {
+                if (event.target === formulario && !busquedaServidor) {
+                    event.preventDefault();
+                    aplicar();
+                }
+            }, true);
+
+            if (campo.value !== '') {
+                aplicar();
+            }
+        });
+
+
+        /**
          * Autocompletado de datos de jugador por DNI
-         * 
+         *
          * Cuando el usuario termina de escribir un DNI (7-8 dígitos),
          * se busca automáticamente en la base de datos y se completan
          * los campos de nombre, apellido y fecha de nacimiento.
@@ -725,22 +858,22 @@
             const apellidoInput = document.getElementById('apellido_jugador');
             const fechaInput = document.getElementById('fecha_nacimiento');
             const camisetaInput = document.getElementById('numero_camiseta');
-            
+
             // Elementos de estado
             const statusContainer = document.getElementById('dni_status');
             const buscandoSpan = document.getElementById('dni_buscando');
             const encontradoSpan = document.getElementById('dni_encontrado');
             const mensajeEncontrado = document.getElementById('dni_mensaje_encontrado');
             const noEncontradoSpan = document.getElementById('dni_no_encontrado');
-            
+
             let timeoutId = null;
             let abortController = null;
-            
+
             // Si no existen los elementos, no hacer nada (ej: formulario no visible)
             if (!dniInput || !nombreInput || !apellidoInput || !fechaInput) {
                 return;
             }
-            
+
             /**
              * Función para ocultar todos los estados
              */
@@ -750,7 +883,7 @@
                 encontradoSpan.classList.add('hidden');
                 noEncontradoSpan.classList.add('hidden');
             }
-            
+
             /**
              * Función para mostrar estado "buscando"
              */
@@ -760,7 +893,7 @@
                 encontradoSpan.classList.add('hidden');
                 noEncontradoSpan.classList.add('hidden');
             }
-            
+
             /**
              * Función para mostrar estado "encontrado"
              */
@@ -771,7 +904,7 @@
                 mensajeEncontrado.textContent = mensaje;
                 noEncontradoSpan.classList.add('hidden');
             }
-            
+
             /**
              * Función para mostrar estado "no encontrado"
              */
@@ -781,7 +914,7 @@
                 encontradoSpan.classList.add('hidden');
                 noEncontradoSpan.classList.remove('hidden');
             }
-            
+
             /**
              * Función para aplicar estilo de campo autocompletado
              */
@@ -792,7 +925,7 @@
                     input.classList.remove('bg-white');
                 }
             }
-            
+
             /**
              * Función para remover estilo de campo autocompletado
              */
@@ -800,7 +933,7 @@
                 input.classList.remove('bg-green-50', 'border-green-300');
                 input.classList.add('bg-white');
             }
-            
+
             /**
              * Función para limpiar campos
              */
@@ -814,7 +947,7 @@
                 removerEstiloAutocompletado(fechaInput);
                 if (camisetaInput) removerEstiloAutocompletado(camisetaInput);
             }
-            
+
             /**
              * Función principal de búsqueda por DNI
              */
@@ -823,11 +956,11 @@
                 if (abortController) {
                     abortController.abort();
                 }
-                
+
                 abortController = new AbortController();
-                
+
                 mostrarBuscando();
-                
+
                 try {
                     const response = await fetch(`{{ route('lista-buena-fe.buscar-dni') }}?dni=${dni}`, {
                         method: 'GET',
@@ -837,13 +970,13 @@
                         },
                         signal: abortController.signal
                     });
-                    
+
                     if (!response.ok) {
                         throw new Error('Error en la respuesta del servidor');
                     }
-                    
+
                     const data = await response.json();
-                    
+
                     if (data.encontrado) {
                         // Autocompletar campos
                         aplicarEstiloAutocompletado(nombreInput, data.nombre);
@@ -868,18 +1001,18 @@
                     ocultarEstados();
                 }
             }
-            
+
             /**
              * Event listener con debounce para el campo DNI
              */
             dniInput.addEventListener('input', function(e) {
                 const dni = e.target.value.trim();
-                
+
                 // Limpiar timeout anterior
                 if (timeoutId) {
                     clearTimeout(timeoutId);
                 }
-                
+
                 // Si el DNI no tiene el formato correcto, ocultar estados y limpiar
                 if (!/^\d{7,8}$/.test(dni)) {
                     ocultarEstados();
@@ -889,13 +1022,13 @@
                     }
                     return;
                 }
-                
+
                 // Debounce de 500ms
                 timeoutId = setTimeout(() => {
                     buscarPorDni(dni);
                 }, 500);
             });
-            
+
             /**
              * Remover estilos de autocompletado cuando el usuario edita manualmente
              */

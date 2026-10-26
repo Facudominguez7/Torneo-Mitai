@@ -8,59 +8,59 @@ use App\Models\Edicion;
 use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
 use App\Models\PlanillaJugador;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Controlador para la vista de estadísticas globales de jugadores.
- * 
+ *
  * Permite visualizar todos los jugadores del torneo con sus equipos
  * y estadísticas tanto globales como por edición.
  * Considera que un jugador puede participar en múltiples categorías.
- * 
- * @package App\Http\Controllers\Panel
  */
 class ControladorEstadisticasJugadores extends Controller
 {
     /**
      * Mostrar la vista de estadísticas de jugadores.
-     * 
+     *
      * Obtiene todos los jugadores registrados, ordenados por cantidad de
      * partidos jugados (descendente). Muestra contadores de jugadores
      * totales, con ≤5 partidos y con >5 partidos.
      *
-     * @param Request $request
-     * @return \Illuminate\Contracts\View\View
+     * @return View
      */
     public function index(Request $request)
     {
         // Obtener todas las ediciones para filtros y selector
         $ediciones = Edicion::orderBy('id', 'desc')->get();
-        
+
         // Edición seleccionada (opcional)
         $idEdicion = $request->input('idEdicion');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        
+
         // Valor de búsqueda
         $busqueda = $request->input('busqueda');
-        
+
         // Obtener jugadores únicos con estadísticas agregadas
         $jugadoresData = $this->obtenerJugadoresConEstadisticas($idEdicion, $busqueda);
-        
+
         // Obtener contadores de partidos
         $contadores = $this->obtenerContadoresPartidos($idEdicion, $busqueda);
-        
+
         // Obtener conteo de jugadores por edición
         $conteoPorEdicion = $this->obtenerConteoPorEdicion();
-        
+
         // Obtener categorías para la edición seleccionada (si aplica)
-        $categorias = $idEdicion 
-            ? Categoria::where('idEdicion', $idEdicion)->orderBy('nombreCategoria', 'desc')->get() 
+        $categorias = $idEdicion
+            ? Categoria::where('idEdicion', $idEdicion)->orderBy('nombreCategoria', 'desc')->get()
             : collect();
-        
+
         // Filtro de categoría
         $idCategoria = $request->input('idCategoria');
-        
+
         return view('Panel.estadisticas-jugadores.index', compact(
             'ediciones',
             'EdicionSeleccionada',
@@ -75,20 +75,20 @@ class ControladorEstadisticasJugadores extends Controller
 
     /**
      * Obtener jugadores únicos con sus estadísticas agregadas.
-     * 
+     *
      * Agrupa jugadores por DNI para manejar casos donde un jugador
      * participa en múltiples categorías. Ordena por partidos jugados DESC.
      *
-     * @param int|null $idEdicion ID de edición para filtrar
-     * @param string|null $busqueda Término de búsqueda
-     * @return \Illuminate\Pagination\LengthAwarePaginator
+     * @param  int|null  $idEdicion  ID de edición para filtrar
+     * @param  string|null  $busqueda  Término de búsqueda
+     * @return LengthAwarePaginator
      */
     private function obtenerJugadoresConEstadisticas(?int $idEdicion, ?string $busqueda)
     {
         // Subquery para contar partidos por jugador
         $subqueryPartidos = PlanillaJugador::query()
             ->select('dni_jugador', DB::raw('COUNT(CASE WHEN asistio = 1 THEN 1 END) as total_partidos'))
-            ->when($idEdicion, fn($q) => $q->where('idEdicion', $idEdicion))
+            ->when($idEdicion, fn ($q) => $q->where('idEdicion', $idEdicion))
             ->groupBy('dni_jugador');
 
         // Query principal: obtener jugadores únicos
@@ -104,10 +104,10 @@ class ControladorEstadisticasJugadores extends Controller
             })
             ->whereExists(function ($q) use ($idEdicion) {
                 $q->select(DB::raw(1))
-                  ->from('lista_buena_fe')
-                  ->whereColumn('lista_buena_fe.dni_jugador', 'jugadores.dni')
-                  ->where('lista_buena_fe.activo', true);
-                
+                    ->from('lista_buena_fe')
+                    ->whereColumn('lista_buena_fe.dni_jugador', 'jugadores.dni')
+                    ->where('lista_buena_fe.activo', true);
+
                 if ($idEdicion) {
                     $q->where('lista_buena_fe.idEdicion', $idEdicion);
                 }
@@ -117,15 +117,15 @@ class ControladorEstadisticasJugadores extends Controller
         if ($busqueda) {
             $query->where(function ($q) use ($busqueda) {
                 $q->where('jugadores.nombre', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('jugadores.apellido', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('jugadores.dni', 'LIKE', "%{$busqueda}%");
+                    ->orWhere('jugadores.apellido', 'LIKE', "%{$busqueda}%")
+                    ->orWhere('jugadores.dni', 'LIKE', "%{$busqueda}%");
             });
         }
 
         // Ordenar por partidos jugados (descendente), luego por apellido
         $query->orderBy('partidos_calculados', 'desc')
-              ->orderBy('jugadores.apellido')
-              ->orderBy('jugadores.nombre');
+            ->orderBy('jugadores.apellido')
+            ->orderBy('jugadores.nombre');
 
         // Paginar resultados
         $jugadoresPaginados = $query->paginate(20);
@@ -140,12 +140,11 @@ class ControladorEstadisticasJugadores extends Controller
 
     /**
      * Enriquecer un jugador con todas sus estadísticas y equipos.
-     * 
-     * Obtiene los equipos donde juega, estadísticas por edición, 
+     *
+     * Obtiene los equipos donde juega, estadísticas por edición,
      * y totales globales.
      *
-     * @param Jugador $jugador
-     * @param int|null $idEdicion
+     * @param  Jugador  $jugador
      * @return Jugador
      */
     private function enriquecerJugadorCompleto($jugador, ?int $idEdicion)
@@ -193,7 +192,7 @@ class ControladorEstadisticasJugadores extends Controller
         // Calcular totales
         $jugador->goles_calculados = $jugador->estadisticas_por_edicion->sum('goles');
         $jugador->tarjetas_rojas_calculadas = $jugador->estadisticas_por_edicion->sum('tarjetas_rojas');
-        
+
         // partidos_calculados ya viene de la query principal
 
         return $jugador;
@@ -201,19 +200,15 @@ class ControladorEstadisticasJugadores extends Controller
 
     /**
      * Obtener contadores de jugadores por cantidad de partidos.
-     * 
-     * Retorna total de jugadores, cantidad con ≤5 partidos y >5 partidos.
      *
-     * @param int|null $idEdicion
-     * @param string|null $busqueda
-     * @return array
+     * Retorna total de jugadores, cantidad con ≤5 partidos y >5 partidos.
      */
     private function obtenerContadoresPartidos(?int $idEdicion, ?string $busqueda): array
     {
         // Subquery para contar partidos por jugador
         $subquery = PlanillaJugador::query()
             ->select('dni_jugador', DB::raw('COUNT(CASE WHEN asistio = 1 THEN 1 END) as total_partidos'))
-            ->when($idEdicion, fn($q) => $q->where('idEdicion', $idEdicion))
+            ->when($idEdicion, fn ($q) => $q->where('idEdicion', $idEdicion))
             ->groupBy('dni_jugador');
 
         // Query para obtener jugadores con sus partidos
@@ -227,10 +222,10 @@ class ControladorEstadisticasJugadores extends Controller
             })
             ->whereExists(function ($q) use ($idEdicion) {
                 $q->select(DB::raw(1))
-                  ->from('lista_buena_fe')
-                  ->whereColumn('lista_buena_fe.dni_jugador', 'jugadores.dni')
-                  ->where('lista_buena_fe.activo', true);
-                
+                    ->from('lista_buena_fe')
+                    ->whereColumn('lista_buena_fe.dni_jugador', 'jugadores.dni')
+                    ->where('lista_buena_fe.activo', true);
+
                 if ($idEdicion) {
                     $q->where('lista_buena_fe.idEdicion', $idEdicion);
                 }
@@ -240,8 +235,8 @@ class ControladorEstadisticasJugadores extends Controller
         if ($busqueda) {
             $query->where(function ($q) use ($busqueda) {
                 $q->where('jugadores.nombre', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('jugadores.apellido', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('jugadores.dni', 'LIKE', "%{$busqueda}%");
+                    ->orWhere('jugadores.apellido', 'LIKE', "%{$busqueda}%")
+                    ->orWhere('jugadores.dni', 'LIKE', "%{$busqueda}%");
             });
         }
 
@@ -256,11 +251,11 @@ class ControladorEstadisticasJugadores extends Controller
 
     /**
      * Obtener el conteo de jugadores por edición.
-     * 
+     *
      * Usa PlanillaJugador para obtener datos históricos de todas las ediciones
      * basándose en los registros de partidos jugados.
      *
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     private function obtenerConteoPorEdicion()
     {

@@ -7,7 +7,6 @@ use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Partido;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 // Helpers con prefijo propio: las funciones de Pest son globales entre archivos
@@ -85,7 +84,6 @@ function ordenEnHtml(string $html, array $marcadores): bool
 
     return true;
 }
-
 
 describe('home: jerarquía de bloques y prosa eliminada', function () {
     it('renderiza los bloques en el orden definido por el spec', function () {

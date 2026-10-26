@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,14 +14,14 @@ return new class extends Migration
     {
         // Limpiar duplicados antes de aplicar la restricción
         // Mantenemos el registro más reciente (mayor ID)
-        $duplicates = \Illuminate\Support\Facades\DB::table('planilla_jugadores')
-            ->select('dni_jugador', 'partido_id', 'partido_type', \Illuminate\Support\Facades\DB::raw('MAX(id) as max_id'))
+        $duplicates = DB::table('planilla_jugadores')
+            ->select('dni_jugador', 'partido_id', 'partido_type', DB::raw('MAX(id) as max_id'))
             ->groupBy('dni_jugador', 'partido_id', 'partido_type')
             ->havingRaw('COUNT(*) > 1')
             ->get();
 
         foreach ($duplicates as $duplicate) {
-            \Illuminate\Support\Facades\DB::table('planilla_jugadores')
+            DB::table('planilla_jugadores')
                 ->where('dni_jugador', $duplicate->dni_jugador)
                 ->where('partido_id', $duplicate->partido_id)
                 ->where('partido_type', $duplicate->partido_type)

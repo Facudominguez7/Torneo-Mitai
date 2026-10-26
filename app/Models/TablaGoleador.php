@@ -10,6 +10,7 @@ class TablaGoleador extends Model
     use HasFactory;
 
     protected $table = 'tabla_goleadores'; // Nombre de la tabla
+
     public $timestamps = true; // Habilitado para rastrear actualizaciones
 
     protected $fillable = [
@@ -20,6 +21,7 @@ class TablaGoleador extends Model
         'dni_jugador',
         // 'nombre' eliminado - se obtiene dinámicamente desde relación jugador
     ];
+
     // Relación con la tabla de equipos
     public function equipo()
     {
@@ -45,21 +47,22 @@ class TablaGoleador extends Model
     public function getNombreCompletoAttribute()
     {
         if ($this->jugador) {
-            return $this->jugador->apellido . ' ' . $this->jugador->nombre;
+            return $this->jugador->apellido.' '.$this->jugador->nombre;
         }
+
         // Fallback si no hay relación (mantiene compatibilidad)
         return $this->attributes['nombre'] ?? 'Desconocido';
     }
 
     public function scopeSearch($query, $val)
     {
-        if (!$val) {
+        if (! $val) {
             return $query;
         }
 
         return $query->whereHas('jugador', function ($q) use ($val) {
-            $q->where('nombre', 'LIKE', '%' . $val . '%')
-              ->orWhere('apellido', 'LIKE', '%' . $val . '%');
+            $q->where('nombre', 'LIKE', '%'.$val.'%')
+                ->orWhere('apellido', 'LIKE', '%'.$val.'%');
         });
     }
 }
