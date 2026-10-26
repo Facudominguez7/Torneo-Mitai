@@ -141,6 +141,11 @@ class ControladorListaBuenaFe extends Controller
 
         $jugadoresInactivos = $jugadoresInactivosQuery->get();
 
+        // El cupo se mide sobre el plantel completo, no sobre el resultado de la búsqueda.
+        $cantidadActivos = $buscarDni === ''
+            ? $jugadoresActivos->count()
+            : ListaBuenaFe::query()->deEquipo($idEquipo, $idEdicion)->activos()->count();
+
         // Obtener estadísticas de jugadores
         $estadisticasService = new EstadisticasService;
         $estadisticasJugadores = $estadisticasService->obtenerJugadoresDosUltimasFechas($idEdicion);
@@ -157,7 +162,8 @@ class ControladorListaBuenaFe extends Controller
             'jugadoresPorCategoria',
             'ediciones',
             'limiteJugadoresPorPlanilla',
-            'buscarDni'
+            'buscarDni',
+            'cantidadActivos'
         ));
     }
 
