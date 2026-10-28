@@ -44,6 +44,12 @@
 
         <div
             class="flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap [.nav-compacta_&]:hidden">
+            <button type="button" id="btn-tema" aria-label="Cambiar tema"
+                class="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 transition hover:border-yellow-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40">
+                <svg id="icono-tema" class="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" aria-hidden="true"></svg>
+                <span id="etiqueta-tema">Sistema</span>
+            </button>
+
             @auth
                 @if (Auth::user()->rol === 'admin')
                     <a href="{{ route('admin', ['idEdicion' => optional($edicionActiva)->id]) }}"
