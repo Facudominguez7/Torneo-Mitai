@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Equipo;
 use App\Models\Partido;
+use App\Models\TablaPosicion;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -42,6 +43,11 @@ class EquipoSeguidoService
         $ultimo = $this->resolverPartido($equipo, $idEdicion, jugado: true);
         $rivales = $this->resolverRivales($equipo, $proximo, $ultimo);
 
+        $idGrupo = $proximo?->idGrupo ?? $ultimo?->idGrupo;
+        if ($idGrupo === null) {
+            $idGrupo = $equipo->grupos()->first()?->id;
+        }
+
         return [
             'disponible' => true,
             'equipo' => [
@@ -51,7 +57,9 @@ class EquipoSeguidoService
             ],
             'proximo' => $proximo !== null ? $this->armarProximo($proximo, $equipo, $rivales) : null,
             'ultimo' => $ultimo !== null ? $this->armarUltimo($ultimo, $equipo, $rivales) : null,
-            'links' => $this->armarLinks($equipo, $idEdicion, $idCategoriaEdicion, $proximo, $ultimo),
+            'posicion' => $this->armarPosicion($equipo, $idEdicion, $idGrupo),
+            'forma' => $this->armarForma($equipo, $idEdicion),
+            'links' => $this->armarLinks($equipo, $idEdicion, $idCategoriaEdicion, $idGrupo),
         ];
     }
 
@@ -178,14 +186,79 @@ class EquipoSeguidoService
         ];
     }
 
-    private function armarLinks(Equipo $equipo, int $idEdicion, ?int $idCategoria, ?Partido $proximo, ?Partido $ultimo): array
+    /**
+     * Ubicación del equipo dentro de su grupo usando el mismo criterio de
+     * orden de la tabla pública de posiciones (puntos, actividad, diferencia,
+     * goles a favor y nombre), para que ambos lugares coincidan siempre.
+     */
+    private function armarPosicion(Equipo $equipo, int $idEdicion, ?int $idGrupo): ?array
     {
-        $idGrupo = $proximo?->idGrupo ?? $ultimo?->idGrupo;
-
-        if ($idGrupo === null && $proximo === null && $ultimo === null) {
-            $idGrupo = $equipo->grupos()->first()?->id;
+        if ($idGrupo === null) {
+            return null;
         }
 
+        $filas = TablaPosicion::query()
+            ->join('equipos', 'tabla_posiciones.idEquipo', '=', 'equipos.id')
+            ->where('tabla_posiciones.idGrupo', $idGrupo)
+            ->where(function ($query) use ($idEdicion) {
+                $query->where('tabla_posiciones.idEdicion', $idEdicion)
+                    ->orWhere('tabla_posiciones.idEdicion', 0);
+            })
+            ->orderBy('tabla_posiciones.puntos', 'DESC')
+            ->orderByRaw('CASE WHEN tabla_posiciones.jugado > 0 THEN 1 ELSE 0 END DESC')
+            ->orderBy('tabla_posiciones.diferenciaGoles', 'DESC')
+            ->orderBy('tabla_posiciones.golesFavor', 'DESC')
+            ->orderBy('equipos.nombre', 'ASC')
+            ->get('tabla_posiciones.*');
+
+        $fila = $filas->firstWhere('idEquipo', $equipo->id);
+        if ($fila === null) {
+            return null;
+        }
+
+        return [
+            'posicion' => $filas->search(fn ($item) => (int) $item->idEquipo === (int) $equipo->id) + 1,
+            'total' => $filas->count(),
+            'puntos' => (int) $fila->puntos,
+            'diferencia' => (int) $fila->diferenciaGoles,
+        ];
+    }
+
+    /**
+     * Resultado (G/E/P) de los últimos cinco partidos jugados, del más
+     * reciente al más viejo.
+     *
+     * @return list<string>
+     */
+    private function armarForma(Equipo $equipo, int $idEdicion): array
+    {
+        return Partido::query()
+            ->where('idEdicion', $idEdicion)
+            ->where(fn ($query) => $query
+                ->where('idEquipoLocal', $equipo->id)
+                ->orWhere('idEquipoVisitante', $equipo->id))
+            ->where('jugado', 1)
+            ->whereNotNull('horario_datetime')
+            ->orderBy('horario_datetime', 'desc')
+            ->orderBy('idFechas', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function (Partido $partido) use ($equipo) {
+                $favor = (int) ($this->esLocal($partido, $equipo) ? $partido->golesEquipoLocal : $partido->golesEquipoVisitante);
+                $contra = (int) ($this->esLocal($partido, $equipo) ? $partido->golesEquipoVisitante : $partido->golesEquipoLocal);
+
+                return match (true) {
+                    $favor > $contra => 'G',
+                    $favor === $contra => 'E',
+                    default => 'P',
+                };
+            })
+            ->values()
+            ->all();
+    }
+
+    private function armarLinks(Equipo $equipo, int $idEdicion, ?int $idCategoria, ?int $idGrupo): array
+    {
         return [
             'fixture' => route('fixture', ['idEdicion' => $idEdicion, 'equipo' => $equipo->nombre]),
             'tabla' => route('tabla-posiciones', array_filter([
