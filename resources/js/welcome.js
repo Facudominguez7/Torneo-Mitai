@@ -302,17 +302,21 @@ function descargarPDF() {
             grilla.appendChild(forma);
         }
 
+        panel.appendChild(grilla);
+
         const accesos = document.createElement('div');
-        accesos.className = 'tm-stat flex flex-col justify-center gap-2 rounded-2xl border border-tema-linea/15 bg-[var(--tm-superficie-bg)] px-4 py-3.5';
+        accesos.className = 'tm-stat mt-3 rounded-2xl border border-tema-linea/15 bg-[var(--tm-superficie-bg)] px-4 py-3';
         accesos.appendChild(crearElemento('p', 'text-[10.5px] font-bold uppercase tracking-[0.12em] text-tema-acento', 'Accesos'));
+        const accesosFila = document.createElement('div');
+        accesosFila.className = 'mt-2 grid gap-2 sm:grid-cols-2';
         if (datos.links && datos.links.fixture) {
-            accesos.appendChild(crearEnlace(datos.links.fixture, 'Fixture del equipo'));
+            accesosFila.appendChild(crearEnlace(datos.links.fixture, 'Fixture del equipo'));
         }
         if (datos.links && datos.links.tabla) {
-            accesos.appendChild(crearEnlace(datos.links.tabla, 'Tabla de posiciones'));
+            accesosFila.appendChild(crearEnlace(datos.links.tabla, 'Tabla de posiciones'));
         }
-        grilla.appendChild(accesos);
-        panel.appendChild(grilla);
+        accesos.appendChild(accesosFila);
+        panel.appendChild(accesos);
 
         if (!datos.proximo && !datos.ultimo) {
             panel.appendChild(crearElemento('p', 'mt-4 text-sm text-tema-dim/70', 'Todavía no hay partidos cargados para tu equipo.'));

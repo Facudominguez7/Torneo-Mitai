@@ -130,7 +130,7 @@
         @if (isset($equiposDeLaEdicion) && $edicionActual && $equiposDeLaEdicion->isNotEmpty())
             {{-- Buscador del equipo seguido: mismos IDs que consume resources/js/welcome.js --}}
             <section id="seguir-equipo-bloque" data-id-edicion="{{ $edicionActual->id }}" class="relative mx-auto max-w-3xl px-4 pb-16 sm:px-6">
-                <div id="seguir-equipo-selector" class="tm-anim-in tm-d2 relative z-50 mx-auto mt-10 max-w-2xl text-left">
+                <div id="seguir-equipo-selector" class="tm-anim-in tm-d2 relative z-50 mx-auto mt-8 max-w-2xl text-left">
                     <label for="seguir-equipo-buscador" class="sr-only">Buscar tu equipo</label>
                     <div class="tm-campo flex items-center gap-3 rounded-[22px] bg-tema-campo-fondo px-5 py-4 text-tema-campo-tinta shadow-[0_30px_70px_-30px_rgba(255,204,51,0.35)] transition-transform duration-300">
                         <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" class="flex-shrink-0">
@@ -155,7 +155,7 @@
                 </p>
 
                 {{-- Panel del equipo seguido: lo arma resources/js/welcome.js con /equipo-seguido --}}
-                <div id="seguir-equipo-card" aria-live="polite" class="mx-auto mt-10 hidden max-w-2xl"></div>
+                <div id="seguir-equipo-card" aria-live="polite" class="mx-auto mt-8 hidden max-w-2xl"></div>
 
                 <script type="application/json" id="seguir-equipo-datos">@json($equiposDeLaEdicion->values())</script>
             </section>
