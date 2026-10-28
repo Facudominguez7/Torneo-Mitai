@@ -201,6 +201,29 @@
         @endif
     </main>
 
+    {{-- Tab bar móvil (artboard 07): oculta desde sm --}}
+    <nav class="tabbar-movil sticky bottom-0 z-30 flex items-center justify-around border-t border-tema-linea/15 bg-tema-fondo pb-[calc(10px+env(safe-area-inset-bottom))] pt-2.5 sm:hidden"
+        aria-label="Navegación inferior">
+        <a href="{{ route('home') }}" aria-current="page">
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M13 13l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Buscar
+        </a>
+        @if (optional($edicionActual)->id)
+            <a href="{{ route('fixture', ['idEdicion' => $edicionActual->id]) }}">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 8.5h14M7 2.5v3M13 2.5v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                Fixture
+            </a>
+            <a href="{{ route('tabla-posiciones', ['idEdicion' => $edicionActual->id]) }}">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 17V9M10 17V4M17 17v-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                Tablas
+            </a>
+            <a href="{{ route('campeones', ['idEdicion' => $edicionActual->id]) }}">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 17h8M8 13h4M10 3l1.6 3.3 3.6.5-2.6 2.6.6 3.6L10 11.2 6.8 13l.6-3.6L4.8 6.8l3.6-.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                Campeones
+            </a>
+        @endif
+    </nav>
+
     <footer class="border-t border-tema-linea/15 bg-black/80 text-white">
         <div class="mx-auto max-w-6xl px-4 py-8 text-center sm:px-6 lg:px-8">
             <p class="text-sm md:text-base">&copy; Mita'í {{ date('Y') }}. Todos los derechos reservados.</p>

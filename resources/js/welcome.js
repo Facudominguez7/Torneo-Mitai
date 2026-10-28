@@ -275,6 +275,33 @@ function descargarPDF() {
             grilla.appendChild(ultimo);
         }
 
+        if (datos.posicion) {
+            const diferencia = datos.posicion.diferencia;
+            const posicion = crearStat(
+                'Posición',
+                datos.posicion.posicion + '° de ' + datos.posicion.total,
+                datos.posicion.puntos + ' pts · ' + (diferencia >= 0 ? '+' : '') + diferencia + ' de diferencia de gol',
+            );
+            posicion.dataset.rol = 'posicion';
+            grilla.appendChild(posicion);
+        }
+
+        if (datos.forma && datos.forma.length) {
+            const forma = document.createElement('div');
+            forma.className = 'tm-stat rounded-2xl border border-tema-linea/15 bg-[var(--tm-superficie-bg)] px-4 py-3.5';
+            forma.dataset.rol = 'forma';
+            forma.appendChild(crearElemento('p', 'text-[10.5px] font-bold uppercase tracking-[0.12em] text-tema-acento', 'Forma'));
+            const fila = document.createElement('div');
+            fila.className = 'tm-forma mt-2';
+            fila.setAttribute('aria-label', 'Últimos ' + datos.forma.length + ' partidos: ' + datos.forma.join(', '));
+            datos.forma.forEach(function (letra) {
+                fila.appendChild(crearElemento('span', letra.toLowerCase(), letra));
+            });
+            forma.appendChild(fila);
+            forma.appendChild(crearElemento('p', 'mt-2 text-xs text-tema-dim/70', 'Últimos ' + datos.forma.length + ' partidos'));
+            grilla.appendChild(forma);
+        }
+
         const accesos = document.createElement('div');
         accesos.className = 'tm-stat flex flex-col justify-center gap-2 rounded-2xl border border-tema-linea/15 bg-[var(--tm-superficie-bg)] px-4 py-3.5';
         accesos.appendChild(crearElemento('p', 'text-[10.5px] font-bold uppercase tracking-[0.12em] text-tema-acento', 'Accesos'));

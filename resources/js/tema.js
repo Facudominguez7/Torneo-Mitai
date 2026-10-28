@@ -10,6 +10,7 @@
 
     const etiqueta = document.getElementById('etiqueta-tema');
     const icono = document.getElementById('icono-tema');
+    const CLAVE_TEMA = 'mitai_tema';
     const estados = ['sistema', 'claro', 'oscuro'];
 
     const ICONO_SOL = '<circle cx="7" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 .8v1.7M7 11.5v1.7M.8 7h1.7M11.5 7h1.7M2.6 2.6l1.2 1.2M10.2 10.2l1.2 1.2M11.4 2.6l-1.2 1.2M3.8 10.2l-1.2 1.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>';
@@ -33,8 +34,23 @@
     }
 
     let indice = 0;
+
+    // La elección sobrevive recargas; sin estado guardado (o con localStorage
+    // bloqueado) queda el modo sistema.
+    try {
+        const guardado = localStorage.getItem(CLAVE_TEMA);
+        indice = Math.max(0, estados.indexOf(guardado));
+    } catch {
+        indice = 0;
+    }
+
     boton.addEventListener('click', function () {
         indice = (indice + 1) % estados.length;
+        try {
+            localStorage.setItem(CLAVE_TEMA, estados[indice]);
+        } catch {
+            // Sin almacenamiento disponible: el override vale hasta recargar.
+        }
         aplicar(estados[indice]);
     });
 
