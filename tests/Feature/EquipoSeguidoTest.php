@@ -85,7 +85,7 @@ it('devuelve proximo y ultimo con rival localia horario marcador y links', funct
 
     $datos = $respuesta->assertJson([
         'disponible' => true,
-        'equipo' => ['nombre' => 'Amigos F.c.', 'idCategoria' => $contexto['categoria']->id],
+        'equipo' => ['nombre' => 'Amigos F.c.', 'idCategoria' => $contexto['categoria']->id, 'foto' => 'equipo.png'],
         'proximo' => [
             'rival' => 'Boca Chicos',
             'esLocal' => true,

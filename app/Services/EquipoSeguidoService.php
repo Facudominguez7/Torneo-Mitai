@@ -47,6 +47,7 @@ class EquipoSeguidoService
             'equipo' => [
                 'nombre' => $equipo->nombre,
                 'idCategoria' => $idCategoriaEdicion,
+                'foto' => $equipo->foto,
             ],
             'proximo' => $proximo !== null ? $this->armarProximo($proximo, $equipo, $rivales) : null,
             'ultimo' => $ultimo !== null ? $this->armarUltimo($ultimo, $equipo, $rivales) : null,

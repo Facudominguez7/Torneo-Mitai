@@ -196,6 +196,29 @@ function descargarPDF() {
         });
     }
 
+    function escudoEquipo(nombre, foto) {
+        // Logo del equipo con fallback al logo Mitai (misma convención de
+        // onerror que layouts/campeones y layouts/tabla-vallas).
+        const escudo = document.createElement('div');
+        escudo.className = 'tm-escudo flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-oro-400/40 bg-brand-navy';
+        if (foto) {
+            const imagen = document.createElement('img');
+            imagen.src = '/fotos/equipos/' + foto;
+            imagen.alt = '';
+            imagen.loading = 'lazy';
+            imagen.className = 'h-full w-full object-cover';
+            imagen.onerror = function () {
+                this.onerror = null;
+                this.src = '/fotos/Logo_Mitai_SinFondo.png';
+            };
+            escudo.appendChild(imagen);
+        } else {
+            escudo.setAttribute('aria-hidden', 'true');
+            escudo.appendChild(crearElemento('span', 'text-base font-extrabold text-oro-400', iniciales(nombre)));
+        }
+        return escudo;
+    }
+
     function renderCard(nombre, datos) {
         card.textContent = '';
         buscador.value = nombre;
@@ -220,7 +243,7 @@ function descargarPDF() {
 
         const encabezado = document.createElement('div');
         encabezado.className = 'flex items-center gap-4';
-        encabezado.appendChild(crearElemento('div', 'tm-escudo flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border border-oro-400/40 bg-brand-navy text-base font-extrabold text-oro-400', iniciales(nombre)));
+        encabezado.appendChild(escudoEquipo(nombre, datos.equipo ? datos.equipo.foto : null));
         const titulo = document.createElement('div');
         titulo.appendChild(crearElemento('h2', 'tm-titulo-equipo text-2xl font-extrabold tracking-tight', nombre));
         const metaCategoria = nombreCategoriaDe(datos.equipo ? datos.equipo.idCategoria : null);
