@@ -120,7 +120,7 @@ function descargarPDF() {
         boton.type = 'button';
         boton.textContent = texto;
         boton.dataset.accion = accion;
-        boton.className = 'inline-flex items-center rounded-full border border-tema-linea/30 px-4 py-2 text-sm font-semibold text-tema-dim/80 transition hover:bg-tema-fila/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light';
+        boton.className = 'inline-flex items-center rounded-full border border-tema-linea/30 px-4 py-2 text-sm font-semibold text-tema-dim/80 transition hover:bg-[var(--tm-fila-hover-bg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light';
         return boton;
     }
 
@@ -128,7 +128,7 @@ function descargarPDF() {
         const enlace = document.createElement('a');
         enlace.href = href;
         enlace.textContent = texto;
-        enlace.className = 'inline-flex items-center justify-between gap-2 rounded-xl border border-tema-linea/15 bg-tema-fila/40 px-4 py-3 text-sm font-semibold transition hover:bg-tema-fila/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light';
+        enlace.className = 'inline-flex items-center justify-between gap-2 rounded-xl border border-tema-linea/15 bg-[var(--tm-fila-bg)] px-4 py-3 text-sm font-semibold transition hover:bg-[var(--tm-fila-hover-bg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light';
         const flecha = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         flecha.setAttribute('viewBox', '0 0 14 14');
         flecha.setAttribute('width', '14');
@@ -149,7 +149,7 @@ function descargarPDF() {
 
     function crearStat(rotulo, valor, detalle) {
         const stat = document.createElement('div');
-        stat.className = 'tm-stat rounded-2xl border border-tema-linea/15 bg-tema-superficie/35 px-4 py-3.5';
+        stat.className = 'tm-stat rounded-2xl border border-tema-linea/15 bg-[var(--tm-superficie-bg)] px-4 py-3.5';
         stat.appendChild(crearElemento('p', 'text-[10.5px] font-bold uppercase tracking-[0.12em] text-tema-acento', rotulo));
         stat.appendChild(crearElemento('p', 'mt-2 text-sm font-bold leading-snug', valor));
         if (detalle) {
@@ -276,7 +276,7 @@ function descargarPDF() {
         }
 
         const accesos = document.createElement('div');
-        accesos.className = 'tm-stat flex flex-col justify-center gap-2 rounded-2xl border border-tema-linea/15 bg-tema-superficie/35 px-4 py-3.5';
+        accesos.className = 'tm-stat flex flex-col justify-center gap-2 rounded-2xl border border-tema-linea/15 bg-[var(--tm-superficie-bg)] px-4 py-3.5';
         accesos.appendChild(crearElemento('p', 'text-[10.5px] font-bold uppercase tracking-[0.12em] text-tema-acento', 'Accesos'));
         if (datos.links && datos.links.fixture) {
             accesos.appendChild(crearEnlace(datos.links.fixture, 'Fixture del equipo'));

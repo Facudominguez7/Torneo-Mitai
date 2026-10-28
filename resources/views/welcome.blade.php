@@ -108,7 +108,7 @@
 
             {{-- Selector de edición: misma función GET que la home anterior --}}
             <form method="GET" action="{{ route('home') }}"
-                class="tm-anim-in tm-d1 mt-7 inline-flex items-center gap-3 rounded-full border border-tema-linea/20 bg-tema-fila/40 px-5 py-2.5">
+                class="tm-anim-in tm-d1 mt-7 inline-flex items-center gap-3 rounded-full border border-tema-linea/20 bg-[var(--tm-fila-bg)] px-5 py-2.5">
                 <label for="idEdicion" class="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-tema-dim/70">
                     Edición
                 </label>
@@ -138,7 +138,7 @@
                         <input id="seguir-equipo-buscador" type="search" autocomplete="off"
                             placeholder="Buscá tu equipo, ej: Talleres"
                             aria-describedby="seguir-equipo-sin-resultados" aria-expanded="false">
-                        <kbd class="hidden rounded-md border border-black/20 px-2 py-1 font-mono text-[11px] font-bold sm:block">Enter</kbd>
+                        <kbd class="hidden rounded-md border border-[var(--tm-campo-borde)] px-2 py-1 font-mono text-[11px] font-bold sm:block">Enter</kbd>
                     </div>
                     <ul id="seguir-equipo-lista" role="listbox" aria-label="Equipos que coinciden"
                         class="absolute inset-x-0 top-full z-50 mt-2 hidden overflow-hidden rounded-2xl border border-black/10 bg-white text-slate-900 shadow-2xl">
@@ -166,28 +166,28 @@
                 </h2>
                 <div class="tm-anim-in tm-d4 grid gap-3 sm:grid-cols-2">
                     <a href="{{ route('tabla-posiciones', ['idEdicion' => $edicionActual->id]) }}"
-                        class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-tema-fila/40 px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
+                        class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-[var(--tm-fila-bg)] px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
                         Posiciones
                         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" class="text-brand-teal-light transition-transform group-hover:translate-x-1">
                             <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </a>
                     <a href="{{ route('tabla-goleadores', ['idEdicion' => $edicionActual->id]) }}"
-                        class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-tema-fila/40 px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
+                        class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-[var(--tm-fila-bg)] px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
                         Goleadores
                         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" class="text-brand-teal-light transition-transform group-hover:translate-x-1">
                             <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </a>
                     <a href="{{ route('instancias-finales', ['idEdicion' => $edicionActual->id]) }}"
-                        class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-tema-fila/40 px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
+                        class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-[var(--tm-fila-bg)] px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
                         Finales
                         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" class="text-brand-teal-light transition-transform group-hover:translate-x-1">
                             <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </a>
                     <a href="{{ route('tabla-vallas', ['idEdicion' => $edicionActual->id]) }}"
-                        class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-tema-fila/40 px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
+                        class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-[var(--tm-fila-bg)] px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
                         Vallas
                         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" class="text-brand-teal-light transition-transform group-hover:translate-x-1">
                             <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
