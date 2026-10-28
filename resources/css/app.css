@@ -198,15 +198,14 @@
  * (entradas escalonadas, cascada de sugerencias y tilt del panel con brillo).
  * Todo el movimiento se desactiva con prefers-reduced-motion.
  */
-.tm-marca-agua::before {
-    content: "";
+.tm-marca-agua img {
     position: fixed;
     left: 50%;
     top: -8%;
     width: 760px;
     height: 760px;
     transform: translateX(-50%);
-    background: url('/fotos/Logo_Mitai_SinFondo.png') center / contain no-repeat;
+    object-fit: contain;
     filter: blur(80px);
     opacity: var(--tm-marca-agua);
     pointer-events: none;

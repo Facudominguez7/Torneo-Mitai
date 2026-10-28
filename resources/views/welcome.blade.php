@@ -8,7 +8,9 @@
     @include('layouts.navigation')
     <main class="tm-velo-host relative">
         {{-- Marca de agua: logo difuminado detrás de todo (opacidad según tema) --}}
-        <div class="tm-marca-agua" aria-hidden="true"></div>
+        <div class="tm-marca-agua" aria-hidden="true">
+            <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="" loading="lazy">
+        </div>
 
         {{-- Alertas del sistema --}}
         @if (session()->has('warning') || session()->has('success') || session()->has('error') || session()->has('info') || session()->has('status') || request()->query('verified') == '1')
@@ -137,7 +139,8 @@
                         </svg>
                         <input id="seguir-equipo-buscador" type="search" autocomplete="off"
                             placeholder="Buscá tu equipo, ej: Talleres"
-                            aria-describedby="seguir-equipo-sin-resultados" aria-expanded="false">
+                            aria-describedby="seguir-equipo-sin-resultados" aria-expanded="false"
+                            class="w-full flex-1 border-0 bg-transparent p-0 text-base font-semibold text-tema-campo-tinta shadow-none placeholder:text-tema-campo-placeholder focus:border-transparent focus:ring-0 sm:text-lg">
                         <kbd class="hidden rounded-md border border-[var(--tm-campo-borde)] px-2 py-1 font-mono text-[11px] font-bold sm:block">Enter</kbd>
                     </div>
                     <ul id="seguir-equipo-lista" role="listbox" aria-label="Equipos que coinciden"
