@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "comments": [
+    {
+      "id": "9u6b8891",
+      "file": "06-tu-equipo-dual.html",
+      "selector": "body > main > div > div > button:nth-of-type(1)",
+      "excerpt": "TJ Talleres Jujuy Sub-8 · Sub-10 · Sub-16",
+      "comment": "no se ve lo que dice, tampoco las etiquetas en tema claro",
+      "createdAt": "2026-10-28T13:27:58.656Z",
+      "status": "resolved",
+      "sentAt": "2026-10-28T13:29:38.339Z",
+      "resolvedAt": "2026-10-28T13:35:32.389Z"
+    },
+    {
+      "id": "30rk8mv6",
+      "file": "06-tu-equipo-dual.html",
+      "selector": "body > main > section:nth-of-type(1)",
+      "excerpt": "TJ Talleres Jujuy Sub-10 · Zona A · Apertura 2026 SIGUIENDO PRÓXIMO PARTIDO Talleres Jujuy vs Club Cuyaya Sábado 31 · 09:30 · Cancha 1 POSICIÓN 2° de 6 14 pts · +7 de diferencia de gol FORMA G G E P G Últimos 5 partidos",
+      "comment": "el efecto 3d en modo claro hay que solucionarlo no se nota",
+      "createdAt": "2026-10-28T13:28:44.983Z",
+      "status": "resolved",
+      "sentAt": "2026-10-28T13:29:38.339Z",
+      "resolvedAt": "2026-10-28T13:35:32.389Z"
+    },
+    {
+      "id": "qgstdic5",
+      "file": "06-tu-equipo-dual.html",
+      "selector": "body > main > div > div > button:nth-of-type(1) > span:nth-of-type(2)",
+      "excerpt": "Sub-8 · Sub-10 · Sub-16",
+      "comment": "la etiqueta no se ve bien ni en modo claro ni en modo oscuro",
+      "createdAt": "2026-10-28T13:29:15.040Z",
+      "status": "resolved",
+      "sentAt": "2026-10-28T13:29:38.339Z",
+      "resolvedAt": "2026-10-28T13:35:32.389Z"
+    },
+    {
+      "id": "anzuoh7f",
+      "file": "07-tu-equipo-dual-movil.html",
+      "selector": "body > nav:nth-of-type(1) > div > button:nth-of-type(2) > svg",
+      "excerpt": "",
+      "comment": "no se ve bien el menu en modo oscuro",
+      "createdAt": "2026-10-28T13:43:12.057Z",
+      "status": "resolved",
+      "sentAt": "2026-10-28T13:44:00.384Z",
+      "resolvedAt": "2026-10-28T16:54:19.556Z"
+    },
+    {
+      "id": "n7o6d58j",
+      "file": "07-tu-equipo-dual-movil.html",
+      "selector": "body > nav:nth-of-type(2) > a:nth-of-type(1)",
+      "excerpt": "Buscar",
+      "comment": "no se ve bien el amarillo en modo claro",
+      "createdAt": "2026-10-28T13:43:45.182Z",
+      "status": "resolved",
+      "sentAt": "2026-10-28T13:44:00.384Z",
+      "resolvedAt": "2026-10-28T16:54:19.556Z"
+    },
+    {
+      "id": "44g4bjjj",
+      "file": "06-tu-equipo-dual.html",
+      "selector": "body > main > p:nth-of-type(1)",
+      "excerpt": "TORNEO APERTURA 2026",
+      "comment": "esto seria un switch para cambiar de edicion",
+      "createdAt": "2026-10-28T17:38:38.440Z",
+      "status": "open",
+      "sentAt": "2026-10-28T17:47:33.516Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "slummabp",
+      "file": "06-tu-equipo-dual.html",
+      "selector": "body > main > div > div > button:nth-of-type(1) > span:nth-of-type(1)",
+      "excerpt": "TJ",
+      "comment": "logo del equipo",
+      "createdAt": "2026-10-28T17:38:57.167Z",
+      "status": "open",
+      "sentAt": "2026-10-28T17:47:33.516Z",
+      "resolvedAt": null
+    }
+  ]
+}

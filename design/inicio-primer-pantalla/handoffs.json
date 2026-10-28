@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "chosen": "06-tu-equipo-dual.html",
+  "handoffs": {
+    "06-tu-equipo-dual.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-10-28T17:31:03.812Z",
+      "startedAt": null,
+      "implementedAt": "2026-10-28T17:31:39.294Z",
+      "previewUrl": "http://localhost:8000/"
+    }
+  }
+}
