@@ -94,6 +94,26 @@ export default {
           '800': '#523314',
           '900': '#29190A',
         },
+        /*
+         * Tema dual de la home "Tu equipo primero" (artboard 06): tokens
+         * semánticos cuyo valor live en variables CSS (--tm-*, canal RGB)
+         * que cambian según prefers-color-scheme y el override manual
+         * data-tema en <html>. Documentados en design/system.md.
+         */
+        tema: {
+          fondo: 'rgb(var(--tm-fondo) / <alpha-value>)',
+          tinta: 'rgb(var(--tm-tinta) / <alpha-value>)',
+          dim: 'rgb(var(--tm-dim) / <alpha-value>)',
+          linea: 'rgb(var(--tm-linea) / <alpha-value>)',
+          fila: 'rgb(var(--tm-fila) / <alpha-value>)',
+          superficie: 'rgb(var(--tm-superficie) / <alpha-value>)',
+          'panel-brillo': 'rgb(var(--tm-panel-brillo) / <alpha-value>)',
+          'panel-fondo': 'rgb(var(--tm-panel-fondo) / <alpha-value>)',
+          'panel-borde': 'rgb(var(--tm-panel-borde) / <alpha-value>)',
+          'campo-fondo': 'rgb(var(--tm-campo-fondo) / <alpha-value>)',
+          'campo-tinta': 'rgb(var(--tm-campo-tinta) / <alpha-value>)',
+          velo: 'rgb(var(--tm-velo) / <alpha-value>)',
+        },
       },
     },
   },
