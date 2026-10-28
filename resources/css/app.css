@@ -58,6 +58,7 @@
         --tm-acento: 155 211 226;
         --tm-panel-borde: 255 204 51;
         --tm-panel-bg: rgba(255, 255, 255, .06);
+        --tm-panel-brillo: rgba(255, 255, 255, .10);
         --tm-campo-fondo: 255 255 255;
         --tm-campo-tinta: 18 38 63;
         --tm-velo: 8 47 59;
@@ -81,6 +82,7 @@
             --tm-acento: 42 109 129;
             --tm-panel-borde: 8 47 59;
             --tm-panel-bg: #FFFFFF;
+        --tm-panel-brillo: rgba(14, 75, 94, .03);
             --tm-campo-fondo: 8 47 59;
             --tm-campo-tinta: 255 255 255;
             --tm-velo: 255 255 255;
@@ -104,6 +106,7 @@
         --tm-acento: 42 109 129;
         --tm-panel-borde: 8 47 59;
         --tm-panel-bg: #FFFFFF;
+        --tm-panel-brillo: rgba(14, 75, 94, .03);
         --tm-campo-fondo: 8 47 59;
         --tm-campo-tinta: 255 255 255;
         --tm-velo: 255 255 255;
@@ -126,6 +129,7 @@
         --tm-acento: 155 211 226;
         --tm-panel-borde: 255 204 51;
         --tm-panel-bg: rgba(255, 255, 255, .06);
+        --tm-panel-brillo: rgba(255, 255, 255, .10);
         --tm-campo-fondo: 255 255 255;
         --tm-campo-tinta: 18 38 63;
         --tm-velo: 8 47 59;
@@ -229,6 +233,7 @@
 
 .tm-panel {
     transform-style: preserve-3d;
+    background-image: linear-gradient(165deg, var(--tm-panel-brillo), var(--tm-panel-bg));
     box-shadow: var(--tm-sombra-panel);
 }
 
@@ -389,5 +394,153 @@
     to {
         opacity: 1;
         transform: none;
+    }
+}
+
+/*
+ * Navegación compartida sobre la home "Tu equipo primero" (artboards 06/07).
+ * layouts/navigation.blade.php es de superficie oscura fija (bg-black/40,
+ * textos blancos, bordes blancos) porque el resto del sitio usa solo tema
+ * oscuro. Sobre la home, que tiene tema dual, la barra pasa a los tokens del
+ * tema mediante el prefijo .tm-home, sin tocar las demás pantallas.
+ * En claro el enlace activo y sus hovers usan el oro oscuro (#997300) que ya
+ * usa la tab bar, porque el dorado de marca no contrasta sobre blanco.
+ */
+.tm-home #nav-principal {
+    background-color: rgb(var(--tm-fondo) / .94);
+    border-bottom-color: rgb(var(--tm-linea) / .14);
+}
+
+.tm-home #nav-principal [class*="text-white"]:not([class*="bg-gradient"]):not([class*="text-white/"]) {
+    color: rgb(var(--tm-tinta));
+}
+
+.tm-home #nav-principal [class*="text-white/60"] {
+    color: rgb(var(--tm-dim) / .6);
+}
+
+.tm-home #nav-principal [class*="text-white/70"],
+.tm-home #nav-principal [class*="text-white/80"] {
+    color: rgb(var(--tm-dim) / .8);
+}
+
+.tm-home #nav-principal [class*="border-white/"],
+.tm-home #nav-secciones-mobile {
+    border-color: rgb(var(--tm-linea) / .16);
+}
+
+:root[data-tema="claro"] .tm-home #nav-principal a[aria-current="page"] {
+    border-bottom-color: #997300;
+}
+
+:root[data-tema="claro"] .tm-home #nav-principal a:hover:not([class*="bg-gradient"]),
+:root[data-tema="claro"] .tm-home #nav-principal button:hover {
+    color: #997300;
+}
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-tema="oscuro"]) .tm-home #nav-principal a[aria-current="page"] {
+        border-bottom-color: #997300;
+    }
+
+    :root:not([data-tema="oscuro"]) .tm-home #nav-principal a:hover:not([class*="bg-gradient"]),
+    :root:not([data-tema="oscuro"]) .tm-home #nav-principal button:hover {
+        color: #997300;
+    }
+}
+
+/*
+ * Móvil (artboard 07): una sola fila de navegación con marca, tema y sesión.
+ * La navegación de secciones de la barra superior se oculta porque la tab bar
+ * inferior de la home ya cumple esa función, y el rótulo del botón de tema se
+ * reduce al ícono para que la fila entre en 390px.
+ */
+@media (max-width: 639px) {
+    .tm-home #nav-secciones-mobile {
+        display: none;
+    }
+
+    .tm-home #nav-principal > div:first-of-type {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        padding: .5rem 1rem;
+    }
+
+    /* La edición vigente se lee en el kicker del hero: en la barra móvil
+       alcanza con el isotipo. */
+    .tm-home #nav-principal > div:first-of-type > a:first-child > div {
+        display: none;
+    }
+
+    .tm-home #nav-principal > div:first-of-type > a:first-child img {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .tm-home #nav-principal > div:first-of-type > div:last-child {
+        width: auto;
+        margin-left: auto;
+        flex-wrap: nowrap;
+        gap: .5rem;
+    }
+
+    .tm-home #nav-principal #etiqueta-tema {
+        display: none;
+    }
+
+    /* Sin la fila de secciones, compactar la barra la dejaría vacía al
+       scrollear. En móvil se mantiene la fila de marca y CTA, como el
+       artboard 07, y solo se recorta el alto. */
+    .tm-home #nav-principal.nav-compacta > div:first-of-type > a:first-child,
+    .tm-home #nav-principal.nav-compacta > div:first-of-type > div:last-child {
+        display: flex;
+    }
+}
+
+/*
+ * Flechas de los accesos: el teal claro del artboard no se lee sobre blanco,
+ * así que en tema claro usan el acento del tema (teal, --tm-acento).
+ */
+:root[data-tema="claro"] .tm-home .text-brand-teal-light {
+    color: rgb(var(--tm-acento));
+}
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-tema="oscuro"]) .tm-home .text-brand-teal-light {
+        color: rgb(var(--tm-acento));
+    }
+}
+
+/*
+ * Panel del equipo en móvil (artboard 07): escala tipográfica del artboard
+ * (título 19px, meta 12px, escudo 48px, chip 10px) para que el nombre del
+ * equipo no domine la tarjeta en 390px.
+ */
+@media (max-width: 639px) {
+    .tm-home .tm-panel {
+        border-radius: 1.375rem;
+        padding: 1.25rem 1.125rem;
+    }
+
+    .tm-home .tm-escudo {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    .tm-home .tm-titulo-equipo {
+        font-size: 1.1875rem;
+        line-height: 1.2;
+    }
+
+    .tm-home .tm-meta-equipo {
+        margin-top: .125rem;
+        font-size: .75rem;
+    }
+
+    .tm-home .tm-chip-seguir {
+        padding: .375rem .75rem;
+        font-size: .625rem;
     }
 }

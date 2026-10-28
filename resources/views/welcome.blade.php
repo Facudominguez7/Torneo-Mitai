@@ -4,7 +4,7 @@
 <html lang="es">
 @include('head')
 
-<body class="min-h-screen bg-tema-fondo text-tema-tinta antialiased transition-colors duration-300">
+<body class="tm-home min-h-screen bg-tema-fondo text-tema-tinta antialiased transition-colors duration-300">
     @include('layouts.navigation')
     <main class="tm-velo-host relative">
         {{-- Marca de agua: logo difuminado detrás de todo (opacidad según tema) --}}
@@ -151,7 +151,7 @@
                     </p>
                 </div>
                 <p class="tm-anim-in tm-d2 mt-4 text-center text-sm text-tema-dim/70">
-                    También podés elegir una categoría y ver todo su fixture abajo.
+                    También podés explorar todo el torneo abajo.
                 </p>
 
                 {{-- Panel del equipo seguido: lo arma resources/js/welcome.js con /equipo-seguido --}}
@@ -163,14 +163,14 @@
 
         {{-- Accesos al torneo --}}
         @if ($edicionActual)
-            <section aria-label="Accesos al torneo" class="relative mx-auto max-w-3xl px-4 pb-24 sm:px-6">
+            <section aria-label="Accesos al torneo" class="relative mx-auto max-w-2xl px-4 pb-24 sm:px-6">
                 <h2 class="tm-anim-in tm-d4 mb-4 text-xs font-bold uppercase tracking-[0.18em] text-tema-acento">
                     O explorá todo el torneo
                 </h2>
                 <div class="tm-anim-in tm-d4 grid gap-3 sm:grid-cols-2">
                     <a href="{{ route('tabla-posiciones', ['idEdicion' => $edicionActual->id]) }}"
                         class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-[var(--tm-fila-bg)] px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
-                        Posiciones
+                        Tabla de posiciones
                         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" class="text-brand-teal-light transition-transform group-hover:translate-x-1">
                             <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
