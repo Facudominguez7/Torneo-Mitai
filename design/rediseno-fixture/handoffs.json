@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "chosen": "02-tablero-operativo.html",
+  "chosen": "04-tablero-movil.html",
   "handoffs": {
     "02-tablero-operativo.html": {
       "status": "implemented",
@@ -9,6 +9,15 @@
       "startedAt": "2026-10-29T01:19:50.696Z",
       "implementedAt": "2026-10-29T01:30:47.028Z",
       "note": "Fidelity pass: dual theme, tactical grid, timeline with circles, compact cards (x-tarjeta-partido compacto prop), date header, single-row filters. Verified 1920/1280/390, light and dark.",
+      "previewUrl": "http://localhost:8000/fixture?idEdicion=10"
+    },
+    "04-tablero-movil.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-10-29T17:07:14.604Z",
+      "startedAt": "2026-10-29T17:07:25.257Z",
+      "implementedAt": "2026-10-29T17:20:18.597Z",
+      "note": "Implementado con filtros compactos y búsqueda; verificado en navegador, incluida apertura de planilla tras filtrar.",
       "previewUrl": "http://localhost:8000/fixture?idEdicion=10"
     }
   }

@@ -66,6 +66,28 @@
       "status": "resolved",
       "sentAt": "2026-10-29T01:16:04.310Z",
       "resolvedAt": "2026-10-29T01:17:27.653Z"
+    },
+    {
+      "id": "zrlc7960",
+      "file": "04-tablero-movil.html",
+      "selector": "body > div > nav:nth-of-type(1)",
+      "excerpt": "TORNEO MITAI Edición vigente Tema: sistema Iniciar sesión →",
+      "comment": "no me gusta que quede tema e iniciar sesion al hacer scroll",
+      "createdAt": "2026-10-29T17:04:24.552Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T17:04:24.574Z",
+      "resolvedAt": "2026-10-29T17:05:48.374Z"
+    },
+    {
+      "id": "kwv1krgw",
+      "file": "04-tablero-movil.html",
+      "selector": "#form-buscar",
+      "excerpt": "Buscar equipo por nombre Buscar Demostración: presioná Enter o tocá Buscar.",
+      "comment": "esto esta horrible no tiene sentido el boton buscar",
+      "createdAt": "2026-10-29T17:05:14.509Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T17:05:14.532Z",
+      "resolvedAt": "2026-10-29T17:06:42.798Z"
     }
   ]
 }

@@ -126,7 +126,7 @@
                                     </a>
                                 @endforeach
                             </div>
-                            <form method="GET" action="{{ route('fixture') }}" class="fixture-buscador-form">
+                            <div id="fixture-buscador-origen"><form method="GET" action="{{ route('fixture') }}" class="fixture-buscador-form">
                                 <input type="hidden" name="idEdicion" value="{{ $idEdicion ?? '' }}">
                                 @if (filled($idCategoria ?? null))
                                     <input type="hidden" name="idCategoria" value="{{ $idCategoria }}">
@@ -136,12 +136,51 @@
                                     <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                                     <input type="search" name="equipo" value="{{ $equipoBuscado }}" placeholder="Buscar equipo..." aria-label="Buscar equipo por nombre">
                                 </label>
-                            </form>
+                                <p id="fixture-busqueda-estado" role="status" aria-live="polite"></p>
+                            </form></div>
+                            <div id="fixture-filtros-sentinel" aria-hidden="true"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="fixture-resultados relative">
+                <div id="fixture-compacto" class="fixture-compacto" hidden>
+                    <div class="fixture-compacto-interior">
+                        <div class="fixture-compacto-botones" role="group" aria-label="Filtros del fixture">
+                            <button type="button" aria-expanded="false" aria-controls="fixture-panel-fecha">{{ $esVistaTodas ? 'Todas las fechas' : ($nombreFecha ?: 'Fechas') }} ▾</button>
+                            <button type="button" aria-expanded="false" aria-controls="fixture-panel-categoria">{{ optional(($categorias ?? collect())->firstWhere('id', $idCategoria ?? null))->nombreCategoria ?? 'Categorías' }} ▾</button>
+                            <button type="button" aria-expanded="false" aria-controls="fixture-panel-buscar" aria-label="Buscar equipo"><svg width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+                        </div>
+                        <div id="fixture-panel-fecha" class="fixture-compacto-panel" hidden>
+                            <nav aria-label="Cambiar fecha" class="fixture-timeline">
+                                <ol class="fixture-timeline-lista">
+                                    <li><a class="fixture-chip" href="{{ $armarUrlFixture($parametrosChipTodas) }}" @if ($esVistaTodas) aria-current="page" @endif>Todas</a></li>
+                                    @foreach (($fechas ?? collect())->reverse() as $fechaChip)
+                                        @php
+                                            $parametrosFechaCompacta = $parametrosBase + ['estado' => $estadoFiltro];
+                                            if (! $fechaEsRelevante($fechaChip)) {
+                                                $parametrosFechaCompacta['idFecha'] = $fechaChip->id;
+                                            }
+                                        @endphp
+                                        <li><a class="fixture-chip" href="{{ $armarUrlFixture($parametrosFechaCompacta) }}" @if ($fechaEsActiva($fechaChip)) aria-current="page" @endif>{{ $fechaChip->nombre }}</a></li>
+                                    @endforeach
+                                </ol>
+                            </nav>
+                            @if ($esVistaTodas && $fechasNavegacion->isNotEmpty())
+                                <nav aria-label="Saltar a una fecha" class="fixture-timeline">
+                                    <p class="fixture-kicker">Saltar a fecha</p>
+                                    <div class="fixture-timeline-lista">
+                                        @foreach ($fechasNavegacion->reverse() as $fechaSalto)
+                                            <a class="fixture-chip" href="#fecha-{{ $fechaSalto->id }}">{{ $fechaSalto->nombre }}</a>
+                                        @endforeach
+                                    </div>
+                                </nav>
+                            @endif
+                        </div>
+                        <div id="fixture-panel-categoria" class="fixture-compacto-panel" hidden></div>
+                        <div id="fixture-panel-buscar" class="fixture-compacto-panel" hidden></div>
+                    </div>
+                </div>
+                <div class="fixture-resultados relative" aria-live="polite">
                 @if (($idFecha ?? '') === 'todas' && $fechasNavegacion->isNotEmpty())
                     <div id="fixture-fechas-sentinel" aria-hidden="true" class="h-px w-full"></div>
                     <div id="fixture-fechas-spacer" class="hidden lg:hidden"></div>
@@ -286,13 +325,147 @@
     </div>
 
     <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const compacta = document.getElementById('fixture-compacto');
+        const filtros = document.querySelector('.fixture-filtros');
+        const sentinel = document.getElementById('fixture-filtros-sentinel');
+        const navegacion = document.getElementById('nav-principal');
+        const estructura = document.querySelector('.fixture-estructura');
+        const botonesCompactos = compacta.querySelector('.fixture-compacto-botones');
+        const origen = document.getElementById('fixture-buscador-origen');
+        const formulario = origen.querySelector('form');
+        const buscar = formulario.querySelector('[name="equipo"]');
+        const aviso = document.getElementById('fixture-busqueda-estado');
+        const resultados = document.querySelector('.fixture-resultados');
+        const movil = window.matchMedia('(max-width: 639px)');
+        const controles = [...compacta.querySelectorAll('[aria-controls]')].map(boton => ({ boton, panel: document.getElementById(boton.getAttribute('aria-controls')) }));
+        const panelFecha = document.getElementById('fixture-panel-fecha');
+        const panelCategoria = document.getElementById('fixture-panel-categoria');
+        panelCategoria.append(document.querySelector('.fixture-categorias').cloneNode(true));
+        let ajusteFecha;
+        function asegurarFechaVisible(fecha, inicio) {
+            actualizarCompacta();
+            const limite = compacta.hidden ? (movil.matches ? 0 : navegacion.getBoundingClientRect().bottom) : compacta.getBoundingClientRect().bottom;
+            const diferencia = limite + 16 - fecha.getBoundingClientRect().top;
+            if (diferencia > 0) window.scrollBy({ top: -diferencia, behavior: 'instant' });
+            if (performance.now() - inicio < 500) ajusteFecha = requestAnimationFrame(() => asegurarFechaVisible(fecha, inicio));
+        }
+        panelFecha.addEventListener('click', event => {
+            const enlace = event.target.closest('a[href^="#fecha-"]');
+            if (!enlace) return;
+            const fecha = document.getElementById(enlace.getAttribute('href').slice(1));
+            cerrar();
+            cancelAnimationFrame(ajusteFecha);
+            if (fecha) ajusteFecha = requestAnimationFrame(() => asegurarFechaVisible(fecha, performance.now()));
+        });
+        window.addEventListener('wheel', () => cancelAnimationFrame(ajusteFecha), { passive: true });
+        window.addEventListener('touchstart', () => cancelAnimationFrame(ajusteFecha), { passive: true });
+        let temporizador;
+        let solicitud;
+        let version = 0;
+
+        function cerrar() {
+            origen.append(formulario);
+            controles.forEach(({ boton, panel }) => { boton.setAttribute('aria-expanded', 'false'); panel.hidden = true; });
+        }
+        controles.forEach(({ boton, panel }) => boton.addEventListener('click', () => {
+            const abrir = panel.hidden;
+            cerrar();
+            if (abrir) {
+                panel.hidden = false;
+                boton.setAttribute('aria-expanded', 'true');
+                if (panel.id === 'fixture-panel-buscar') { panel.append(formulario); buscar.focus({ preventScroll: true }); }
+            }
+        }));
+        function actualizarCompacta() {
+            const alturaNav = movil.matches ? 0 : navegacion.getBoundingClientRect().bottom;
+            compacta.style.setProperty('--fixture-nav-altura', `${alturaNav}px`);
+            const mostrar = sentinel.getBoundingClientRect().bottom <= alturaNav;
+            if (!mostrar && !compacta.hidden) {
+                const focoBuscar = formulario.contains(document.activeElement);
+                const focoCompacta = compacta.contains(document.activeElement);
+                cerrar();
+                if (focoBuscar) buscar.focus({ preventScroll: true });
+                else if (focoCompacta) filtros.querySelector('a, input')?.focus({ preventScroll: true });
+            }
+            compacta.hidden = !mostrar;
+            const estilo = getComputedStyle(compacta);
+            const bordeYPadding = parseFloat(estilo.paddingTop) + parseFloat(estilo.paddingBottom)
+                + parseFloat(estilo.borderTopWidth) + parseFloat(estilo.borderBottomWidth);
+            const alturaBarra = mostrar ? botonesCompactos.getBoundingClientRect().height + bordeYPadding : 0;
+            estructura.style.setProperty('--fixture-salto-altura', `${alturaNav + alturaBarra + 16}px`);
+        }
+        if ('ResizeObserver' in window) {
+            const observadorAltura = new ResizeObserver(actualizarCompacta);
+            observadorAltura.observe(navegacion);
+            observadorAltura.observe(botonesCompactos);
+        }
+        window.addEventListener('scroll', actualizarCompacta, { passive: true });
+        window.addEventListener('resize', actualizarCompacta);
+        document.addEventListener('keydown', event => {
+            if (event.key !== 'Escape') return;
+            const activo = controles.find(({ panel }) => !panel.hidden);
+            if (activo) { cerrar(); activo.boton.focus(); }
+        });
+        actualizarCompacta();
+
+        async function buscarEnServidor(url, guardarHistorial) {
+            const actual = ++version;
+            solicitud?.abort();
+            solicitud = new AbortController();
+            aviso.textContent = 'Buscando partidos…';
+            try {
+                const respuesta = await fetch(url, { signal: solicitud.signal, headers: { 'Accept': 'text/html' } });
+                if (!respuesta.ok) throw new Error('Error de respuesta');
+                const pagina = new DOMParser().parseFromString(await respuesta.text(), 'text/html');
+                const nuevo = pagina.querySelector('.fixture-resultados');
+                const nuevaLinea = pagina.querySelector('.fixture-filtros .fixture-timeline');
+                const nuevoPanel = pagina.getElementById('fixture-panel-fecha');
+                const nuevaCategoria = pagina.querySelector('.fixture-filtros .fixture-categorias');
+                const nuevosBotones = pagina.querySelectorAll('.fixture-compacto-botones button');
+                if (!nuevo || !nuevaLinea || !nuevoPanel || !nuevaCategoria || nuevosBotones.length !== controles.length || actual !== version) throw new Error('Respuesta inválida');
+                const enlaceEnfocado = document.activeElement?.closest('#fixture-panel-fecha a, #fixture-panel-categoria a');
+                const hrefEnfocado = enlaceEnfocado?.getAttribute('href');
+                const panelEnfocado = enlaceEnfocado?.closest('.fixture-compacto-panel');
+                document.querySelector('.fixture-filtros .fixture-timeline').replaceWith(nuevaLinea);
+                document.querySelector('.fixture-filtros .fixture-categorias').replaceWith(nuevaCategoria);
+                panelFecha.replaceChildren(...nuevoPanel.childNodes);
+                panelCategoria.replaceChildren(nuevaCategoria.cloneNode(true));
+                controles.slice(0, 2).forEach(({ boton }, indice) => { boton.textContent = nuevosBotones[indice].textContent; });
+                if (hrefEnfocado && panelEnfocado) {
+                    [...panelEnfocado.querySelectorAll('a')].find(enlace => enlace.getAttribute('href') === hrefEnfocado)?.focus({ preventScroll: true });
+                }
+                resultados.replaceChildren(...nuevo.childNodes);
+                document.dispatchEvent(new Event('fixture-resultados-actualizados'));
+                if (guardarHistorial) history.replaceState(history.state, '', respuesta.url);
+                aviso.textContent = '';
+            } catch (error) {
+                if (error.name !== 'AbortError' && actual === version) aviso.textContent = 'No se pudo actualizar la búsqueda. Presioná Enter para volver a intentar.';
+            }
+        }
+        buscar.addEventListener('input', () => {
+            if (!movil.matches) return;
+            clearTimeout(temporizador);
+            version++;
+            solicitud?.abort();
+            aviso.textContent = 'Buscando partidos…';
+            temporizador = setTimeout(() => {
+                const url = new URL(formulario.action);
+                url.search = new URLSearchParams(new FormData(formulario)).toString();
+                buscarEnServidor(url, true);
+            }, 300);
+        });
+        formulario.addEventListener('submit', () => { clearTimeout(temporizador); solicitud?.abort(); });
+        window.addEventListener('popstate', () => { window.location.reload(); });
+    });
     document.addEventListener('DOMContentLoaded', function() {
-        const barraFechas = document.getElementById('fixture-fechas-bar');
-        const barraFechasSpacer = document.getElementById('fixture-fechas-spacer');
-        const barraFechasSentinel = document.getElementById('fixture-fechas-sentinel');
+        let barraFechas;
+        let barraFechasSpacer;
+        let barraFechasSentinel;
+        let observer;
 
         function fijarBarraFechas() {
-            if (!barraFechas || !barraFechasSpacer) {
+            if (!barraFechas || !barraFechasSpacer || document.getElementById('fixture-compacto')) {
                 return;
             }
 
@@ -322,11 +495,15 @@
         }
 
         function inicializarBarraFechasPersistente() {
-            if (!barraFechas || !barraFechasSpacer || !barraFechasSentinel) {
+            observer?.disconnect();
+            barraFechas = document.getElementById('fixture-fechas-bar');
+            barraFechasSpacer = document.getElementById('fixture-fechas-spacer');
+            barraFechasSentinel = document.getElementById('fixture-fechas-sentinel');
+            if (!barraFechas || !barraFechasSpacer || !barraFechasSentinel || !('IntersectionObserver' in window)) {
                 return;
             }
 
-            const observer = new IntersectionObserver(
+            observer = new IntersectionObserver(
                 ([entry]) => {
                     if (entry.isIntersecting) {
                         soltarBarraFechas();
@@ -347,7 +524,12 @@
 
 
         inicializarBarraFechasPersistente();
-        window.addEventListener('resize', sincronizarAlturaSpacer);
+        document.addEventListener('fixture-resultados-actualizados', inicializarBarraFechasPersistente);
+        window.addEventListener('resize', function () {
+            soltarBarraFechas();
+            inicializarBarraFechasPersistente();
+            sincronizarAlturaSpacer();
+        });
 
         // Con hash #fecha-N el browser salta solo al anchor tras el reload del self-heal.
         if (!window.location.hash) {

@@ -141,6 +141,100 @@ it('presenta la cabecera de la fecha con kicker, título, día real y resumen de
         ->assertDontSee('>Jornada<', false);
 });
 
+it('ofrece controles compactos móviles y conserva la búsqueda GET del servidor', function () {
+    $escenario = tableroEscenario();
+
+    $this->get(route('fixture', ['idEdicion' => $escenario['edicion']->id, 'idCategoria' => $escenario['categoria']->id, 'estado' => 'finalizados', 'equipo' => 'Leones']))
+        ->assertOk()
+        ->assertSee('id="fixture-compacto"', false)
+        ->assertSee('aria-controls="fixture-panel-fecha"', false)
+        ->assertSee('aria-controls="fixture-panel-categoria"', false)
+        ->assertSee('aria-controls="fixture-panel-buscar"', false)
+        ->assertSee('aria-live="polite"', false)
+        ->assertSee('name="estado" value="finalizados"', false)
+        ->assertSee('type="search" name="equipo" value="Leones"', false)
+        ->assertSee('Leones');
+});
+
+it('ofrece saltos a fechas renderizadas en todas sin cambiar la selección y mantiene el aviso con el formulario', function () {
+    $escenario = tableroEscenario();
+    $parametros = ['idEdicion' => $escenario['edicion']->id, 'idCategoria' => $escenario['categoria']->id];
+    $respuesta = $this->get(route('fixture', $parametros + ['idFecha' => 'todas']))->assertOk();
+    $dom = new DOMDocument;
+    @$dom->loadHTML($respuesta->getContent());
+    $xpath = new DOMXPath($dom);
+
+    expect($xpath->query('//*[@id="fixture-panel-fecha"]//a[@href="#fecha-'.$escenario['fecha']->id.'"]')->length)->toBe(1)
+        ->and($xpath->query('//form[contains(@class,"fixture-buscador-form")]//*[@id="fixture-busqueda-estado"]')->length)->toBe(1)
+        ->and($xpath->query('//*[@id="fixture-panel-fecha"]//a[contains(@href,"idFecha=todas")]')->length)->toBe(1);
+
+    $individual = $this->get(route('fixture', $parametros + ['idFecha' => $escenario['fecha']->id]))->assertOk();
+    $domIndividual = new DOMDocument;
+    @$domIndividual->loadHTML($individual->getContent());
+    $xpathIndividual = new DOMXPath($domIndividual);
+    expect($xpathIndividual->query('//*[@id="fixture-panel-fecha"]//a[starts-with(@href,"#fecha-")]')->length)->toBe(0);
+});
+
+it('muestra la lupa compacta y deja espacio para el foco del buscador', function () {
+    $escenario = tableroEscenario();
+    $respuesta = $this->get(route('fixture', ['idEdicion' => $escenario['edicion']->id, 'idCategoria' => $escenario['categoria']->id]))->assertOk();
+    $dom = new DOMDocument;
+    @$dom->loadHTML($respuesta->getContent());
+    $xpath = new DOMXPath($dom);
+
+    expect($xpath->query('//*[@aria-controls="fixture-panel-buscar"]/*[local-name()="svg"]')->length)->toBe(1)
+        ->and(file_get_contents(resource_path('css/app.css')))->toContain('#fixture-panel-buscar:not([hidden]) {');
+});
+
+it('mantiene el buscador móvil ancho y legible en ambos lugares', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)->toContain(".fixture-buscador-form,\n    .fixture-buscador {\n        width: 100%;")
+        ->toContain(".fixture-buscador {\n        min-height: 3rem;")
+        ->toContain("flex: 1 1 auto;\n        min-width: 0;\n        font-size: 1rem;");
+});
+
+it('mantiene filtros compactos disponibles al desplazarse también en tablet y escritorio', function () {
+    $escenario = tableroEscenario();
+    $respuesta = $this->get(route('fixture', ['idEdicion' => $escenario['edicion']->id, 'idCategoria' => $escenario['categoria']->id, 'idFecha' => 'todas']))->assertOk();
+
+    expect($respuesta->getContent())
+        ->toContain('id="fixture-filtros-sentinel"')
+        ->toContain("document.getElementById('fixture-filtros-sentinel')")
+        ->toContain('sentinel.getBoundingClientRect().bottom')
+        ->toContain('aria-controls="fixture-panel-fecha"')
+        ->toContain('aria-controls="fixture-panel-categoria"')
+        ->toContain('aria-controls="fixture-panel-buscar"')
+        ->toContain('href="#fecha-'.$escenario['fecha']->id.'"');
+});
+
+it('ajusta el margen de los saltos nativos a la navegación y barra compacta', function () {
+    $escenario = tableroEscenario();
+    $respuesta = $this->get(route('fixture', ['idEdicion' => $escenario['edicion']->id, 'idCategoria' => $escenario['categoria']->id, 'idFecha' => 'todas']))->assertOk();
+
+    expect($respuesta->getContent())
+        ->toContain('href="#fecha-'.$escenario['fecha']->id.'"')
+        ->toContain('new ResizeObserver(actualizarCompacta)')
+        ->toContain("setProperty('--fixture-salto-altura'")
+        ->toContain('botonesCompactos.getBoundingClientRect().height')
+        ->and(file_get_contents(resource_path('css/app.css')))
+        ->toContain('scroll-margin-top: max(7rem, var(--fixture-salto-altura, 0px));');
+});
+
+it('mantiene visible la fecha elegida y conserva el ícono al actualizar la búsqueda', function () {
+    $escenario = tableroEscenario();
+    $respuesta = $this->get(route('fixture', ['idEdicion' => $escenario['edicion']->id, 'idCategoria' => $escenario['categoria']->id, 'idFecha' => 'todas']))->assertOk();
+    $html = $respuesta->getContent();
+
+    expect($html)
+        ->toContain('href="#fecha-'.$escenario['fecha']->id.'"')
+        ->toContain('function asegurarFechaVisible(')
+        ->toContain('compacta.getBoundingClientRect().bottom')
+        ->toContain('window.scrollBy(')
+        ->toContain('controles.slice(0, 2).forEach(')
+        ->not->toContain('controles.forEach(({ boton }, indice) => { boton.textContent');
+});
+
 it('ubica categorías y buscador en una única fila de controles', function () {
     $escenario = tableroEscenario();
 

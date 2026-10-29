@@ -22,6 +22,13 @@
       "tradeoff": "Coherente con la home \"tu equipo primero\" (buscador grande + cascada de resultados); la navegación por fecha queda menos directa.",
       "width": 1440,
       "height": 900
+    },
+    {
+      "file": "04-tablero-movil.html",
+      "title": "Tablero operativo móvil",
+      "tradeoff": "Filtros y partidos accesibles en una columna; las fechas y categorías requieren desplazamiento horizontal.",
+      "width": 390,
+      "height": 844
     }
   ]
 }

@@ -831,6 +831,13 @@
     gap: .75rem;
     min-width: 0;
     padding: .25rem 0 .75rem;
+    position: relative;
+}
+
+#fixture-filtros-sentinel {
+    position: absolute;
+    bottom: 0;
+    height: 1px;
 }
 
 .fixture-categorias {
@@ -889,6 +896,10 @@
 .fixture-fecha {
     display: grid;
     gap: 1.5rem;
+}
+
+.fixture-tablero .fixture-fecha {
+    scroll-margin-top: max(7rem, var(--fixture-salto-altura, 0px));
 }
 
 .fixture-kicker {
@@ -1179,7 +1190,133 @@
     }
 }
 
+.fixture-compacto {
+    display: none;
+}
+
+@media (max-width: 639px) {
+    .fixture-tablero #nav-principal {
+        position: relative;
+    }
+
+    .fixture-tablero #nav-principal.nav-compacta > div:first-of-type > a:first-child,
+    .fixture-tablero #nav-principal.nav-compacta > div:first-of-type > div:last-child {
+        display: flex;
+    }
+
+    .fixture-estructura {
+        max-width: 40rem;
+        padding-top: 1.25rem;
+    }
+
+    .fixture-tablero .fixture-chip {
+        min-height: 2.75rem;
+        background: var(--tm-fila-bg);
+    }
+
+    .fixture-buscador-form,
+    .fixture-buscador {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .fixture-buscador {
+        min-height: 3rem;
+    }
+
+    .fixture-tablero .fixture-buscador input[type="search"],
+    .fixture-tablero .fixture-buscador input[type="search"]:focus {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 1rem;
+    }
+
+    .fixture-filtros-interior {
+        gap: .75rem;
+    }
+
+}
+
+.fixture-tablero #fixture-fechas-bar,
+.fixture-tablero #fixture-fechas-spacer {
+    display: none;
+}
+
+    .fixture-compacto:not([hidden]) {
+        position: fixed;
+        inset: var(--fixture-nav-altura, 0px) 0 auto;
+        z-index: 45;
+        display: block;
+        padding: .5rem 1rem;
+        border-bottom: 1px solid rgb(var(--tm-linea) / .16);
+        background: rgb(var(--tm-fondo));
+    }
+
+    .fixture-compacto-interior {
+        max-width: 38rem;
+        margin: auto;
+    }
+
+    .fixture-compacto-botones {
+        display: flex;
+        gap: .5rem;
+    }
+
+    .fixture-compacto-botones button {
+        flex: 1;
+        min-width: 0;
+        min-height: 2.75rem;
+        overflow: hidden;
+        padding: 0 .75rem;
+        border: 1px solid rgb(var(--tm-linea) / .16);
+        border-radius: 999px;
+        background: var(--tm-fila-bg);
+        color: rgb(var(--tm-tinta));
+        font-size: .8125rem;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .fixture-compacto-botones button:last-child {
+        display: grid;
+        flex: none;
+        width: 2.75rem;
+        place-items: center;
+    }
+
+    .fixture-compacto-botones button[aria-expanded="true"] {
+        border-color: rgb(var(--tm-acento));
+    }
+
+    .fixture-compacto-botones button:focus-visible {
+        outline: 3px solid rgb(var(--tm-acento));
+        outline-offset: 2px;
+    }
+
+    .fixture-compacto-panel:not([hidden]) {
+        max-height: calc(100vh - 150px - env(safe-area-inset-bottom));
+        overflow: auto;
+        padding: .5rem 0;
+    }
+
+    #fixture-panel-buscar:not([hidden]) {
+        padding: .5rem .375rem;
+    }
+
+@media (max-width: 639px) {
+    .fixture-resumen {
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+}
+
 @media (min-width: 640px) {
+    .fixture-compacto-interior { max-width: 73.5rem; }
+    .fixture-compacto-botones button { flex: 0 1 auto; min-width: 10rem; }
+    .fixture-compacto-botones button:last-child { min-width: 0; }
+
     .fixture-controles {
         flex-direction: row;
         align-items: center;
@@ -1190,7 +1327,7 @@
         flex: 1 1 auto;
     }
 
-    .fixture-buscador-form {
+    #fixture-buscador-origen {
         flex: none;
         margin-left: auto;
     }
@@ -1229,14 +1366,14 @@
         border-bottom: 1px solid rgb(var(--tm-linea) / .16);
     }
 
-    .fixture-timeline {
+    .fixture-filtros .fixture-timeline {
         grid-column: 1;
         grid-row: 3;
         padding: 2rem 1rem 2rem .25rem;
         border-right: 1px solid rgb(var(--tm-linea) / .16);
     }
 
-    .fixture-timeline::before {
+    .fixture-filtros .fixture-timeline::before {
         content: 'FECHAS';
         display: block;
         margin-bottom: 1rem;
@@ -1245,14 +1382,14 @@
         letter-spacing: .2em;
     }
 
-    .fixture-timeline-lista {
+    .fixture-filtros .fixture-timeline-lista {
         position: relative;
         display: block;
         padding: 0;
         overflow: visible;
     }
 
-    .fixture-timeline-lista::before {
+    .fixture-filtros .fixture-timeline-lista::before {
         content: '';
         position: absolute;
         top: .5rem;
@@ -1262,12 +1399,12 @@
         background: rgb(var(--tm-linea) / .16);
     }
 
-    .fixture-timeline-lista > li {
+    .fixture-filtros .fixture-timeline-lista > li {
         position: relative;
         padding: 0 0 .25rem 1.5rem;
     }
 
-    .fixture-tablero .fixture-timeline-lista .fixture-chip {
+    .fixture-tablero .fixture-filtros .fixture-timeline-lista .fixture-chip {
         position: relative;
         display: flex;
         justify-content: space-between;
@@ -1281,7 +1418,7 @@
         font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
     }
 
-    .fixture-tablero .fixture-timeline-lista .fixture-chip::before {
+    .fixture-tablero .fixture-filtros .fixture-timeline-lista .fixture-chip::before {
         content: '';
         position: absolute;
         top: 50%;
@@ -1294,17 +1431,17 @@
         background: rgb(var(--tm-fondo));
     }
 
-    .fixture-tablero .fixture-timeline-lista .fixture-chip:hover {
+    .fixture-tablero .fixture-filtros .fixture-timeline-lista .fixture-chip:hover {
         background: var(--tm-fila-bg);
         color: rgb(var(--tm-tinta));
     }
 
-    .fixture-tablero .fixture-timeline-lista .fixture-chip[aria-current="page"] {
+    .fixture-tablero .fixture-filtros .fixture-timeline-lista .fixture-chip[aria-current="page"] {
         background: var(--tm-fila-bg);
         color: var(--fx-destacado);
     }
 
-    .fixture-tablero .fixture-timeline-lista .fixture-chip[aria-current="page"]::before {
+    .fixture-tablero .fixture-filtros .fixture-timeline-lista .fixture-chip[aria-current="page"]::before {
         border-color: #FFCC33;
         background: #FFCC33;
     }
