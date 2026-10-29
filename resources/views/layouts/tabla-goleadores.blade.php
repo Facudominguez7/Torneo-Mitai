@@ -145,7 +145,6 @@
                 </section>
             </main>
 
-            @include('layouts.footer')
         </div>
     </div>
 
@@ -368,6 +367,8 @@
             });
         });
     </script>
+    <x-links-legales />
+    <x-tab-bar-movil :edicion="$EdicionSeleccionada" />
 </body>
 
 </html>

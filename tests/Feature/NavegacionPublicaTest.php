@@ -79,10 +79,11 @@ it('marca con aria-current solo el link de partidos dentro de la vista fixture',
 
     $nav = navPublica($this->get(route('fixture', ['idEdicion' => $edicion->id]))->getContent());
 
-    // Cada link de seccion vive DOS veces en el DOM (links inline de desktop
-    // y chips mobile; por viewport solo uno es visible): el activo se marca
-    // exactamente una vez por representacion y los demas no se marcan.
-    expect(preg_match_all('/<a\b[^>]*aria-current="page"/', $nav))->toBe(2);
+    // Cada link de seccion vive TRES veces en el DOM (links inline de desktop,
+    // chips mobile y tab bar movil; por viewport solo uno es visible): el
+    // activo se marca exactamente una vez por representacion y los demas no
+    // se marcan.
+    expect(preg_match_all('/<a\b[^>]*aria-current="page"/', $nav))->toBe(3);
 
     expect(linkDeSeccion($nav, 'Partidos'))->toContain('aria-current="page"');
 
@@ -96,9 +97,9 @@ it('marca solo el link de inicio con aria-current en el home', function () {
 
     $nav = navPublica($this->get(route('home'))->getContent());
 
-    // Mismo criterio: el activo aparece marcado en ambas representaciones
-    // (desktop inline + chips mobile), nunca en los otros links.
-    expect(preg_match_all('/<a\b[^>]*aria-current="page"/', $nav))->toBe(2);
+    // Mismo criterio: el activo aparece marcado en las tres representaciones
+    // (desktop inline + chips mobile + tab bar movil), nunca en los otros links.
+    expect(preg_match_all('/<a\b[^>]*aria-current="page"/', $nav))->toBe(3);
 
     expect(linkDeSeccion($nav, 'Inicio'))->toContain('aria-current="page"');
 

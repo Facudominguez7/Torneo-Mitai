@@ -22,7 +22,7 @@
         @endphp
         <a href="{{ $homeUrl }}"
             class="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40 sm:self-auto [.nav-compacta_&]:hidden">
-            <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" class="h-10 w-10" alt="MITAI Logo">
+            <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" class="h-10 w-10 brand-anim" alt="MITAI Logo">
             <div class="flex flex-col text-center sm:text-left">
                 <span class="text-sm font-semibold uppercase tracking-[0.3em] text-white/60">Torneo Mitai</span>
                 <span
@@ -124,7 +124,7 @@
     </div>
 
     <div id="nav-secciones-mobile"
-        class="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-6 gap-y-2 overflow-x-auto border-t border-white/10 px-4 pt-3 pb-4 sm:flex-nowrap sm:px-6 {{ $navInlineSecciones ? 'xl:hidden' : '' }} xl:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        class="mx-auto hidden max-w-6xl flex-wrap justify-center gap-x-6 gap-y-2 overflow-x-auto border-t border-white/10 px-4 pt-3 pb-4 sm:flex sm:flex-nowrap sm:px-6 {{ $navInlineSecciones ? 'xl:hidden' : '' }} xl:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         @foreach ($itemsSeccion as $item)
             <a href="{{ route($item['ruta'], ['idEdicion' => optional($edicionActiva)->id]) }}"
                 @if (request()->routeIs($item['patterns']))

@@ -100,9 +100,10 @@
                 </section>
             </main>
 
-            @include('layouts.footer')
         </div>
     </div>
+    <x-links-legales />
+    <x-tab-bar-movil :edicion="$EdicionSeleccionada" />
 </body>
 
 </html>

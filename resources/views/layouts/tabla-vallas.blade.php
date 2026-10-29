@@ -231,7 +231,6 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
                 </section>
             </main>
 
-            @include('layouts.footer')
         </div>
     </div>
 
@@ -325,6 +324,8 @@ Datos obtenidos dinámicamente de equipo_ediciones.golesContra.
 
 
     </script>
+    <x-links-legales />
+    <x-tab-bar-movil :edicion="$EdicionSeleccionada" />
 </body>
 
 </html>

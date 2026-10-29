@@ -197,11 +197,12 @@
                 </div>
             </main>
 
-            @include('layouts.footer')
 
             <x-planilla-publica-modal />
         </div>
     </div>
+    <x-links-legales />
+    <x-tab-bar-movil :edicion="$EdicionSeleccionada" />
 </body>
 
 </html>
