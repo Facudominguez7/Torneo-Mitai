@@ -357,6 +357,12 @@ El proyecto está configurado para despliegue automático en Hostinger mediante 
 
 ---
 
+## 📜 Licencia
+
+Este proyecto es **privado y propietario**. Todos los derechos están reservados a su autor; la publicación del código en este repositorio no otorga ninguna licencia de uso, copia, modificación ni distribución. Ver el archivo [LICENSE](LICENSE).
+
+---
+
 ## 👨‍💻 Autor
 
 **Facundo Díaz Domínguez**
