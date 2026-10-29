@@ -121,6 +121,6 @@ describe('fixture: tarjeta de partido (caracterización previa al refactor)', fu
             ->toContain('data-local="union del este"')
             ->toContain('data-visitante="federal misiones"')
             ->toContain('Interzonal')
-            ->toContain('via-amber-900/30');
+            ->toContain('tarjeta-compacta--interzonal');
     });
 });
