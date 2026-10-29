@@ -133,6 +133,18 @@ En el fixture, la barra compacta visible se fija debajo de la navegación con fo
 
 La implementación real incluye gradientes, marca de agua desenfocada, tilt y sombra de lista; la propuesta editorial siguiente los desaconseja para nuevas direcciones. Mantener explícita esta diferencia, sin presentar la propuesta como descripción de la home existente. El movimiento de entrada y tilt está condicionado a `prefers-reduced-motion: no-preference`.
 
+### Planilla pública compartida
+
+Fuente: `resources/css/app.css`, reglas `.planilla-publica` (fixture y finales). Es un patrón implementado, no una nueva escala global ni una propuesta para posiciones.
+
+| Elemento | Valores y comportamiento existentes |
+| --- | --- |
+| Velo y hoja | Capa fija `z-index: 50`, velo `rgb(var(--brand-navy-deep) / .8)`; hoja centrada de `min(100%, 65.625rem)`, alto máximo `calc(100dvh - 2rem)`, borde `1px` de `--tm-linea` al `.2` y fondo `--tm-fondo`. |
+| Cabecera | Padding `1.125rem 1.5rem`, separación `1rem`, borde inferior `2px` de `--tm-acento`; título `1.5rem`/700; cierre `2.75rem` cuadrado con foco `3px` y offset `2px`. |
+| Contenido y equipos | Contenido con scroll vertical y padding `1.25rem 1.5rem 1.875rem`; equipos en dos columnas con gap `1.75rem`; rótulos y subtítulos `.75rem`/700, mayúsculas y tracking `.1em`. |
+| Datos y estados | Tabla con padding de celda `.5625rem .3125rem`, borde inferior `1px`, primera y última columna en `ui-monospace, 'SF Mono', Menlo, Consolas, monospace` y última alineada a derecha. Aviso y reporte usan `--tm-fila-bg` y borde izquierdo de acento `4px` y `3px`, respectivamente; estado con alto mínimo `12.5rem`. |
+| Móvil | Hasta `700px`, hoja alineada abajo, sin padding exterior y alto máximo `94dvh`; cabecera y contenido con padding `1rem`, equipos en una columna con gap `1.25rem` y metadatos en columna. |
+
 ## Desviación conocida (a sistematizar)
 
 La home actual (`welcome.blade.php`) usa acentos directos de la paleta default de Tailwind — `yellow-300`, `emerald-400`, `sky-400`, `rose-500` — en lugar de los tokens de marca. El amarillo de CTA (`#FDE047`) se aproxima a `oro-300/400` de la escala del sistema. Nuevos diseños deben usar los tokens declarados (`brand-*`, `oro-*`, `bronce-*`) y no introducir colores fuera del sistema.

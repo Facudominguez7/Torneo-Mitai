@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "comments": [
+    {
+      "id": "kdn0swyj",
+      "file": "01-tabla-cancha.html",
+      "selector": "body",
+      "excerpt": "TORNEO MITAI Edición ilustrativa Inicio Partidos Posiciones Goleadores Finales Tema: Oscuro Iniciar sesión → TABLA GENERAL · EDICIÓN ILUSTRATIVA Tabla de posiciones Resumen de puntos, victorias y diferencia de gol para cada equipo del grupo. El orden prioriza puntaje y, en caso de empate, ubica prim",
+      "comment": "mostrame este en movil tambien como se veria",
+      "createdAt": "2026-10-29T18:43:34.031Z",
+      "status": "open",
+      "sentAt": "2026-10-29T18:43:34.062Z",
+      "resolvedAt": null
+    },
+    {
+      "id": "brf87hby",
+      "file": "01-tabla-cancha.html",
+      "selector": "body > main > p:nth-of-type(2)",
+      "excerpt": "Resumen de puntos, victorias y diferencia de gol para cada equipo del grupo. El orden prioriza puntaje y, en caso de empate, ubica primero a los equipos que ya jugaron.",
+      "comment": "no es necesario",
+      "createdAt": "2026-10-29T18:44:04.722Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T18:44:04.780Z",
+      "resolvedAt": "2026-10-29T18:47:19.431Z"
+    },
+    {
+      "id": "8yzxzu4t",
+      "file": "01-tabla-cancha.html",
+      "selector": "body > main > p:nth-of-type(3)",
+      "excerpt": "Datos, equipos y categorías ilustrativos; no representan la edición seleccionada.",
+      "comment": "tampoco es necesario",
+      "createdAt": "2026-10-29T18:44:13.134Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T18:44:13.139Z",
+      "resolvedAt": "2026-10-29T18:47:19.431Z"
+    },
+    {
+      "id": "3va8g867",
+      "file": "01-tabla-cancha.html",
+      "selector": "body > main > p:nth-of-type(1)",
+      "excerpt": "TABLA GENERAL · EDICIÓN ILUSTRATIVA",
+      "comment": "tampoco es necesario",
+      "createdAt": "2026-10-29T18:44:24.557Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T18:44:24.616Z",
+      "resolvedAt": "2026-10-29T18:47:19.431Z"
+    },
+    {
+      "id": "9l04zfl3",
+      "file": "01-tabla-cancha.html",
+      "selector": "body",
+      "excerpt": "TORNEO MITAI Edición ilustrativa Inicio Partidos Posiciones Goleadores Finales Tema: Claro Iniciar sesión → TABLA GENERAL · EDICIÓN ILUSTRATIVA Tabla de posiciones Resumen de puntos, victorias y diferencia de gol para cada equipo del grupo. El orden prioriza puntaje y, en caso de empate, ubica prime",
+      "comment": "agrega algo de fondo",
+      "createdAt": "2026-10-29T18:44:36.266Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T18:44:36.299Z",
+      "resolvedAt": "2026-10-29T18:48:38.965Z"
+    },
+    {
+      "id": "afcmx2r9",
+      "file": "01-tabla-cancha.html",
+      "selector": "#preview-open",
+      "excerpt": "Ver en móvil · 390 × 844",
+      "comment": "falta una columna",
+      "createdAt": "2026-10-29T18:48:54.967Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T18:48:55.031Z",
+      "resolvedAt": "2026-10-29T18:50:45.727Z",
+      "screenshot": ".screenshots/afcmx2r9.png"
+    },
+    {
+      "id": "jt2dyasr",
+      "file": "01-tabla-cancha.html",
+      "selector": "body > main > section > p",
+      "excerpt": "Pts: puntos · J: jugados · G: ganados · E: empatados · P: perdidos · GF: goles a favor · GC: goles en contra · DF: diferencia de gol. En móvil se muestran Pts, J y DF.",
+      "comment": "no es necesario explicar",
+      "createdAt": "2026-10-29T18:50:50.653Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T18:50:50.685Z",
+      "resolvedAt": "2026-10-29T18:51:22.580Z"
+    }
+  ]
+}
