@@ -131,6 +131,33 @@
   main.app { max-width:780px; margin:0 auto; padding:56px 24px 64px; text-align:center; }
   .kicker { font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--teal-claro); }
   :root[data-tema="claro"] .kicker { color:var(--teal); }
+
+  /* --- Selector de edición (hero) --- */
+  .selector-edicion { position:relative; display:inline-flex; flex-direction:column; align-items:flex-start; gap:6px; }
+  .selector-edicion .micro-label { font-size:10px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:var(--dim); }
+  .selector-edicion .control { position:relative; display:inline-flex; align-items:center; gap:10px; background:var(--fila); border:1px solid var(--linea); border-radius:14px; padding:10px 44px 10px 18px; cursor:pointer; font-family:inherit; font-size:15px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--oro-400); transition: border-color .25s ease, background .25s ease; }
+  .selector-edicion .control:hover { background:rgba(255,204,51,.08); border-color:rgba(255,204,51,.45); }
+  .selector-edicion .control:focus-visible { outline:3px solid var(--teal-claro); outline-offset:2px; }
+  .selector-edicion .control[aria-expanded="true"] { border-color:var(--oro-400); }
+  .selector-edicion .flecha { position:absolute; right:16px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--oro-400); }
+  .selector-edicion .control[aria-expanded="true"] .flecha { transform:translateY(-50%) rotate(180deg); }
+  @media (prefers-reduced-motion: no-preference) {
+    .selector-edicion .flecha { transition:transform .25s ease; }
+    /* Cascada escalonada de opciones, igual que las sugerencias del buscador */
+    .selector-edicion .lista [role="option"] { animation: baja3d .4s cubic-bezier(.2,.7,.3,1.1) both; }
+    .selector-edicion.abierto .lista [role="option"]:nth-child(1) { animation-delay:.06s }
+    .selector-edicion.abierto .lista [role="option"]:nth-child(2) { animation-delay:.14s }
+    .selector-edicion.abierto .lista [role="option"]:nth-child(3) { animation-delay:.22s }
+  }
+  /* Superficie sólida por tema: evita la superposición translúcida sobre el contenido */
+  .selector-edicion .lista { position:absolute; top:calc(100% + 8px); left:0; min-width:100%; background:var(--fondo); border:1px solid var(--linea); border-radius:14px; box-shadow:0 24px 50px -18px rgba(8,47,59,.55); overflow:hidden; z-index:6; display:none; text-align:left; }
+  .selector-edicion.abierto { z-index:6; }
+  .selector-edicion.abierto .lista { display:block; }
+  .selector-edicion .lista [role="option"] { display:flex; align-items:center; gap:10px; padding:12px 18px; font-size:14px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--tinta); cursor:pointer; white-space:nowrap; }
+  .selector-edicion .lista [role="option"]:hover, .selector-edicion .lista [role="option"].resaltada { background:rgba(255,204,51,.1); }
+  .selector-edicion .lista [role="option"][aria-selected="true"] { color:var(--oro-400); }
+  .selector-edicion .lista [role="option"] .check { margin-left:auto; opacity:0; color:var(--oro-400); flex-shrink:0; }
+  .selector-edicion .lista [role="option"][aria-selected="true"] .check { opacity:1; }
   h1 { font-size:42px; font-weight:800; letter-spacing:-.7px; margin-top:14px; line-height:1.1; }
   .sub { margin-top:12px; font-size:16px; color:var(--dim); }
 
@@ -241,7 +268,18 @@
   </nav>
 
   <main class="app">
-    <p class="kicker anim-in">Torneo Apertura 2026</p>
+    <div class="selector-edicion anim-in d1">
+      <span class="micro-label" id="etiqueta-edicion">Edición</span>
+      <button type="button" class="control" id="edicion-hero" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="etiqueta-edicion edicion-hero" aria-activedescendant="opcion-2026">
+        <span class="texto">Torneo Apertura 2026</span>
+        <svg class="flecha" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="lista" role="listbox" aria-label="Seleccionar edición del torneo">
+        <div role="option" id="opcion-2026" aria-selected="true">Torneo Apertura 2026<svg class="check" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div role="option" id="opcion-clausura-2025" aria-selected="false">Torneo Clausura 2025<svg class="check" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div role="option" id="opcion-apertura-2025" aria-selected="false">Torneo Apertura 2025<svg class="check" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
     <h1 class="anim-in d1">¿De qué equipo sos?</h1>
     <p class="sub anim-in d1">Elegí tu equipo y mirá sus partidos, resultados y posición sin buscar nada.</p>
 
@@ -253,15 +291,15 @@
         <kbd>Enter</kbd>
       </label>
       <div class="sugerencias" role="listbox" aria-label="Equipos que coinciden">
-        <button type="button" role="option" aria-selected="false" data-equipo="Talleres Jujuy"><span class="esc" aria-hidden="true">TJ</span> Talleres Jujuy <span class="cat">Sub-8 · Sub-10 · Sub-16</span></button>
-        <button type="button" role="option" aria-selected="false" data-equipo="Talleres de Palpalá"><span class="esc" aria-hidden="true">TA</span> Talleres de Palpalá <span class="cat">Sub-12</span></button>
+        <button type="button" role="option" aria-selected="false" data-equipo="Talleres Jujuy"><span aria-hidden="true"><svg width="34" height="34" viewBox="0 0 58 58"><path d="M29 4l20 6v20c0 12-9 20-20 24C18 50 9 42 9 30V10z" fill="#C8102E"/><path d="M29 8.5l15.5 4.6V30c0 9.4-7 15.9-15.5 19.2C20.5 45.9 13.5 39.4 13.5 30V13.1z" fill="#FFFFFF"/><path d="M29 8.5l15.5 4.6V17H13.5v-3.9zM13.5 26h31v8h-31z" fill="#C8102E"/><text x="29" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="800" fill="#0E4B5E">T</text></svg></span> Talleres Jujuy <span class="cat">Sub-8 · Sub-10 · Sub-16</span></button>
+        <button type="button" role="option" aria-selected="false" data-equipo="Talleres de Palpalá"><span aria-hidden="true"><svg width="34" height="34" viewBox="0 0 58 58"><path d="M29 4l20 6v20c0 12-9 20-20 24C18 50 9 42 9 30V10z" fill="#1B7A3D"/><path d="M29 8.5l15.5 4.6V30c0 9.4-7 15.9-15.5 19.2C20.5 45.9 13.5 39.4 13.5 30V13.1z" fill="#FFFFFF"/><path d="M29 8.5l15.5 4.6V17H13.5v-3.9zM13.5 26h31v8h-31z" fill="#1B7A3D"/><text x="29" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="800" fill="#0E4B5E">TP</text></svg></span> Talleres de Palpalá <span class="cat">Sub-12</span></button>
       </div>
       <p class="hint" id="hint-buscador">También podés elegir una categoría y ver todo su fixture abajo.</p>
     </div>
 
     <section class="panel-equipo anim-in d3" aria-label="Panel del equipo seleccionado">
       <div class="equipo-head">
-        <span class="escudo" aria-hidden="true">TJ</span>
+        <span class="escudo" aria-hidden="true"><svg width="58" height="58" viewBox="0 0 58 58"><path d="M29 4l20 6v20c0 12-9 20-20 24C18 50 9 42 9 30V10z" fill="#C8102E"/><path d="M29 8.5l15.5 4.6V30c0 9.4-7 15.9-15.5 19.2C20.5 45.9 13.5 39.4 13.5 30V13.1z" fill="#FFFFFF"/><path d="M29 8.5l15.5 4.6V17H13.5v-3.9zM13.5 26h31v8h-31z" fill="#C8102E"/><text x="29" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="800" fill="#0E4B5E">T</text></svg></span>
         <div>
           <h2>Talleres Jujuy</h2>
           <p class="meta">Sub-10 · Zona A · Apertura 2026</p>
@@ -365,6 +403,52 @@
           input.focus();
         });
       });
+    })();
+
+    /* Selector de edición: mismo patrón de apertura que el buscador (velo de foco + cascada) */
+    (function () {
+      var raiz = document.querySelector('.selector-edicion');
+      var btn = document.getElementById('edicion-hero');
+      var main = document.querySelector('main');
+      if (!raiz || !btn || !main) return;
+      var opciones = Array.prototype.slice.call(raiz.querySelectorAll('[role="option"]'));
+      var idxResaltada = 0;
+      function abrir() {
+        raiz.classList.add('abierto');
+        main.classList.add('abierto');
+        btn.setAttribute('aria-expanded', 'true');
+        resaltar(idxResaltada);
+      }
+      function cerrar() {
+        raiz.classList.remove('abierto');
+        main.classList.remove('abierto');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+      function abierta() { return raiz.classList.contains('abierto'); }
+      function resaltar(i) {
+        idxResaltada = (i + opciones.length) % opciones.length;
+        opciones.forEach(function (o, j) { o.classList.toggle('resaltada', j === idxResaltada); });
+        btn.setAttribute('aria-activedescendant', opciones[idxResaltada].id);
+      }
+      function elegir(i) {
+        opciones.forEach(function (o, j) { o.setAttribute('aria-selected', j === i ? 'true' : 'false'); });
+        btn.querySelector('.texto').textContent = opciones[i].textContent.trim();
+        resaltar(i);
+        cerrar();
+        btn.focus();
+      }
+      btn.addEventListener('click', function () { abierta() ? cerrar() : abrir(); });
+      btn.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown') { e.preventDefault(); abierta() ? resaltar(idxResaltada + 1) : abrir(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); abierta() ? resaltar(idxResaltada - 1) : abrir(); }
+        else if (e.key === 'Enter' || e.key === ' ') { if (abierta()) { e.preventDefault(); elegir(idxResaltada); } }
+        else if (e.key === 'Escape') cerrar();
+      });
+      opciones.forEach(function (o, i) {
+        o.addEventListener('click', function () { elegir(i); });
+        o.addEventListener('mousemove', function () { resaltar(i); });
+      });
+      document.addEventListener('click', function (e) { if (!raiz.contains(e.target)) cerrar(); });
     })();
 
     /* Tilt 3D del panel con puntero fino */

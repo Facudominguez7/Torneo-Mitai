@@ -345,7 +345,7 @@ function descargarPDF() {
 
     function cerrarBuscador() {
         selector.classList.remove('abierto');
-        if (main) {
+        if (main && !document.getElementById('selector-edicion')?.classList.contains('abierto')) {
             main.classList.remove('abierto');
         }
         buscador.setAttribute('aria-expanded', 'false');
@@ -377,8 +377,20 @@ function descargarPDF() {
             boton.dataset.idCategoria = equipo.idCategoria ?? '';
             boton.className = 'tm-sugerencia flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-900 transition hover:bg-brand-teal/10 focus:outline-none focus-visible:bg-brand-teal/10';
 
-            const escudo = crearElemento('span', 'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-navy font-mono text-[11px] font-bold text-oro-400', iniciales(equipo.nombre));
+            const escudo = document.createElement('span');
+            escudo.className = 'flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-navy';
             escudo.setAttribute('aria-hidden', 'true');
+            const imagen = document.createElement('img');
+            const logoMitai = '/fotos/Logo_Mitai_SinFondo.png';
+            imagen.src = equipo.foto ? '/fotos/equipos/' + equipo.foto : logoMitai;
+            imagen.alt = '';
+            imagen.loading = 'lazy';
+            imagen.className = 'h-full w-full object-cover';
+            imagen.onerror = function () {
+                this.onerror = null;
+                this.src = logoMitai;
+            };
+            escudo.appendChild(imagen);
             boton.appendChild(escudo);
             boton.appendChild(document.createTextNode(equipo.nombre));
             if (equipo.nombreCategoria) {
@@ -469,4 +481,90 @@ function descargarPDF() {
     } else {
         mostrarSelector();
     }
+})();
+
+// Selector de edición (#fixture artboard 06): dropdown diseñado en lugar del
+// <select> nativo. Mismo patrón de apertura que el buscador (velo de foco,
+// cascada escalonada); elegir una opción navega a su data-url.
+(function () {
+    const raiz = document.getElementById('selector-edicion');
+    const disparador = document.getElementById('idEdicion');
+    if (!raiz || !disparador) {
+        return;
+    }
+    const main = document.querySelector('main.tm-velo-host');
+    const opciones = Array.prototype.slice.call(raiz.querySelectorAll('[role="option"]'));
+    if (!opciones.length) {
+        return;
+    }
+    let indiceResaltado = Math.max(0, opciones.findIndex(function (o) { return o.getAttribute('aria-selected') === 'true'; }));
+
+    function estaAbierto() {
+        return raiz.classList.contains('abierto');
+    }
+
+    function resaltar(indice) {
+        indiceResaltado = (indice + opciones.length) % opciones.length;
+        opciones.forEach(function (opcion, i) {
+            opcion.classList.toggle('tm-resaltada', i === indiceResaltado);
+        });
+        disparador.setAttribute('aria-activedescendant', opciones[indiceResaltado].id);
+    }
+
+    function abrir() {
+        raiz.classList.add('abierto');
+        if (main) {
+            main.classList.add('abierto');
+        }
+        disparador.setAttribute('aria-expanded', 'true');
+        resaltar(indiceResaltado);
+    }
+
+    function cerrar() {
+        raiz.classList.remove('abierto');
+        if (main && !document.getElementById('seguir-equipo-selector')?.classList.contains('abierto')) {
+            main.classList.remove('abierto');
+        }
+        disparador.setAttribute('aria-expanded', 'false');
+    }
+
+    function elegir(indice) {
+        const url = opciones[indice].dataset.url;
+        if (url) {
+            window.location.href = url;
+        }
+    }
+
+    disparador.addEventListener('click', function () {
+        if (estaAbierto()) {
+            cerrar();
+        } else {
+            abrir();
+        }
+    });
+    disparador.addEventListener('keydown', function (evento) {
+        if (evento.key === 'ArrowDown') {
+            evento.preventDefault();
+            if (estaAbierto()) { resaltar(indiceResaltado + 1); } else { abrir(); }
+        } else if (evento.key === 'ArrowUp') {
+            evento.preventDefault();
+            if (estaAbierto()) { resaltar(indiceResaltado - 1); } else { abrir(); }
+        } else if (evento.key === 'Enter' || evento.key === ' ') {
+            if (estaAbierto()) {
+                evento.preventDefault();
+                elegir(indiceResaltado);
+            }
+        } else if (evento.key === 'Escape') {
+            cerrar();
+        }
+    });
+    opciones.forEach(function (opcion, i) {
+        opcion.addEventListener('click', function () { elegir(i); });
+        opcion.addEventListener('mousemove', function () { resaltar(i); });
+    });
+    document.addEventListener('click', function (evento) {
+        if (!raiz.contains(evento.target)) {
+            cerrar();
+        }
+    });
 })();

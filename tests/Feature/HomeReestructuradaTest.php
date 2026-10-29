@@ -3,6 +3,7 @@
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Partido;
@@ -100,8 +101,8 @@ describe('home: buscador protagonista y tema dual (artboard 06)', function () {
         $html = $this->get(route('home'))->assertOk()->getContent();
 
         expect(ordenEnHtml($html, [
-            '¿De qué equipo sos?',
             'id="idEdicion"',
+            '¿De qué equipo sos?',
             'id="seguir-equipo-bloque"',
             'O explorá todo el torneo',
         ]))->toBeTrue();
@@ -129,13 +130,63 @@ describe('home: buscador protagonista y tema dual (artboard 06)', function () {
         expect($html)->toContain('Cambiar tema');
     });
 
+    it('expone fotos de equipos directos y heredados en los datos del buscador', function () {
+        $contexto = homeBase();
+        $otraEdicion = Edicion::create(['nombre' => 'Edicion anterior']);
+        $directo = Equipo::create([
+            'idCategoria' => $contexto['categoria']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'nombre' => 'Equipo compartido',
+            'foto' => 'directo.png',
+        ]);
+        $heredado = Equipo::create([
+            'idCategoria' => $contexto['categoria']->id,
+            'idEdicion' => $otraEdicion->id,
+            'nombre' => 'Equipo compartido',
+            'foto' => 'heredado.png',
+        ]);
+        EquipoEdicion::create([
+            'idEquipo' => $heredado->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'golesContra' => 0,
+        ]);
+
+        $html = $this->get(route('home', ['idEdicion' => $contexto['edicion']->id]))->assertOk()->getContent();
+        expect(preg_match('/<script\b[^>]*\bid="seguir-equipo-datos"[^>]*>(.*?)<\/script>/s', $html, $coincidencias))->toBe(1);
+        $participantes = json_decode($coincidencias[1], true, 512, JSON_THROW_ON_ERROR);
+
+        $fotosPorEquipo = array_column($participantes, 'foto', 'id');
+
+        expect($participantes)->toHaveCount(2)
+            ->and($fotosPorEquipo)->toHaveCount(2)
+            ->and($fotosPorEquipo[$directo->id])->toBe('directo.png')
+            ->and($fotosPorEquipo[$heredado->id])->toBe('heredado.png');
+    });
+
     it('recuerda la edición elegida en el selector', function () {
         $contexto = homeBase();
         homePartido($contexto, homeFecha($contexto, 'Fecha 2'), now()->addDays(2)->format('Y-m-d H:i:s'));
 
         $html = $this->get(route('home', ['idEdicion' => $contexto['edicion']->id]))->assertOk()->getContent();
 
-        expect(preg_match('/value="'.preg_quote($contexto['edicion']->id, '/').'"[^>]*selected/', $html))->toBe(1);
+        // Dropdown diseñado: la edición activa queda marcada en la listbox.
+        expect(preg_match('/id="opcion-edicion-'.preg_quote($contexto['edicion']->id, '/').'"[^>]*aria-selected="true"/', $html))->toBe(1);
+        expect($html)->toContain('id="opcion-edicion-vacia" data-url="'.route('home').'"');
+    });
+
+    it('renderiza el selector de edición como dropdown navegable', function () {
+        $contexto = homeBase();
+
+        $html = $this->get(route('home'))->assertOk()->getContent();
+
+        // Disparador con ARIA del listbox y opción nula primero (misma semántica
+        // que el <select> anterior: elegir una edición navega a ?idEdicion=N).
+        expect($html)->toContain('aria-haspopup="listbox"');
+        expect($html)->toContain('aria-expanded="false"');
+        expect($html)->toContain('data-url="'.route('home').'"');
+        expect($html)->toContain('data-url="'.route('home', ['idEdicion' => $contexto['edicion']->id]).'"');
+        expect($html)->toContain('Seleccione una edición');
     });
 
     it('no contiene la prosa institucional ni los ctas duplicados eliminados', function () {
@@ -210,8 +261,8 @@ describe('home: buscador protagonista y tema dual (artboard 06)', function () {
         ]);
 
         $marcadores = [
-            '¿De qué equipo sos?',
             'id="idEdicion"',
+            '¿De qué equipo sos?',
             'id="seguir-equipo-bloque"',
             'O explorá todo el torneo',
         ];

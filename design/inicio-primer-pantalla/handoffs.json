@@ -5,9 +5,10 @@
     "06-tu-equipo-dual.html": {
       "status": "implemented",
       "queued": false,
-      "sentAt": "2026-10-28T17:31:03.812Z",
+      "sentAt": "2026-10-29T00:42:18.845Z",
       "startedAt": null,
-      "implementedAt": "2026-10-28T17:31:39.294Z",
+      "implementedAt": "2026-10-29T00:52:02.870Z",
+      "note": "Selector y escudos implementados; tests focales aprobados. Fotos ausentes en entorno local aceptadas por el usuario; hallazgos previos del buscador pendientes.",
       "previewUrl": "http://localhost:8000/"
     }
   }

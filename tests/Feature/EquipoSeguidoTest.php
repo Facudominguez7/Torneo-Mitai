@@ -3,10 +3,12 @@
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Partido;
 use App\Models\TablaPosicion;
+use App\Services\EquiposDeEdicionService;
 
 function seguirEquipoBase(): array
 {
@@ -65,6 +67,29 @@ function seguirEquipoUrl(array $parametros): string
 {
     return '/equipo-seguido?'.http_build_query($parametros);
 }
+
+it('conserva las fotos de participantes directos y por pivote', function () {
+    $contexto = seguirEquipoBase();
+    $otraEdicion = Edicion::create(['nombre' => 'Edicion anterior']);
+    $directo = equipoSeguido($contexto, 'Equipo directo');
+    $heredado = Equipo::create([
+        'idCategoria' => $contexto['categoria']->id,
+        'idEdicion' => $otraEdicion->id,
+        'nombre' => 'Equipo heredado',
+        'foto' => 'heredado.png',
+    ]);
+    EquipoEdicion::create([
+        'idEquipo' => $heredado->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'golesContra' => 0,
+    ]);
+
+    $participantes = app(EquiposDeEdicionService::class)->participantes($contexto['edicion']->id)->keyBy('id');
+
+    expect($participantes->get($directo->id)['foto'])->toBe('equipo.png')
+        ->and($participantes->get($heredado->id)['foto'])->toBe('heredado.png');
+});
 
 it('devuelve proximo y ultimo con rival localia horario marcador y links', function () {
     $contexto = seguirEquipoBase();

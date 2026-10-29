@@ -96,35 +96,46 @@
             $edicionActual = $EdicionSeleccionada ?? $ultimaEdicion;
         @endphp
 
+        {{-- Selector de edición: dropdown diseñado (artboard 06); welcome.js navega a data-url --}}
+        <div class="mx-auto max-w-4xl px-4 pt-16 text-center sm:px-6">
+            <div id="selector-edicion" class="tm-selector-edicion tm-anim-in tm-d1">
+                <span id="etiqueta-edicion"
+                    class="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-tema-dim/70">
+                    {{ __('Edición') }}
+                </span>
+                <button type="button" id="idEdicion" class="tm-selector-disparador"
+                    aria-haspopup="listbox" aria-expanded="false"
+                    aria-labelledby="etiqueta-edicion idEdicion">
+                    <span class="tm-selector-texto">{{ optional($edicionActual)->nombre ?? __('Seleccione una edición') }}</span>
+                    <svg class="tm-selector-flecha" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <ul id="lista-ediciones" class="tm-selector-lista" role="listbox"
+                    aria-label="{{ __('Seleccionar edición del torneo') }}">
+                    <li role="option" id="opcion-edicion-vacia" data-url="{{ route('home') }}"
+                        aria-selected="{{ $edicionActual ? 'false' : 'true' }}">
+                        {{ __('Seleccione una edición') }}
+                        <svg class="tm-selector-check" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </li>
+                    @foreach ($ediciones as $edicion)
+                        <li role="option" id="opcion-edicion-{{ $edicion->id }}"
+                            data-url="{{ route('home', ['idEdicion' => $edicion->id]) }}"
+                            aria-selected="{{ optional($edicionActual)->id === $edicion->id ? 'true' : 'false' }}">
+                            {{ $edicion->nombre }}
+                            <svg class="tm-selector-check" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+
         {{-- Hero: buscador protagonista (artboard 06) --}}
-        <section class="relative mx-auto max-w-4xl px-4 pt-16 text-center sm:px-6">
-            <p class="tm-anim-in font-mono text-xs font-bold uppercase tracking-[0.22em] text-tema-acento">
-                {{ optional($edicionActual)->nombre ?? "Torneos Mita'í" }}
-            </p>
+        <section class="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
             <h1 class="tm-anim-in tm-d1 mt-4 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
                 ¿De qué equipo sos?
             </h1>
             <p class="tm-anim-in tm-d1 mx-auto mt-4 max-w-2xl text-base text-tema-dim/70 sm:text-lg">
                 Elegí tu equipo y mirá sus partidos, resultados y posición sin buscar nada.
             </p>
-
-            {{-- Selector de edición: misma función GET que la home anterior --}}
-            <form method="GET" action="{{ route('home') }}"
-                class="tm-anim-in tm-d1 mt-7 inline-flex items-center gap-3 rounded-full border border-tema-linea/20 bg-[var(--tm-fila-bg)] px-5 py-2.5">
-                <label for="idEdicion" class="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-tema-dim/70">
-                    Edición
-                </label>
-                <select id="idEdicion" name="idEdicion" onchange="this.form.submit()"
-                    class="cursor-pointer bg-transparent text-sm font-semibold text-tema-tinta focus:outline-none focus:ring-2 focus:ring-brand-teal-light/60">
-                    <option value="" class="text-slate-900">{{ __('Seleccione una edición') }}</option>
-                    @foreach ($ediciones as $edicion)
-                        <option value="{{ $edicion->id }}" class="text-slate-900"
-                            @selected(optional($edicionActual)->id === $edicion->id)>
-                            {{ $edicion->nombre }}
-                        </option>
-                    @endforeach
-                </select>
-            </form>
         </section>
 
         @if (isset($equiposDeLaEdicion) && $edicionActual && $equiposDeLaEdicion->isNotEmpty())

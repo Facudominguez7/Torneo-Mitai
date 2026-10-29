@@ -231,6 +231,128 @@
     opacity: 1;
 }
 
+/*
+ * Selector de edición del hero: dropdown diseñado que reemplaza al <select>
+ * nativo (paridad con el artboard 06). Superficie sólida con el token de
+ * fondo del tema (sin translucidez), opción elegida en acento de la tab bar
+ * y cascada escalonada de opciones al abrir, igual que las sugerencias.
+ */
+.tm-selector-edicion {
+    position: relative;
+    z-index: 50;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.tm-selector-edicion.abierto {
+    z-index: 51;
+}
+
+.tm-selector-disparador {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--tm-linea) / .2);
+    background: var(--tm-fila-bg);
+    padding: 10px 44px 10px 18px;
+    font-size: .875rem;
+    font-weight: 600;
+    color: rgb(var(--tm-tinta));
+    cursor: pointer;
+    transition: border-color .25s ease, background .25s ease;
+}
+
+.tm-selector-disparador:hover {
+    background: var(--tm-fila-hover-bg);
+    border-color: rgb(var(--tm-panel-borde) / .45);
+}
+
+.tm-selector-disparador:focus-visible {
+    outline: 3px solid rgb(var(--tm-acento));
+    outline-offset: 2px;
+}
+
+.tm-selector-disparador[aria-expanded="true"] {
+    border-color: rgb(var(--tm-panel-borde));
+}
+
+.tm-selector-flecha {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: rgb(var(--tm-panel-borde));
+}
+
+.tm-selector-disparador[aria-expanded="true"] .tm-selector-flecha {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.tm-selector-lista {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 100%;
+    z-index: 50;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid rgb(var(--tm-linea) / .16);
+    /* Superficie sólida del tema: nada se transparenta sobre el contenido */
+    background: rgb(var(--tm-fondo));
+    color: rgb(var(--tm-tinta));
+    box-shadow: 0 24px 50px -18px rgba(8, 47, 59, .55);
+    text-align: left;
+    display: none;
+}
+
+.tm-selector-edicion.abierto .tm-selector-lista {
+    display: block;
+}
+
+.tm-selector-lista [role="option"] {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    font-size: .8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.tm-selector-lista [role="option"]:hover,
+.tm-selector-lista [role="option"].tm-resaltada {
+    background: rgb(var(--tm-fila) / .1);
+}
+
+.tm-selector-lista [role="option"][aria-selected="true"] {
+    color: rgb(var(--tm-panel-borde));
+}
+
+:root[data-tema="claro"] .tm-selector-lista [role="option"][aria-selected="true"] {
+    color: #997300;
+}
+
+.tm-selector-check {
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0;
+    color: rgb(var(--tm-panel-borde));
+}
+
+:root[data-tema="claro"] .tm-selector-check {
+    color: #997300;
+}
+
+.tm-selector-lista [role="option"][aria-selected="true"] .tm-selector-check {
+    opacity: 1;
+}
+
 .tm-panel {
     transform-style: preserve-3d;
     background-image: linear-gradient(165deg, var(--tm-panel-brillo), var(--tm-panel-bg));
@@ -361,6 +483,19 @@
 
     .abierto .tm-sugerencia:nth-child(1) { animation-delay: .06s }
     .abierto .tm-sugerencia:nth-child(2) { animation-delay: .14s }
+
+    /* Cascada de opciones del selector de edición: misma animación que las sugerencias */
+    .tm-selector-lista [role="option"] {
+        animation: tm-baja3d .4s cubic-bezier(.2, .7, .3, 1.1) both;
+    }
+
+    .tm-selector-edicion.abierto .tm-selector-lista [role="option"]:nth-child(1) { animation-delay: .06s }
+    .tm-selector-edicion.abierto .tm-selector-lista [role="option"]:nth-child(2) { animation-delay: .14s }
+    .tm-selector-edicion.abierto .tm-selector-lista [role="option"]:nth-child(3) { animation-delay: .22s }
+
+    .tm-selector-flecha {
+        transition: transform .25s ease;
+    }
 
     .tm-campo:focus-within {
         transform: perspective(800px) translateZ(16px);
