@@ -2,6 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Planilla pública: hoja de consulta compartida por fixture y finales. */
+.planilla-publica { position: fixed; inset: 0; z-index: 50; color: rgb(var(--tm-tinta)); }
+.planilla-publica__velo { position: absolute; inset: 0; background: rgb(var(--brand-navy-deep) / .8); }
+.planilla-publica__posicion { position: relative; display: flex; justify-content: center; align-items: center; height: 100%; padding: 1rem; }
+.planilla-publica__hoja { display: flex; flex-direction: column; width: min(100%, 65.625rem); max-height: calc(100dvh - 2rem); overflow: hidden; border: 1px solid rgb(var(--tm-linea) / .2); background: rgb(var(--tm-fondo)); }
+.planilla-publica__cabecera { display: flex; justify-content: space-between; gap: 1rem; padding: 1.125rem 1.5rem; border-bottom: 2px solid rgb(var(--tm-acento)); }
+.planilla-publica__cabecera h2 { font-size: 1.5rem; font-weight: 700; line-height: 1.2; margin: .25rem 0; }
+.planilla-publica__cabecera button { flex: none; width: 2.75rem; height: 2.75rem; border: 1px solid rgb(var(--tm-linea) / .2); background: var(--tm-fila-bg); }
+.planilla-publica__cabecera button:focus-visible { outline: 3px solid rgb(var(--tm-acento)); outline-offset: 2px; }
+.planilla-publica__contenido { overflow-y: auto; padding: 1.25rem 1.5rem 1.875rem; }
+.planilla-publica__rotulo, .planilla-publica__subtitulo { text-transform: uppercase; letter-spacing: .1em; font-size: .75rem; font-weight: 700; }
+.planilla-publica__meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem; padding-bottom: 1rem; border-bottom: 1px solid rgb(var(--tm-linea) / .2); }
+.planilla-publica__meta strong, .planilla-publica__subtitulo { color: rgb(var(--tm-acento)); }
+.planilla-publica__aviso { margin: 1.125rem 0; padding: .75rem 1rem; border-left: 4px solid rgb(var(--tm-acento)); background: var(--tm-fila-bg); }
+.planilla-publica__aviso p { margin-top: .25rem; }
+.planilla-publica__equipos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem; margin-top: 1.125rem; }
+.planilla-publica__equipos section { min-width: 0; }
+.planilla-publica__equipo { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; border-bottom: 2px solid rgb(var(--tm-tinta)); }
+.planilla-publica__equipo h3 { margin: .5rem 0; font-size: 1.2rem; font-weight: 700; overflow-wrap: anywhere; }
+.planilla-publica__equipo > span { font-size: .85rem; }
+.planilla-publica__subtitulo { margin: 1.125rem 0 .5rem; }
+.planilla-publica table { width: 100%; border-collapse: collapse; text-align: left; }
+.planilla-publica th, .planilla-publica td { padding: .5625rem .3125rem; border-bottom: 1px solid rgb(var(--tm-linea) / .2); }
+.planilla-publica th { font-size: .75rem; }
+.planilla-publica td:first-child, .planilla-publica td:last-child { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+.planilla-publica td:last-child, .planilla-publica th:last-child { text-align: right; }
+.planilla-publica__reporte { margin: .5rem 0; padding: .625rem .75rem; border-left: 3px solid rgb(var(--tm-acento)); background: var(--tm-fila-bg); }
+.planilla-publica__reporte p, .planilla-publica__vacio { font-size: .85rem; }
+.planilla-publica__estado { min-height: 12.5rem; padding: 2.5rem 0; }
+.planilla-publica__estado h3 { font-size: 1.2rem; font-weight: 700; }
+@media (max-width: 700px) {
+    .planilla-publica__posicion { align-items: end; padding: 0; }
+    .planilla-publica__hoja { max-height: 94dvh; }
+    .planilla-publica__cabecera, .planilla-publica__contenido { padding: 1rem; }
+    .planilla-publica__equipos { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+    .planilla-publica__meta { flex-direction: column; }
+}
+
 
 
 @layer base {

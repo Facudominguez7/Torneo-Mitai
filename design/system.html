@@ -43,7 +43,23 @@
   .radius-row { display: flex; gap: 16px; }
   .radius-demo { width: 110px; height: 64px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center; font-size: 11px; color: rgba(255,255,255,.7); }
   .shadow-demo { width: 220px; padding: 20px; border-radius: 24px; background: var(--brand-navy); font-size: 12px; text-align: center; }
-  .row-note { font-size: 12px; color: rgba(255,255,255,.45); margin-top: 8px; }
+  .row-note { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 8px; }
+  .themes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 1100px; }
+  .theme-example { padding: 24px; border-radius: 16px; background: rgb(var(--fondo)); color: rgb(var(--tinta)); border: 1px solid rgb(var(--linea) / .3); }
+  .theme-example.dark { --fondo: 8 47 59; --tinta: 255 255 255; --linea: 255 255 255; --acento: 155 211 226; --panel: rgba(255,255,255,.06); --fila: rgba(255,255,255,.06); --hover: rgba(255,255,255,.12); --campo: 255 255 255; --campo-tinta: 18 38 63; --destacado: #FFCC33; --sombra: none; }
+  .theme-example.light { --fondo: 255 255 255; --tinta: 8 47 59; --linea: 8 47 59; --acento: 42 109 129; --panel: #FFFFFF; --fila: rgba(14,75,94,.05); --hover: rgba(14,75,94,.09); --campo: 8 47 59; --campo-tinta: 255 255 255; --destacado: #997300; --sombra: 5px 5px 0 rgba(8,47,59,.1); }
+  .theme-example h3 { font-size: 20px; }
+  .theme-example p { margin-top: 12px; }
+  .theme-example .sample-panel { margin-top: 16px; padding: 18px; background: var(--panel); border: 1px solid rgb(var(--linea) / .3); border-radius: 1rem; box-shadow: var(--sombra); }
+  .theme-example .sample-row { background: var(--fila); padding: 12px; margin-top: 12px; border-radius: .5625rem; }
+  .theme-example .sample-row:hover { background: var(--hover); }
+  .theme-example input { display: block; margin-top: 12px; padding: 12px; width: 100%; background: rgb(var(--campo)); color: rgb(var(--campo-tinta)); border: 1px solid rgb(var(--linea) / .3); border-radius: 999px; }
+  .theme-example input:focus-visible { outline: 3px solid rgb(var(--acento)); outline-offset: 2px; }
+  .theme-example strong { color: var(--destacado); }
+  .theme-example .accent { color: rgb(var(--acento)); }
+  .spacing-sample { display: flex; align-items: center; gap: .5rem; padding: .75rem .25rem; }
+  .spacing-sample span { padding: .4375rem .9375rem; border: 1px solid var(--brand-teal-light); border-radius: 999px; }
+  @media (max-width: 700px) { .themes { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -59,6 +75,21 @@
       <div class="swatch"><div class="chip" style="background:var(--brand-navy-deep)"></div><div class="meta">brand-navy-deep<code>#082F3B · rgb(8 47 59)</code></div></div>
       <div class="swatch"><div class="chip" style="background:var(--brand-teal-light)"></div><div class="meta">brand-teal-light<code>#9BD3E2 · rgb(155 211 226)</code></div></div>
     </div>
+  </section>
+
+  <section>
+    <h2>Tema dual · home y fixture</h2>
+    <p class="row-note">Fuente: resources/css/app.css y tailwind.config.js. Oscuro por defecto; sistema claro o data-tema="claro" activa claro; data-tema="oscuro" fuerza oscuro. Muestras simultáneas, no un selector funcional.</p>
+    <div class="themes" style="margin-top:16px">
+      <article class="theme-example dark"><h3>Oscuro</h3><p class="accent">Acento · 155 211 226</p><div class="sample-panel"><strong>Fecha 5</strong><div class="sample-row">Partidos de la fecha · fila / hover</div><label>Buscar equipo<input type="search" placeholder="Nombre del equipo"></label></div><p>Fondo 8 47 59 · tinta 255 255 255</p></article>
+      <article class="theme-example light"><h3>Claro</h3><p class="accent">Acento · 42 109 129</p><div class="sample-panel"><strong>Fecha 5</strong><div class="sample-row">Partidos de la fecha · fila / hover</div><label>Buscar equipo<input type="search" placeholder="Nombre del equipo"></label></div><p>Fondo 255 255 255 · tinta 8 47 59</p></article>
+    </div>
+    <p class="row-note">Los 20 tokens --tm-* y sus valores exactos están en system.md. Oro de fixture: #FFCC33 oscuro / #997300 claro. La muestra no reproduce el movimiento ni el brillo de producción.</p>
+  </section>
+
+  <section>
+    <h2>Espaciado aplicado · fixture</h2>
+    <div class="card"><p>Fila de fechas: gap .5rem; padding .75rem .25rem. Chips: padding .4375rem .9375rem, radio 999px.</p><div class="spacing-sample"><span>Fecha 4</span><span>Fecha 5</span><span>Fecha 6</span></div><p>Tarjeta compacta: padding 1.125rem 1.25rem; gap entre tarjetas .875rem. Fuente: resources/css/app.css.</p><p class="row-note">Barra compacta de fixture: controles de altura mínima 2.75rem, gap .5rem y foco de 3px; en móvil, buscador de altura mínima 3rem. Desde 1024px: fechas en columna de 13.75rem y partidos en dos columnas. La acción de planilla tiene altura mínima 2rem y la variante no disponible usa borde discontinuo. Fuente: resources/css/app.css.</p></div>
   </section>
 
   <section>

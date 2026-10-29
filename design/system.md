@@ -58,12 +58,45 @@ Variables crudas en `resources/css/app.css` `:root`, expuestas como `primary`, `
 | `brand-navy-deep` | `rgb(8, 47, 59)` = `#082F3B` | Navy profundo (fondos) | `app.css` línea 38 |
 | `brand-teal-light` | `rgb(155, 211, 226)` = `#9BD3E2` | Teal claro | `app.css` línea 39 |
 
+## Tema semántico dual implementado
+
+Fuente de todas las filas: `resources/css/app.css` (`:root`, media query y atributos `data-tema`); los alias indicados están en `tailwind.config.js` (`colors.tema`). Canales RGB se consumen como `rgb(var(--tm-*) / <alpha-value>)`; los valores `rgba`, `#FFFFFF`, opacidad y sombra son valores completos, no canales.
+
+Sin atributo, oscuro es el valor base y `prefers-color-scheme: light` activa claro. `data-tema="claro"` fuerza claro y `data-tema="oscuro"` fuerza oscuro, independientemente del sistema. El selector sistema → claro → oscuro es la guía aprobada; la CSS define la precedencia, no la persistencia del control.
+
+| Variable | Oscuro | Claro | Rol / alias Tailwind |
+| --- | --- | --- | --- |
+| `--tm-fondo` | `8 47 59` | `255 255 255` | Fondo / `tema.fondo` |
+| `--tm-tinta` | `255 255 255` | `8 47 59` | Texto / `tema.tinta` |
+| `--tm-dim` | `235 244 248` | `8 47 59` | Texto secundario / `tema.dim` |
+| `--tm-linea` | `255 255 255` | `8 47 59` | Bordes / `tema.linea` |
+| `--tm-fila` | `255 255 255` | `14 75 94` | Filas / `tema.fila` |
+| `--tm-superficie` | `0 0 0` | `14 75 94` | Superficie / `tema.superficie` |
+| `--tm-superficie-bg` | `rgba(0, 0, 0, .35)` | `rgba(14, 75, 94, .055)` | Fondo de superficie / `tema.superficie-bg` |
+| `--tm-fila-bg` | `rgba(255, 255, 255, .06)` | `rgba(14, 75, 94, .05)` | Fondo de fila / `tema.fila-bg` |
+| `--tm-fila-hover-bg` | `rgba(255, 255, 255, .12)` | `rgba(14, 75, 94, .09)` | Hover de fila |
+| `--tm-campo-borde` | `rgba(18, 38, 63, .3)` | `rgba(255, 255, 255, .4)` | Borde de campo |
+| `--tm-acento` | `155 211 226` | `42 109 129` | Acento / `tema.acento` |
+| `--tm-panel-borde` | `255 204 51` | `8 47 59` | Borde del panel / `tema.panel-borde` |
+| `--tm-panel-bg` | `rgba(255, 255, 255, .06)` | `#FFFFFF` | Superficie del panel |
+| `--tm-panel-brillo` | `rgba(255, 255, 255, .10)` | `rgba(14, 75, 94, .03)` | Brillo del panel |
+| `--tm-campo-fondo` | `255 255 255` | `8 47 59` | Fondo del campo / `tema.campo-fondo` |
+| `--tm-campo-tinta` | `18 38 63` | `255 255 255` | Texto del campo / `tema.campo-tinta` |
+| `--tm-velo` | `8 47 59` | `255 255 255` | Velo / `tema.velo` |
+| `--tm-brillo` | `rgba(255, 255, 255, .16)` | `rgba(255, 191, 0, .28)` | Brillo interactivo |
+| `--tm-marca-agua` | `.17` | `.08` | Opacidad de marca de agua |
+| `--tm-sombra-panel` | `none` | `5px 5px 0 rgba(8, 47, 59, .1)` | Sombra de panel |
+
+En fixture, `--fx-destacado` es `#FFCC33` en oscuro y `#997300` en claro; `--fx-rejilla` es `rgb(var(--tm-linea) / .04)` (`resources/css/app.css`, `.fixture-tablero`). La navegación móvil activa usa los mismos oros. Estos son usos existentes, no autorización para introducir nuevos colores.
+
 ## Escalas de posición (torneo)
 
 | Token | DEFAULT | 50 | 100 | 300 | 500 | 700 | 900 | Fuente |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `oro` | `#FFD700` | `#FFF9E6` | `#FFF2CC` | `#FFD966` | `#FFBF00` | `#997300` | `#332600` | `tailwind.config.js` |
 | `bronce` | `#CD7F32` | `#FBF0E6` | `#F6E0CC` | `#E2A266` | `#CD7F32` | `#7B4C1E` | `#29190A` | `tailwind.config.js` |
+
+Valores restantes de las escalas (`tailwind.config.js`): oro 200 `#FFE699`, 400 `#FFCC33`, 600 `#CC9900`, 800 `#664D00`; bronce 200 `#ECC199`, 400 `#D88333`, 600 `#A46528`, 800 `#523314`.
 
 Uso histórico: campeones → oro; subcampeones → plata/gris; tercer puesto Mitai → bronce (convención de las vistas `layouts/campeones.blade.php`).
 
@@ -80,6 +113,8 @@ Uso histórico: campeones → oro; subcampeones → plata/gris; tercer puesto Mi
 | `--color-red` | `#DC2626` | Estado error/peligro | `admin.css` |
 | `--color-yellow` | `#CA8A04` | Estado advertencia | `admin.css` |
 
+Otros tokens de `resources/css/admin/admin.css`: `--color-blue: #2563eb`, `--color-cyan: #0891b2`, `--color-teal: #0d9488`, `--color-fuchsia: #c026d3`, `--color-orange: #ea580c`, `--color-violet: #7c3aed`. Son paleta heredada del panel, no nuevos acentos aprobados para el portal.
+
 ## Forma, sombras y patrones en uso
 
 | Patrón | Valor | Fuente |
@@ -89,6 +124,14 @@ Uso histórico: campeones → oro; subcampeones → plata/gris; tercer puesto Mi
 | Sombra glow destacada | `0 24px 60px -30px rgba(color, .35–.9)` | `welcome.blade.php` + `safelist` de `tailwind.config.js` |
 | Glassmorphism | `bg-white/10` + `backdrop-blur-md` + borde `border-white/10–15` | `welcome.blade.php` (card "Seguir mi equipo") |
 | Fondo oscuro de la home | `bg-slate-950` con gradientes `via-black` | `welcome.blade.php` |
+
+### Patrones implementados para home y fixture
+
+Fuente: `resources/css/app.css`. Selector de edición: gap `6px`, padding `10px 44px 10px 18px`, radio `999px`, foco de `3px`; lista con radio `14px` y sombra `0 24px 50px -18px rgba(8, 47, 59, .55)`. En fixture, chips con altura mínima `2.25rem`, gap `.5rem`, radio `999px`; tarjeta compacta con padding `1.125rem 1.25rem`, radio `1rem` y separación `.875rem`. El estado activo usa `brand-teal-light` sobre `brand-navy-deep`; el buscador usa `--tm-fila-bg`, `--tm-acento` y `--tm-tinta`. Datos de fixture usan `ui-monospace, 'SF Mono', Menlo, Consolas, monospace`. Son ejemplos reales de espaciado y forma, no una escala global personalizada.
+
+En el fixture, la barra compacta visible se fija debajo de la navegación con fondo `--tm-fondo`; sus botones tienen altura mínima `2.75rem`, separación `.5rem`, radio `999px` y foco `3px` con `--tm-acento`. Desde `640px` los botones de texto tienen ancho mínimo `10rem`; desde `1024px` el fixture usa columna de fechas `13.75rem`, separación `2rem` y dos columnas de partidos. En móvil (`max-width: 639px`), chips de `2.75rem` y buscador de `3rem`. La acción de planilla usa altura mínima `2rem`, radio `999px` y una variante no disponible con borde discontinuo. Fuente: `resources/css/app.css`.
+
+La implementación real incluye gradientes, marca de agua desenfocada, tilt y sombra de lista; la propuesta editorial siguiente los desaconseja para nuevas direcciones. Mantener explícita esta diferencia, sin presentar la propuesta como descripción de la home existente. El movimiento de entrada y tilt está condicionado a `prefers-reduced-motion: no-preference`.
 
 ## Desviación conocida (a sistematizar)
 

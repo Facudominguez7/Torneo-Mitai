@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "chosen": "01-planilla-cancha.html",
+  "handoffs": {
+    "01-planilla-cancha.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-10-29T17:56:18.288Z",
+      "startedAt": "2026-10-29T17:56:24.937Z",
+      "implementedAt": "2026-10-29T18:06:40.684Z",
+      "note": "Modal compartido implementado y comprobado en fixture y finales, con ambos temas y teclado.",
+      "previewUrl": "http://localhost:8000/fixture?idEdicion=10"
+    }
+  }
+}
