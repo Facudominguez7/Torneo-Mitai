@@ -75,7 +75,7 @@ Proyecto **privado y propietario**: todos los derechos reservados. La publicaci�
 
 ## 👨‍💻 Autor
 
-**Facundo Díaz Domínguez** — [LinkedIn](https://www.linkedin.com/in/facundo-diaz-dominguez-0a826b230) · [torneosmitai.com](https://torneosmitai.com)
+**Ing. Facundo Díaz Domínguez** — [LinkedIn](https://www.linkedin.com/in/facundo-diaz-dominguez-0a826b230) · [torneosmitai.com](https://torneosmitai.com)
 
 <p align="center">
   <sub>Hecho con ❤️ para el fútbol formativo</sub>
