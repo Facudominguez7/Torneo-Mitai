@@ -144,9 +144,9 @@
                 <div id="seguir-equipo-selector" class="tm-anim-in tm-d2 relative z-50 mx-auto mt-8 max-w-2xl text-left">
                     <label for="seguir-equipo-buscador" class="sr-only">Buscar tu equipo</label>
                     <div class="tm-campo flex items-center gap-3 rounded-[22px] bg-tema-campo-fondo px-5 py-4 text-tema-campo-tinta shadow-[0_30px_70px_-30px_rgba(255,204,51,0.35)] transition-transform duration-300">
-                        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" class="flex-shrink-0">
-                            <circle cx="9.5" cy="9.5" r="6.5" fill="none" stroke="#2A6D81" stroke-width="2.2"/>
-                            <path d="M14.5 14.5L19 19" stroke="#2A6D81" stroke-width="2.2" stroke-linecap="round"/>
+                        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" class="flex-shrink-0 text-brand-teal">
+                            <circle cx="9.5" cy="9.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/>
+                            <path d="M14.5 14.5L19 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
                         </svg>
                         <input id="seguir-equipo-buscador" type="search" autocomplete="off"
                             placeholder="Buscá tu equipo, ej: Talleres"
