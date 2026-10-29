@@ -184,6 +184,14 @@
       "sessions": 28,
       "memories": 24,
       "prompts": 0
+    },
+    {
+      "id": "96a0255e",
+      "created_by": "facundo",
+      "created_at": "2026-10-29T02:19:40.731152252Z",
+      "sessions": 1,
+      "memories": 5,
+      "prompts": 0
     }
   ]
 }
