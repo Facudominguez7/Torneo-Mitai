@@ -4,6 +4,10 @@ Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como par
 
 Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
 
+## Tabla pública de goleadores (rama `feat/home-new`)
+
+- Implementado `design/tabla-goleadores/02-ranking-protagonista.html` con podio para el orden canónico, filtros URL/AJAX, paginación adaptable, tema dual y movimiento reducido. En móvil, el ranking aparece antes y los filtros compactos quedan disponibles desde el inicio; también persisten al desplazar en escritorio y tablet. La pestaña inferior de Goleadores abre esta tabla conservando la edición. Pest focal (22 pruebas, 118 aserciones) y Pint aprobados en Docker; flujos visuales y recuperación de error comprobados con Playwright. La simulación inicial de error no llegó al servidor por el service worker; se verificó luego con un fallo controlado de `fetch` en la página.
+
 ## Tabla pública de posiciones (rama `feat/home-new`)
 
 - Implementado el artboard `design/tabla-posiciones/01-tabla-cancha.html`: tabla adaptable con escudos, filtros existentes, temas y estadísticas accesibles en móvil. Verificada en Playwright a 1920×1080, 1280×720 y 390×844; pruebas focales y Pint en Docker aprobados. Los escudos tienen una base clara para mantener el contraste.

@@ -24,7 +24,7 @@
         ],
         'goleadores' => [
             'etiqueta' => 'Goleadores',
-            'ruta' => 'goleadores',
+            'ruta' => 'tabla-goleadores',
             'activa' => request()->routeIs('goleadores') || request()->routeIs('tabla-goleadores'),
             'icono' => '<path d="M10 3l1.6 3.3 3.6.5-2.6 2.6.6 3.6L10 11.2 6.8 13l.6-3.6L4.8 6.8l3.6-.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
         ],

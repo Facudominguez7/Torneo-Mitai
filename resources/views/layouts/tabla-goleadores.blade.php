@@ -2,7 +2,7 @@
 <html lang="es">
 @include('head')
 
-<body class="bg-[--color-primary] text-white">
+<body class="goleadores-pagina fixture-tablero">
     <div class="relative isolate min-h-screen">
         <div class="absolute inset-0 overflow-hidden">
             <img src="{{ asset('fotos/fondo_en_cancha.webp') }}" alt="Cancha de fútbol"
@@ -14,26 +14,17 @@
             @include('layouts.navigation')
 
             <main class="flex-1">
-                <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-                    <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-                        <div class="space-y-3 max-w-3xl">
-                            <span
-                                class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-brand-gold/80">
-                                <span class="h-2 w-2 rounded-full bg-brand-gold"></span>
-                                Ranking oficial
-                            </span>
-                            <h1 class="text-3xl sm:text-4xl font-bold text-white">Tabla de goleadores</h1>
-                            <p class="text-sm sm:text-base text-white/70">Explorá el listado completo de artilleros de
-                                la edición seleccionada, filtrá por categoría y ordená por goles, nombre o equipo para
-                                encontrar a tu jugador preferido.</p>
+                <section class="goleadores-contenido">
+                    <div class="goleadores-intro">
+                        <div>
+                            <span class="goleadores-rotulo">Estadísticas del torneo</span>
+                            <h1>Tabla de goleadores</h1>
+                            <p>Los goles de cada categoría, en una sola tabla.</p>
                         </div>
-                        <div class="grid gap-3 text-sm text-white/70">
+                        <div class="goleadores-edicion">
                             @if ($EdicionSeleccionada)
-                                <div
-                                    class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
-                                    <i class="fa-solid fa-trophy text-brand-gold"></i>
-                                    {{ $EdicionSeleccionada->nombre }}
-                                </div>
+                                <span class="goleadores-rotulo">Edición</span>
+                                <strong>{{ $EdicionSeleccionada->nombre }}</strong>
                             @endif
                             @if ($goleadores_t->isNotEmpty() && $goleadores_t->first()->updated_at)
                                 @php
@@ -49,7 +40,7 @@
                                     ];
                                     $diaAbreviado = $diasAbreviados[$ultimaActualizacion->copy()->locale('en')->translatedFormat('D')] ?? $ultimaActualizacion->format('D').'.';
                                 @endphp
-                                <div class="inline-flex items-center gap-2 text-xs text-white/50">
+                                <div class="goleadores-actualizacion">
                                     <i class="fa-solid fa-clock text-brand-gold/60"></i>
                                     Última actualización: {{ $diaAbreviado }} {{ $ultimaActualizacion->format('d/m/Y H:i') }}
                                 </div>
@@ -57,62 +48,63 @@
                         </div>
                     </div>
 
-                    <div
-                        class="mt-10 rounded-3xl border border-brand-gold/25 bg-black/30 px-5 py-6 shadow-[0_24px_60px_-40px_rgba(var(--brand-navy)_/_0.85)] sm:px-6 sm:py-7">
-                        <div class="grid gap-4 md:grid-cols-[minmax(0,260px)_auto] md:items-center">
-                            <div class="filtro-categoria">
-                                <x-dropdown align="right" width="52">
-                                    <x-slot name="trigger">
-                                        <button
-                                            class="inline-flex w-full items-center justify-between gap-2 rounded-2xl border border-brand-gold/40 bg-gradient-to-r from-brand-navy/90 via-brand-teal/85 to-brand-navy/85 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-brand-gold/40">
-                                            <span id="label-categoria" class="truncate">
-                                                {{ optional($categorias->firstWhere('id', $idCategoria))->nombreCategoria ?? 'Filtrar por categoría' }}
-                                            </span>
-                                            <i class="fa-solid fa-chevron-down text-xs"></i>
-                                        </button>
-                                    </x-slot>
-                                    <x-slot name="content">
-                                        <div class="max-h-72 overflow-y-auto">
-                                            <div class="cursor-pointer px-4 py-2 text-sm text-white/80 transition hover:bg-brand-gold/15"
-                                                data-id="" data-nombre="Todas las categorías">
-                                                Todas las categorías
-                                            </div>
-                                            @foreach ($categorias as $c)
-                                                <div class="cursor-pointer px-4 py-2 text-sm text-white/90 transition hover:bg-brand-gold/15"
-                                                    data-id="{{ $c->id }}" data-nombre="{{ $c->nombreCategoria }}">
-                                                    {{ $c->nombreCategoria }}
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </x-slot>
-                                </x-dropdown>
-                            </div>
+                    <div class="goleadores-filtros">
+                        <div id="goleadores-origen-categoria">
+                            <form method="GET" action="{{ route('tabla-goleadores') }}" id="form-categoria-goleadores">
+                                <input type="hidden" name="idEdicion" value="{{ $idEdicion }}">
+                                <input type="hidden" name="search_value" value="{{ $searchValue }}">
+                                <input type="hidden" name="sort" value="{{ $sortKey }}"><input type="hidden" name="dir" value="{{ $dir }}">
+                                <label class="goleadores-rotulo" for="categoria-goleadores">Categoría</label>
+                                <select id="categoria-goleadores" name="idCategoria">
+                                    <option value="">Todas las categorías</option>
+                                    @foreach ($categorias as $c)
+                                        <option value="{{ $c->id }}" @selected((string) $c->id === (string) $idCategoria)>{{ $c->nombreCategoria }}</option>
+                                    @endforeach
+                                </select>
+                                <noscript><button type="submit">Aplicar categoría</button></noscript>
+                            </form>
                         </div>
 
-                        <div class="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <h2 class="text-sm font-semibold uppercase tracking-[0.3em] text-white/70">Buscar
-                                    jugador</h2>
-                                <p class="text-xs text-white/50">Buscá por nombre en toda la tabla con paginación.</p>
-                            </div>
+                        <div id="goleadores-origen-buscar" class="goleadores-busqueda">
                             <form id="form-busqueda-goleadores" method="GET" action="{{ route('tabla-goleadores') }}"
-                                class="w-full md:max-w-sm">
+                                >
                                 <input type="hidden" name="idEdicion" value="{{ $idEdicion }}">
                                 <input type="hidden" name="idCategoria" value="{{ $idCategoria }}">
                                 <input type="hidden" name="sort" value="{{ $sortKey }}">
                                 <input type="hidden" name="dir" value="{{ $dir }}">
-                                <label for="buscador-goleadores" class="relative block">
-                                    <span
-                                        class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-brand-gold">
-                                        <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                                    </span>
+                                <label for="buscador-goleadores" class="goleadores-rotulo">Buscar jugador</label>
                                     <input id="buscador-goleadores" name="search_value" type="text"
                                         value="{{ $searchValue }}" placeholder="Buscar por nombre..."
-                                        class="w-full rounded-2xl border border-brand-gold/35 bg-white/5 px-4 py-3 pl-11 text-sm font-semibold text-white placeholder:text-white/45 focus:border-brand-gold/60 focus:outline-none focus:ring-2 focus:ring-brand-gold/40">
-                                </label>
+                                        >
                             </form>
                         </div>
+                        <div id="goleadores-origen-orden"><form method="GET" action="{{ route('tabla-goleadores') }}" id="form-orden-goleadores">
+                            <input type="hidden" name="idEdicion" value="{{ $idEdicion }}"><input type="hidden" name="idCategoria" value="{{ $idCategoria }}"><input type="hidden" name="search_value" value="{{ $searchValue }}">
+                            <label class="goleadores-rotulo" for="orden-goleadores">Ordenar por</label>
+                            <select id="orden-goleadores" name="orden">
+                                @foreach (['goles' => 'Goles', 'nombre' => 'Nombre', 'equipo' => 'Equipo', 'categoria' => 'Categoría'] as $clave => $etiqueta)
+                                    @foreach (['desc' => ($clave === 'goles' ? 'mayor a menor' : 'Z a A'), 'asc' => ($clave === 'goles' ? 'menor a mayor' : 'A a Z')] as $direccion => $texto)
+                                        <option value="{{ $clave }}:{{ $direccion }}" @selected($sortKey === $clave && $dir === $direccion)>{{ $etiqueta }} · {{ $texto }}</option>
+                                    @endforeach
+                                @endforeach
+                            </select>
+                            <noscript><div class="goleadores-orden-alternativo">@foreach (['goles' => 'Goles', 'nombre' => 'Nombre', 'equipo' => 'Equipo', 'categoria' => 'Categoría'] as $clave => $etiqueta) @foreach (['asc' => 'ascendente', 'desc' => 'descendente'] as $direccion => $texto) <a href="{{ route('tabla-goleadores', array_filter(['idEdicion' => $idEdicion, 'idCategoria' => $idCategoria, 'search_value' => $searchValue, 'sort' => $clave, 'dir' => $direccion, 'page' => 1])) }}">{{ $etiqueta }} {{ $texto }}</a> @endforeach @endforeach</div></noscript>
+                        </form></div>
                     </div>
+                    <div id="goleadores-filtros-sentinel" aria-hidden="true"></div>
+                    <div id="goleadores-compacto" class="goleadores-compacto goleadores-compacto-inicial-movil" hidden>
+                        <div class="goleadores-compacto-interior">
+                            <div class="goleadores-compacto-botones" role="group" aria-label="Filtros de goleadores">
+                                <button type="button" aria-expanded="false" aria-controls="goleadores-panel-categoria">Categoría ▾</button>
+                                <button type="button" aria-expanded="false" aria-controls="goleadores-panel-orden">Orden ▾</button>
+                                <button type="button" aria-expanded="false" aria-controls="goleadores-panel-buscar" aria-label="Buscar jugador"><svg width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+                            </div>
+                            <div id="goleadores-panel-categoria" class="goleadores-compacto-panel" hidden></div>
+                            <div id="goleadores-panel-orden" class="goleadores-compacto-panel" hidden></div>
+                            <div id="goleadores-panel-buscar" class="goleadores-compacto-panel" hidden></div>
+                        </div>
+                    </div>
+                    <p class="goleadores-nota">Filtrá por categoría o buscá por nombre para encontrar un jugador.</p>
 
                     <div id="estado-goleadores" class="fixed inset-x-4 top-4 z-50 md:static md:inset-auto md:mt-6">
                         <span id="estado-carga-anuncio" role="status" aria-live="polite" aria-atomic="true"
@@ -156,13 +148,83 @@
             const buscador = document.getElementById('buscador-goleadores');
             const contenedor = document.getElementById('resultados-goleadores');
             const formBusqueda = document.getElementById('form-busqueda-goleadores');
-            const triggerCategoria = document.getElementById('label-categoria');
+            const categoria = document.getElementById('categoria-goleadores');
+            const orden = document.getElementById('orden-goleadores');
             const estadoCarga = document.getElementById('estado-carga-goleadores');
             const estadoCargaAnuncio = document.getElementById('estado-carga-anuncio');
             const estadoError = document.getElementById('estado-error-goleadores');
             const botonReintentar = document.getElementById('reintentar-goleadores');
             let secuenciaCargas = 0;
             let ultimoIntento = null;
+
+            const compacta = document.getElementById('goleadores-compacto');
+            const sentinel = document.getElementById('goleadores-filtros-sentinel');
+            const navegacion = document.getElementById('nav-principal');
+            const movil = window.matchMedia('(max-width: 639px)');
+            const controlesCompactos = [...compacta.querySelectorAll('[aria-controls]')].map(function (boton) {
+                const nombre = boton.getAttribute('aria-controls').replace('goleadores-panel-', '');
+                const origen = document.getElementById('goleadores-origen-' + nombre);
+                return { boton, panel: document.getElementById(boton.getAttribute('aria-controls')), origen, formulario: origen.querySelector('form') };
+            });
+
+            function cerrarCompacta() {
+                controlesCompactos.forEach(function ({ boton, panel, origen, formulario }) {
+                    origen.append(formulario);
+                    boton.setAttribute('aria-expanded', 'false');
+                    panel.hidden = true;
+                });
+            }
+
+            controlesCompactos.forEach(function ({ boton, panel, formulario }) {
+                boton.addEventListener('click', function () {
+                    const abrir = panel.hidden;
+                    cerrarCompacta();
+                    if (abrir) {
+                        panel.append(formulario);
+                        panel.hidden = false;
+                        boton.setAttribute('aria-expanded', 'true');
+                        formulario.querySelector('select, input:not([type="hidden"])').focus({ preventScroll: true });
+                    }
+                });
+            });
+
+            function enfocarBuscador() {
+                const control = controlesCompactos.find(function (item) { return item.formulario === formBusqueda; });
+                if (!compacta.hidden && control.panel.hidden) {
+                    cerrarCompacta();
+                    control.panel.append(formBusqueda);
+                    control.panel.hidden = false;
+                    control.boton.setAttribute('aria-expanded', 'true');
+                }
+                buscador.focus({ preventScroll: true });
+            }
+
+            function actualizarCompacta() {
+                const alturaNav = movil.matches ? 0 : Math.max(0, navegacion.getBoundingClientRect().bottom);
+                compacta.style.setProperty('--goleadores-nav-altura', alturaNav + 'px');
+                const fijar = sentinel.getBoundingClientRect().bottom <= alturaNav;
+                const mostrar = movil.matches || fijar;
+                compacta.classList.toggle('goleadores-compacto-fijo', fijar);
+                if (!mostrar && !compacta.hidden) {
+                    const enfocado = document.activeElement;
+                    const control = controlesCompactos.find(function (item) { return item.formulario.contains(enfocado); });
+                    const boton = compacta.contains(enfocado);
+                    cerrarCompacta();
+                    if (control) enfocado.focus({ preventScroll: true });
+                    else if (boton) categoria.focus({ preventScroll: true });
+                }
+                compacta.hidden = !mostrar;
+            }
+            window.addEventListener('scroll', actualizarCompacta, { passive: true });
+            window.addEventListener('resize', actualizarCompacta);
+            if ('ResizeObserver' in window) new ResizeObserver(actualizarCompacta).observe(navegacion);
+            document.addEventListener('keydown', function (event) {
+                if (event.key !== 'Escape') return;
+                const activo = controlesCompactos.find(function (item) { return !item.panel.hidden; });
+                if (activo) { cerrarCompacta(); activo.boton.focus({ preventScroll: true }); }
+            });
+            document.body.classList.add('goleadores-js');
+            actualizarCompacta();
 
             function establecerEstado(estado) {
                 if (contenedor) {
@@ -220,7 +282,8 @@
                     establecerEstado('inactivo');
 
                     if (focoPosterior) {
-                        focoPosterior.focus();
+                        if (focoPosterior === buscador) enfocarBuscador();
+                        else focoPosterior.focus();
                     }
 
                     if (desdeHistorial) {
@@ -228,6 +291,13 @@
                     } else {
                         history.pushState(null, '', destino);
                     }
+                    const actual = new URL(destino, window.location.href).searchParams;
+                    orden.value = (actual.get('sort') || 'goles') + ':' + (actual.get('dir') || 'desc');
+                    document.querySelectorAll('#form-busqueda-goleadores input[type="hidden"], #form-categoria-goleadores input[type="hidden"], #form-orden-goleadores input[type="hidden"]').forEach(function (input) {
+                        if (['idCategoria', 'search_value', 'sort', 'dir'].includes(input.name)) {
+                            input.value = actual.get(input.name) || (input.name === 'sort' ? 'goles' : input.name === 'dir' ? 'desc' : '');
+                        }
+                    });
                 } catch (error) {
                     if (miTurno !== secuenciaCargas) {
                         return;
@@ -277,7 +347,7 @@
                     // El foco pasa a un control externo estable antes de reintentar: ocultar
                     // el error no debe dejar el foco caído en body.
                     if (buscador) {
-                        buscador.focus();
+                        enfocarBuscador();
                     }
 
                     fetchResultados(ultimoIntento.destino, ultimoIntento.desdeHistorial);
@@ -299,16 +369,12 @@
                 });
             }
 
-            document.querySelectorAll('.filtro-categoria [data-id]').forEach(function (item) {
-                item.addEventListener('click', function () {
-                    const idCategoria = this.getAttribute('data-id') || '';
-
-                    if (triggerCategoria) {
-                        triggerCategoria.textContent = this.getAttribute('data-nombre') || 'Filtrar por categoría';
-                    }
-
-                    loadResults({ idCategoria, idEdicion, page: 1 });
-                });
+            categoria.addEventListener('change', function () {
+                loadResults({ idCategoria: categoria.value, idEdicion, page: 1 });
+            });
+            orden.addEventListener('change', function () {
+                const [sort, dir] = orden.value.split(':');
+                loadResults({ sort, dir, page: 1 });
             });
 
             // Delegación: los links de orden y de paginación viven dentro del
@@ -347,17 +413,8 @@
                     buscador.value = search.get('search_value') || '';
                 }
 
-                if (triggerCategoria) {
-                    const idCategoriaUrl = search.get('idCategoria') || '';
-                    const opcion = Array.from(document.querySelectorAll('.filtro-categoria [data-id]'))
-                        .find(function (item) {
-                            return (item.getAttribute('data-id') || '') === idCategoriaUrl;
-                        });
-
-                    triggerCategoria.textContent = opcion
-                        ? opcion.getAttribute('data-nombre')
-                        : 'Filtrar por categoría';
-                }
+                categoria.value = search.get('idCategoria') || '';
+                orden.value = (search.get('sort') || 'goles') + ':' + (search.get('dir') || 'desc');
             }
 
             // Atrás/Adelante: se repide el parcial con los filtros de la URL restaurada.

@@ -2,6 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ranking público: el podio y la lista comparten los datos del parcial. */
+.goleadores-pagina { background-color: rgb(var(--tm-fondo)); background-image: radial-gradient(circle at 78% 18%, transparent 0, transparent 130px, rgb(var(--brand-teal) / .12) 131px, transparent 133px), linear-gradient(90deg, transparent 0, transparent calc(50% - 1px), rgb(var(--brand-teal) / .08) 50%, transparent calc(50% + 1px)), repeating-linear-gradient(0deg, transparent 0, transparent 87px, rgb(var(--brand-teal) / .055) 88px, transparent 89px); background-attachment: fixed; color: rgb(var(--tm-tinta)); }
+.goleadores-contenido { width: min(100%, 75rem); margin: auto; padding: 2.8125rem 1.5rem 6.25rem; }
+.goleadores-intro { display: flex; align-items: end; justify-content: space-between; gap: 1.25rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgb(var(--tm-linea) / .22); }
+.goleadores-intro h1 { margin: .625rem 0; font-size: clamp(2.125rem, 5vw, 3.5rem); line-height: 1; font-weight: 800; }
+.goleadores-intro p, .goleadores-nota, .goleadores-actualizacion { color: rgb(var(--tm-dim) / .75); }
+.goleadores-edicion { text-align: right; }
+.goleadores-edicion strong { display: block; font-size: 1.75rem; overflow-wrap: anywhere; }
+.goleadores-actualizacion { font-size: .75rem; }
+.goleadores-rotulo { display: block; margin-bottom: .4375rem; color: rgb(var(--tm-acento)); font-size: .75rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.goleadores-filtros { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: .875rem; margin: 1.5rem 0 .5rem; }
+:is(.goleadores-filtros, .goleadores-compacto-panel) input:not([type=hidden]), :is(.goleadores-filtros, .goleadores-compacto-panel) select { width: 100%; min-height: 2.75rem; padding: 0 .75rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 1rem; background: var(--tm-fila-bg); color: rgb(var(--tm-tinta)); }
+:is(.goleadores-filtros, .goleadores-compacto-panel) select { appearance: none; padding-right: 3rem; background-image: linear-gradient(45deg, transparent 50%, rgb(var(--tm-acento)) 50%), linear-gradient(135deg, rgb(var(--tm-acento)) 50%, transparent 50%); background-position: calc(100% - 22px) center, calc(100% - 17px) center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+:is(.goleadores-filtros, .goleadores-compacto-panel) select option { background: rgb(var(--tm-fondo)); color: rgb(var(--tm-tinta)); }
+:is(.goleadores-filtros, .goleadores-compacto-panel) input::placeholder { color: rgb(var(--tm-dim) / .75); }
+:is(.goleadores-filtros, .goleadores-compacto) :is(input, select, button):focus-visible, .goleadores-resultados a:focus-visible { outline: 3px solid rgb(var(--tm-acento)); outline-offset: 3px; }
+.goleadores-compacto:not([hidden]) { position: fixed; inset: var(--goleadores-nav-altura, 0px) 0 auto; z-index: 45; padding: .5rem 1rem; border-bottom: 1px solid rgb(var(--tm-linea) / .16); background: rgb(var(--tm-fondo)); }
+.goleadores-compacto-interior { max-width: 72rem; margin: auto; }
+.goleadores-compacto-botones { display: flex; gap: .5rem; }
+.goleadores-compacto-botones button { flex: 1; min-width: 0; min-height: 2.75rem; padding: 0 .75rem; border: 1px solid rgb(var(--tm-linea) / .16); border-radius: 999px; background: var(--tm-fila-bg); color: rgb(var(--tm-tinta)); font-size: .8125rem; font-weight: 700; }
+.goleadores-compacto-botones button:last-child { display: grid; flex: none; width: 2.75rem; place-items: center; }
+.goleadores-compacto-botones button[aria-expanded="true"] { border-color: rgb(var(--tm-acento)); }
+.goleadores-compacto-panel:not([hidden]) { max-height: calc(100dvh - var(--goleadores-nav-altura, 0px) - 150px - env(safe-area-inset-bottom)); overflow: auto; padding: .75rem .25rem; }
+.goleadores-compacto-panel form { max-width: 30rem; }
+@media (min-width: 640px) { .goleadores-compacto-botones button:not(:last-child) { flex: 0 1 12rem; } }
+.goleadores-nota { font-size: .8125rem; }
+.goleadores-resultados { margin-top: 1.5rem; }
+.goleadores-seccion { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; padding-bottom: .75rem; }
+.goleadores-seccion h2 { font-size: 1.25rem; font-weight: 700; }
+.goleadores-seccion span { color: rgb(var(--tm-dim) / .75); font-size: .8125rem; }
+.goleadores-seccion-lista { border-bottom: 2px solid rgb(var(--tm-acento)); }
+.goleadores-podio { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 1px; overflow: hidden; margin-bottom: 2.125rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 1rem; background: rgb(var(--tm-linea) / .22); }
+.goleadores-podio article { display: flex; flex-direction: column; min-width: 0; min-height: 12.8125rem; padding: 1.5rem; background: rgb(var(--brand-navy)); color: white; }
+.goleadores-podio article:first-child { padding-top: 1.3125rem; border-top: 4px solid rgb(var(--brand-gold)); background: rgb(var(--brand-navy-deep)); }
+.goleadores-posicion { color: rgb(var(--brand-teal-light)); font: 700 .8125rem ui-monospace, 'SF Mono', Menlo, Consolas, monospace; text-transform: uppercase; overflow-wrap: anywhere; }
+.goleadores-podio article:first-child .goleadores-posicion { color: rgb(var(--brand-gold)); }
+.goleadores-podio h3 { margin: 1.375rem 0 .3125rem; font-size: clamp(1.3125rem, 2.2vw, 1.8125rem); font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
+.goleadores-podio p { color: rgb(255 255 255 / .8); overflow-wrap: anywhere; }
+.goleadores-tanto { display: flex; align-items: baseline; gap: .4375rem; margin-top: auto; padding-top: 1rem; font-size: .75rem; text-transform: uppercase; }
+.goleadores-tanto strong { color: rgb(var(--brand-gold)); font: 800 2.25rem/1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+.goleadores-tabla table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.goleadores-tabla th, .goleadores-tabla td { padding: .875rem .75rem; text-align: left; overflow-wrap: anywhere; }
+.goleadores-tabla th { color: rgb(var(--tm-acento)); font-size: .6875rem; text-transform: uppercase; letter-spacing: .1em; }
+.goleadores-tabla th:first-child { width: 4rem; }
+.goleadores-tabla th:last-child, .goleadores-tabla td:last-child { width: 5rem; text-align: right; }
+.goleadores-tabla tbody tr { border-top: 1px solid rgb(var(--tm-linea) / .22); background: var(--tm-fila-bg); }
+.goleadores-tabla td:first-child, .goleadores-tabla td:last-child { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-weight: 700; }
+.goleadores-meta-movil { display: none; }
+.goleadores-vacio { padding: 2.25rem 1rem; background: var(--tm-fila-bg); text-align: center; }
+.goleadores-vacio a { display: inline-flex; margin-top: 1rem; padding: .75rem 1rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 999px; }
+.goleadores-paginacion { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-top: 1.5rem; font-size: .8125rem; }
+.goleadores-paginacion a, .goleadores-paginacion [aria-disabled] { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 1rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 999px; }
+.goleadores-paginacion [aria-disabled] { opacity: .5; }
+.goleadores-paginacion a:focus-visible { outline: 3px solid rgb(var(--tm-acento)); outline-offset: 3px; }
+.goleadores-orden-alternativo { display: flex; flex-wrap: wrap; gap: .75rem; }
+@media (prefers-reduced-motion: no-preference) {
+    @keyframes goleadores-entrada { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    .goleadores-podio article, .goleadores-tabla tbody tr { animation: goleadores-entrada .4s ease-out both; }
+    .goleadores-podio article:nth-child(2), .goleadores-tabla tbody tr:nth-child(2) { animation-delay: .06s; }
+    .goleadores-podio article:nth-child(3), .goleadores-tabla tbody tr:nth-child(3) { animation-delay: .12s; }
+    @media (hover: hover) { .goleadores-podio article, .goleadores-tabla tbody tr { transition: filter .2s ease, box-shadow .2s ease; } .goleadores-podio article:hover, .goleadores-tabla tbody tr:hover { filter: brightness(1.12); box-shadow: inset 0 -3px 0 rgb(var(--tm-acento)); } }
+}
+@media (max-width: 700px) {
+    .goleadores-contenido { padding: 1.875rem 1rem 6.875rem; }
+    .goleadores-intro { flex-direction: column; align-items: start; }
+    .goleadores-edicion { text-align: left; }
+    .goleadores-edicion strong { font-size: 1.3125rem; }
+    .goleadores-filtros { grid-template-columns: 1fr; }
+    .goleadores-busqueda { grid-row: 1; }
+    .goleadores-seccion { flex-direction: column; align-items: start; gap: .25rem; }
+    .goleadores-podio { grid-template-columns: 1fr 1fr; }
+    .goleadores-podio article { min-height: 10.625rem; padding: 1.125rem; }
+    .goleadores-podio article:first-child { grid-column: 1 / -1; min-height: 10.3125rem; padding: 1.0625rem 1.125rem 1.125rem; }
+    .goleadores-podio h3 { font-size: 1.25rem; margin-top: .9375rem; }
+    .goleadores-tabla thead { display: none; }
+    .goleadores-tabla th, .goleadores-tabla td { padding: .8125rem .5rem; }
+    .goleadores-tabla td:first-child { width: 2.25rem; }
+    .goleadores-tabla td:last-child { width: 3.5rem; }
+    .goleadores-tabla td:nth-child(3), .goleadores-tabla td:nth-child(4) { display: none; }
+    .goleadores-meta-movil { display: block; color: rgb(var(--tm-dim) / .75); font-size: .75rem; }
+}
+
+@media (max-width: 639px) {
+    .goleadores-js .goleadores-contenido { padding-top: .75rem; }
+    .goleadores-js .goleadores-intro { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+    .goleadores-js .goleadores-filtros, .goleadores-js .goleadores-nota { display: none; }
+    .goleadores-compacto-panel input:not([type=hidden]), .goleadores-compacto-panel select { font-size: 1rem; }
+    .goleadores-js .goleadores-compacto-inicial-movil:not([hidden]):not(.goleadores-compacto-fijo) { position: relative; inset: auto; margin: 0 -1rem; }
+}
+
 /* Tabla pública de posiciones: tablero de cancha con tema compartido. */
 .posiciones-pagina {
     background-color: rgb(var(--tm-fondo));

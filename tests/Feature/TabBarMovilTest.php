@@ -76,6 +76,14 @@ it('adopta la barra en campeones y vallas', function () {
         ->and(tabBarMovil($this->get(route('vallas', $idEdicion))->assertOk()->getContent()))->not->toBeEmpty();
 });
 
+it('enlaza Goleadores a la tabla conservando la edición', function () {
+    $contexto = tabBarBase();
+    $html = $this->get(route('fixture', ['idEdicion' => $contexto['edicion']->id]))->assertOk()->getContent();
+    $enlace = html_entity_decode(pestanaTabBar(tabBarMovil($html), 'Goleadores'), ENT_QUOTES);
+
+    expect($enlace)->toContain(route('tabla-goleadores', ['idEdicion' => $contexto['edicion']->id]));
+});
+
 it('marca Goleadores como activo en la tabla de goleadores', function () {
     $contexto = tabBarBase();
 
