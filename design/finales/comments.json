@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "comments": [
+    {
+      "id": "bx70c6qf",
+      "file": "02-camino-copa.html",
+      "selector": "body > section > div",
+      "excerpt": "Edición 21° Edición Torneos Mita'í 20° Edición Torneos Mita'í Mita'í Cup 2026 19° Edición Torneos Mita'í 1° Edición Inter-Cap 18 Edición Torneos Mita'í Mita'í Cup 2025 17 Edición Torneos Mita'í 16 Edición Torneos Mitaí Mita'í Cup 2024 Categoría Todas Categoría 2019 Categoría 2018 Categoría 2017 Cate",
+      "comment": "soluciona esto porfavor los elementos esta horrible",
+      "createdAt": "2026-10-30T15:05:58.554Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T15:05:58.622Z",
+      "resolvedAt": "2026-10-30T15:22:29.489Z"
+    },
+    {
+      "id": "5cimr36n",
+      "file": "02-camino-copa.html",
+      "selector": "#phases > section:nth-of-type(4) > div > section",
+      "excerpt": "Final 12/07/2026 · 17:00 2 Huracán \"Rojo\" Huracán \"Negro\" 2 – 2 Penales 3 – 2 Final Ver planilla 12/07/2026 · 20:00 3 Deportivo Misiones Bartolomé Mitre 1 – 1 Penales 2 – 3 Final Ver planilla",
+      "comment": "no se distingue realmente quien gano",
+      "createdAt": "2026-10-30T15:30:31.431Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T15:30:31.457Z",
+      "resolvedAt": "2026-10-30T17:03:01.633Z"
+    }
+  ]
+}

@@ -133,6 +133,10 @@ En el fixture, la barra compacta visible se fija debajo de la navegación con fo
 
 La implementación real incluye gradientes, marca de agua desenfocada, tilt y sombra de lista; la propuesta editorial siguiente los desaconseja para nuevas direcciones. Mantener explícita esta diferencia, sin presentar la propuesta como descripción de la home existente. El movimiento de entrada y tilt está condicionado a `prefers-reduced-motion: no-preference`.
 
+### Ranking público de goleadores
+
+Fuente: `resources/css/app.css`, selectores `.goleadores-*`. El fondo combina `--tm-fondo` con líneas de cancha `brand-teal` a baja opacidad. El podio usa `brand-navy-deep`, `brand-navy`, `brand-gold` y `brand-teal-light`, con borde redondeado de `1rem`; las cifras usan la pila monoespaciada del proyecto. Los filtros usan `--tm-fila-bg`, radio `1rem`, foco de `3px` y flecha con `--tm-acento`. En móvil hay barra compacta desde el inicio; en escritorio y tablet aparece al desplazar. Los botones compactos tienen altura mínima `2.75rem` y radio `999px`. Entrada y realce por mouse respetan movimiento reducido.
+
 ### Tabla pública de posiciones
 
 Fuente: `resources/css/app.css`, selectores `.posiciones-*`. El tablero usa fondo `--tm-fondo` con cuadrícula de `brand-teal` al 8% cada 44px, texto `--tm-tinta`, encabezado `brand-navy`, bordes `--tm-linea` al 22% y filas `--tm-fila-bg`. Los filtros tienen altura mínima `2.75rem`, radio `999px` y acento `brand-teal-light`; el tablero usa datos monoespaciados. Los escudos se muestran sobre fondo blanco circular, con `2px` de padding, para conservar contraste. En móvil (hasta 700px) quedan visibles puesto, equipo, puntos, jugados y diferencia; el resto se conserva accesible. Las filas se animan solo si no se solicita movimiento reducido.

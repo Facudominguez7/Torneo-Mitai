@@ -4,6 +4,10 @@ Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como par
 
 Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
 
+## Instancias finales (rama `feat/home-new`)
+
+- Implementado `design/finales/02-camino-copa.html` con datos reales, escudos, filtros de categoría/copa/fase y ganador del partido cuando el marcador o los penales lo determinan. La edición se conserva desde Inicio y no se selecciona en el panel; al elegir un filtro, el panel se cierra. La planilla pública y las variantes previas de tarjeta se conservan. En escritorio las etapas se ordenan de izquierda a derecha y las finales quedan a la derecha; en móvil se apilan. El marcador aparece una sola vez junto a los equipos. El estado vacío distingue edición sin partidos de filtros sin resultados y solo ofrece limpiar cuando hay filtros activos. Pest focal y regresión: 33 pruebas/190 aserciones; Pint y Playwright en escritorio y móvil aprobados. La verificación independiente detectó el caso Gran Final; fue corregido y probado. La evaluación nativa no clasificó por archivos sin seguimiento ajenos.
+
 ## Tabla pública de goleadores (rama `feat/home-new`)
 
 - Implementado `design/tabla-goleadores/02-ranking-protagonista.html` con podio para el orden canónico, filtros URL/AJAX, paginación adaptable, tema dual y movimiento reducido. En móvil, el ranking aparece antes y los filtros compactos quedan disponibles desde el inicio; también persisten al desplazar en escritorio y tablet. La pestaña inferior de Goleadores abre esta tabla conservando la edición. Pest focal (22 pruebas, 118 aserciones) y Pint aprobados en Docker; flujos visuales y recuperación de error comprobados con Playwright. La simulación inicial de error no llegó al servidor por el service worker; se verificó luego con un fallo controlado de `fetch` en la página.

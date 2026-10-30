@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "chosen": "02-camino-copa.html",
+  "handoffs": {
+    "02-camino-copa.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-10-30T17:21:58.874Z",
+      "startedAt": "2026-10-30T17:22:05.396Z",
+      "implementedAt": "2026-10-30T17:24:03.961Z",
+      "note": "Estado vacío adaptado a filtros reales; se conserva la edición seleccionada desde Inicio.",
+      "previewUrl": "http://localhost:8000/instancias-finales?idEdicion=9"
+    }
+  }
+}

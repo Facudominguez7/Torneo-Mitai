@@ -66,6 +66,25 @@ function tarjetaPartido(
     ]);
 }
 
+it('conserva las variantes predeterminada y compacta de la tarjeta compartida', function () {
+    $partido = (object) [
+        'id' => 1, 'idEdicion' => 1, 'jugado' => 0, 'horario_datetime' => null,
+        'cancha' => 1, 'golesEquipoLocal' => null, 'golesEquipoVisitante' => null,
+        'nombre_local' => 'Local', 'nombre_visitante' => 'Visitante',
+        'foto_local' => 'local.png', 'foto_visitante' => 'visita.png',
+        'fecha' => (object) ['nombre' => 'Fecha 1'],
+    ];
+
+    $this->blade('<x-tarjeta-partido :partido="$partido" />', ['partido' => $partido])
+        ->assertSee('partido-card rounded-3xl', false)
+        ->assertSee('Local')
+        ->assertDontSee('finales-partido', false);
+    $this->blade('<x-tarjeta-partido :partido="$partido" :compacto="true" />', ['partido' => $partido])
+        ->assertSee('partido-card tarjeta-compacta', false)
+        ->assertSee('Visitante')
+        ->assertDontSee('finales-partido', false);
+});
+
 describe('fixture: tarjeta de partido (caracterización previa al refactor)', function () {
     it('renderiza las tarjetas estandar con equipos marcador y estado', function () {
         $contexto = tarjetaBase();

@@ -2,6 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Instancias finales: fases independientes, sin vínculos inferidos entre partidos. */
+.finales-pagina { background: rgb(var(--tm-fondo)); color: rgb(var(--tm-tinta)); }
+.finales-intro, .finales-contenido, .finales-filtros { width: min(100%, 72rem); margin: auto; }
+.finales-intro { padding: 2.75rem 1.5rem 1.75rem; }
+.finales-intro h1 { margin: .625rem 0; font-size: clamp(2.125rem, 5vw, 3.5rem); line-height: 1; font-weight: 800; }
+.finales-rotulo { color: rgb(var(--tm-acento)); font-size: .75rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.finales-barra { position: sticky; top: var(--finales-nav-altura, 0px); z-index: 20; border-block: 1px solid rgb(var(--tm-linea) / .22); background: rgb(var(--tm-fondo)); }
+.finales-filtros summary { display: flex; align-items: center; gap: .75rem; min-height: 3.25rem; padding: .5rem 1.5rem; cursor: pointer; font-weight: 700; }
+.finales-filtros summary span { min-width: 0; overflow: hidden; color: rgb(var(--tm-acento)); font-size: .8125rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.finales-filtros form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: .75rem; padding: 0 1.5rem 1rem; }
+.finales-filtros label { display: grid; min-width: 0; gap: .375rem; color: rgb(var(--tm-acento)); font-size: .75rem; font-weight: 700; }
+.finales-filtros select, .finales-filtros button, .finales-filtros a, .finales-accion { min-height: 2.75rem; padding: .5rem .875rem; border: 1px solid rgb(var(--tm-linea) / .25); border-radius: 999px; background: var(--tm-fila-bg); color: rgb(var(--tm-tinta)); }
+.finales-filtros select { width: 100%; min-width: 0; }
+.finales-filtros select option { background: rgb(var(--tm-fondo)); color: rgb(var(--tm-tinta)); }
+.finales-pagina :is(summary, select, button, a):focus-visible { outline: 3px solid rgb(var(--tm-acento)); outline-offset: 2px; }
+.finales-contenido { padding: 2rem 1.5rem 7rem; }
+.finales-cabecera { display: flex; justify-content: space-between; align-items: end; gap: 1rem; padding-bottom: .875rem; border-bottom: 1px solid rgb(var(--tm-linea) / .22); }
+.finales-cabecera h2 { font-size: 1.6875rem; font-weight: 700; }
+.finales-cabecera p { color: rgb(var(--tm-acento)); font-size: .8125rem; }
+.finales-grupo { margin-top: 1.75rem; }
+.finales-grupo > h2 { font-size: 1.375rem; font-weight: 800; }
+.finales-etapas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; align-items: start; }
+.finales-etapa { min-width: 0; }
+.finales-etapa--anteriores { grid-column: 1; }
+.finales-etapa--semifinal { grid-column: 2; }
+.finales-etapa--final { grid-column: 3; }
+.finales-etapa > h3 { padding: .75rem 0; border-bottom: 3px solid rgb(var(--tm-acento)); font-size: 1.125rem; font-weight: 700; }
+.finales-fase { min-width: 0; margin-top: 1rem; }
+.finales-fase h4 { font-weight: 700; }
+.finales-copa { min-width: 0; margin-top: .75rem; }
+.finales-copa h5 { margin-bottom: .5rem; color: rgb(var(--tm-acento)); font-size: .8125rem; font-weight: 700; }
+.finales-partido { margin-bottom: .75rem; overflow: hidden; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 1rem; background: var(--tm-fila-bg); }
+.finales-partido-cabecera, .finales-partido-pie { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; padding: .75rem .875rem; font-size: .75rem; }
+.finales-partido-cabecera { border-bottom: 1px solid rgb(var(--tm-linea) / .22); color: rgb(var(--tm-acento)); font-weight: 700; }
+.finales-partido-pie { border-top: 1px solid rgb(var(--tm-linea) / .22); }
+.finales-equipos { padding: .75rem .875rem; }
+.finales-equipo { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .375rem 0; font-weight: 700; }
+.finales-equipo > span { display: flex; align-items: center; gap: .5rem; min-width: 0; overflow-wrap: anywhere; }
+.finales-equipo img { flex: none; width: 1.875rem; height: 1.875rem; padding: 3px; border-radius: 50%; background: white; object-fit: contain; }
+.finales-equipo--ganador img { outline: 2px solid rgb(var(--tm-acento)); outline-offset: 2px; }
+.finales-equipo strong { font: 800 1.125rem ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+.finales-equipos p { margin-top: .375rem; color: rgb(var(--tm-acento)); font-size: .75rem; }
+.finales-ganador { font-weight: 700; overflow-wrap: anywhere; }
+.finales-accion { display: inline-flex; align-items: center; font-size: .75rem; font-weight: 700; }
+.finales-vacio { margin-top: 1.25rem; padding: 2.25rem 1rem; border-radius: 1rem; background: var(--tm-fila-bg); text-align: center; }
+.finales-vacio a { display: inline-flex; align-items: center; min-height: 2.75rem; margin-top: 1rem; padding: .5rem 1rem; border: 1px solid rgb(var(--tm-linea) / .25); border-radius: 999px; color: rgb(var(--tm-tinta)); }
+@media (max-width: 900px) { .finales-etapas { grid-template-columns: repeat(2, minmax(0, 1fr)); } .finales-etapa--semifinal { grid-column: 1; } .finales-etapa--final { grid-column: 2; } .finales-filtros form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .finales-intro { padding: 1.375rem 1rem .875rem; } .finales-intro h1 { font-size: 1.875rem; } .finales-contenido { padding: 1.25rem 1rem 7rem; } .finales-etapas { grid-template-columns: minmax(0, 1fr); } .finales-etapa { grid-column: auto; } .finales-filtros summary { padding-inline: 1rem; } .finales-filtros form { max-height: 65dvh; overflow: auto; padding-inline: 1rem; } .finales-filtros select { font-size: 1rem; } }
+
 /* Ranking público: el podio y la lista comparten los datos del parcial. */
 .goleadores-pagina { background-color: rgb(var(--tm-fondo)); background-image: radial-gradient(circle at 78% 18%, transparent 0, transparent 130px, rgb(var(--brand-teal) / .12) 131px, transparent 133px), linear-gradient(90deg, transparent 0, transparent calc(50% - 1px), rgb(var(--brand-teal) / .08) 50%, transparent calc(50% + 1px)), repeating-linear-gradient(0deg, transparent 0, transparent 87px, rgb(var(--brand-teal) / .055) 88px, transparent 89px); background-attachment: fixed; color: rgb(var(--tm-tinta)); }
 .goleadores-contenido { width: min(100%, 75rem); margin: auto; padding: 2.8125rem 1.5rem 6.25rem; }

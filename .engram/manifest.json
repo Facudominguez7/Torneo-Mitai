@@ -232,6 +232,14 @@
       "sessions": 7,
       "memories": 28,
       "prompts": 0
+    },
+    {
+      "id": "1dd429e6",
+      "created_by": "facu",
+      "created_at": "2026-10-30T17:34:52.154241284Z",
+      "sessions": 6,
+      "memories": 28,
+      "prompts": 0
     }
   ]
 }

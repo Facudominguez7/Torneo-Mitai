@@ -19,6 +19,7 @@
     // Variante de una fila para el tablero del fixture. Por defecto la
     // tarjeta conserva el formato amplio que usan instancias finales y demas.
     'compacto' => false,
+    'finales' => false,
 ])
 
 @php
@@ -74,7 +75,42 @@
 @php
     $tipoCobro = $tipoPartido === 'instancia_final' ? \App\Models\CargoPlanilla::TIPO_INSTANCIA_FINAL : \App\Models\CargoPlanilla::TIPO_PARTIDO;
 @endphp
-@if ($compacto)
+@if ($finales)
+@php
+    $ganador = null;
+    if ($hayMarcador) {
+        if ($partido->golesEquipoLocal != $partido->golesEquipoVisitante) {
+            $ganador = $partido->golesEquipoLocal > $partido->golesEquipoVisitante ? 'local' : 'visitante';
+        } elseif (!is_null($partido->penalesEquipoLocal) && !is_null($partido->penalesEquipoVisitante) && $partido->penalesEquipoLocal != $partido->penalesEquipoVisitante) {
+            $ganador = $partido->penalesEquipoLocal > $partido->penalesEquipoVisitante ? 'local' : 'visitante';
+        }
+    }
+@endphp
+<article class="partido-card finales-partido" id="partido-{{ $partido->id }}" data-jugado="{{ (int) $estaFinalizado }}" data-horario="{{ $hayHorario ? \Carbon\Carbon::parse($partido->horario_datetime)->toIso8601String() : '' }}" data-local="{{ strtolower($partido->nombre_local) }}" data-visitante="{{ strtolower($partido->nombre_visitante) }}">
+    @if (auth()->user()?->isAdmin())
+        <a class="finales-accion" href="{{ route('cobros.index', ['idEdicion' => $partido->idEdicion, 'tipo' => $tipoCobro, 'partido' => $partido->id, 'periodo' => 'todos', 'estado' => 'todos']) }}">Cobros de este partido</a>
+    @endif
+    <div class="finales-partido-cabecera"><span>{{ $hayHorario ? \Carbon\Carbon::parse($partido->horario_datetime)->format('d/m/Y · H:i') : $horarioVacio }}</span><span>{{ $hayCancha ? 'Cancha ' . $partido->cancha : $canchaVacia }}</span></div>
+    <div class="finales-equipos">
+        @foreach (['local', 'visitante'] as $lado)
+            <div class="finales-equipo{{ $ganador === $lado ? ' finales-equipo--ganador' : '' }}">
+                <span><img src="{{ asset('fotos/equipos/' . $partido->{'foto_' . $lado}) }}" alt="" loading="lazy" onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';">{{ $partido->{'nombre_' . $lado} }}</span>
+                <strong>{{ $hayMarcador ? $partido->{$lado === 'local' ? 'golesEquipoLocal' : 'golesEquipoVisitante'} : '–' }}</strong>
+            </div>
+        @endforeach
+        @if ($penales)<p>Penales: {{ $penales }}</p>@endif
+        @if ($resultadoGlobal)<p>Global: {{ $resultadoGlobal }}</p>@endif
+        @if ($ganador)<p class="finales-ganador">Ganador del partido: {{ $partido->{'nombre_' . $ganador} }}</p>@endif
+    </div>
+    <div class="finales-partido-pie"><span>{{ $statusLabel }}</span>
+        @if ($planillaPublicaDisponible)
+            <button type="button" class="finales-accion" x-on:click='abrirPlanilla(@json($planillaPublicaUrl))'>Ver planilla</button>
+        @else
+            <span>Planilla no disponible</span>
+        @endif
+    </div>
+</article>
+@elseif ($compacto)
 <article class="partido-card tarjeta-compacta{{ $interzonal ? ' tarjeta-compacta--interzonal' : '' }}" data-jugado="{{ (int) $estaFinalizado }}" data-horario="{{ $hayHorario ? \Carbon\Carbon::parse($partido->horario_datetime)->toIso8601String() : '' }}" data-local="{{ strtolower($partido->nombre_local) }}" data-visitante="{{ strtolower($partido->nombre_visitante) }}" id="partido-{{ $partido->id }}">
     @if (auth()->user()?->isAdmin())
         <a class="tc-admin" href="{{ route('cobros.index', ['idEdicion' => $partido->idEdicion, 'tipo' => $tipoCobro, 'partido' => $partido->id, 'periodo' => 'todos', 'estado' => 'todos']) }}">Cobros de este partido</a>
