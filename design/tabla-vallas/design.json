@@ -1,0 +1,20 @@
+{
+  "title": "Tabla de vallas",
+  "brief": "Dos direcciones para el ranking de equipos con menos goles recibidos, dentro del sistema del portal público.",
+  "artboards": [
+    {
+      "file": "01-tabla-cancha.html",
+      "title": "Tabla de cancha",
+      "tradeoff": "Comparación compacta y directa; menos protagonismo de los primeros puestos.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-defensa-protagonista.html",
+      "title": "Defensa protagonista",
+      "tradeoff": "Destaca los primeros equipos; ocupa más espacio antes de la tabla.",
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}
