@@ -88,6 +88,15 @@
   </section>
 
   <section>
+    <h2>Marca de agua del portal · convención aprobada</h2>
+    <div class="card">
+      <p>El logo de fondo es parte durable del sistema del portal público, incluida la página web de baja de suscripción. No se usa en panel, login ni emails y se oculta al imprimir. Los textos y controles deben permanecer legibles por encima de la marca.</p>
+      <p class="row-note">Imagen decorativa <code>fotos/Logo_Mitai_SinFondo.png</code>: fija y centrada en la ventana, sin desenfoque; ancho <code>min(760px, 95vw)</code> y altura automática. El contexto aislado y <code>z-index: -1</code> la dejan detrás del contenido; <code>pointer-events: none</code> permite interactuar con él.</p>
+      <p class="row-note">Opacidad <code>--tm-marca-agua</code>: .17 en oscuro y .08 en claro, según el tema del sistema o el override manual. Fuentes: <code>resources/css/app.css</code> y <code>resources/views/components/marca-agua-portal.blade.php</code>.</p>
+    </div>
+  </section>
+
+  <section>
     <h2>Espaciado aplicado · fixture</h2>
     <div class="card"><p>Fila de fechas: gap .5rem; padding .75rem .25rem. Chips: padding .4375rem .9375rem, radio 999px.</p><div class="spacing-sample"><span>Fecha 4</span><span>Fecha 5</span><span>Fecha 6</span></div><p>Tarjeta compacta: padding 1.125rem 1.25rem; gap entre tarjetas .875rem. Fuente: resources/css/app.css.</p><p class="row-note">Barra compacta de fixture: controles de altura mínima 2.75rem, gap .5rem y foco de 3px; en móvil, buscador de altura mínima 3rem. Desde 1024px: fechas en columna de 13.75rem y partidos en dos columnas. La acción de planilla tiene altura mínima 2rem y la variante no disponible usa borde discontinuo. Fuente: resources/css/app.css.</p></div>
   </section>

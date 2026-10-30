@@ -9,6 +9,7 @@ Sincronizado desde las fuentes del proyecto. Los valores listados provienen text
 - `resources/css/admin/admin.css` (`:root`)
 - `resources/views/head.blade.php` (declaración de fuente)
 - `resources/views/welcome.blade.php` (uso real en la home)
+- `resources/views/components/marca-agua-portal.blade.php` (marca de agua compartida)
 
 ## Tipografía
 
@@ -45,6 +46,12 @@ Reglas propuestas (no extraídas de código; marcar como convención a acordar):
 - Mantener el logo cuadrado: nunca estirar, rotar ni teñir; el PNG transparente funciona sobre fondo oscuro y claro sin recolorar.
 - Tamaño mínimo en UI: 24px; tamaño de navegación: 40px.
 - En los artboards de `design/` se embebe una copia reducida a 128px en base64 para mantenerlos autocontenidos.
+
+### Marca de agua del portal · convención aprobada
+
+El fondo con el logo es parte durable del sistema de diseño del portal público, incluida la página web de baja de suscripción. No se aplica al panel, login ni emails; se oculta al imprimir. Mantener legibles los textos y controles por encima de la marca.
+
+El componente `resources/views/components/marca-agua-portal.blade.php` usa `fotos/Logo_Mitai_SinFondo.png` como imagen decorativa (`aria-hidden` y `alt` vacío). Según `resources/css/app.css`, la imagen está fija y centrada en la ventana, sin desenfoque (`filter: none`), con ancho `min(760px, 95vw)` y altura automática. El contexto aislado y `z-index: -1` la sitúan detrás del contenido; `pointer-events: none` evita interferir con las interacciones. La opacidad `--tm-marca-agua` es `.17` en oscuro y `.08` en claro, siguiendo el tema del sistema o el override manual.
 
 ## Colores de marca (portal)
 
@@ -87,7 +94,7 @@ Sin atributo, oscuro es el valor base y `prefers-color-scheme: light` activa cla
 | `--tm-marca-agua` | `.17` | `.08` | Opacidad de marca de agua |
 | `--tm-sombra-panel` | `none` | `5px 5px 0 rgba(8, 47, 59, .1)` | Sombra de panel |
 
-En fixture, `--fx-destacado` es `#FFCC33` en oscuro y `#997300` en claro; `--fx-rejilla` es `rgb(var(--tm-linea) / .04)` (`resources/css/app.css`, `.fixture-tablero`). La navegación móvil activa usa los mismos oros. Estos son usos existentes, no autorización para introducir nuevos colores.
+En fixture, `--fx-destacado` es `#FFCC33` en oscuro y `#997300` en claro (`resources/css/app.css`, `.fixture-tablero`). La navegación móvil activa usa los mismos oros. Estos son usos existentes, no autorización para introducir nuevos colores.
 
 ## Escalas de posición (torneo)
 
@@ -131,7 +138,7 @@ Fuente: `resources/css/app.css`. Selector de edición: gap `6px`, padding `10px 
 
 En el fixture, la barra compacta visible se fija debajo de la navegación con fondo `--tm-fondo`; sus botones tienen altura mínima `2.75rem`, separación `.5rem`, radio `999px` y foco `3px` con `--tm-acento`. Desde `640px` los botones de texto tienen ancho mínimo `10rem`; desde `1024px` el fixture usa columna de fechas `13.75rem`, separación `2rem` y dos columnas de partidos. En móvil (`max-width: 639px`), chips de `2.75rem` y buscador de `3rem`. La acción de planilla usa altura mínima `2rem`, radio `999px` y una variante no disponible con borde discontinuo. Fuente: `resources/css/app.css`.
 
-La implementación real incluye gradientes, marca de agua desenfocada, tilt y sombra de lista; la propuesta editorial siguiente los desaconseja para nuevas direcciones. Mantener explícita esta diferencia, sin presentar la propuesta como descripción de la home existente. El movimiento de entrada y tilt está condicionado a `prefers-reduced-motion: no-preference`.
+La implementación real incluye gradientes, marca de agua sin desenfoque, tilt y sombra de lista; la propuesta editorial siguiente desaconseja algunos de esos recursos para nuevas direcciones. La marca de agua aprobada es una convención vigente, no una propuesta pendiente. Mantener explícita esta diferencia, sin presentar la propuesta como descripción de la home existente. El movimiento de entrada y tilt está condicionado a `prefers-reduced-motion: no-preference`.
 
 ### Ranking público de goleadores
 

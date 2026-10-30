@@ -91,8 +91,8 @@ it('hace translúcidas solo las tarjetas compactas del fixture en tema claro', f
     expect($css)
         ->toContain(".fixture-tablero .tarjeta-compacta {\n    min-width: 0;")
         ->toContain('background: var(--tm-panel-bg);')
-        ->toContain(":root[data-tema=\"claro\"] .fixture-tablero .tarjeta-compacta {\n    background: rgb(255 255 255 / .65);\n}")
-        ->toContain(":root:not([data-tema=\"oscuro\"]) .fixture-tablero .tarjeta-compacta {\n        background: rgb(255 255 255 / .65);\n    }");
+        ->toContain(":root[data-tema=\"claro\"] .fixture-tablero .tarjeta-compacta {\n    background: rgb(255 255 255 / .20);\n}")
+        ->toContain(":root:not([data-tema=\"oscuro\"]) .fixture-tablero .tarjeta-compacta {\n        background: rgb(255 255 255 / .20);\n    }");
 });
 
 describe('fixture: tarjeta de partido (caracterización previa al refactor)', function () {
