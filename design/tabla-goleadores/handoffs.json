@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "chosen": "02-ranking-protagonista.html",
+  "handoffs": {
+    "02-ranking-protagonista.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-10-30T13:57:11.019Z",
+      "startedAt": "2026-10-30T13:57:13.656Z",
+      "implementedAt": "2026-10-30T14:26:14.206Z",
+      "note": "Implemented and verified with responsive filters, pagination, canonical podium and error recovery.",
+      "previewUrl": "http://localhost:8000/tabla-de-goleadores?idEdicion=10"
+    }
+  }
+}

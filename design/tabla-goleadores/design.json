@@ -1,0 +1,20 @@
+{
+  "title": "Tabla de goleadores",
+  "brief": "Dos alternativas para consultar y comparar goleadores de una edición, con búsqueda, filtros y ordenamiento.",
+  "artboards": [
+    {
+      "file": "01-tabla-cancha.html",
+      "title": "Tabla de cancha",
+      "tradeoff": "Comparación compacta y directa; menos protagonismo para cada goleador.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-ranking-protagonista.html",
+      "title": "Ranking protagonista",
+      "tradeoff": "Destaca a los primeros goleadores; requiere más espacio que una tabla compacta.",
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}

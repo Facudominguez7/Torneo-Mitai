@@ -133,6 +133,10 @@ En el fixture, la barra compacta visible se fija debajo de la navegación con fo
 
 La implementación real incluye gradientes, marca de agua desenfocada, tilt y sombra de lista; la propuesta editorial siguiente los desaconseja para nuevas direcciones. Mantener explícita esta diferencia, sin presentar la propuesta como descripción de la home existente. El movimiento de entrada y tilt está condicionado a `prefers-reduced-motion: no-preference`.
 
+### Tabla pública de posiciones
+
+Fuente: `resources/css/app.css`, selectores `.posiciones-*`. El tablero usa fondo `--tm-fondo` con cuadrícula de `brand-teal` al 8% cada 44px, texto `--tm-tinta`, encabezado `brand-navy`, bordes `--tm-linea` al 22% y filas `--tm-fila-bg`. Los filtros tienen altura mínima `2.75rem`, radio `999px` y acento `brand-teal-light`; el tablero usa datos monoespaciados. Los escudos se muestran sobre fondo blanco circular, con `2px` de padding, para conservar contraste. En móvil (hasta 700px) quedan visibles puesto, equipo, puntos, jugados y diferencia; el resto se conserva accesible. Las filas se animan solo si no se solicita movimiento reducido.
+
 ### Planilla pública compartida
 
 Fuente: `resources/css/app.css`, reglas `.planilla-publica` (fixture y finales). Es un patrón implementado, no una nueva escala global ni una propuesta para posiciones.
