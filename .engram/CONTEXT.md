@@ -4,6 +4,10 @@ Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como par
 
 Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
 
+## Portal público (rama `feat/home-new`)
+
+- Inicio separa partidos y tablas de premios de la edición, conserva la edición en los accesos y usa River Plate como ejemplo. El logo centrado y sin desenfoque se muestra como marca de agua en el sitio público, no en acceso, panel ni impresiones. La navegación de escritorio se compacta con transición e histéresis; en móvil conserva el comportamiento anterior. Pest focal: 43 pruebas/212 aserciones y Pint en 542 archivos. Playwright comprobó portada, finales, fixture, tablas, campeones y baja, tamaños 1920×1080, 1280×720 y 390×844, temas y scroll. La revisión nativa no pudo clasificar por archivos sin seguimiento ajenos; no se comprobó visualmente el perfil autenticado.
+
 ## Instancias finales (rama `feat/home-new`)
 
 - Implementado `design/finales/02-camino-copa.html` con datos reales, escudos, filtros de categoría/copa/fase y ganador del partido cuando el marcador o los penales lo determinan. La edición se conserva desde Inicio y no se selecciona en el panel; al elegir un filtro, el panel se cierra. La planilla pública y las variantes previas de tarjeta se conservan. En escritorio las etapas se ordenan de izquierda a derecha y las finales quedan a la derecha; en móvil se apilan. El marcador aparece una sola vez junto a los equipos. El estado vacío distingue edición sin partidos de filtros sin resultados y solo ofrece limpiar cuando hay filtros activos. Pest focal y regresión: 33 pruebas/190 aserciones; Pint y Playwright en escritorio y móvil aprobados. La verificación independiente detectó el caso Gran Final; fue corregido y probado. La evaluación nativa no clasificó por archivos sin seguimiento ajenos.

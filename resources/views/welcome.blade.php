@@ -7,10 +7,7 @@
 <body class="tm-home min-h-screen bg-tema-fondo text-tema-tinta antialiased transition-colors duration-300">
     @include('layouts.navigation')
     <main class="tm-velo-host relative">
-        {{-- Marca de agua: logo difuminado detrás de todo (opacidad según tema) --}}
-        <div class="tm-marca-agua" aria-hidden="true">
-            <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="" loading="lazy">
-        </div>
+        <x-marca-agua-portal />
 
         {{-- Alertas del sistema --}}
         @if (session()->has('warning') || session()->has('success') || session()->has('error') || session()->has('info') || session()->has('status') || request()->query('verified') == '1')
@@ -149,7 +146,7 @@
                             <path d="M14.5 14.5L19 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
                         </svg>
                         <input id="seguir-equipo-buscador" type="search" autocomplete="off"
-                            placeholder="Buscá tu equipo, ej: Talleres"
+                            placeholder="Buscá tu equipo, ej: River Plate"
                             aria-describedby="seguir-equipo-sin-resultados" aria-expanded="false"
                             class="w-full flex-1 border-0 bg-transparent p-0 text-base font-semibold text-tema-campo-tinta shadow-none placeholder:text-tema-campo-placeholder focus:border-transparent focus:ring-0 sm:text-lg">
                         <kbd class="hidden rounded-md border border-[var(--tm-campo-borde)] px-2 py-1 font-mono text-[11px] font-bold sm:block">Enter</kbd>
@@ -161,10 +158,6 @@
                         No encontramos equipos con ese nombre.
                     </p>
                 </div>
-                <p class="tm-anim-in tm-d2 mt-4 text-center text-sm text-tema-dim/70">
-                    También podés explorar todo el torneo abajo.
-                </p>
-
                 {{-- Panel del equipo seguido: lo arma resources/js/welcome.js con /equipo-seguido --}}
                 <div id="seguir-equipo-card" aria-live="polite" class="mx-auto mt-8 hidden max-w-2xl"></div>
 
@@ -178,7 +171,9 @@
                 <h2 class="tm-anim-in tm-d4 mb-4 text-xs font-bold uppercase tracking-[0.18em] text-tema-acento">
                     O explorá todo el torneo
                 </h2>
-                <div class="tm-anim-in tm-d4 grid gap-3 sm:grid-cols-2">
+                <section class="tm-anim-in tm-d4">
+                    <h3 class="mb-3 text-sm font-bold text-tema-dim">Partidos y tablas</h3>
+                    <div class="grid gap-3 sm:grid-cols-2">
                     <a href="{{ route('tabla-posiciones', ['idEdicion' => $edicionActual->id]) }}"
                         class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-[var(--tm-fila-bg)] px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
                         Tabla de posiciones
@@ -207,7 +202,22 @@
                             <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </a>
-                </div>
+                    </div>
+                </section>
+                <section class="tm-anim-in tm-d4 mt-6">
+                    <h3 class="mb-3 text-sm font-bold text-tema-dim">Premios de la edición</h3>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                    @foreach (['campeones' => 'Campeones', 'subcampeones' => 'Subcampeones', 'goleadores' => 'Goleadores premiados', 'vallas' => 'Vallas premiadas'] as $ruta => $etiqueta)
+                        <a href="{{ route($ruta, ['idEdicion' => $edicionActual->id]) }}"
+                            class="group flex items-center justify-between gap-3 rounded-2xl border border-tema-linea/15 bg-[var(--tm-fila-bg)] px-5 py-4 text-sm font-semibold transition hover:bg-tema-superficie/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light">
+                            {{ $etiqueta }}
+                            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" class="text-brand-teal-light transition-transform group-hover:translate-x-1">
+                                <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </a>
+                    @endforeach
+                    </div>
+                </section>
             </section>
         @endif
     </main>

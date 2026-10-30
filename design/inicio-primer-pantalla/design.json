@@ -57,6 +57,13 @@
       "tradeoff": "Variante tablet del tema dual: conserva nav con links, panel en 2 columnas con próximo partido a ancho completo; tilt con brillo activo solo con puntero fino, entradas 3D y velo de foco. Detecta prefers-color-scheme y permite override manual",
       "width": 834,
       "height": 1112
+    },
+    {
+      "file": "09-logo-fondo.html",
+      "title": "Inicio — logo visible de fondo",
+      "tradeoff": "Logo identificable como marca de agua en ambos temas; se mantiene tenue para priorizar el buscador.",
+      "width": 1440,
+      "height": 900
     }
   ]
 }

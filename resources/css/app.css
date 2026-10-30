@@ -433,17 +433,24 @@
  * (entradas escalonadas, cascada de sugerencias y tilt del panel con brillo).
  * Todo el movimiento se desactiva con prefers-reduced-motion.
  */
+/* El contexto aislado conserva la marca sobre el fondo y detrás del contenido. */
+:has(> .tm-marca-agua) { isolation: isolate; }
+
 .tm-marca-agua img {
     position: fixed;
     left: 50%;
-    top: -8%;
-    width: 760px;
-    height: 760px;
-    transform: translateX(-50%);
-    object-fit: contain;
-    filter: blur(80px);
+    top: 50%;
+    z-index: -1;
+    width: min(760px, 95vw);
+    height: auto;
+    transform: translate(-50%, -50%);
+    filter: none;
     opacity: var(--tm-marca-agua);
     pointer-events: none;
+}
+
+@media print {
+    .tm-marca-agua { display: none; }
 }
 
 .tm-velo-host::after {
@@ -763,6 +770,24 @@
     }
 }
 
+@media (min-width: 640px) {
+    .nav-compactable { max-width: 32rem; max-height: 5rem; opacity: 1; }
+    .nav-compacta .nav-compactable { max-width: 0; max-height: 0; opacity: 0; overflow: clip; pointer-events: none; }
+    .nav-fila { overflow-anchor: none; }
+    @media (prefers-reduced-motion: no-preference) {
+        .nav-compactable { transition: max-width .3s ease, max-height .3s ease, opacity .2s ease; }
+        .nav-fila { transition: padding .3s ease, gap .3s ease; }
+    }
+    .nav-compacta .nav-fila { padding-top: .5rem; padding-bottom: .5rem; }
+}
+@media (max-width: 639px) {
+    .nav-compacta .nav-compactable { display: none; }
+    .nav-compacta .nav-fila { padding-top: .5rem; padding-bottom: .5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .nav-compactable, .nav-fila { transition: none; }
+}
+
 /*
  * Navegación compartida sobre la home "Tu equipo primero" (artboards 06/07).
  * layouts/navigation.blade.php es de superficie oscura fija (bg-black/40,
@@ -947,7 +972,6 @@
  */
 .fixture-tablero {
     --fx-destacado: #FFCC33;
-    --fx-rejilla: rgb(var(--tm-linea) / .04);
 }
 
 :root[data-tema="claro"] .fixture-tablero {
@@ -958,21 +982,6 @@
     :root:not([data-tema="oscuro"]) .fixture-tablero {
         --fx-destacado: #997300;
     }
-}
-
-/* Textura: rejilla de pizarra táctica, centrada arriba a la derecha. */
-.fixture-tablero::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-        linear-gradient(var(--fx-rejilla) 1px, transparent 1px),
-        linear-gradient(90deg, var(--fx-rejilla) 1px, transparent 1px);
-    background-size: 44px 44px;
-    -webkit-mask-image: radial-gradient(1100px 700px at 60% 30%, #000 40%, transparent 100%);
-    mask-image: radial-gradient(1100px 700px at 60% 30%, #000 40%, transparent 100%);
 }
 
 .fixture-tablero > .relative > .absolute {
@@ -1231,6 +1240,16 @@
     border-radius: 1rem;
     background: var(--tm-panel-bg);
     color: rgb(var(--tm-tinta));
+}
+
+:root[data-tema="claro"] .fixture-tablero .tarjeta-compacta {
+    background: rgb(255 255 255 / .65);
+}
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-tema="oscuro"]) .fixture-tablero .tarjeta-compacta {
+        background: rgb(255 255 255 / .65);
+    }
 }
 
 .fixture-tablero .tarjeta-compacta--interzonal {

@@ -121,7 +121,7 @@ describe('home: buscador protagonista y tema dual (artboard 06)', function () {
 
         // Desplegable cerrado por defecto: la lista existe pero arranca oculta.
         expect($html)->toContain('id="seguir-equipo-buscador"');
-        expect($html)->toContain('Buscá tu equipo, ej: Talleres');
+        expect($html)->toContain('Buscá tu equipo, ej: River Plate');
         expect($html)->toContain('id="seguir-equipo-lista"');
         expect($html)->toContain('id="seguir-equipo-datos"');
         expect($html)->toContain('hidden overflow-hidden rounded-2xl');

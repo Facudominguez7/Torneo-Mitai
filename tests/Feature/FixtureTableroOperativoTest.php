@@ -67,6 +67,15 @@ function tableroEscenario(): array
     ];
 }
 
+it('conserva la marca de agua del fixture sin la rejilla decorativa', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)
+        ->not->toContain('.fixture-tablero::before')
+        ->not->toContain('--fx-rejilla')
+        ->toContain('.tm-marca-agua img {');
+});
+
 it('aplica el tema dual de la home al cuerpo del fixture', function () {
     $escenario = tableroEscenario();
 
