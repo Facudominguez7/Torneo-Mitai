@@ -2,6 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tabla pública de posiciones: tablero de cancha con tema compartido. */
+.posiciones-pagina {
+    background-color: rgb(var(--tm-fondo));
+    background-image: linear-gradient(rgb(var(--brand-teal) / .08) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--brand-teal) / .08) 1px, transparent 1px);
+    background-size: 44px 44px;
+    color: rgb(var(--tm-tinta));
+}
+.posiciones-contenido { width: min(100%, 72rem); margin: auto; padding: 3rem 1.5rem 6.25rem; }
+.posiciones-contenido h1 { font-size: clamp(1.875rem, 4vw, 3rem); line-height: 1.1; font-weight: 800; }
+.posiciones-filtros { display: grid; gap: .75rem; margin: 1.75rem 0; }
+.posiciones-filtro { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.posiciones-filtro strong { min-width: 5.625rem; color: rgb(var(--tm-acento)); font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; }
+.posiciones-filtro a { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 1.125rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 999px; font-weight: 700; }
+.posiciones-filtro a:hover { background: var(--tm-fila-hover-bg); }
+.posiciones-filtro a:focus-visible { outline: 3px solid rgb(var(--tm-acento)); outline-offset: 3px; }
+.posiciones-filtro a[aria-current="page"] { background: rgb(var(--brand-teal-light)); border-color: rgb(var(--brand-teal-light)); color: rgb(var(--brand-navy-deep)); }
+.posiciones-tablero { margin-top: 1.75rem; border: 1px solid rgb(var(--tm-linea) / .22); }
+.posiciones-cabecera { display: flex; justify-content: space-between; gap: .75rem; padding: 1.25rem 1.5rem; background: rgb(var(--brand-navy)); color: white; }
+.posiciones-cabecera h2 { font-size: 1.25rem; font-weight: 700; }
+.posiciones-cabecera span { font-size: .8125rem; }
+.posiciones-tablero table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.posiciones-tablero caption { padding: 1rem 1.5rem; color: rgb(var(--tm-acento)); font-weight: 700; text-align: left; }
+.posiciones-tablero th, .posiciones-tablero td { padding: 1rem .5rem; border-bottom: 1px solid rgb(var(--tm-linea) / .22); text-align: center; }
+.posiciones-tablero th { color: rgb(var(--tm-acento)); font-size: .75rem; }
+.posiciones-tablero th:nth-child(2), .posiciones-tablero td:nth-child(2) { width: 32%; text-align: left; }
+.posiciones-tablero td:not(:nth-child(2)) { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+.posiciones-tablero tbody tr { background: var(--tm-fila-bg); }
+.posiciones-tablero tbody tr:first-child td:first-child, .posiciones-tablero tbody tr:first-child td:nth-child(3) { color: rgb(var(--tm-acento)); font-weight: 800; }
+.posiciones-equipo { display: flex; align-items: center; gap: .5rem; min-width: 0; font-weight: 700; }
+.posiciones-equipo img { flex: none; width: 1.75rem; height: 1.75rem; padding: 2px; border-radius: 50%; background: #fff; object-fit: contain; }
+.posiciones-equipo span { overflow-wrap: anywhere; }
+.posiciones-estadisticas-movil { display: none; }
+@media (max-width: 700px) {
+    .posiciones-contenido { padding: 1.75rem 1rem 6.25rem; }
+    .posiciones-filtro strong { width: 100%; }
+    .posiciones-cabecera { display: block; padding: 1rem; }
+    .posiciones-cabecera span { display: block; margin-top: .3125rem; }
+    .posiciones-tablero { margin-inline: -.5rem; }
+    .posiciones-tablero th, .posiciones-tablero td { padding: .8125rem .25rem; font-size: .8125rem; }
+    .posiciones-tablero th:first-child, .posiciones-tablero td:first-child { width: 12%; }
+    .posiciones-tablero th:nth-child(2), .posiciones-tablero td:nth-child(2) { width: 40%; }
+    .posiciones-tablero th:nth-child(n+5):nth-child(-n+9), .posiciones-tablero td:nth-child(n+5):nth-child(-n+9) { display: none; }
+    .posiciones-equipo { gap: .375rem; }
+    .posiciones-equipo img { width: 1.5rem; height: 1.5rem; }
+    .posiciones-estadisticas-movil { display: block; position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    .posiciones-tablero tbody tr { animation: posiciones-entrada .42s ease-out both; }
+    .posiciones-tablero tbody tr:nth-child(2) { animation-delay: .06s; }
+    .posiciones-tablero tbody tr:nth-child(3) { animation-delay: .12s; }
+    .posiciones-tablero tbody tr:nth-child(4) { animation-delay: .18s; }
+    @keyframes posiciones-entrada { from { opacity: 0; transform: perspective(900px) translateY(10px) rotateX(-2deg); } to { opacity: 1; transform: none; } }
+}
+
 /* Planilla pública: hoja de consulta compartida por fixture y finales. */
 .planilla-publica { position: fixed; inset: 0; z-index: 50; color: rgb(var(--tm-tinta)); }
 .planilla-publica__velo { position: absolute; inset: 0; background: rgb(var(--brand-navy-deep) / .8); }

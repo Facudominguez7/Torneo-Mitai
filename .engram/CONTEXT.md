@@ -4,6 +4,10 @@ Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como par
 
 Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
 
+## Tabla pública de posiciones (rama `feat/home-new`)
+
+- Implementado el artboard `design/tabla-posiciones/01-tabla-cancha.html`: tabla adaptable con escudos, filtros existentes, temas y estadísticas accesibles en móvil. Verificada en Playwright a 1920×1080, 1280×720 y 390×844; pruebas focales y Pint en Docker aprobados. Los escudos tienen una base clara para mantener el contraste.
+
 ## SEO del sitio público (2026-10-25, rama `feat/seo-publico`)
 
 - `config/seo.php` y `SeoComposer` (vista `head`) generan el título, la descripción, la canónica (conserva solo `idEdicion`, `idCategoria`, `idGrupo` y `tipo`), Open Graph/Twitter y robots. El título nombra la edición solo cuando la página la muestra. Sin `idEdicion`, solo `/` e `/instancias-finales` muestran la última edición; el resto muestra el selector y usa `descripcion_general`.
