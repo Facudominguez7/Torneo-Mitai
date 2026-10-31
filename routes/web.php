@@ -210,24 +210,10 @@ Route::prefix('Panel/notificaciones')->middleware([UserAccesPanelMiddleware::cla
         ->name('notificaciones.index');
     Route::post('/suscriptores/{id}/reenviar-verificacion', [ControladorNotificacionesEmail::class, 'reenviarVerificacionManual'])
         ->name('notificaciones.reenviar-verificacion');
-    Route::get('/recordatorios/contar', [ControladorNotificacionesEmail::class, 'contarUsuariosPendientes'])
-        ->name('notificaciones.contar-pendientes');
-    Route::post('/recordatorios/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteRecordatorios'])
-        ->name('notificaciones.enviar-lote');
-    Route::post('/recordatorios/log-completo', [ControladorNotificacionesEmail::class, 'logEnvioCompleto'])
-        ->name('notificaciones.log-completo');
-    Route::get('/manual/contar', [ControladorNotificacionesEmail::class, 'contarSuscriptores'])
-        ->name('notificaciones.manual.contar');
-    Route::post('/manual/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteNotificacionManual'])
-        ->name('notificaciones.manual.enviar-lote');
     Route::get('/resumen-fecha/contar', [ControladorEnvioSuscriptores::class, 'contarResumenFecha'])
         ->name('notificaciones.resumen-fecha.contar');
     Route::post('/resumen-fecha/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarResumenFecha'])
         ->name('notificaciones.resumen-fecha.suscriptores');
-    Route::post('/resultado/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResultado'])
-        ->name('notificaciones.resultado.enviar-lote');
-    Route::post('/resultado-instancia/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResultadoInstancia'])
-        ->name('notificaciones.resultado-instancia.enviar-lote');
 });
 
 // Rutas para gestión de suscripción a emails de notificación
