@@ -73,6 +73,32 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
 
+  # Scheduler: hace en local lo que el cron del hosting en producción (schedule:run cada minuto),
+  # así la cola de los avisos se procesa igual en los dos entornos.
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mitai-scheduler
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: php artisan schedule:work
+    volumes:
+      - .:/var/www/html
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      - /var/www/html/vendor
+    networks:
+      - mitai-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - APP_DEBUG=${APP_DEBUG}
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
   # Servicio Nginx (servidor web)
   nginx:
     image: nginx:alpine
