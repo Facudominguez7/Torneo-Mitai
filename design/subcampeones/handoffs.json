@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "chosen": "01-podio-de-cancha.html",
+  "handoffs": {
+    "01-podio-de-cancha.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-10-31T00:05:16.796Z",
+      "startedAt": "2026-10-31T00:05:19.573Z",
+      "implementedAt": "2026-10-31T00:08:47.932Z",
+      "note": "Implementado con datos reales y selector de edición; pruebas y navegador verificados.",
+      "previewUrl": "http://localhost:8000/subcampeones?idEdicion=9"
+    }
+  }
+}

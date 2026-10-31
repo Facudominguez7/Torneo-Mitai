@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<!-- Dirección 1: "Cartel de jornada" — hero tipográfico + filas de cartel.
+     Tradeoff: máximo escaneo de una jornada; menos contexto global del torneo. -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartel de jornada — Fixture · Torneos Mita'í</title>
+<style>
+  :root {
+    --navy-deep: #082F3B;
+    --navy: #0E4B5E;
+    --teal: #2A6D81;
+    --teal-claro: #9BD3E2;
+    --oro: #F7F280;
+    --oro-400: #FFCC33;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+    /* Tema oscuro (por defecto). Bloque claro agregable después: */
+    /* @media (prefers-color-scheme: light) { :root:not([data-tema="oscuro"]) { ... } } */
+    --fondo: #082F3B;
+    --tinta: #FFFFFF;
+    --dim: rgba(235,244,248,.72);
+    --linea: rgba(255,255,255,.14);
+    --fila: rgba(255,255,255,.06);
+    --panel-fondo: rgba(255,255,255,.05);
+    --velo: rgba(8,47,59,.52);
+    --marca-agua: .17;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:var(--font); background:var(--fondo); color:var(--tinta); min-height:100vh; }
+
+  /* Textura de fondo: franjas de cancha + marca de agua difusa (sin imágenes remotas) */
+  body::before {
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.022) 0 90px, transparent 90px 180px),
+      radial-gradient(900px 500px at 85% -10%, rgba(42,109,129,.28), transparent 70%),
+      radial-gradient(700px 420px at -10% 110%, rgba(255,204,51,.08), transparent 70%);
+  }
+  .page { position:relative; z-index:1; }
+
+  a { color:inherit; text-decoration:none; }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline:3px solid var(--teal-claro); outline-offset:2px; border-radius:8px; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+
+  /* Header compacto: marca + buscador + instancias finales */
+  .top { display:flex; align-items:center; gap:24px; padding:16px 48px; border-bottom:1px solid var(--linea); }
+  .marca { font-weight:800; font-size:17px; letter-spacing:.02em; white-space:nowrap; }
+  .marca em { font-style:normal; color:var(--oro-400); }
+  .buscador-mini { flex:1; max-width:420px; display:flex; align-items:center; gap:10px; background:var(--fila); border:1px solid var(--linea); border-radius:999px; padding:9px 16px; }
+  .buscador-mini input { flex:1; border:0; outline:none; background:transparent; font-family:inherit; font-size:14px; font-weight:600; color:var(--tinta); min-width:0; }
+  .buscador-mini input::placeholder { color:var(--dim); font-weight:500; }
+  .btn-final { margin-left:auto; white-space:nowrap; display:inline-flex; align-items:center; gap:8px; background:var(--oro-400); color:var(--navy-deep); border:0; border-radius:999px; padding:10px 18px; font-family:inherit; font-weight:800; font-size:13px; cursor:pointer; }
+  .btn-final:hover { filter:brightness(1.06); }
+
+  /* Hero tipográfico: la fecha como cartel */
+  main { max-width:1180px; margin:0 auto; padding:48px 48px 72px; }
+  .kicker { font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:var(--teal-claro); }
+  h1 { margin-top:10px; font-size:88px; font-weight:800; letter-spacing:-2.5px; line-height:.95; }
+  h1 .dia { display:block; font-size:34px; font-weight:700; letter-spacing:-.5px; color:var(--teal-claro); margin-top:10px; }
+
+  /* Tabs de fechas tipo cartelera */
+  .fechas { margin-top:36px; display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
+  .fechas button { flex-shrink:0; background:transparent; border:1px solid var(--linea); color:var(--dim); border-radius:12px; padding:10px 0; width:76px; cursor:pointer; font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.06em; transition: background .2s ease, color .2s ease, border-color .2s ease; }
+  .fechas button small { display:block; font-family:var(--font); font-size:11px; font-weight:600; margin-top:3px; color:var(--dim); }
+  .fechas button:hover { background:var(--fila); color:var(--tinta); }
+  .fechas button[aria-current="true"] { background:var(--oro-400); border-color:var(--oro-400); color:var(--navy-deep); }
+  .fechas button[aria-current="true"] small { color:var(--navy-deep); }
+
+  /* Filas de cartel */
+  .cartel { margin-top:32px; display:flex; flex-direction:column; gap:10px; }
+  .partido { display:grid; grid-template-columns: 130px 1fr 110px 120px; align-items:center; gap:20px; background:var(--panel-fondo); border:1px solid var(--linea); border-radius:18px; padding:20px 26px; }
+  .partido .cuando { font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.08em; color:var(--dim); }
+  .partido .cat { display:inline-block; margin-top:6px; font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--navy-deep); background:var(--teal-claro); border-radius:999px; padding:3px 10px; }
+  .duelo { display:flex; align-items:center; gap:16px; font-size:22px; font-weight:800; letter-spacing:-.4px; }
+  .duelo .vs { font-size:12px; font-weight:700; letter-spacing:.2em; color:var(--dim); }
+  .resultado { font-family:var(--mono); font-size:20px; font-weight:800; color:var(--oro-400); text-align:right; }
+  .resultado.final { color:var(--dim); }
+  .lugar { font-size:13px; font-weight:600; color:var(--dim); text-align:right; }
+  .lugar strong { display:block; color:var(--tinta); font-size:14px; }
+
+  /* Estados */
+  .vivo { display:inline-flex; align-items:center; gap:7px; color:var(--oro-400); }
+  .vivo::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--oro-400); }
+  @media (prefers-reduced-motion: no-preference) {
+    .vivo::before { animation: latido 1.2s ease-in-out infinite; }
+    @keyframes latido { 50% { opacity:.3; } }
+  }
+
+  /* Entrada escalonada */
+  @media (prefers-reduced-motion: no-preference) {
+    .anim-in { animation: aparecer .7s cubic-bezier(.22,.68,.3,1) both; }
+    .d1 { animation-delay:.09s } .d2 { animation-delay:.18s } .d3 { animation-delay:.26s } .d4 { animation-delay:.34s }
+    @keyframes aparecer { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <p class="marca">Torneos <em>Mita'í</em></p>
+    <label class="buscador-mini">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="#9BD3E2" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="#9BD3E2" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input type="search" placeholder="Buscá un equipo…" aria-label="Buscar equipo en la fecha">
+    </label>
+    <button type="button" class="btn-final">Ver instancias finales
+      <svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h8M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <p class="kicker anim-in">Torneo Apertura 2026 · 21ª edición</p>
+    <h1 class="anim-in d1">Fecha 7<span class="dia">Sábado 31 de octubre</span></h1>
+
+    <nav class="fechas anim-in d2" aria-label="Elegir fecha del torneo">
+      <button type="button"><small>Fecha</small>1</button>
+      <button type="button"><small>Fecha</small>2</button>
+      <button type="button"><small>Fecha</small>3</button>
+      <button type="button"><small>Fecha</small>4</button>
+      <button type="button"><small>Fecha</small>5</button>
+      <button type="button"><small>Fecha</small>6</button>
+      <button type="button" aria-current="true"><small>Fecha</small>7</button>
+      <button type="button"><small>Fecha</small>8</button>
+      <button type="button"><small>Fecha</small>9</button>
+      <button type="button"><small>Fecha</small>10</button>
+      <button type="button"><small>Fecha</small>11</button>
+      <button type="button"><small>Fecha</small>12</button>
+      <button type="button"><small>Fecha</small>13</button>
+      <button type="button"><small>Fecha</small>14</button>
+    </nav>
+
+    <section class="cartel anim-in d3" aria-label="Partidos de la fecha 7">
+      <article class="partido anim-in d3">
+        <div class="cuando">FINALIZADO<span class="cat" style="margin-left:8px">Sub-10</span></div>
+        <p class="duelo">Talleres Jujuy <span class="vs">VS</span> Club Cuyaya</p>
+        <p class="resultado final">2 - 1</p>
+        <p class="lugar"><strong>Cancha 1</strong>Sábado 09:30</p>
+      </article>
+      <article class="partido anim-in d3">
+        <div class="cuando"><span class="vivo">EN JUEGO · 67'</span><span class="cat" style="margin-left:8px">Sub-12</span></div>
+        <p class="duelo">Talleres de Palpalá <span class="vs">VS</span> Huracán</p>
+        <p class="resultado">1 - 0</p>
+        <p class="lugar"><strong>Cancha 2</strong>Sábado 10:45</p>
+      </article>
+      <article class="partido anim-in d4">
+        <div class="cuando">PRÓXIMO<span class="cat" style="margin-left:8px">Sub-14</span></div>
+        <p class="duelo">Juventud Unida <span class="vs">VS</span> Dep. Lynch</p>
+        <p class="resultado final">—</p>
+        <p class="lugar"><strong>Cancha 3</strong>Sábado 12:00</p>
+      </article>
+      <article class="partido anim-in d4">
+        <div class="cuando">PRÓXIMO<span class="cat" style="margin-left:8px">Sub-8</span></div>
+        <p class="duelo">Club Cuyaya <span class="vs">VS</span> Talleres Jujuy</p>
+        <p class="resultado final">—</p>
+        <p class="lugar"><strong>Cancha 1</strong>Sábado 13:15</p>
+      </article>
+      <article class="partido anim-in d4">
+        <div class="cuando">PRÓXIMO<span class="cat" style="margin-left:8px">Sub-16</span></div>
+        <p class="duelo">Huracán <span class="vs">VS</span> Juventud Unida</p>
+        <p class="resultado final">—</p>
+        <p class="lugar"><strong>Cancha 2</strong>Sábado 14:30</p>
+      </article>
+    </section>
+  </main>
+</div>
+</body>
+</html>

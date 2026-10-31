@@ -1,0 +1,27 @@
+{
+  "title": "Identidad propia para la pantalla de inicio",
+  "brief": "Rediseño de la primera pantalla con dirección de arte deliberada: evitar la estética genérica de interfaz generada por IA (gradientes violeta, glassmorphism, cards uniformes, hero centrado con dos botones, sombras difusas) y construir un lenguaje visual propio a partir de la identidad real del club: navy/oro del escudo, cultura de fixture impreso y tablero de resultados, tipografía Barlow + monoespaciada para datos vivos. Referencias conceptuales: Carbon (grilla y densidad), Primer (tipografía funcional), USWDS (claridad de servicio). Tres direcciones que difieren en estructura y superficie, no solo en color.",
+  "artboards": [
+    {
+      "file": "01-tablero-impreso.html",
+      "title": "Tablero impreso (papel)",
+      "tradeoff": "Superficie clara con masthead editorial de hoja de fixture: doble filete, partidos como filas de tabla, resultados y tabla Sub-12 en columna lateral, índice numerado al pie. Máxima densidad útil y personalidad 'fixture de mesa'; sacrifica emoción visual y cambia el sitio a claro (rompe continuidad con el resto del portal oscuro)",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-tablero-nocturno.html",
+      "title": "Tablero nocturno (estadio)",
+      "tradeoff": "Mantiene el navy profundo del portal y el tema 'Cancha nocturna' del auth, pero con cromo mínimo: banda de marcador con horas en monoespaciada, cabeceras con barra lateral oro, marcadores sobre bloques negros, sin glass ni glows. Continuidad de marca y energía de estadio; riesgo de leerse como dark-SaaS si se le agrega decoración",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "03-cartelera-utilitaria.html",
+      "title": "Cartelera utilitaria (póster)",
+      "tradeoff": "Póster tipográfico sobre navy de marca: titular grande alineado a la izquierda, tres tareas reales como índice numerado de cartelera con dato mono a la derecha, campeones vigentes en columnas de texto. Lo más distintivo y rápido de leer; expone menos contenido de golpe y apuesta a que el usuario elija una tarea",
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}

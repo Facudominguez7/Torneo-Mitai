@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "comments": [
+    {
+      "id": "3js2f1re",
+      "file": "02-ranking-protagonista.html",
+      "selector": "body",
+      "excerpt": "TORNEO MITAI Edición ilustrativa Inicio Partidos Posiciones Goleadores Finales Tema: Sistema ESTADÍSTICAS DEL TORNEO Tabla de goleadores Los goles de cada categoría, en una sola tabla. EDICIÓN 10 CATEGORÍA Todas las categorías Sub-12 Sub-14 Sub-16 Sub-18 BUSCAR JUGADOR O EQUIPO ORDENAR POR Goles · m",
+      "comment": "necesito algun efecto sombra o algo que inventes que quede lindo el fondo",
+      "createdAt": "2026-10-30T13:48:55.382Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T13:48:55.389Z",
+      "resolvedAt": "2026-10-30T13:50:00.575Z"
+    },
+    {
+      "id": "8y6nkrih",
+      "file": "02-ranking-protagonista.html",
+      "selector": "#resultado > div:nth-of-type(2) > article:nth-of-type(1)",
+      "excerpt": "1° PUESTO · Sub-12 Alex Sol Los Aromos 18 GOLES",
+      "comment": "hay algo que esta raro aca en la union de los elementos",
+      "createdAt": "2026-10-30T13:49:41.038Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T13:49:41.122Z",
+      "resolvedAt": "2026-10-30T13:50:42.576Z",
+      "screenshot": ".screenshots/8y6nkrih.png"
+    },
+    {
+      "id": "7hmdtxvl",
+      "file": "02-ranking-protagonista.html",
+      "selector": "#orden",
+      "excerpt": "Goles · mayor a menor Goles · menor a mayor Nombre · A a Z Nombre · Z a A Equipo · A a Z Equipo · Z a A Categoría · A a Z Categoría · Z a A",
+      "comment": "esta muy pegado el icono para desplegar",
+      "createdAt": "2026-10-30T13:51:03.933Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T13:51:03.968Z",
+      "resolvedAt": "2026-10-30T13:51:27.790Z"
+    },
+    {
+      "id": "oen0vjkf",
+      "file": "02-ranking-protagonista.html",
+      "selector": "body",
+      "excerpt": "TORNEO MITAI Edición ilustrativa Inicio Partidos Posiciones Goleadores Finales Tema: Sistema ESTADÍSTICAS DEL TORNEO Tabla de goleadores Los goles de cada categoría, en una sola tabla. EDICIÓN 10 CATEGORÍA Todas las categorías Sub-12 Sub-14 Sub-16 Sub-18 BUSCAR JUGADOR O EQUIPO ORDENAR POR Goles · m",
+      "comment": "quiero animaciones al mover simplemente el mouse",
+      "createdAt": "2026-10-30T13:52:08.805Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T13:52:08.852Z",
+      "resolvedAt": "2026-10-30T13:52:45.421Z"
+    }
+  ]
+}

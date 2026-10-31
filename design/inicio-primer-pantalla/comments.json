@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "comments": [
+    {
+      "id": "i1cqlngc",
+      "file": "06-tu-equipo-dual.html",
+      "selector": "body > nav > a > img",
+      "excerpt": "",
+      "comment": "esto no implementaste",
+      "createdAt": "2026-10-28T23:56:04.703Z",
+      "status": "resolved",
+      "sentAt": "2026-10-28T23:57:02.889Z",
+      "resolvedAt": "2026-10-29T00:09:16.788Z"
+    },
+    {
+      "id": "dz4x1j2i",
+      "file": "06-tu-equipo-dual.html",
+      "selector": "body > main > p:nth-of-type(1)",
+      "excerpt": "TORNEO APERTURA 2026",
+      "comment": "aca debe de estar el select de ediciones y hacelo  mas lindo eso parece del patriarcado",
+      "createdAt": "2026-10-28T23:56:36.609Z",
+      "status": "resolved",
+      "sentAt": "2026-10-28T23:57:02.889Z",
+      "resolvedAt": "2026-10-29T00:09:16.788Z",
+      "screenshot": ".screenshots/dz4x1j2i.png"
+    },
+    {
+      "id": "l8c3ogcw",
+      "file": "06-tu-equipo-dual.html",
+      "selector": "body > main > div > div > button:nth-of-type(1) > span:nth-of-type(1)",
+      "excerpt": "TJ",
+      "comment": "logo del equipo en cuestion tanto en modo claro como oscuro",
+      "createdAt": "2026-10-28T23:57:00.499Z",
+      "status": "resolved",
+      "sentAt": "2026-10-28T23:57:02.889Z",
+      "resolvedAt": "2026-10-29T00:09:16.788Z"
+    },
+    {
+      "id": "uzynjmz3",
+      "file": "06-tu-equipo-dual.html",
+      "selector": "#edicion-hero",
+      "excerpt": "TORNEO APERTURA 2026",
+      "comment": "al desplegarlo se superpone, que tenga la misma animacion que ocurre al momento de buscar un equipo",
+      "createdAt": "2026-10-29T00:18:21.517Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T00:18:23.054Z",
+      "resolvedAt": "2026-10-29T00:25:22.804Z",
+      "screenshot": ".screenshots/uzynjmz3.png"
+    }
+  ]
+}

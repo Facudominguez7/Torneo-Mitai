@@ -18,9 +18,12 @@ it('muestra la politica de privacidad con los datos que guarda el sitio', functi
         ->assertSee(route('terminos'), false);
 });
 
-it('enlaza las paginas legales desde el pie del sitio', function (): void {
-    $this->blade("@include('layouts.footer')")
-        ->assertSeeText('Sitio desarrollado por el Ing. Facundo Díaz Domínguez.')
+it('enlaza las paginas legales al pie de las paginas publicas sin credito ni redes', function (): void {
+    // El pie con credito y redes se elimino por decision del usuario; los
+    // enlaces legales viven en una linea propia al pie de cada pantalla.
+    $this->get('/fixture')->assertOk()
         ->assertSee(route('terminos'), false)
-        ->assertSee(route('privacidad'), false);
+        ->assertSee(route('privacidad'), false)
+        ->assertDontSeeText('Sitio desarrollado por')
+        ->assertDontSeeText('Conéctate conmigo en LinkedIn');
 });

@@ -1,0 +1,8 @@
+{
+  "title": "Campeones",
+  "brief": "Dos direcciones para consultar los campeones por edición, copa y categoría en el portal público.",
+  "artboards": [
+    { "file": "01-palmares-de-cancha.html", "title": "Palmarés de cancha", "tradeoff": "Comparación compacta por copa y categoría; menos protagonismo de los escudos.", "width": 1440, "height": 900 },
+    { "file": "02-noche-de-campeones.html", "title": "Noche de campeones", "tradeoff": "Destaca los escudos y cada logro; exige más desplazamiento para comparar.", "width": 1440, "height": 900 }
+  ]
+}

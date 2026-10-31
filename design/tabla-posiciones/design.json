@@ -1,0 +1,9 @@
+{
+  "title": "Tabla de posiciones",
+  "brief": "Tres direcciones duales para consultar posiciones por categoría y grupo, con datos ilustrativos.",
+  "artboards": [
+    { "file": "01-tabla-cancha.html", "title": "Tabla de cancha", "tradeoff": "Comparación compacta y directa; menos protagonismo para cada equipo.", "width": 1440, "height": 900 },
+    { "file": "02-clasificacion-protagonista.html", "title": "Clasificación protagonista", "tradeoff": "Destaca el primer puesto; dedica más espacio al líder.", "width": 1440, "height": 900 },
+    { "file": "03-ficha-equipo.html", "title": "Ficha de equipo", "tradeoff": "Cada equipo y sus puntos se leen con facilidad; menor densidad comparativa.", "width": 1440, "height": 900 }
+  ]
+}

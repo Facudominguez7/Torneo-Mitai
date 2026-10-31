@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "chosen": "01-tabla-cancha.html",
+  "handoffs": {
+    "01-tabla-cancha.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-10-30T13:30:09.766Z",
+      "startedAt": "2026-10-30T13:30:11.420Z",
+      "implementedAt": "2026-10-30T13:35:46.858Z",
+      "note": "Implemented with responsive standings, existing filters and team crests; verified on desktop and mobile.",
+      "previewUrl": "http://localhost:8000/tabla-de-posiciones?idEdicion=9"
+    }
+  }
+}

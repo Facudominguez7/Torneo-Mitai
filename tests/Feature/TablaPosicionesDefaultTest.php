@@ -114,6 +114,23 @@ it('respeta la categoria explicita de la segunda categoria sin caer al default',
         ->and($html)->not->toContain('Categoría no encontrada');
 });
 
+it('presenta la tabla de cancha con escudos y estadísticas accesibles', function () {
+    $contexto = crearContextoPosicionesDefault();
+
+    $this->get(route('tabla-posiciones', ['idEdicion' => $contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSee('Posiciones del grupo seleccionado')
+        ->assertSee('Ganados: 1, empatados: 0, perdidos: 0, goles a favor: 3, goles en contra: 1')
+        ->assertSee('escudo.png')
+        ->assertSee('Equipo Norte')
+        ->assertDontSee('Resumen actualizado de puntos');
+});
+
+it('mantiene una base clara para los escudos de posiciones', function () {
+    expect(file_get_contents(resource_path('css/app.css')))
+        ->toMatch('/\.posiciones-equipo img\s*\{[^}]*background:\s*#fff\s*;/');
+});
+
 it('responde 200 en la tabla de posiciones sin idEdicion manteniendo el comportamiento legacy', function () {
     $response = $this->get(route('tabla-posiciones'));
 
