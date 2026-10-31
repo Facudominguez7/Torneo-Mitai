@@ -7,6 +7,7 @@ use App\Http\Controllers\ControladorNotificacionesEmail;
 use App\Http\Controllers\ControladorPlanillaPublica;
 use App\Http\Controllers\ControladorSeo;
 use App\Http\Controllers\ControladorSuscripcion;
+use App\Http\Controllers\ControladorWebhookResend;
 use App\Http\Controllers\Google\LoginController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\Panel\ControladorCampeon;
@@ -71,6 +72,9 @@ Route::get('/tabla-de-vallas', [ControladorHome::class, 'tablaVallas'])->name('t
 Route::get('/instancias-finales', [ControladorHome::class, 'instanciasFinales'])->name('instancias-finales');
 Route::get('/robots.txt', [ControladorSeo::class, 'robots'])->name('robots');
 Route::get('/sitemap.xml', [ControladorSeo::class, 'sitemap'])->name('sitemap');
+// Bajas y cambios de tópicos hechos desde Resend; sin CSRF (ver bootstrap/app.php), validado con la firma.
+Route::post('/webhooks/resend', ControladorWebhookResend::class)->middleware('throttle:120,1')->name('webhooks.resend');
+
 Route::get('/suscripcion', [ControladorSuscripcion::class, 'create'])->name('suscripcion.create');
 Route::post('/suscripcion', [ControladorSuscripcion::class, 'store'])->middleware('throttle:suscripcion')->name('suscripcion.store');
 Route::get('/suscripcion/{suscriptor}/confirmar', [ControladorSuscripcion::class, 'confirmar'])->middleware(['signed', 'throttle:10,1'])->name('suscripcion.confirmar');

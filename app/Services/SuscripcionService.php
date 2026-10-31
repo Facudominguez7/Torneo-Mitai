@@ -6,6 +6,7 @@ use App\Jobs\SincronizarSuscriptorResend;
 use App\Mail\ConfirmacionSuscripcionMail;
 use App\Models\Suscriptor;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
@@ -138,5 +139,56 @@ class SuscripcionService
     public function urlBaja(Suscriptor $suscriptor): string
     {
         return URL::signedRoute('suscripcion.baja', $suscriptor);
+    }
+
+    /**
+     * Aplica un cambio que el suscriptor hizo desde Resend, sin encolar otra sincronización: Resend ya lo tiene.
+     * Se ignora si el suscriptor cambió algo acá después del evento, porque ese cambio local es el vigente
+     * (y es también el eco de nuestra propia sincronización, que llega como evento).
+     *
+     * @param  array<string, mixed>  $datos  campo data del evento
+     */
+    public function aplicarCambioDesdeResend(string $tipo, array $datos, CarbonInterface $emitido): void
+    {
+        $email = mb_strtolower(trim((string) ($datos['email'] ?? '')));
+        $suscriptor = $email === '' ? null : Suscriptor::query()->where('email', $email)->first();
+
+        if ($suscriptor === null || $suscriptor->updated_at?->greaterThanOrEqualTo($emitido)) {
+            return;
+        }
+
+        $cambios = match ($tipo) {
+            'contact.deleted' => ['resend_contacto_id' => null, 'baja_at' => $suscriptor->baja_at ?? $emitido],
+            'contact.updated' => ($datos['unsubscribed'] ?? false) === true ? ['baja_at' => $suscriptor->baja_at ?? $emitido] : [],
+            'contact.topics.updated' => $this->avisosDesdeTopicos($datos['topics'] ?? []),
+            default => [],
+        };
+
+        // resend_sincronizado_at no se toca: si había un cambio local pendiente, se sigue enviando
+        // ya combinado con este; si no, Resend ya quedó igual que acá.
+        if ($cambios !== []) {
+            $suscriptor->forceFill($cambios)->save();
+        }
+    }
+
+    /**
+     * @param  mixed  $topicos  lista de {id, subscription} con los tópicos que cambiaron
+     * @return array<string, bool> columna del aviso => si lo recibe
+     */
+    private function avisosDesdeTopicos(mixed $topicos): array
+    {
+        $avisoPorTopico = array_flip(array_map('strval', config('suscripciones.resend.topicos')));
+        $cambios = [];
+
+        foreach (is_array($topicos) ? $topicos : [] as $topico) {
+            $aviso = $avisoPorTopico[(string) ($topico['id'] ?? '')] ?? null;
+            $columna = $aviso === null ? null : config("suscripciones.avisos.{$aviso}");
+
+            if ($columna !== null && in_array($topico['subscription'] ?? null, ['opt_in', 'opt_out'], true)) {
+                $cambios[$columna] = $topico['subscription'] === 'opt_in';
+            }
+        }
+
+        return $cambios;
     }
 }

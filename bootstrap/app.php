@@ -33,6 +33,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'email/baja',
             'suscripcion/*/baja',
+            // Resend no manda token CSRF: el webhook se valida con su firma.
+            'webhooks/resend',
         ]);
 
         // Prioridad explícita: el bloqueo del panel (404 a invitados) debe

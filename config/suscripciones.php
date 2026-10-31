@@ -31,6 +31,10 @@ return [
         ],
         // Pausa entre suscriptores del comando de sincronización (Resend admite 10 pedidos por segundo).
         'pausa_ms' => 300,
+        // Secreto de firma del webhook (empieza con whsec_): está en el detalle del webhook en Resend.
+        'webhook_secreto' => env('RESEND_WEBHOOK_SECRET'),
+        // Antigüedad máxima aceptada de un evento firmado, contra reenvíos de pedidos capturados.
+        'webhook_tolerancia_segundos' => 300,
     ],
 
     // Avisos que se pueden elegir y su columna en suscriptores.
