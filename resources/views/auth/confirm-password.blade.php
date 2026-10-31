@@ -1,7 +1,9 @@
 <x-guest-layout>
+    <x-slot:sobre>Zona protegida</x-slot:sobre>
+
     <div class="flex flex-col gap-1.5">
-        <h1 class="text-[26px] font-bold leading-tight sm:text-[28px]">Confirmá tu contraseña</h1>
-        <p class="text-[15px] text-white/75">Esta sección es protegida. Ingresá tu contraseña para continuar.</p>
+        <h1 class="text-[26px] font-extrabold leading-tight sm:text-[32px]">Confirmá tu contraseña</h1>
+        <p class="text-[15px] text-brand-navy-deep/75">Esta sección es protegida. Ingresá tu contraseña para continuar.</p>
     </div>
 
     <form method="POST" action="{{ route('password.confirm') }}" class="flex flex-col gap-[18px]"

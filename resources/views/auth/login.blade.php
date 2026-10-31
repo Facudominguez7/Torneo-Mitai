@@ -1,7 +1,10 @@
 <x-guest-layout>
+    <x-slot:titular><span class="acceso-corto">Todo lo de tu equipo.</span><span class="acceso-largo">Todo lo de tu equipo, en una sola cuenta.</span></x-slot:titular>
+    <x-slot:bajada><span class="acceso-corto">Fixture, posiciones y planillas de cada partido.</span><span class="acceso-largo">Fixture, resultados, posiciones y planillas de cada partido de la edición.</span></x-slot:bajada>
+
     <div class="flex flex-col gap-1.5">
-        <h1 class="text-[26px] font-bold leading-tight sm:text-[28px]">Ingresá a tu cuenta</h1>
-        <p class="text-[15px] text-white/75">Fixture, resultados y planillas de tu equipo.</p>
+        <h1 class="text-[26px] font-extrabold leading-tight sm:text-[32px]">Ingresá a tu cuenta</h1>
+        <p class="text-[15px] text-brand-navy-deep/75">Usá el correo con el que te registraste.</p>
     </div>
 
     @if (session('aviso'))
@@ -26,7 +29,7 @@
             @if (Route::has('password.request'))
                 <x-slot:accion>
                     <a href="{{ route('password.request') }}"
-                        class="text-sm font-semibold text-brand-teal-light underline-offset-4 hover:text-brand-gold hover:underline">¿Olvidaste tu contraseña?</a>
+                        class="acceso-enlace text-sm">¿Olvidaste tu contraseña?</a>
                 </x-slot:accion>
             @endif
         </x-acceso.campo>
@@ -39,9 +42,9 @@
     <x-acceso.boton-google>Ingresar con Google</x-acceso.boton-google>
 
     <x-slot:pie>
-        <p class="text-center text-[15px] text-white/80">
+        <p class="text-center text-[15px] text-brand-navy-deep/75 lg:text-left">
             ¿Todavía no tenés cuenta?
-            <a href="{{ route('register') }}" class="font-bold text-brand-teal-light underline-offset-4 hover:text-brand-gold hover:underline">Crear cuenta</a>
+            <a href="{{ route('register') }}" class="acceso-enlace">Crear cuenta</a>
         </p>
     </x-slot:pie>
 </x-guest-layout>

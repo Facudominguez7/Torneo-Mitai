@@ -3,11 +3,12 @@
   "chosen": "01-arqueros-destacados.html",
   "handoffs": {
     "01-arqueros-destacados.html": {
-      "status": "in_progress",
+      "status": "implemented",
       "queued": false,
       "sentAt": "2026-10-31T00:28:16.944Z",
       "startedAt": "2026-10-31T00:28:20.032Z",
-      "implementedAt": null
+      "implementedAt": "2026-10-31T00:40:51.000Z",
+      "note": "Implementado con arqueros reales, escudos con respaldo, goles recibidos y selector de edición con alternativa GET; pruebas y Playwright aprobados."
     }
   }
 }
