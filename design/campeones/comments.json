@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "comments": [
+    {
+      "id": "cesxssdp",
+      "file": "02-noche-de-campeones.html",
+      "selector": "body",
+      "excerpt": "TORNEO MITAI Edición ilustrativa Inicio Partidos Posiciones Goleadores Finales Campeones Tema: Sistema HISTORIAL DEL TORNEO Campeones de cada categoría Reviví los equipos que levantaron la copa en la edición seleccionada. EDICIÓN Edición ilustrativa Copa de Oro CAMPEONES SUB-12 LA Los Aromos Campeón",
+      "comment": "me gusta pero los campeones se define asi los de oro son los mas capos, los de plata son los segundos mas capos y los de bronce para abajo son los menos capos entonces eso me gustaria que se refleje con el diseño",
+      "createdAt": "2026-10-30T23:42:30.905Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T23:42:32.741Z",
+      "resolvedAt": "2026-10-30T23:43:12.871Z"
+    },
+    {
+      "id": "ggz4nq4x",
+      "file": "02-noche-de-campeones.html",
+      "selector": "#edicion",
+      "excerpt": "Edición ilustrativa",
+      "comment": "en todos los diseños te esta pasando que queda pegado los items de adentro con los bordes",
+      "createdAt": "2026-10-30T23:46:37.951Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T23:46:39.506Z",
+      "resolvedAt": "2026-10-30T23:47:02.998Z"
+    }
+  ]
+}

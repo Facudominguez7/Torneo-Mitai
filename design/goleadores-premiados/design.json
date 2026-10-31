@@ -1,0 +1,20 @@
+{
+  "title": "Goleadores premiados",
+  "brief": "Dos propuestas para consultar jugadores premiados y sus equipos por categoría en la edición seleccionada.",
+  "artboards": [
+    {
+      "file": "01-premiados-de-cancha.html",
+      "title": "Premiados de cancha",
+      "tradeoff": "Da protagonismo al jugador y al escudo; ocupa más espacio.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-registro-de-goleadores.html",
+      "title": "Registro de goleadores",
+      "tradeoff": "Facilita comparar categorías y equipos; menor protagonismo visual.",
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}

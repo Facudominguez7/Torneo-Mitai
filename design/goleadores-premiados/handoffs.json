@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "chosen": "01-premiados-de-cancha.html",
+  "handoffs": {
+    "01-premiados-de-cancha.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-10-31T00:19:38.023Z",
+      "startedAt": "2026-10-31T00:19:41.587Z",
+      "implementedAt": "2026-10-31T00:23:36.674Z",
+      "note": "Implementado con premiados reales, selector, pruebas y revisión visual en escritorio y móvil.",
+      "previewUrl": "http://localhost:8000/goleadores?idEdicion=9"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "chosen": "02-noche-de-campeones.html",
+  "handoffs": {
+    "02-noche-de-campeones.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-10-30T23:47:48.982Z",
+      "startedAt": "2026-10-30T23:47:50.867Z",
+      "implementedAt": "2026-10-30T23:51:33.445Z",
+      "note": "Implementado con datos reales; pruebas y comprobación visual en escritorio y móvil.",
+      "previewUrl": "http://localhost:8000/campeones?idEdicion=9"
+    }
+  }
+}

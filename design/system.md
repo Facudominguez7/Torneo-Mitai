@@ -144,6 +144,12 @@ La implementación real incluye gradientes, marca de agua sin desenfoque, tilt y
 
 Fuente: `resources/css/app.css`, selectores `.goleadores-*`. El fondo combina `--tm-fondo` con líneas de cancha `brand-teal` a baja opacidad. El podio usa `brand-navy-deep`, `brand-navy`, `brand-gold` y `brand-teal-light`, con borde redondeado de `1rem`; las cifras usan la pila monoespaciada del proyecto. Los filtros usan `--tm-fila-bg`, radio `1rem`, foco de `3px` y flecha con `--tm-acento`. En móvil hay barra compacta desde el inicio; en escritorio y tablet aparece al desplazar. Los botones compactos tienen altura mínima `2.75rem` y radio `999px`. Entrada y realce por mouse respetan movimiento reducido.
 
+### Goleadores premiados
+
+Fuente: `resources/css/app.css`, selectores `.premios-*`. Es un patrón implementado, no tokens nuevos ni una escala global. La sección tiene margen superior `2.625rem`; su título usa `clamp(1.375rem, 3vw, 1.625rem)` y borde `--tm-linea` al `.22`. El tablero dispone tres columnas con gap `1rem`. Las tarjetas alineadas a izquierda usan padding `1.375rem`, radio `1rem`, borde `--tm-linea` al `.22`, fondo `--tm-fila-bg` y tinta `--tm-tinta`. La categoría usa `--tm-acento`, `.75rem`/700 y tracking `.08em`; el nombre usa `1.3125rem`/700 y el detalle `.8125rem`.
+
+El escudo circular mide `4.5rem`, con padding `.25rem`, fondo blanco y borde `2px` de `--brand-teal-light`. El estado vacío conserva borde, radio y fondo de la tarjeta, con padding `1.5rem`. Hasta `700px`, el tablero pasa a una columna y cada tarjeta organiza el escudo a la izquierda y el texto a la derecha, con gap `1rem`. En dispositivos con hover y sin preferencia de movimiento reducido, la tarjeta se eleva `4px` y el borde pasa a `--tm-acento` mediante transición de `.2s`.
+
 ### Tabla pública de posiciones
 
 Fuente: `resources/css/app.css`, selectores `.posiciones-*`. El tablero usa fondo `--tm-fondo` con cuadrícula de `brand-teal` al 8% cada 44px, texto `--tm-tinta`, encabezado `brand-navy`, bordes `--tm-linea` al 22% y filas `--tm-fila-bg`. Los filtros tienen altura mínima `2.75rem`, radio `999px` y acento `brand-teal-light`; el tablero usa datos monoespaciados. Los escudos se muestran sobre fondo blanco circular, con `2px` de padding, para conservar contraste. En móvil (hasta 700px) quedan visibles puesto, equipo, puntos, jugados y diferencia; el resto se conserva accesible. Las filas se animan solo si no se solicita movimiento reducido.
@@ -159,6 +165,16 @@ Fuente: `resources/css/app.css`, reglas `.planilla-publica` (fixture y finales).
 | Contenido y equipos | Contenido con scroll vertical y padding `1.25rem 1.5rem 1.875rem`; equipos en dos columnas con gap `1.75rem`; rótulos y subtítulos `.75rem`/700, mayúsculas y tracking `.1em`. |
 | Datos y estados | Tabla con padding de celda `.5625rem .3125rem`, borde inferior `1px`, primera y última columna en `ui-monospace, 'SF Mono', Menlo, Consolas, monospace` y última alineada a derecha. Aviso y reporte usan `--tm-fila-bg` y borde izquierdo de acento `4px` y `3px`, respectivamente; estado con alto mínimo `12.5rem`. |
 | Móvil | Hasta `700px`, hoja alineada abajo, sin padding exterior y alto máximo `94dvh`; cabecera y contenido con padding `1rem`, equipos en una columna con gap `1.25rem` y metadatos en columna. |
+
+### Ranking público de vallas
+
+Fuente: `resources/css/app.css`, selectores `.vallas-*`. Usa los tokens semánticos de fondo, tinta, acento, borde y filas existentes; no añade colores. El contenido mide hasta `72rem`; filtros de altura mínima `2.75rem`, radio `999px` y foco `3px`. El podio usa tres columnas con gap `.875rem` y tarjetas de radio `1rem`; escudos de `2.5rem` sobre blanco. La tabla usa borde y radio `1rem`, datos monoespaciados y cabecera sobre `--tm-fila-bg`. Hasta `700px` el podio pasa a una columna y la categoría se presenta dentro de la celda del equipo. Las transiciones y desplazamientos de hover requieren `prefers-reduced-motion: no-preference`.
+
+### Historial público de campeones
+
+Fuente: `resources/css/app.css`, selectores `.campeones-*`. El contenido ocupa hasta `72rem`; la introducción separa título y selector con gap `1.5rem`. El selector usa alto mínimo `2.75rem`, radio `999px` y foco `3px`. Su menú tiene gap de flecha `1rem`, lista sólida con radio `14px` y opciones de alto mínimo `2.75rem` con gap `.75rem`.
+
+Las copas mantienen jerarquía propia: Oro usa tarjeta navy profundo, borde superior de `4px` y escudo de `6.25rem` con borde dorado; Plata usa tarjeta navy y borde blanco de `3px`; Bronce usa borde `#cd7f32` de `2px`; Mita'í usa superficie y tinta semánticas. Las tarjetas se distribuyen en tres columnas con gap `1rem`; escudos normales de `5.25rem`. Hasta `700px` se pasa a una columna con escudos de `4.5rem`. El hover solo se anima sin preferencia de movimiento reducido. Las copas son divisiones independientes, no posiciones dentro de una sola copa.
 
 ## Desviación conocida (a sistematizar)
 

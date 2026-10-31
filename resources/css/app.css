@@ -1719,3 +1719,113 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+/* Ranking público de vallas */
+.vallas-pagina { background: rgb(var(--tm-fondo)); color: rgb(var(--tm-tinta)); }
+.vallas-contenido { width: min(100% - 3rem, 72rem); margin: 0 auto; padding: 3.5rem 0 7rem; }
+.vallas-intro { max-width: 42rem; }
+.vallas-intro h1 { font-size: clamp(2rem, 5vw, 3.375rem); font-weight: 700; line-height: 1.1; margin: .75rem 0; }
+.vallas-intro p { line-height: 1.5; }
+.vallas-rotulo { display: block; color: rgb(var(--tm-acento)); font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.vallas-filtros { display: flex; flex-wrap: wrap; align-items: start; gap: 1rem; margin: 1.75rem 0; }
+.vallas-filtros form, .vallas-busqueda { display: flex; flex-direction: column; gap: .5rem; }
+.vallas-filtros input, .vallas-filtros select { min-height: 2.75rem; min-width: 15rem; max-width: 100%; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 999px; background-color: var(--tm-fila-bg); color: rgb(var(--tm-tinta)); padding: .65rem 1.125rem; }
+.vallas-filtros select { padding-right: 3rem; }
+.vallas-filtros select option { background: rgb(var(--tm-fondo)); color: rgb(var(--tm-tinta)); }
+.vallas-filtros :is(input, select, button):focus-visible, .vallas-tabla a:focus-visible { outline: 3px solid rgb(var(--tm-acento)); outline-offset: 2px; }
+.vallas-ayuda { font-size: .75rem; color: rgb(var(--tm-dim)); }
+.vallas-podio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .875rem; margin: 1.875rem 0; }
+.vallas-card { border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 1rem; background: var(--tm-fila-bg); padding: 1.375rem; }
+.vallas-card h2 { font-size: 1.125rem; font-weight: 700; }
+.vallas-card p { font-size: .875rem; }
+.vallas-card p strong { font-family: ui-monospace, monospace; font-size: 1.875rem; }
+.vallas-equipo { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; min-width: 0; }
+.vallas-card .vallas-equipo { margin: .75rem 0; }
+.vallas-equipo img { width: 2.5rem; height: 2.5rem; object-fit: contain; padding: 2px; background: #fff; border-radius: 50%; flex: none; }
+.vallas-equipo strong, .vallas-equipo h2 { overflow-wrap: anywhere; }
+.vallas-contenido section > h2 { font-size: 1.5rem; font-weight: 700; margin: 1.5rem 0 1rem; }
+.vallas-tabla { overflow: hidden; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 1rem; }
+.vallas-tabla table { width: 100%; border-collapse: collapse; }
+.vallas-tabla th, .vallas-tabla td { text-align: left; padding: 1rem 1.25rem; border-bottom: 1px solid rgb(var(--tm-linea) / .15); }
+.vallas-tabla th { background: var(--tm-fila-bg); font-size: .75rem; text-transform: uppercase; }
+.vallas-tabla th:last-child, .vallas-tabla td:last-child { text-align: right; }
+.vallas-tabla tbody tr:last-child td { border-bottom: 0; }
+.vallas-tabla td:first-child, .vallas-tabla td:last-child { font-family: ui-monospace, monospace; font-weight: 700; }
+.vallas-categoria-movil { display: none; }
+.vallas-vacio { margin: 1.5rem 0; padding: 1.5rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 1rem; background: var(--tm-fila-bg); }
+.vallas-paginacion { margin-top: 2rem; }
+.vallas-pagina [hidden] { display: none !important; }
+@media (hover: hover) { .vallas-card:hover, .vallas-tabla tbody tr:hover { background: var(--tm-fila-hover-bg); } }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) { .vallas-card, .vallas-tabla tbody tr { transition: transform .2s ease, background-color .2s ease; } .vallas-card:hover { transform: translateY(-4px); } .vallas-tabla tbody tr:hover { transform: translateX(4px); } }
+@media (max-width: 700px) { .vallas-contenido { width: min(100% - 2rem, 72rem); padding-top: 2.25rem; } .vallas-podio { grid-template-columns: 1fr; } .vallas-card { padding: 1rem; } .vallas-tabla th, .vallas-tabla td { padding: .75rem .5rem; } .vallas-tabla th:nth-child(3), .vallas-tabla td:nth-child(3) { display: none; } .vallas-categoria-movil { display: block; width: 100%; font-size: .75rem; color: rgb(var(--tm-dim)); } }
+
+/* Historial público de campeones */
+.campeones-pagina { background: rgb(var(--tm-fondo)); color: rgb(var(--tm-tinta)); }
+.campeones-contenido { width: min(100% - 3rem, 72rem); margin: 0 auto; padding: 3.5rem 0 7rem; }
+.campeones-intro { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1.5rem; padding-bottom: 1.75rem; border-bottom: 1px solid rgb(var(--tm-linea) / .22); }
+.campeones-intro > div { max-width: 42rem; min-width: 0; }
+.campeones-rotulo, .campeones-selector label, .campeones-selector-rotulo { color: rgb(var(--tm-acento)); font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.campeones-intro h1 { margin: .75rem 0; font-size: clamp(2rem, 5vw, 3.75rem); font-weight: 700; line-height: 1.05; overflow-wrap: anywhere; }
+.campeones-intro p { line-height: 1.5; }
+.campeones-selector { display: flex; flex-direction: column; gap: .5rem; min-width: 13rem; max-width: 100%; }
+.campeones-selector :is(select, button) { min-height: 2.75rem; max-width: 100%; padding: .65rem 3rem .65rem 1.125rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 999px; background-color: var(--tm-fila-bg); color: rgb(var(--tm-tinta)); }
+.campeones-selector option { background: rgb(var(--tm-fondo)); color: rgb(var(--tm-tinta)); }
+.campeones-selector :is(select, button, summary, a):focus-visible { outline: 3px solid rgb(var(--tm-acento)); outline-offset: 2px; }
+.campeones-selector-menu { position: relative; z-index: 10; min-width: 0; }
+.campeones-selector-menu summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 2.75rem; padding: .65rem 1.125rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 999px; background: var(--tm-fila-bg); color: rgb(var(--tm-tinta)); font-size: .875rem; font-weight: 600; cursor: pointer; overflow-wrap: anywhere; list-style: none; }
+.campeones-selector-menu summary::-webkit-details-marker { display: none; }
+.campeones-selector-menu summary::after { content: ''; flex: none; width: .5rem; height: .5rem; border-right: 2px solid rgb(var(--tm-acento)); border-bottom: 2px solid rgb(var(--tm-acento)); transform: rotate(45deg); }
+.campeones-selector-menu[open] summary { border-color: rgb(var(--tm-acento)); }
+.campeones-selector-menu[open] summary::after { transform: rotate(225deg); }
+.campeones-selector-lista { position: absolute; top: calc(100% + .5rem); right: 0; z-index: 50; width: max(100%, 13rem); max-width: min(22rem, calc(100vw - 2rem)); max-height: min(18rem, 50dvh); overflow-y: auto; padding: .25rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 14px; background: rgb(var(--tm-fondo)); color: rgb(var(--tm-tinta)); box-shadow: 0 24px 50px -18px rgb(var(--brand-navy-deep) / .55); }
+.campeones-selector-lista a { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 2.75rem; padding: .75rem .875rem; border-radius: .625rem; font-size: .8125rem; font-weight: 600; overflow-wrap: anywhere; }
+.campeones-selector-lista a:hover { background: var(--tm-fila-hover-bg); }
+.campeones-selector-lista a:focus-visible { outline-offset: -3px; }
+.campeones-selector-lista a[aria-current="page"] { background: var(--tm-fila-bg); color: rgb(var(--tm-acento)); font-weight: 700; }
+.campeones-copa { margin-top: 2.625rem; }
+.campeones-copa > h2 { padding-bottom: .75rem; border-bottom: 1px solid rgb(var(--tm-linea) / .22); font-size: clamp(1.375rem, 3vw, 1.625rem); font-weight: 700; line-height: 1.2; }
+.campeones-lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.campeones-tarjeta { display: flex; flex-direction: column; align-items: center; min-width: 0; min-height: 13.75rem; padding: 1.25rem; border: 1px solid rgb(255 255 255 / .22); border-top: 3px solid rgb(255 255 255 / .7); border-radius: 1rem; background: rgb(var(--brand-navy)); color: white; text-align: center; }
+.campeones-oro .campeones-tarjeta { min-height: 15.625rem; border-top: 4px solid rgb(var(--brand-gold)); background: rgb(var(--brand-navy-deep)); }
+.campeones-bronce .campeones-tarjeta { border-top: 2px solid #cd7f32; }
+.campeones-mitai .campeones-tarjeta { border: 1px solid rgb(var(--tm-linea) / .22); background: var(--tm-fila-bg); color: rgb(var(--tm-tinta)); }
+.campeones-categoria { align-self: flex-start; color: rgb(var(--brand-teal-light)); font-size: .75rem; font-weight: 700; letter-spacing: .08em; }
+.campeones-mitai .campeones-categoria { color: rgb(var(--tm-acento)); }
+.campeones-escudo { flex: none; width: 5.25rem; height: 5.25rem; margin: .625rem 0; padding: .25rem; border: 4px solid rgb(var(--brand-teal-light)); border-radius: 50%; background: white; object-fit: contain; }
+.campeones-oro .campeones-escudo { width: 6.25rem; height: 6.25rem; border-color: rgb(var(--brand-gold)); }
+.campeones-tarjeta h3 { font-size: 1.3125rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.campeones-tarjeta p { margin-top: .25rem; font-size: .8125rem; }
+.campeones-vacio { margin-top: 1rem; padding: 1.5rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 1rem; background: var(--tm-fila-bg); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) { .campeones-tarjeta { transition: transform .2s ease; } .campeones-tarjeta:hover { transform: translateY(-4px); } }
+@media (max-width: 700px) {
+    .campeones-contenido { width: min(100% - 2rem, 72rem); padding-top: 2rem; }
+    .campeones-selector { width: 100%; }
+    .campeones-selector select { width: 100%; }
+    .campeones-lista { grid-template-columns: 1fr; }
+    .campeones-tarjeta, .campeones-oro .campeones-tarjeta { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); grid-template-rows: auto auto auto; column-gap: 1rem; min-height: 0; text-align: left; }
+    .campeones-categoria { grid-column: 2; grid-row: 1; }
+    .campeones-escudo, .campeones-oro .campeones-escudo { grid-column: 1; grid-row: 1 / 4; width: 4.5rem; height: 4.5rem; margin: 0; }
+    .campeones-tarjeta h3, .campeones-tarjeta p { grid-column: 2; }
+}
+
+/* Goleadores premiados */
+.premios-seccion { margin-top: 2.625rem; }
+.premios-seccion > h2 { padding-bottom: .75rem; border-bottom: 1px solid rgb(var(--tm-linea) / .22); font-size: clamp(1.375rem, 3vw, 1.625rem); font-weight: 700; line-height: 1.2; }
+.premios-tablero { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.premios-tarjeta { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 1.375rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 1rem; background: var(--tm-fila-bg); color: rgb(var(--tm-tinta)); text-align: left; }
+.premios-categoria { align-self: flex-start; color: rgb(var(--tm-acento)); font-size: .75rem; font-weight: 700; letter-spacing: .08em; }
+.premios-escudo { flex: none; width: 4.5rem; height: 4.5rem; margin: .875rem 0; padding: .25rem; border: 2px solid rgb(var(--brand-teal-light)); border-radius: 50%; background: white; object-fit: contain; }
+.premios-tarjeta h3 { font-size: 1.3125rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.premios-tarjeta p { margin-top: .25rem; font-size: .8125rem; overflow-wrap: anywhere; }
+.premios-vacio { margin-top: 1rem; padding: 1.5rem; border: 1px solid rgb(var(--tm-linea) / .22); border-radius: 1rem; background: var(--tm-fila-bg); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .premios-tarjeta { transition: transform .2s ease, border-color .2s ease; }
+    .premios-tarjeta:hover { transform: translateY(-4px); border-color: rgb(var(--tm-acento)); }
+}
+@media (max-width: 700px) {
+    .premios-tablero { grid-template-columns: 1fr; }
+    .premios-tarjeta { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); grid-template-rows: auto auto auto; column-gap: 1rem; min-height: 0; text-align: left; }
+    .premios-categoria { grid-column: 2; grid-row: 1; }
+    .premios-escudo { grid-column: 1; grid-row: 1 / 4; width: 4.5rem; height: 4.5rem; margin: 0; }
+    .premios-tarjeta h3, .premios-tarjeta p { grid-column: 2; }
+}

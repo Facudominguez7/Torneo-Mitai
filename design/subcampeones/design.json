@@ -1,0 +1,20 @@
+{
+  "title": "Subcampeones",
+  "brief": "Dos propuestas para consultar los subcampeones de cada copa y categoría en la edición seleccionada.",
+  "artboards": [
+    {
+      "file": "01-podio-de-cancha.html",
+      "title": "Podio de cancha",
+      "tradeoff": "Tarjetas y escudos destacados; requiere más desplazamiento.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-finalistas.html",
+      "title": "Finalistas",
+      "tradeoff": "Comparación compacta entre copas y categorías; escudos menos protagonistas.",
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}

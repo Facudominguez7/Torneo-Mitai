@@ -1,0 +1,20 @@
+{
+  "title": "Vallas premiadas",
+  "brief": "Dos propuestas para consultar arqueros premiados y sus equipos por categoría en la edición seleccionada.",
+  "artboards": [
+    {
+      "file": "01-arqueros-destacados.html",
+      "title": "Arqueros destacados",
+      "tradeoff": "Tarjetas con más protagonismo de cada arquero y escudo; requiere más espacio.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-registro-defensivo.html",
+      "title": "Registro defensivo",
+      "tradeoff": "Filas compactas para comparar categorías y equipos; menor protagonismo visual.",
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}
