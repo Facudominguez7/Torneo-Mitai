@@ -1,6 +1,6 @@
 {{--
-    Suscriptores (T9a, panel-admin-redesign): tarjeta del resumen de la fecha,
-    filtros y tabla de usuarios sobre los componentes x-ui.*. El aviso rápido
+    Suscriptores (T9a, panel-admin-redesign): tarjetas del resumen, la próxima fecha
+    y el aviso del torneo, filtros y tabla de usuarios sobre los componentes x-ui.*. El aviso rápido
     por BCC y el recordatorio de verificación por tandas se retiraron (T10,
     resumen-fecha-suscriptores): los avisos salen por el canal de suscriptores.
 --}}
@@ -14,6 +14,7 @@
         $resumenIdFecha = $resumenIdFecha ?? null;
         $categoriasResumen = $categoriasResumen ?? collect();
         $fechasResumen = $fechasResumen ?? collect();
+        $fechasEdicion = $fechasEdicion ?? collect();
         $iniciales = static fn (string $nombre): string => collect(preg_split('/\s+/', trim($nombre)))
             ->filter()
             ->take(2)
@@ -57,6 +58,63 @@
 
                 <x-ui.button id="btn-enviar-resumen-fecha" onclick="iniciarEnvioResumenFecha()" class="mt-1 w-full">
                     Enviar resumen
+                </x-ui.button>
+            </div>
+        </article>
+
+        {{-- Próxima fecha --}}
+        <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
+            <div>
+                <h2 class="text-base font-bold text-gray-800">Próxima fecha</h2>
+                <p class="mt-1 text-sm text-gray-500">Días, horarios y canchas de una fecha para los suscriptores que eligieron la próxima fecha.</p>
+                <p class="mt-1 text-xs text-gray-400">Edición activa: {{ $resumenNombreEdicion }}</p>
+            </div>
+
+            <div class="flex flex-col gap-2" id="proxima-fecha-controls">
+                <x-ui.select id="proxima-idCategoria" label="Categoría">
+                    <option value="">Todas las categorías</option>
+                    @foreach($categoriasResumen as $categoriaProxima)
+                        <option value="{{ $categoriaProxima->id }}">{{ $categoriaProxima->nombreCategoria }}</option>
+                    @endforeach
+                </x-ui.select>
+
+                <x-ui.select id="proxima-idFecha" label="Fecha">
+                    <option value="">Seleccionar fecha</option>
+                    @foreach($fechasEdicion as $fechaProxima)
+                        <option value="{{ $fechaProxima->id }}" data-categoria="{{ $fechaProxima->idCategoria }}">{{ $fechaProxima->nombre }}</option>
+                    @endforeach
+                </x-ui.select>
+
+                <x-ui.button id="btn-enviar-proxima-fecha" onclick="iniciarEnvioProximaFecha()" class="mt-1 w-full">
+                    Enviar próxima fecha
+                </x-ui.button>
+            </div>
+        </article>
+
+        {{-- Aviso del torneo --}}
+        <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
+            <div>
+                <h2 class="text-base font-bold text-gray-800">Aviso del torneo</h2>
+                <p class="mt-1 text-sm text-gray-500">Un mensaje propio (suspensiones, cambios de cancha, novedades) para los suscriptores que eligieron los avisos.</p>
+            </div>
+
+            <div class="flex flex-col gap-2" id="aviso-torneo-controls">
+                <input type="hidden" id="aviso-idEnvio" value="{{ \Illuminate\Support\Str::uuid() }}">
+
+                <div>
+                    <label for="aviso-titulo" class="mb-1 block text-sm font-medium text-gray-700">Título</label>
+                    <input type="text" id="aviso-titulo" maxlength="{{ \App\Http\Requests\Suscripcion\AvisoTorneoRequest::TITULO_MAXIMO }}"
+                        class="block w-full rounded-md border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30">
+                </div>
+
+                <div>
+                    <label for="aviso-mensaje" class="mb-1 block text-sm font-medium text-gray-700">Mensaje</label>
+                    <textarea id="aviso-mensaje" rows="4" maxlength="{{ \App\Http\Requests\Suscripcion\AvisoTorneoRequest::MENSAJE_MAXIMO }}"
+                        class="block w-full rounded-md border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30"></textarea>
+                </div>
+
+                <x-ui.button id="btn-enviar-aviso-torneo" onclick="iniciarEnvioAvisoTorneo()" class="mt-1 w-full">
+                    Enviar aviso
                 </x-ui.button>
             </div>
         </article>
@@ -214,12 +272,20 @@
     </style>
 
     <script>
-        // El resumen no va por lotes: queda en cola y sale como un único envío a los suscriptores.
+        // Los avisos no van por lotes: quedan en cola y salen como un único envío a los suscriptores.
         const ENDPOINTS = {
             resumen_fecha: {
                 count_route: '{{ route("notificaciones.resumen-fecha.contar") }}',
                 send_route: '{{ route("notificaciones.resumen-fecha.suscriptores") }}',
-            }
+            },
+            proxima_fecha: {
+                count_route: '{{ route("notificaciones.proxima-fecha.contar") }}',
+                send_route: '{{ route("notificaciones.proxima-fecha.suscriptores") }}',
+            },
+            avisos: {
+                count_route: '{{ route("notificaciones.avisos.contar") }}',
+                send_route: '{{ route("notificaciones.avisos.suscriptores") }}',
+            },
         };
 
         const resumenIdCategoriaInput = document.getElementById('resumen-idCategoria');
@@ -300,46 +366,90 @@
         }
 
         /**
-         * Deja en cola el resumen de la fecha para los suscriptores (un único broadcast de Resend).
+         * Textos de cada envío por fecha: el resumen (resultados) y la próxima fecha (programación).
          * Cada fecha y categoría sale una sola vez; solo se puede reintentar un envío fallido.
          */
-        async function iniciarEnvioResumenFecha() {
-            const boton = document.getElementById('btn-enviar-resumen-fecha');
+        const ENVIOS_POR_FECHA = {
+            resumen_fecha: {
+                boton: 'btn-enviar-resumen-fecha',
+                categoria: () => resumenIdCategoriaInput,
+                fecha: () => resumenIdFechaInput,
+                faltaFecha: 'Seleccioná una fecha para enviar el resumen.',
+                sinContenido: 'No hay resultados para enviar en la fecha seleccionada.',
+                yaEnviado: 'Este resumen ya se envió',
+                enCola: 'Este resumen ya está en cola: sale en el próximo minuto.',
+                sinDestinatarios: 'Todavía nadie eligió recibir el resumen de la fecha.',
+                fallido: 'El envío anterior de este resumen falló.',
+                unaVez: 'Cada resumen se envía una sola vez.',
+                encolado: 'Resumen en cola',
+                errorEnvio: 'No se pudo enviar el resumen.',
+            },
+            proxima_fecha: {
+                boton: 'btn-enviar-proxima-fecha',
+                categoria: () => document.getElementById('proxima-idCategoria'),
+                fecha: () => document.getElementById('proxima-idFecha'),
+                faltaFecha: 'Seleccioná una fecha para enviar la programación.',
+                sinContenido: 'No hay partidos programados para la fecha seleccionada.',
+                yaEnviado: 'Esta próxima fecha ya se envió',
+                enCola: 'Esta próxima fecha ya está en cola: sale en el próximo minuto.',
+                sinDestinatarios: 'Todavía nadie eligió recibir la próxima fecha.',
+                fallido: 'El envío anterior de esta próxima fecha falló.',
+                unaVez: 'Cada próxima fecha se envía una sola vez.',
+                encolado: 'Próxima fecha en cola',
+                errorEnvio: 'No se pudo enviar la próxima fecha.',
+            },
+        };
+
+        function iniciarEnvioResumenFecha() {
+            return iniciarEnvioPorFecha('resumen_fecha');
+        }
+
+        function iniciarEnvioProximaFecha() {
+            return iniciarEnvioPorFecha('proxima_fecha');
+        }
+
+        /**
+         * Cuenta los destinatarios, pide confirmación y deja el envío en cola (un único envío a los
+         * suscriptores que eligieron ese aviso).
+         */
+        async function iniciarEnvioPorFecha(tipo) {
+            const textos = ENVIOS_POR_FECHA[tipo];
+            const boton = document.getElementById(textos.boton);
             if (boton?.disabled) {
                 return;
             }
 
-            const idCategoria = resumenIdCategoriaInput?.value || '';
-            const idFecha = resumenIdFechaInput?.value || '';
+            const idCategoria = textos.categoria()?.value || '';
+            const idFecha = textos.fecha()?.value || '';
 
             if (!idFecha) {
-                await Swal.fire('Faltan datos', 'Seleccioná una fecha para enviar el resumen.', 'warning');
+                await Swal.fire('Faltan datos', textos.faltaFecha, 'warning');
                 return;
             }
 
             const datos = { idFecha, ...(idCategoria ? { idCategoria } : {}) };
 
             try {
-                const conteo = await fetch(`${ENDPOINTS.resumen_fecha.count_route}?${new URLSearchParams(datos).toString()}`, {
+                const conteo = await fetch(`${ENDPOINTS[tipo].count_route}?${new URLSearchParams(datos).toString()}`, {
                     headers: { Accept: 'application/json' },
                 });
                 const resumen = await conteo.json();
                 if (!conteo.ok || !resumen.success) {
-                    throw new Error(resumen.message || 'No hay resultados para enviar en la fecha seleccionada.');
+                    throw new Error(resumen.message || textos.sinContenido);
                 }
 
                 if (resumen.envio?.estado === 'enviado') {
-                    await Swal.fire('Ya enviado', `Este resumen ya se envió el ${resumen.envio.enviado_at} a ${resumen.envio.destinatarios} destinatario(s).`, 'info');
+                    await Swal.fire('Ya enviado', `${textos.yaEnviado} el ${resumen.envio.enviado_at} a ${resumen.envio.destinatarios} destinatario(s).`, 'info');
                     return;
                 }
 
                 if (resumen.envio?.estado === 'pendiente') {
-                    await Swal.fire('En cola', 'Este resumen ya está en cola: sale en el próximo minuto.', 'info');
+                    await Swal.fire('En cola', textos.enCola, 'info');
                     return;
                 }
 
                 if (resumen.destinatarios === 0) {
-                    await Swal.fire('Sin destinatarios', 'Todavía nadie eligió recibir el resumen de la fecha.', 'info');
+                    await Swal.fire('Sin destinatarios', textos.sinDestinatarios, 'info');
                     return;
                 }
 
@@ -347,11 +457,11 @@
                 const confirmacion = await Swal.fire({
                     title: reintento ? 'Reintentar el envío' : 'Enviar a suscriptores',
                     html: `<div style="text-align:left">` +
-                        (reintento ? `<p>El envío anterior de este resumen falló.</p>` : '') +
+                        (reintento ? `<p>${textos.fallido}</p>` : '') +
                         `<p><strong>Fecha:</strong> ${resumen.fecha_nombre}</p>` +
                         `<p><strong>Partidos:</strong> ${resumen.partidos_count}</p>` +
                         `<p><strong>Destinatarios:</strong> ${resumen.destinatarios}</p>` +
-                        `<p>Cada resumen se envía una sola vez.</p>` +
+                        `<p>${textos.unaVez}</p>` +
                         `</div>`,
                     icon: 'question',
                     showCancelButton: true,
@@ -368,7 +478,7 @@
                 boton.disabled = true;
                 boton.classList.add('opacity-50', 'cursor-not-allowed');
 
-                const respuesta = await fetch(ENDPOINTS.resumen_fecha.send_route, {
+                const respuesta = await fetch(ENDPOINTS[tipo].send_route, {
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',
@@ -379,12 +489,125 @@
                 });
                 const envio = await respuesta.json();
                 if (!respuesta.ok || !envio.success) {
-                    throw new Error(envio.message || 'No se pudo enviar el resumen.');
+                    throw new Error(envio.message || textos.errorEnvio);
                 }
 
-                await Swal.fire('Resumen en cola', envio.message, 'success');
+                await Swal.fire(textos.encolado, envio.message, 'success');
             } catch (error) {
-                await Swal.fire('No se pudo enviar', error.message || 'Error al enviar el resumen.', 'error');
+                await Swal.fire('No se pudo enviar', error.message || textos.errorEnvio, 'error');
+            } finally {
+                if (boton) {
+                    boton.disabled = false;
+                    boton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+
+        /**
+         * La lista de fechas de la próxima fecha se filtra en el navegador por la categoría elegida.
+         */
+        function filtrarFechasProxima() {
+            const categoria = document.getElementById('proxima-idCategoria');
+            const fecha = document.getElementById('proxima-idFecha');
+            if (!categoria || !fecha) {
+                return;
+            }
+
+            Array.from(fecha.options).forEach((option) => {
+                const visible = !option.dataset.categoria || !categoria.value || option.dataset.categoria === categoria.value;
+                option.hidden = !visible;
+                if (!visible && option.selected) {
+                    fecha.selectedIndex = 0;
+                }
+            });
+        }
+
+        document.getElementById('proxima-idCategoria')?.addEventListener('change', filtrarFechasProxima);
+
+        function escaparHtml(texto) {
+            const nodo = document.createElement('div');
+            nodo.textContent = texto;
+            return nodo.innerHTML;
+        }
+
+        /**
+         * Deja en cola el aviso libre del torneo. El identificador de la carga del formulario evita
+         * mandarlo dos veces; después de encolarlo, el formulario se prepara para un aviso nuevo.
+         */
+        async function iniciarEnvioAvisoTorneo() {
+            const boton = document.getElementById('btn-enviar-aviso-torneo');
+            const idEnvio = document.getElementById('aviso-idEnvio');
+            const titulo = document.getElementById('aviso-titulo');
+            const mensaje = document.getElementById('aviso-mensaje');
+            if (boton?.disabled) {
+                return;
+            }
+
+            if (!titulo.value.trim() || !mensaje.value.trim()) {
+                await Swal.fire('Faltan datos', 'Escribí el título y el mensaje del aviso.', 'warning');
+                return;
+            }
+
+            try {
+                const conteo = await fetch(ENDPOINTS.avisos.count_route, { headers: { Accept: 'application/json' } });
+                const resumen = await conteo.json();
+                if (!conteo.ok || !resumen.success) {
+                    throw new Error(resumen.message || 'No se pudo contar a los destinatarios.');
+                }
+
+                if (resumen.destinatarios === 0) {
+                    await Swal.fire('Sin destinatarios', 'Todavía nadie eligió recibir los avisos del torneo.', 'info');
+                    return;
+                }
+
+                const confirmacion = await Swal.fire({
+                    title: 'Enviar a suscriptores',
+                    html: `<div style="text-align:left">` +
+                        `<p><strong>Título:</strong> ${escaparHtml(titulo.value.trim())}</p>` +
+                        `<p><strong>Destinatarios:</strong> ${resumen.destinatarios}</p>` +
+                        `<p>El aviso se envía una sola vez.</p>` +
+                        `</div>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, enviar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#6b7280',
+                });
+
+                if (!confirmacion.isConfirmed) {
+                    return;
+                }
+
+                boton.disabled = true;
+                boton.classList.add('opacity-50', 'cursor-not-allowed');
+
+                const respuesta = await fetch(ENDPOINTS.avisos.send_route, {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    },
+                    body: JSON.stringify({ id_envio: idEnvio.value, titulo: titulo.value, mensaje: mensaje.value }),
+                });
+                const envio = await respuesta.json();
+                if (!respuesta.ok || !envio.success) {
+                    const errores = envio.errors ? Object.values(envio.errors).flat().join(' ') : '';
+                    throw new Error(errores || envio.message || 'No se pudo enviar el aviso.');
+                }
+
+                titulo.value = '';
+                mensaje.value = '';
+                if (window.crypto?.randomUUID) {
+                    idEnvio.value = window.crypto.randomUUID();
+                    await Swal.fire('Aviso en cola', envio.message, 'success');
+                } else {
+                    await Swal.fire('Aviso en cola', envio.message, 'success');
+                    window.location.reload();
+                }
+            } catch (error) {
+                await Swal.fire('No se pudo enviar', error.message || 'Error al enviar el aviso.', 'error');
             } finally {
                 if (boton) {
                     boton.disabled = false;

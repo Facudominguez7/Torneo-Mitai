@@ -214,6 +214,14 @@ Route::prefix('Panel/notificaciones')->middleware([UserAccesPanelMiddleware::cla
         ->name('notificaciones.resumen-fecha.contar');
     Route::post('/resumen-fecha/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarResumenFecha'])
         ->name('notificaciones.resumen-fecha.suscriptores');
+    Route::get('/proxima-fecha/contar', [ControladorEnvioSuscriptores::class, 'contarProximaFecha'])
+        ->name('notificaciones.proxima-fecha.contar');
+    Route::post('/proxima-fecha/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarProximaFecha'])
+        ->name('notificaciones.proxima-fecha.suscriptores');
+    Route::get('/avisos/contar', [ControladorEnvioSuscriptores::class, 'contarAvisoTorneo'])
+        ->name('notificaciones.avisos.contar');
+    Route::post('/avisos/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarAvisoTorneo'])
+        ->name('notificaciones.avisos.suscriptores');
 });
 
 // Rutas para gestión de suscripción a emails de notificación

@@ -10,6 +10,11 @@ class EnvioSuscriptores extends Model
 {
     public const TIPO_RESUMEN_FECHA = 'resumen_fecha';
 
+    public const TIPO_PROXIMA_FECHA = 'proxima_fecha';
+
+    /** Mensaje libre del administrador: su título y texto quedan en contenido. */
+    public const TIPO_AVISOS = 'avisos';
+
     /** Aviso único a los usuarios que se pasaron a la lista de suscriptores: su clave es fija. */
     public const TIPO_AVISO_MIGRACION = 'aviso_migracion';
 
@@ -24,7 +29,7 @@ class EnvioSuscriptores extends Model
     protected $table = 'envios_suscriptores';
 
     protected $fillable = [
-        'tipo', 'clave', 'idEdicion', 'idFecha', 'idCategoria', 'usuario_id', 'estado', 'destinatarios', 'broadcast_id', 'enviado_at',
+        'tipo', 'clave', 'idEdicion', 'idFecha', 'idCategoria', 'contenido', 'usuario_id', 'estado', 'destinatarios', 'broadcast_id', 'enviado_at',
     ];
 
     protected function casts(): array
@@ -33,6 +38,7 @@ class EnvioSuscriptores extends Model
             'idEdicion' => 'integer',
             'idFecha' => 'integer',
             'idCategoria' => 'integer',
+            'contenido' => 'array',
             'destinatarios' => 'integer',
             'enviado_at' => 'datetime',
         ];
@@ -41,6 +47,17 @@ class EnvioSuscriptores extends Model
     public static function claveResumenFecha(int $idFecha, ?int $idCategoria): string
     {
         return self::TIPO_RESUMEN_FECHA.':'.$idFecha.':'.($idCategoria ?? 'todas');
+    }
+
+    public static function claveProximaFecha(int $idFecha, ?int $idCategoria): string
+    {
+        return self::TIPO_PROXIMA_FECHA.':'.$idFecha.':'.($idCategoria ?? 'todas');
+    }
+
+    /** Cada carga del formulario de avisos trae su identificador: es el candado contra el doble envío. */
+    public static function claveAvisoTorneo(string $idEnvio): string
+    {
+        return self::TIPO_AVISOS.':'.$idEnvio;
     }
 
     public function usuario(): BelongsTo

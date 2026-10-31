@@ -4,7 +4,7 @@ namespace App\Http\Requests\Suscripcion;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-/** Fecha (y categoría opcional) del resumen que el administrador cuenta o envía a los suscriptores. */
+/** Fecha (y categoría opcional) del resumen o de la próxima fecha que el administrador cuenta o envía a los suscriptores. */
 class ResumenFechaRequest extends FormRequest
 {
     public function authorize(): bool

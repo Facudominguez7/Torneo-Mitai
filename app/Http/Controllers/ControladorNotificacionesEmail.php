@@ -76,6 +76,7 @@ class ControladorNotificacionesEmail extends Controller
 
         $categoriasResumen = collect();
         $fechasResumen = collect();
+        $fechasEdicion = collect();
 
         if ($resumenIdEdicion > 0) {
             $categoriasResumen = Categoria::query()
@@ -93,6 +94,12 @@ class ControladorNotificacionesEmail extends Controller
             $fechasResumen = $consultaFechas
                 ->orderBy('id')
                 ->get(['id', 'nombre', 'idCategoria']);
+
+            // La próxima fecha filtra por categoría en el navegador: necesita todas las fechas.
+            $fechasEdicion = Fecha::query()
+                ->where('idEdicion', $resumenIdEdicion)
+                ->orderBy('id')
+                ->get(['id', 'nombre', 'idCategoria']);
         }
 
         return view('Panel.suscriptores-email', compact(
@@ -101,6 +108,7 @@ class ControladorNotificacionesEmail extends Controller
             'EdicionSeleccionada',
             'categoriasResumen',
             'fechasResumen',
+            'fechasEdicion',
             'resumenIdEdicion',
             'resumenNombreEdicion',
             'resumenIdCategoria',
