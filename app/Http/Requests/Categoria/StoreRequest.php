@@ -26,6 +26,19 @@ class StoreRequest extends FormRequest
             'nombreCategoria' => 'required|min:5|max:50',
             'idEdicion' => 'required|integer',
             'jugadores_maximos' => 'nullable|integer|min:1|max:100',
+            'anio_desde' => 'nullable|integer|min:2000|max:2099|required_with:anio_hasta',
+            'anio_hasta' => 'nullable|integer|min:2000|max:2099|gte:anio_desde',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'anio_desde.required_with' => 'Completá el año desde para cargar el año hasta.',
+            'anio_hasta.gte' => 'El año hasta no puede ser anterior al año desde.',
         ];
     }
 }
