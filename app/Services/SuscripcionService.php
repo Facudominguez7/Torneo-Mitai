@@ -49,7 +49,7 @@ class SuscripcionService
             }
             if ($verificadoPorCuenta) {
                 $suscriptor->usuario_id = $usuario->id;
-                $suscriptor->forceFill(['confirmado_at' => now(), 'baja_at' => null, 'resend_sincronizado_at' => null]);
+                $suscriptor->forceFill(['confirmado_at' => now(), 'baja_at' => null, 'resend_sincronizado_at' => null, 'cambio_local_ms' => now()->getTimestampMs()]);
             }
             $suscriptor->save();
             $suscriptor->equipos()->sync($idsEquipos);
@@ -78,7 +78,7 @@ class SuscripcionService
         }
 
         if (! $suscriptor->estaActivo()) {
-            $suscriptor->forceFill(['confirmado_at' => now(), 'baja_at' => null, 'resend_sincronizado_at' => null])->save();
+            $suscriptor->forceFill(['confirmado_at' => now(), 'baja_at' => null, 'resend_sincronizado_at' => null, 'cambio_local_ms' => now()->getTimestampMs()])->save();
             SincronizarSuscriptorResend::dispatch($suscriptor->id);
         }
 
@@ -101,7 +101,7 @@ class SuscripcionService
             $suscriptor->forceFill([
                 'confirmado_at' => $suscriptor->confirmado_at ?? now(),
                 'baja_at' => null,
-                'resend_sincronizado_at' => null,
+                'resend_sincronizado_at' => null, 'cambio_local_ms' => now()->getTimestampMs(),
             ])->save();
             $suscriptor->equipos()->sync($idsEquipos);
         });
@@ -112,7 +112,7 @@ class SuscripcionService
     public function darDeBaja(Suscriptor $suscriptor): void
     {
         if ($suscriptor->baja_at === null) {
-            $suscriptor->forceFill(['baja_at' => now(), 'resend_sincronizado_at' => null])->save();
+            $suscriptor->forceFill(['baja_at' => now(), 'resend_sincronizado_at' => null, 'cambio_local_ms' => now()->getTimestampMs()])->save();
             SincronizarSuscriptorResend::dispatch($suscriptor->id);
         }
     }
@@ -143,8 +143,8 @@ class SuscripcionService
 
     /**
      * Aplica un cambio que el suscriptor hizo desde Resend, sin encolar otra sincronización: Resend ya lo tiene.
-     * Se ignora si el suscriptor cambió algo acá después del evento, porque ese cambio local es el vigente
-     * (y es también el eco de nuestra propia sincronización, que llega como evento).
+     * Se ignora si la persona cambió algo en el sitio después del evento: ese cambio local es el vigente.
+     * Se compara con cambio_local_ms y no con updated_at, que también mueven la sincronización y otros eventos.
      *
      * @param  array<string, mixed>  $datos  campo data del evento
      */
@@ -153,7 +153,7 @@ class SuscripcionService
         $email = mb_strtolower(trim((string) ($datos['email'] ?? '')));
         $suscriptor = $email === '' ? null : Suscriptor::query()->where('email', $email)->first();
 
-        if ($suscriptor === null || $suscriptor->updated_at?->greaterThanOrEqualTo($emitido)) {
+        if ($suscriptor === null || ($suscriptor->cambio_local_ms !== null && $suscriptor->cambio_local_ms >= $emitido->getTimestampMs())) {
             return;
         }
 

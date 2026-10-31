@@ -98,3 +98,27 @@ it('no hace nada si el suscriptor ya esta sincronizado, no existe o la sincroniz
 
     expect($historial)->toHaveCount(0);
 });
+
+it('un cambio guardado mientras corre la sincronizacion queda pendiente y lo lleva el job siguiente', function (): void {
+    $historial = resendFalso([
+        respuestaResend(['object' => 'contact', 'id' => 'contacto-1']),
+        respuestaResend(['object' => 'contact', 'id' => 'contacto-1']),
+        respuestaResend(['object' => 'contact', 'id' => 'contacto-1']),
+        respuestaResend(['object' => 'contact', 'id' => 'contacto-1']),
+    ]);
+    $suscriptor = Suscriptor::factory()->activo()->create(['resend_contacto_id' => 'contacto-1', 'cambio_local_ms' => now()->subMinute()->getTimestampMs()]);
+    $leidoPorElPrimero = $suscriptor->fresh();
+
+    // La persona guarda preferencias mientras el primer job todavía está hablando con Resend.
+    Queue::fake();
+    app(SuscripcionService::class)->actualizarPreferencias($suscriptor->fresh(), [], ['avisos']);
+    app(SincronizacionResendService::class)->sincronizar($leidoPorElPrimero);
+
+    expect($suscriptor->fresh()->resend_sincronizado_at)->toBeNull();
+
+    (new SincronizarSuscriptorResend($suscriptor->id))->withFakeQueueInteractions()->handle(app(SincronizacionResendService::class));
+
+    expect($historial)->toHaveCount(4)
+        ->and(pedidoResend($historial, 3)['cuerpo'])->toContain(['id' => 'topico-avisos', 'subscription' => 'opt_in'])
+        ->and($suscriptor->fresh()->resend_sincronizado_at)->not->toBeNull();
+});

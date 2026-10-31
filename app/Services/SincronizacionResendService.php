@@ -25,6 +25,8 @@ class SincronizacionResendService
             return false;
         }
 
+        $cambioLeido = $suscriptor->cambio_local_ms;
+
         try {
             $suscriptor->estaActivo() ? $this->publicar($suscriptor) : $this->marcarBaja($suscriptor);
         } catch (Throwable $error) {
@@ -38,7 +40,12 @@ class SincronizacionResendService
             return false;
         }
 
-        $suscriptor->forceFill(['resend_sincronizado_at' => now()])->save();
+        // Si la persona cambió algo mientras tanto, queda pendiente: lo lleva el job que encoló ese cambio.
+        Suscriptor::query()
+            ->whereKey($suscriptor->id)
+            ->where('cambio_local_ms', $cambioLeido)
+            ->update(['resend_sincronizado_at' => now()]);
+        $suscriptor->refresh();
 
         return true;
     }

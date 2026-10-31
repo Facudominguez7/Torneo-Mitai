@@ -56,10 +56,12 @@ function enviarWebhook(string $cuerpo, array $encabezados): TestResponse
 
 function suscriptorAnterior(array $atributos = []): Suscriptor
 {
-    $suscriptor = Suscriptor::factory()->activo()->create(['email' => 'madre@correo.com', 'resend_sincronizado_at' => now()->subHour(), ...$atributos]);
-    Suscriptor::query()->whereKey($suscriptor->id)->update(['updated_at' => now()->subHour()]);
-
-    return $suscriptor->fresh();
+    return Suscriptor::factory()->activo()->create([
+        'email' => 'madre@correo.com',
+        'resend_sincronizado_at' => now()->subHour(),
+        'cambio_local_ms' => now()->subHour()->getTimestampMs(),
+        ...$atributos,
+    ]);
 }
 
 it('da de baja al suscriptor que se desuscribio desde resend, sin volver a sincronizarlo', function (): void {
@@ -124,9 +126,22 @@ it('deja pendiente el cambio local que todavia no llego a resend', function (): 
         ->and($suscriptor->resend_sincronizado_at)->toBeNull();
 });
 
+it('aplica en orden los eventos seguidos aunque el anterior se haya procesado despues', function (): void {
+    $suscriptor = suscriptorAnterior(['recibe_resumen_fecha' => true]);
+    $topicos = eventoResend('contact.topics.updated', ['email' => 'madre@correo.com', 'topics' => [['id' => 'topico-resumen', 'subscription' => 'opt_out']]], now()->subSeconds(10)->toIso8601ZuluString('millisecond'));
+    $baja = eventoResend('contact.updated', ['email' => 'madre@correo.com', 'unsubscribed' => true], now()->subSeconds(8)->toIso8601ZuluString('millisecond'));
+
+    enviarWebhook($topicos, encabezadosWebhook($topicos, 'msg_topicos'))->assertNoContent();
+    enviarWebhook($baja, encabezadosWebhook($baja, 'msg_baja'))->assertNoContent();
+
+    $suscriptor->refresh();
+    expect($suscriptor->recibe_resumen_fecha)->toBeFalse()
+        ->and($suscriptor->estaActivo())->toBeFalse();
+});
+
 it('ignora el evento anterior al ultimo cambio local', function (): void {
-    $suscriptor = suscriptorAnterior();
-    $cuerpo = eventoResend('contact.updated', ['email' => 'madre@correo.com', 'unsubscribed' => true], now()->subHours(2)->toIso8601ZuluString());
+    $suscriptor = suscriptorAnterior(['cambio_local_ms' => now()->subSecond()->getTimestampMs()]);
+    $cuerpo = eventoResend('contact.updated', ['email' => 'madre@correo.com', 'unsubscribed' => true], now()->subSeconds(2)->toIso8601ZuluString('millisecond'));
 
     enviarWebhook($cuerpo, encabezadosWebhook($cuerpo))->assertNoContent();
 
@@ -138,7 +153,7 @@ it('procesa una sola vez el mismo evento aunque resend lo reintente', function (
     $cuerpo = eventoResend('contact.topics.updated', ['email' => 'madre@correo.com', 'topics' => [['id' => 'topico-resumen', 'subscription' => 'opt_out']]]);
 
     enviarWebhook($cuerpo, encabezadosWebhook($cuerpo, 'msg_repetido'))->assertNoContent();
-    Suscriptor::query()->whereKey($suscriptor->id)->update(['recibe_resumen_fecha' => true, 'updated_at' => now()->subHour()]);
+    Suscriptor::query()->whereKey($suscriptor->id)->update(['recibe_resumen_fecha' => true]);
     enviarWebhook($cuerpo, encabezadosWebhook($cuerpo, 'msg_repetido'))->assertNoContent();
 
     expect($suscriptor->fresh()->recibe_resumen_fecha)->toBeTrue();

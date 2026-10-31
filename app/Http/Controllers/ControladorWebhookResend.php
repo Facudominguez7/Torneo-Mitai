@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Services\FirmaWebhookResend;
 use App\Services\SuscripcionService;
+use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 
 /**
  * Recibe de Resend las bajas y cambios de tópicos que el suscriptor hace desde allá
@@ -37,19 +37,22 @@ class ControladorWebhookResend extends Controller
         }
 
         // Resend reintenta los envíos que no confirmamos: el mismo evento puede llegar más de una vez.
+        // Se marca recién después de aplicarlo, así un corte a mitad de camino deja que Resend lo reintente.
         $claveEvento = 'resend-webhook:'.$idEvento;
-        if (! Cache::add($claveEvento, true, now()->addDay())) {
+        if (Cache::has($claveEvento)) {
             return response('', 204);
         }
 
         try {
-            $suscripciones->aplicarCambioDesdeResend($tipo, $datos, Carbon::parse((string) $request->json('created_at', 'now')));
-        } catch (Throwable $error) {
-            // Sin marcarlo como procesado: Resend lo vuelve a mandar.
-            Cache::forget($claveEvento);
+            $emitido = Carbon::parse((string) $request->json('created_at'));
+        } catch (InvalidFormatException) {
+            Log::warning('Webhook de Resend con fecha ilegible.', ['tipo' => $tipo]);
 
-            throw $error;
+            return response('', 204);
         }
+
+        $suscripciones->aplicarCambioDesdeResend($tipo, $datos, $emitido);
+        Cache::put($claveEvento, true, now()->addDay());
 
         return response('', 204);
     }
