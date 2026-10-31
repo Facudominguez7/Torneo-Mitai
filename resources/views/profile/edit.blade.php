@@ -1,101 +1,98 @@
 <x-app-layout :idEdicion="$EdicionSeleccionada ? $EdicionSeleccionada->id : null">
+    {{-- Perfil con el diseño "Reglamento": comparte cabecera, índice y tema con las páginas legales. --}}
     @php
         $usuario = auth()->user();
-        $edicionActiva = $EdicionSeleccionada ?? $ultimaEdicion ?? null;
-        $locale = app()->getLocale() ?? 'es';
-        $fechaRegistro = $usuario?->created_at
-            ? $usuario->created_at->copy()->locale($locale)->translatedFormat('d \de F \de Y')
-            : null;
+        $nombre = $usuario->name ?: $usuario->email;
+        $fechaRegistro = $usuario->created_at?->copy()->locale(app()->getLocale())->translatedFormat('d \de F \de Y');
+        $rol = match ($usuario->rol) {
+            'admin' => 'Administrador',
+            'editor' => 'Editor',
+            default => 'Usuario',
+        };
+        $secciones = array_filter([
+            'datos' => 'Tus datos',
+            'contrasena' => $usuario->google_id ? null : 'Contraseña',
+            'eliminar' => 'Eliminar cuenta',
+        ]);
+        $numeros = array_flip(array_keys($secciones));
+        $numero = fn (string $ancla): string => str_pad((string) ($numeros[$ancla] + 1), 2, '0', STR_PAD_LEFT);
     @endphp
 
-    <div class="relative isolate overflow-hidden">
-        <div class="absolute inset-0">
-            <img src="{{ asset('fotos/fondo_en_cancha.webp') }}" alt="Fondo cancha"
-                class="h-full w-full object-cover object-center">
-            <div class="absolute inset-0 bg-gradient-to-b from-black/85 via-black/80 to-black/90"></div>
-        </div>
+    <div class="legal perfil">
+        <header class="legal-cabecera">
+            <svg aria-hidden="true" class="legal-lineas" viewBox="0 0 620 340" fill="none">
+                <rect x="20" y="20" width="700" height="300" rx="4" />
+                <circle cx="320" cy="170" r="90" />
+                <line x1="320" y1="20" x2="320" y2="320" />
+            </svg>
 
-        <div class="relative pb-16">
-            <section class="mx-auto max-w-6xl px-4 pt-12 sm:px-6 lg:px-8">
-                <div class="overflow-hidden rounded-3xl border border-white/10 bg-white/5 px-6 py-8 shadow-[0_32px_88px_-48px_rgba(0,0,0,0.9)] backdrop-blur">
-                    <div class="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-                        <div class="flex flex-col gap-6 sm:flex-row sm:items-center">
-                            <div class="relative h-24 w-24 overflow-hidden rounded-3xl border border-white/15 bg-black/40 p-1 shadow-[0_18px_42px_-30px_rgba(255,255,255,0.8)]">
-                                @if (!empty($usuario?->google_avatar))
-                                    <img src="{{ $usuario->google_avatar }}" alt="Avatar de {{ $usuario->name ?? $usuario->email }}"
-                                        class="h-full w-full rounded-[1.25rem] object-cover">
-                                @else
-                                    <div class="flex h-full w-full items-center justify-center rounded-[1.25rem] bg-gradient-to-br from-yellow-500/60 via-orange-500/50 to-rose-500/60 text-3xl font-bold text-white">
-                                        {{ mb_substr($usuario->name ?? $usuario->email, 0, 1) }}
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="space-y-2">
-                                <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
-                                    Perfil
-                                </span>
-                                <h1 class="text-3xl font-bold text-white">
-                                    {{ $usuario->name ?? $usuario->email }}
-                                </h1>
-                                <div class="flex flex-wrap items-center gap-3 text-sm text-white/60">
-                                    <span class="inline-flex items-center gap-2">
-                                        <i class="fa-regular fa-envelope text-yellow-300"></i>
-                                        {{ $usuario->email }}
-                                    </span>
-                                    @if ($fechaRegistro)
-                                        <span class="inline-flex items-center gap-2">
-                                            <i class="fa-regular fa-calendar text-emerald-300"></i>
-                                            {{ __('Miembro desde') }} {{ $fechaRegistro }}
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col gap-4 text-sm text-white/70">
-                            <div class="flex flex-wrap gap-3">
-                                @if ($edicionActiva)
-                                    <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                        <i class="fa-solid fa-trophy text-yellow-200"></i>
-                                        {{ $edicionActiva->nombre }}
-                                    </span>
-                                @endif
-                                <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-                                    <i class="fa-solid fa-user-shield text-sky-300"></i>
-                                    {{ strtoupper($usuario->rol ?? 'jugador') }}
-                                </span>
-                                @if ($usuario->google_id)
-                                    <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200/40 bg-emerald-400/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-emerald-100">
-                                        <i class="fa-brands fa-google"></i>
-                                        {{ __('Cuenta vinculada con Google') }}
-                                    </span>
-                                @endif
-                            </div>
-                            <p class="max-w-md text-sm text-white/60">
-                                {{ __('Desde aquí podés administrar tu presencia en el torneo, actualizar tus datos y gestionar la seguridad de tu cuenta.') }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="mx-auto mt-10 max-w-6xl space-y-8 px-4 sm:px-6 lg:px-8">
-                <div class="grid gap-6 lg:grid-cols-2">
-                    <div class="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_-48px_rgba(0,0,0,0.85)] backdrop-blur">
-                        @include('profile.partials.update-profile-information-form')
-                    </div>
-
-                    @if (!$usuario->google_id)
-                        <div class="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_-48px_rgba(0,0,0,0.85)] backdrop-blur">
-                            @include('profile.partials.update-password-form')
-                        </div>
+            <div class="legal-cabecera-in perfil-cabecera">
+                <div class="perfil-avatar" aria-hidden="true">
+                    @if ($usuario->google_avatar)
+                        <img src="{{ $usuario->google_avatar }}" alt="" referrerpolicy="no-referrer"
+                            onerror="this.hidden = true; this.nextElementSibling.hidden = false">
+                        <span hidden>{{ mb_strtoupper(mb_substr($nombre, 0, 1)) }}</span>
+                    @else
+                        <span>{{ mb_strtoupper(mb_substr($nombre, 0, 1)) }}</span>
                     @endif
-
-                    <div class="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_-48px_rgba(0,0,0,0.85)] backdrop-blur">
-                        @include('profile.partials.delete-user-form')
-                    </div>
                 </div>
-            </section>
+
+                <div class="min-w-0">
+                    <span class="legal-sobre">Tu cuenta</span>
+                    <h1 class="legal-titulo perfil-nombre">{{ $nombre }}</h1>
+                    <p class="legal-meta">
+                        <span class="perfil-correo">{{ $usuario->email }}</span>
+                        @if ($fechaRegistro)
+                            <span>Desde {{ $fechaRegistro }}</span>
+                        @endif
+                        <span>{{ $rol }}</span>
+                        @if ($usuario->google_id)
+                            <span class="perfil-google">Con Google</span>
+                        @endif
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        <div class="legal-cuerpo">
+            <details class="legal-indice-movil">
+                <summary>Secciones <span>{{ count($secciones) }} secciones</span></summary>
+                <ol>
+                    @foreach ($secciones as $ancla => $titulo)
+                        <li><a href="#{{ $ancla }}"><span>{{ $numero($ancla) }}</span>{{ $titulo }}</a></li>
+                    @endforeach
+                </ol>
+            </details>
+
+            <nav class="legal-indice" aria-label="Secciones del perfil">
+                <p>En esta página</p>
+                <ol>
+                    @foreach ($secciones as $ancla => $titulo)
+                        <li><a href="#{{ $ancla }}" @class(['perfil-indice-peligro' => $ancla === 'eliminar'])><span>{{ $numero($ancla) }}</span>{{ $titulo }}</a></li>
+                    @endforeach
+                </ol>
+            </nav>
+
+            <div class="perfil-secciones">
+                <section id="datos" class="perfil-seccion">
+                    <h2><span>{{ $numero('datos') }}</span>Tus datos</h2>
+                    <p class="perfil-descripcion">El nombre aparece en el menú y en los correos del torneo.</p>
+                    @include('profile.partials.update-profile-information-form')
+                </section>
+
+                @isset($secciones['contrasena'])
+                    <section id="contrasena" class="perfil-seccion">
+                        <h2><span>{{ $numero('contrasena') }}</span>Contraseña</h2>
+                        <p class="perfil-descripcion">Usá al menos ocho caracteres.</p>
+                        @include('profile.partials.update-password-form')
+                    </section>
+                @endisset
+
+                <section id="eliminar" class="perfil-seccion perfil-seccion--peligro">
+                    <h2><span>{{ $numero('eliminar') }}</span>Eliminar cuenta</h2>
+                    @include('profile.partials.delete-user-form')
+                </section>
+            </div>
         </div>
     </div>
 </x-app-layout>

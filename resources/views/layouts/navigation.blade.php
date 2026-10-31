@@ -182,8 +182,13 @@
             actualizar();
             @else
             if (!barra || !centinela || !('IntersectionObserver' in window)) return;
+            // Compactar achica la barra. Con scroll anchoring el navegador descuenta esa altura del scroll, vuelve a 0 y la barra se
+            // expande otra vez (bucle). Sin anchoring, alcanza con no compactar cuando la página no tiene recorrido para absorberlo.
+            document.documentElement.style.overflowAnchor = 'none';
             new IntersectionObserver(function (entrada) {
-                barra.classList.toggle('nav-compacta', !entrada[0].isIntersecting);
+                const recorrido = document.documentElement.scrollHeight - window.innerHeight;
+                const compacta = barra.classList.contains('nav-compacta');
+                barra.classList.toggle('nav-compacta', !entrada[0].isIntersecting && (compacta || recorrido > barra.offsetHeight + 16));
             }).observe(centinela);
             @endif
         });

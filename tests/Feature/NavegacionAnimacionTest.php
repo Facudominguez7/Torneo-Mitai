@@ -21,6 +21,14 @@ it('mantiene la navegacion anterior en perfil autenticado', function () {
         ->not->toContain('nav-compactable', 'window.scrollY');
 });
 
+it('no compacta la navegacion del perfil si la pagina no tiene recorrido para absorberlo', function () {
+    $usuario = User::factory()->create();
+    $html = html_entity_decode($this->actingAs($usuario)->get(route('profile.edit'))->assertOk()->getContent());
+
+    expect($html)->toContain('document.documentElement.scrollHeight - window.innerHeight', 'barra.offsetHeight')
+        ->toContain("document.documentElement.style.overflowAnchor = 'none'");
+});
+
 it('aplica la compactacion publica tambien a usuarios autenticados y conserva el observador movil', function () {
     Edicion::create(['nombre' => 'Edición navegación']);
     $usuario = User::factory()->create();
