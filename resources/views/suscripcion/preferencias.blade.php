@@ -10,10 +10,7 @@
         $avisosMarcados = $conDatosPrevios
             ? (array) old('avisos', [])
             : array_keys(array_filter(array_map(fn (array $aviso): bool => $aviso[2], $avisos)));
-        $equiposMarcados = $conDatosPrevios ? array_map('intval', (array) old('equipos', [])) : $suscriptor->equipos->pluck('id')->all();
-        $maxEquipos = (int) config('suscripciones.max_equipos');
         $errorAvisos = $errores->first('avisos') ?: $errores->first('avisos.*');
-        $errorEquipos = $errores->first('equipos') ?: $errores->first('equipos.*');
     @endphp
 
     <div class="flex flex-col gap-1.5">
@@ -42,37 +39,6 @@
             @endforeach
             @if ($errorAvisos)
                 <p id="preferencias-avisos-error" class="text-sm text-red-300">{{ $errorAvisos }}</p>
-            @endif
-        </fieldset>
-
-        <fieldset class="flex flex-col gap-2" @if ($errorEquipos) aria-describedby="preferencias-equipos-error" @endif>
-            <legend class="mb-2 text-[15px] font-semibold text-white/90">Resultados de tus equipos</legend>
-            <p class="text-sm text-white/70">Un correo al cerrar cada fecha, con los resultados de los equipos que seguís (hasta {{ $maxEquipos }}).</p>
-
-            @foreach ($suscriptor->equipos as $equipo)
-                <x-suscripcion.opcion nombre="equipos[]" :valor="$equipo->id" :marcado="in_array($equipo->id, $equiposMarcados, true)"
-                    :detalle="$equipo->categoria?->nombreCategoria">
-                    {{ $equipo->nombre }}
-                </x-suscripcion.opcion>
-            @endforeach
-
-            @if ($suscriptor->equipos->count() < $maxEquipos && $equiposDisponibles->isNotEmpty())
-                <label for="preferencias-sumar-equipo" class="mt-1 text-sm font-semibold text-white/90">Sumar un equipo</label>
-                <select id="preferencias-sumar-equipo" name="equipos[]"
-                    class="h-12 w-full rounded-[10px] border border-white/20 bg-brand-navy-deep px-3.5 text-base text-white transition focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/30">
-                    <option value="">Elegí un equipo</option>
-                    @foreach ($equiposDisponibles->groupBy('nombreCategoria') as $categoria => $equiposCategoria)
-                        <optgroup label="{{ $categoria ?: 'Sin categoría' }}">
-                            @foreach ($equiposCategoria as $equipo)
-                                <option value="{{ $equipo['id'] }}">{{ $equipo['nombre'] }}</option>
-                            @endforeach
-                        </optgroup>
-                    @endforeach
-                </select>
-            @endif
-
-            @if ($errorEquipos)
-                <p id="preferencias-equipos-error" class="text-sm text-red-300">{{ $errorEquipos }}</p>
             @endif
         </fieldset>
 

@@ -29,7 +29,7 @@ it('la home trae el formulario de avisos para la tarjeta del equipo seguido', fu
         ->assertSee('id="seguir-equipo-suscripcion"', false)
         ->assertSee('action="'.route('suscripcion.store').'"', false)
         ->assertSee('Avisame por correo')
-        ->assertSee('data-rol="equipo-id"', false)
+        ->assertDontSee('name="equipos[]"', false)
         ->assertSee('value="resumen_fecha" checked', false)
         ->assertSee('value="proxima_fecha" checked', false)
         ->assertDontSee('value="avisos" checked', false)
@@ -58,7 +58,7 @@ it('la home muestra el error de la suscripcion y conserva el correo escrito', fu
         ->assertSee('value="no-es-un-correo"', false);
 });
 
-it('pide al menos un aviso o un equipo', function (): void {
+it('pide al menos un aviso', function (): void {
     $this->withSession(['_token' => 'token-suscripcion'])
         ->from(route('suscripcion.create'))
         ->post(route('suscripcion.store'), ['_token' => 'token-suscripcion', 'email' => 'tio@correo.com', 'avisos' => ''])
@@ -67,19 +67,28 @@ it('pide al menos un aviso o un equipo', function (): void {
     expect(Suscriptor::query()->count())->toBe(0);
 });
 
-it('suscribe solo a los resultados del equipo si no marca otros avisos', function (): void {
+it('ignora los equipos que lleguen en el pedido', function (): void {
+    $equipo = suscripcionPublicaEquipo();
+
+    $this->withSession(['_token' => 'token-suscripcion'])
+        ->from(route('home'))
+        ->post(route('suscripcion.store'), ['_token' => 'token-suscripcion', 'email' => 'tio@correo.com', 'equipos' => [$equipo->id], 'avisos' => ['resumen_fecha']])
+        ->assertSessionHasNoErrors();
+
+    $suscriptor = Suscriptor::query()->sole();
+    expect($suscriptor->recibe_resumen_fecha)->toBeTrue()
+        ->and($suscriptor->equipos)->toBeEmpty();
+});
+
+it('con solo equipos y sin avisos pide elegir un aviso', function (): void {
     $equipo = suscripcionPublicaEquipo();
 
     $this->withSession(['_token' => 'token-suscripcion'])
         ->from(route('home'))
         ->post(route('suscripcion.store'), ['_token' => 'token-suscripcion', 'email' => 'tio@correo.com', 'equipos' => [$equipo->id], 'avisos' => ''])
-        ->assertSessionHasNoErrors();
+        ->assertSessionHasErrors(['avisos' => 'Elegí al menos un aviso.'], null, 'suscripcion');
 
-    $suscriptor = Suscriptor::query()->sole();
-    expect($suscriptor->recibe_resumen_fecha)->toBeFalse()
-        ->and($suscriptor->recibe_avisos)->toBeFalse()
-        ->and($suscriptor->recibe_proxima_fecha)->toBeFalse()
-        ->and($suscriptor->equipos->pluck('id')->all())->toBe([$equipo->id]);
+    expect(Suscriptor::query()->count())->toBe(0);
 });
 
 it('tiene una pagina propia para suscribirse sin seguir un equipo', function (): void {

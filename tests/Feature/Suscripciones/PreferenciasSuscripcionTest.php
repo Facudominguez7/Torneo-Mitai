@@ -39,19 +39,16 @@ function guardarPreferencias(Suscriptor $suscriptor, array $datos): TestResponse
 }
 
 it('muestra las preferencias con el enlace firmado, fuera del indice', function (): void {
-    [$huracan, $defensores] = preferenciasEquipos();
     $suscriptor = Suscriptor::factory()->activo()->create([
         'email' => 'madre@correo.com', 'recibe_resumen_fecha' => true, 'recibe_avisos' => false, 'recibe_proxima_fecha' => true,
     ]);
-    $suscriptor->equipos()->attach($huracan->id);
 
     $this->get(urlPreferencias($suscriptor))
         ->assertOk()
         ->assertSee('madre@correo.com')
         ->assertSee('value="resumen_fecha" checked', false)
         ->assertDontSee('value="avisos" checked', false)
-        ->assertSee('value="'.$huracan->id.'" checked', false)
-        ->assertSee('<option value="'.$defensores->id.'">Defensores</option>', false)
+        ->assertDontSee('name="equipos[]"', false)
         ->assertSee('<meta name="robots" content="noindex', false)
         ->assertDontSee('rel="canonical"', false);
 });
@@ -62,7 +59,7 @@ it('no muestra las preferencias sin la firma', function (): void {
     $this->get(route('suscripcion.preferencias', $suscriptor))->assertForbidden();
 });
 
-it('guarda los avisos y los equipos elegidos', function (): void {
+it('guarda los avisos elegidos e ignora los equipos enviados', function (): void {
     [$huracan, $defensores] = preferenciasEquipos();
     $suscriptor = Suscriptor::factory()->activo()->create();
     $suscriptor->equipos()->attach($huracan->id);
@@ -75,7 +72,7 @@ it('guarda los avisos y los equipos elegidos', function (): void {
     expect($suscriptor->recibe_resumen_fecha)->toBeFalse()
         ->and($suscriptor->recibe_avisos)->toBeTrue()
         ->and($suscriptor->recibe_proxima_fecha)->toBeFalse()
-        ->and($suscriptor->equipos->pluck('id')->all())->toBe([$defensores->id])
+        ->and($suscriptor->equipos->pluck('id')->all())->toBe([$huracan->id])
         ->and($suscriptor->resend_sincronizado_at)->toBeNull();
 });
 
@@ -97,7 +94,6 @@ it('valida las preferencias', function (array $datos, string $campo): void {
 })->with([
     'nada elegido' => [['avisos' => ''], 'avisos'],
     'aviso desconocido' => [['avisos' => ['spam']], 'avisos.0'],
-    'equipo inexistente' => [['avisos' => [], 'equipos' => [999999]], 'equipos.0'],
 ]);
 
 it('no guarda preferencias sin la firma', function (): void {

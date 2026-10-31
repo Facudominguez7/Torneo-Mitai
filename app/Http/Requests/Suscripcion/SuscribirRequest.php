@@ -36,8 +36,6 @@ class SuscribirRequest extends FormRequest
                     }
                 },
             ],
-            'equipos' => ['sometimes', 'array', 'max:'.config('suscripciones.max_equipos')],
-            'equipos.*' => ['integer', 'distinct', Rule::exists('equipos', 'id')],
             // El formulario manda "avisos" vacío cuando no se marca ninguno; sin la clave se reciben todos.
             'avisos' => ['sometimes', 'nullable', 'array'],
             'avisos.*' => ['string', Rule::in(array_keys(config('suscripciones.avisos')))],
@@ -49,7 +47,7 @@ class SuscribirRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if ($this->has('avisos') && empty($this->input('avisos')) && empty($this->input('equipos'))) {
+                if ($this->has('avisos') && empty($this->input('avisos'))) {
                     $validator->errors()->add('avisos', 'Elegí al menos un aviso.');
                 }
             },
@@ -64,8 +62,6 @@ class SuscribirRequest extends FormRequest
         return [
             'email.required' => 'Escribí tu correo electrónico.',
             'email.email' => 'Ese correo no parece válido. Revisalo.',
-            'equipos.max' => 'Podés seguir hasta :max equipos.',
-            'equipos.*.exists' => 'Uno de los equipos elegidos ya no existe.',
             'avisos.*.in' => 'Elegiste un aviso que no existe.',
         ];
     }

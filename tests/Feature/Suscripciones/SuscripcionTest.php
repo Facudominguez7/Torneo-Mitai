@@ -1,11 +1,8 @@
 <?php
 
-// Suscripción con solo un email: doble opt-in, equipos seguidos y baja con enlace firmado.
+// Suscripción con solo un email: doble opt-in, avisos elegidos y baja con enlace firmado.
 
 use App\Mail\ConfirmacionSuscripcionMail;
-use App\Models\Categoria;
-use App\Models\Edicion;
-use App\Models\Equipo;
 use App\Models\Suscriptor;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
@@ -18,14 +15,6 @@ beforeEach(function (): void {
     Mail::fake();
 });
 
-function suscripcionEquipo(string $nombre = 'Huracán'): Equipo
-{
-    $edicion = Edicion::create(['nombre' => '21° Edición Torneos Mita\'í']);
-    $categoria = Categoria::create(['idEdicion' => $edicion->id, 'nombreCategoria' => 'Categoría 2015']);
-
-    return Equipo::create(['nombre' => $nombre, 'idCategoria' => $categoria->id, 'idEdicion' => $edicion->id]);
-}
-
 /** @param  array<string, mixed>  $datos */
 function suscribirse(array $datos): TestResponse
 {
@@ -35,9 +24,7 @@ function suscribirse(array $datos): TestResponse
 }
 
 it('guarda la suscripcion pendiente y manda el correo de confirmacion', function (): void {
-    $equipo = suscripcionEquipo();
-
-    suscribirse(['email' => '  Madre.Huracan@Correo.com ', 'equipos' => [$equipo->id]])
+    suscribirse(['email' => '  Madre.Huracan@Correo.com '])
         ->assertRedirect('/')
         ->assertSessionHas('suscripcion', 'Te enviamos un correo a madre.huracan@correo.com. Abrilo y confirmá la suscripción.');
 
@@ -47,8 +34,7 @@ it('guarda la suscripcion pendiente y manda el correo de confirmacion', function
         ->and($suscriptor->estaActivo())->toBeFalse()
         ->and($suscriptor->recibe_resumen_fecha)->toBeTrue()
         ->and($suscriptor->recibe_avisos)->toBeTrue()
-        ->and($suscriptor->recibe_proxima_fecha)->toBeTrue()
-        ->and($suscriptor->equipos->pluck('id')->all())->toBe([$equipo->id]);
+        ->and($suscriptor->recibe_proxima_fecha)->toBeTrue();
 
     Mail::assertQueued(ConfirmacionSuscripcionMail::class, function (ConfirmacionSuscripcionMail $mail) use ($suscriptor): bool {
         return $mail->hasTo('madre.huracan@correo.com')
@@ -109,16 +95,14 @@ it('no da de baja sin la firma del enlace', function (): void {
 });
 
 it('no cambia las preferencias de un suscriptor activo desde el formulario publico', function (): void {
-    $equipo = suscripcionEquipo();
     $suscriptor = Suscriptor::factory()->activo()->create(['email' => 'padre@correo.com']);
 
-    suscribirse(['email' => 'padre@correo.com', 'equipos' => [$equipo->id], 'avisos' => []])
+    suscribirse(['email' => 'padre@correo.com', 'avisos' => ['resumen_fecha']])
         ->assertSessionHas('suscripcion', 'Te enviamos un correo a padre@correo.com. Abrilo y confirmá la suscripción.');
 
     $suscriptor->refresh();
     expect($suscriptor->estaActivo())->toBeTrue()
         ->and($suscriptor->recibe_avisos)->toBeTrue()
-        ->and($suscriptor->equipos)->toBeEmpty()
         ->and(Suscriptor::query()->count())->toBe(1);
     Mail::assertNothingOutgoing();
 });
@@ -194,7 +178,7 @@ it('suscribe sin confirmacion al usuario que ingreso con su email verificado', f
     Mail::assertNothingOutgoing();
 });
 
-it('valida el correo y los equipos', function (array $datos, string $campo): void {
+it('valida el correo y los avisos', function (array $datos, string $campo): void {
     suscribirse($datos)->assertSessionHasErrors($campo, null, 'suscripcion');
 
     expect(Suscriptor::query()->count())->toBe(0);
@@ -204,12 +188,5 @@ it('valida el correo y los equipos', function (array $datos, string $campo): voi
     'email invalido' => [['email' => 'no-es-un-correo'], 'email'],
     'email como lista' => [['email' => ['a@correo.com']], 'email'],
     'dominio bloqueado' => [['email' => 'prueba@example.com'], 'email'],
-    'equipo inexistente' => [['email' => 'a@correo.com', 'equipos' => [999999]], 'equipos.0'],
     'aviso desconocido' => [['email' => 'a@correo.com', 'avisos' => ['spam']], 'avisos.0'],
 ]);
-
-it('limita la cantidad de equipos seguidos', function (): void {
-    $equipos = collect(range(1, 6))->map(fn (int $numero): int => suscripcionEquipo("Equipo {$numero}")->id)->all();
-
-    suscribirse(['email' => 'a@correo.com', 'equipos' => $equipos])->assertSessionHasErrors('equipos', null, 'suscripcion');
-});

@@ -124,23 +124,9 @@ function descargarPDF() {
         return seccion;
     }
 
-    // Formulario "Avisame por correo" con los resultados del equipo seguido. Sin id conocido, se ofrecen solo los demás avisos.
-    function crearSuscripcion(favorito) {
-        const fragmento = plantillaSuscripcion.content.cloneNode(true);
-        const equipo = equipos.find(function (candidato) {
-            return candidato.nombre === favorito.nombre
-                && (!favorito.idCategoria || String(candidato.idCategoria) === String(favorito.idCategoria));
-        });
-        const casilla = fragmento.querySelector('[data-rol="equipo-id"]');
-
-        if (equipo) {
-            casilla.value = equipo.id;
-            fragmento.querySelector('[data-rol="equipo-nombre"]').textContent = equipo.nombre;
-        } else {
-            casilla.closest('label').remove();
-        }
-
-        return fragmento;
+    // Formulario "Avisame por correo": los avisos son los mismos para todos, sin depender del equipo seguido.
+    function crearSuscripcion() {
+        return plantillaSuscripcion.content.cloneNode(true);
     }
 
     function renderCard(nombre, datos) {
@@ -214,7 +200,7 @@ function descargarPDF() {
         card.appendChild(acciones);
 
         if (plantillaSuscripcion) {
-            card.appendChild(crearSuscripcion(leerFavorito()));
+            card.appendChild(crearSuscripcion());
         }
 
         card.classList.remove('hidden');

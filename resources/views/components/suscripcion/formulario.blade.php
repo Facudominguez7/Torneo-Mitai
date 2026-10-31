@@ -1,17 +1,16 @@
 @props(['conEquipo' => false])
 
-{{-- Formulario de suscripción: correo y avisos. Con equipo suma los resultados del equipo seguido (welcome.js completa el id). --}}
+{{-- Formulario de suscripción: correo y avisos. Con equipo es la versión de la tarjeta "Seguir mi equipo" de la portada. --}}
 @php
     $errores = $errors->getBag('suscripcion');
     $conDatosPrevios = session()->hasOldInput('email');
     $avisosMarcados = $conDatosPrevios ? (array) old('avisos', []) : ['resumen_fecha', 'proxima_fecha'];
-    $equipoMarcado = ! $conDatosPrevios || ! empty(old('equipos'));
     $avisos = [
         'resumen_fecha' => ['Resumen de la fecha', 'Resultados, tablas y goleadores.'],
         'proxima_fecha' => ['Próxima fecha', 'Días, horarios y canchas.'],
         'avisos' => ['Avisos del torneo', 'Cambios de cancha, suspensiones e inscripciones.'],
     ];
-    $errorAvisos = $errores->first('avisos') ?: $errores->first('avisos.*') ?: $errores->first('equipos') ?: $errores->first('equipos.*');
+    $errorAvisos = $errores->first('avisos') ?: $errores->first('avisos.*');
 @endphp
 
 <form method="POST" action="{{ route('suscripcion.store') }}" class="flex flex-col gap-[18px]"
@@ -35,13 +34,6 @@
         <legend class="mb-2 text-[15px] font-semibold text-white/90">Qué querés recibir</legend>
         {{-- Sin casillas marcadas el navegador no manda "avisos": este campo vacío indica que no eligió ninguno. --}}
         <input type="hidden" name="avisos" value="">
-
-        @if ($conEquipo)
-            <x-suscripcion.opcion nombre="equipos[]" valor="" :marcado="$equipoMarcado" data-rol="equipo-id"
-                detalle="Un correo al cerrar cada fecha.">
-                Resultados de <span data-rol="equipo-nombre">tu equipo</span>
-            </x-suscripcion.opcion>
-        @endif
 
         @foreach ($avisos as $valor => [$titulo, $detalle])
             <x-suscripcion.opcion nombre="avisos[]" :valor="$valor" :marcado="in_array($valor, $avisosMarcados, true)" :detalle="$detalle">

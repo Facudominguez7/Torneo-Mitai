@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Suscripcion\PreferenciasRequest;
 use App\Http\Requests\Suscripcion\SuscribirRequest;
-use App\Models\Edicion;
 use App\Models\Suscriptor;
-use App\Services\EquiposDeEdicionService;
 use App\Services\SuscripcionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +16,7 @@ class ControladorSuscripcion extends Controller
 
     public function __construct(private readonly SuscripcionService $suscripciones) {}
 
-    /** Página para suscribirse sin seguir un equipo (los resultados se eligen desde "Seguir mi equipo"). */
+    /** Página para suscribirse a los avisos del torneo. */
     public function create(): View
     {
         return view('suscripcion.create');
@@ -30,7 +28,6 @@ class ControladorSuscripcion extends Controller
 
         $activo = $this->suscripciones->suscribir(
             $email,
-            array_map('intval', $request->validated('equipos', [])),
             $request->has('avisos') ? ($request->validated('avisos') ?? []) : null,
             $request->user(),
         );
@@ -50,17 +47,10 @@ class ControladorSuscripcion extends Controller
             : 'Ese enlace ya no sirve. Volvé a suscribirte para recibir uno nuevo.');
     }
 
-    public function preferencias(Suscriptor $suscriptor, EquiposDeEdicionService $equiposDeEdicion): View
+    public function preferencias(Suscriptor $suscriptor): View
     {
-        $suscriptor->load('equipos.categoria:id,nombreCategoria');
-        $ultimaEdicion = Edicion::query()->latest('id')->first();
-        $seguidos = $suscriptor->equipos->pluck('id')->all();
-
         return view('suscripcion.preferencias', [
             'suscriptor' => $suscriptor,
-            'equiposDisponibles' => $ultimaEdicion
-                ? $equiposDeEdicion->participantes((int) $ultimaEdicion->id)->reject(fn (array $equipo): bool => in_array($equipo['id'], $seguidos, true))
-                : collect(),
             'urlPreferencias' => $this->suscripciones->urlPreferencias($suscriptor),
             'urlBaja' => $this->suscripciones->urlBaja($suscriptor),
         ]);
@@ -70,7 +60,6 @@ class ControladorSuscripcion extends Controller
     {
         $this->suscripciones->actualizarPreferencias(
             $suscriptor,
-            array_map('intval', $request->validated('equipos', [])),
             $request->validated('avisos') ?? [],
         );
 

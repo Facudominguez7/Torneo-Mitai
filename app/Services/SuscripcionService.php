@@ -22,11 +22,10 @@ class SuscripcionService
      * cualquiera puede escribir un correo ajeno, así que sus preferencias solo cambian con su enlace firmado.
      * Por la misma razón, una baja sigue vigente hasta que se confirme el pedido nuevo.
      *
-     * @param  list<int>  $idsEquipos
      * @param  list<string>|null  $avisos  null = todos los avisos
      * @return bool true si quedó activo en el momento (usuario con ese correo ya verificado)
      */
-    public function suscribir(string $email, array $idsEquipos, ?array $avisos, ?User $usuario): bool
+    public function suscribir(string $email, ?array $avisos, ?User $usuario): bool
     {
         $suscriptor = Suscriptor::query()->firstOrNew(['email' => $email]);
 
@@ -43,7 +42,7 @@ class SuscripcionService
             return false;
         }
 
-        DB::transaction(function () use ($suscriptor, $idsEquipos, $avisos, $usuario, $verificadoPorCuenta): void {
+        DB::transaction(function () use ($suscriptor, $avisos, $usuario, $verificadoPorCuenta): void {
             foreach (config('suscripciones.avisos') as $aviso => $columna) {
                 $suscriptor->{$columna} = $avisos === null || in_array($aviso, $avisos, true);
             }
@@ -52,7 +51,6 @@ class SuscripcionService
                 $suscriptor->forceFill(['confirmado_at' => now(), 'baja_at' => null, 'resend_sincronizado_at' => null, 'cambio_local_ms' => now()->getTimestampMs()]);
             }
             $suscriptor->save();
-            $suscriptor->equipos()->sync($idsEquipos);
         });
 
         if (! $verificadoPorCuenta) {
@@ -86,15 +84,14 @@ class SuscripcionService
     }
 
     /**
-     * Cambia avisos y equipos desde el enlace firmado del correo, que prueba que el correo es suyo:
+     * Cambia los avisos desde el enlace firmado del correo, que prueba que el correo es suyo:
      * por eso guardar también reactiva a quien se había dado de baja.
      *
-     * @param  list<int>  $idsEquipos
      * @param  list<string>  $avisos
      */
-    public function actualizarPreferencias(Suscriptor $suscriptor, array $idsEquipos, array $avisos): void
+    public function actualizarPreferencias(Suscriptor $suscriptor, array $avisos): void
     {
-        DB::transaction(function () use ($suscriptor, $idsEquipos, $avisos): void {
+        DB::transaction(function () use ($suscriptor, $avisos): void {
             foreach (config('suscripciones.avisos') as $aviso => $columna) {
                 $suscriptor->{$columna} = in_array($aviso, $avisos, true);
             }
@@ -103,7 +100,6 @@ class SuscripcionService
                 'baja_at' => null,
                 'resend_sincronizado_at' => null, 'cambio_local_ms' => now()->getTimestampMs(),
             ])->save();
-            $suscriptor->equipos()->sync($idsEquipos);
         });
 
         SincronizarSuscriptorResend::dispatch($suscriptor->id);

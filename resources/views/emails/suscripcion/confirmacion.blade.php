@@ -1,7 +1,7 @@
 <x-mail::message>
 # Confirmá tu suscripción
 
-Pediste recibir los avisos de Torneos Mita'í: resultados de tus equipos, resumen de cada fecha y novedades del torneo.
+Pediste recibir los avisos de Torneos Mita'í: resumen de cada fecha, próxima fecha y novedades del torneo.
 
 <x-mail::button :url="$urlConfirmacion">
 Confirmar suscripción

@@ -29,7 +29,7 @@ it('confirmar, cambiar preferencias y dar de baja seguidos encolan una sola sinc
     $servicio = app(SuscripcionService::class);
 
     $servicio->confirmar($suscriptor, now()->getTimestamp());
-    $servicio->actualizarPreferencias($suscriptor->fresh(), [], ['avisos']);
+    $servicio->actualizarPreferencias($suscriptor->fresh(), ['avisos']);
     $servicio->darDeBaja($suscriptor->fresh());
 
     expect($historial)->toHaveCount(0);
@@ -111,7 +111,7 @@ it('un cambio guardado mientras corre la sincronizacion queda pendiente y lo lle
 
     // La persona guarda preferencias mientras el primer job todavía está hablando con Resend.
     Queue::fake();
-    app(SuscripcionService::class)->actualizarPreferencias($suscriptor->fresh(), [], ['avisos']);
+    app(SuscripcionService::class)->actualizarPreferencias($suscriptor->fresh(), ['avisos']);
     app(SincronizacionResendService::class)->sincronizar($leidoPorElPrimero);
 
     expect($suscriptor->fresh()->resend_sincronizado_at)->toBeNull();

@@ -17,8 +17,6 @@ return [
     'minutos_entre_confirmaciones' => 10,
     'pedidos_por_dia' => 20,
 
-    'max_equipos' => 5,
-
     // Contactos de Resend. Con MailHog en local no se sincroniza, así no se crean contactos reales.
     // Los tópicos se crearon con suscripción por defecto opt_out: solo recibe quien eligió ese aviso.
     'resend' => [
