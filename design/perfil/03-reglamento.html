@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perfil Reglamento · Torneo Mita'í</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--navy:#0E4B5E;--navy-deep:#082F3B;--teal:#2A6D81;--teal-light:#9BD3E2;--gold:#F7F280;--papel:#F6F8F9;--tinta:#082F3B;--error:#B42318;--mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;padding:48px;background:#E4E1DA;font-family:Barlow,sans-serif;color:var(--tinta)}
+.tablero{display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}
+.rotulo-frame{margin:0 0 12px;font:600 13px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#5B6770}
+.frame{position:relative;overflow:hidden;border-radius:6px;box-shadow:0 1px 0 rgba(0,0,0,.08);background:var(--papel)}
+.frame--d{width:1440px;height:1000px}.frame--m{width:390px;height:844px}
+.repetir{position:fixed;top:16px;right:16px;z-index:10;padding:10px 16px;border:0;border-radius:4px;background:var(--navy);color:#fff;font:700 14px Barlow,sans-serif;cursor:pointer}
+.repetir:hover{background:var(--teal)}
+.nav{display:flex;align-items:center;gap:14px;height:64px;padding:0 40px;background:var(--navy-deep);color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
+.nav img{width:36px;height:36px;object-fit:contain}.nav strong{font-size:18px}
+.nav .der{display:flex;align-items:center;gap:12px;margin-left:auto}
+.nav .tema{padding:7px 12px;border:1px solid rgba(255,255,255,.2);border-radius:999px;font:700 10px var(--mono);letter-spacing:.2em;color:rgba(255,255,255,.7)}
+.nav .chip{display:flex;align-items:center;gap:10px;padding:4px 12px 4px 4px;border:1px solid rgba(247,242,128,.4);border-radius:999px;font-size:14px;font-weight:700}
+.nav .chip i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--teal);font-style:normal;font-weight:800}
+.frame--m .nav{padding:0 16px;height:56px}.frame--m .nav .tema,.frame--m .nav .chip span{display:none}
+/* Campos y botones compartidos con el acceso Medio campo */
+.campo{display:flex;flex-direction:column;gap:8px}
+.campo label{font:700 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--teal)}
+.entrada{display:flex;align-items:center;height:52px;padding:0 16px;border-bottom:2px solid #B9C9CF;background:#fff;font:500 16px Barlow,sans-serif;color:var(--tinta);transition:border-color .2s,box-shadow .2s}
+.entrada:hover{border-bottom-color:var(--teal)}
+.entrada--foco{border-bottom-color:var(--navy);box-shadow:inset 0 -1px 0 var(--navy)}
+.entrada .ojo{margin-left:auto;font-size:13px;font-weight:700;color:var(--teal)}
+.boton{position:relative;display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 24px;border:0;border-radius:4px;background:var(--navy);color:#fff;font:700 16px Barlow,sans-serif;overflow:hidden;transition:background .2s,translate .2s}
+.boton::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--gold);scale:0 1;transform-origin:left;transition:scale .3s}
+.boton:hover{background:var(--teal);translate:0 -2px}.boton:hover::after{scale:1 1}
+.boton--peligro{background:transparent;border:1.5px solid var(--error);color:var(--error)}
+.boton--peligro:hover{background:var(--error);color:#fff}.boton--peligro::after{display:none}
+.ok{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--teal)}
+.ok::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--teal)}
+.aviso{padding:14px 16px;border-left:4px solid var(--navy);background:rgba(247,242,128,.4);font-size:15px;line-height:1.45}
+.aviso b{display:block}.aviso a{font-weight:700;color:var(--navy)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{padding:6px 12px;border:1px solid currentColor;border-radius:999px;font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+
+.cab{position:relative;overflow:hidden;padding:48px 80px 0;background:var(--navy-deep);color:#fff}
+svg.lineas{position:absolute;right:-40px;top:-20px;width:620px;height:300px;stroke:rgba(155,211,226,.22);stroke-width:2;fill:none}
+.cab-in{position:relative;display:flex;align-items:center;gap:28px;padding-bottom:36px}
+.avatar{display:grid;place-items:center;width:104px;height:104px;border-radius:50%;border:3px solid var(--gold);background:var(--teal);font-size:44px;font-weight:800}
+.sobre{font:700 13px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.cab h1{margin:8px 0 0;font-size:52px;font-weight:800;line-height:1}
+.meta{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:12px;font:600 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--teal-light)}
+.meta .g{color:var(--gold)}
+.cuerpo{display:grid;grid-template-columns:260px 1fr;gap:72px;padding:44px 80px}
+.indice{position:sticky;top:24px;align-self:start;display:flex;flex-direction:column;border-left:2px solid #D3DEE2}
+.indice a{display:flex;gap:12px;margin-left:-2px;padding:8px 16px;border-left:2px solid transparent;font-size:15px;font-weight:600;color:#45606B;text-decoration:none;transition:color .2s,border-color .2s,padding-left .2s}
+.indice a span{font:600 12px var(--mono);color:#8A9AA1;padding-top:2px}
+.indice a:hover{color:var(--navy-deep);border-left-color:var(--teal);padding-left:22px}
+.indice a.activa{color:var(--navy-deep);border-left-color:var(--navy);background:linear-gradient(90deg,rgba(247,242,128,.45),transparent)}
+.indice a.peligro:hover{border-left-color:var(--error);color:var(--error)}
+.secciones{max-width:720px;display:flex;flex-direction:column;gap:44px}
+.sec h2{display:flex;align-items:baseline;gap:14px;margin:0;font-size:24px;font-weight:800}
+.sec h2 span{font:700 13px var(--mono);letter-spacing:.1em;color:var(--teal);transition:color .2s}
+.sec:hover h2 span{color:var(--navy-deep)}
+.sec p.d{margin:8px 0 18px;font-size:15px;color:#45606B}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:18px}.f .aviso,.f .acciones{grid-column:1/-1}
+.acciones{display:flex;align-items:center;gap:18px}
+.sec--peligro{padding:24px;border:1.5px solid rgba(180,35,24,.35);border-radius:4px;background:#fff}
+.sec--peligro h2 span{color:var(--error)}
+.txt{margin:0 0 16px;font-size:15px;line-height:1.5;color:#45606B}
+.desplegable{display:flex;justify-content:space-between;margin-bottom:24px;padding:14px 16px;border:1px solid #C7D5DA;border-radius:4px;background:#fff;font:700 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--teal)}
+.desplegable em{font-style:normal;font:700 15px Barlow,sans-serif;letter-spacing:0;text-transform:none;color:var(--navy-deep)}
+.frame--m .cab{padding:24px 16px 0}.frame--m svg.lineas{width:300px;height:160px;right:-90px}
+.frame--m .cab-in{gap:16px;padding-bottom:22px}.frame--m .avatar{width:64px;height:64px;font-size:28px}
+.frame--m .cab h1{font-size:28px}.frame--m .meta{font-size:11px;gap:4px 12px}
+.frame--m .cuerpo{display:block;padding:20px 16px}.frame--m .f{grid-template-columns:1fr}
+.frame--m .secciones{gap:32px}.frame--m .sec h2{font-size:20px}
+
+@media (prefers-reduced-motion:no-preference){
+ .anim .sube{animation:sube .6s cubic-bezier(.2,.7,.2,1) backwards}
+ .anim .avatar{animation:rueda .8s cubic-bezier(.2,.7,.2,1) backwards}
+ .anim svg.lineas *{stroke-dasharray:1600;animation:trazo 1.4s ease-out backwards}
+ .anim .d1{animation-delay:.1s}.anim .d2{animation-delay:.2s}.anim .d3{animation-delay:.3s}.anim .d4{animation-delay:.42s}.anim .d5{animation-delay:.54s}.anim .d6{animation-delay:.66s}
+ @keyframes sube{from{opacity:0;translate:0 18px}to{opacity:1;translate:0 0}}
+ @keyframes rueda{from{opacity:0;rotate:-90deg;scale:.6}to{opacity:1;rotate:0deg;scale:1}}
+ @keyframes trazo{from{stroke-dashoffset:1600}to{stroke-dashoffset:0}}
+ @keyframes bote{0%,100%{translate:0 0}35%{translate:0 -6px}65%{translate:0 1px}}
+ .avatar:hover{animation:bote .5s ease}
+}
+</style>
+</head>
+<body class="anim">
+<button type="button" class="repetir" onclick="var b=document.body;b.classList.remove('anim');void b.offsetWidth;b.classList.add('anim')">↻ Repetir animación</button>
+<div class='tablero'><div><p class='rotulo-frame'>Escritorio · Perfil</p><div class='frame frame--d'><div class='nav'><img src='../../public/fotos/Logo_Mitai_SinFondo.png' alt=''><strong>Torneo Mita'í</strong><div class='der'><span class='tema'>SISTEMA</span><span class='chip'><i>L</i><span>Lucía Benítez</span></span></div></div><header class='cab'><svg class='lineas' viewBox='0 0 620 300'><rect x='20' y='20' width='700' height='260' rx='4'/><circle cx='320' cy='150' r='90'/><line x1='320' y1='20' x2='320' y2='280'/></svg><div class='cab-in'><div class='avatar'>L</div><div><span class='sobre sube d1'>Tu cuenta</span><h1 class='sube d2'>Lucía Benítez</h1><div class='meta sube d3'><span>lucia.benitez@gmail.com</span><span>Desde 14 de marzo de 2025</span><span>Usuario</span></div></div></div></header><div class='cuerpo'><nav class='indice sube d3'><a href='#' class=' activa'><span>01</span>Tus datos</a><a href='#' class=' '><span>02</span>Contraseña</a><a href='#' class='peligro '><span>03</span>Eliminar cuenta</a></nav><div class='secciones'><section class='sec sube d4'><h2><span>01</span>Tus datos</h2><p class='d'>El nombre aparece en el menú y en los correos del torneo.</p><div class='f'><div class='aviso'><b>Tu correo todavía no está verificado.</b>Verificalo para recibir los avisos del torneo. <a href='#'>Reenviar código</a></div><div class='campo'><label>Nombre completo</label><div class='entrada entrada--foco'>Lucía Benítez</div></div><div class='campo'><label>Correo electrónico</label><div class='entrada'>lucia.benitez@gmail.com</div></div><div class='acciones'><span class='boton'>Guardar cambios</span><span class=ok>Datos guardados</span></div></div></section><section class='sec sube d5'><h2><span>02</span>Contraseña</h2><p class='d'>Usá al menos ocho caracteres.</p><div class='f'><div class='campo'><label>Contraseña actual</label><div class='entrada'>••••••••<span class=ojo>Mostrar</span></div></div><div class='campo'><label>Nueva contraseña</label><div class='entrada'><span class=ojo>Mostrar</span></div></div><div class='campo'><label>Confirmar contraseña</label><div class='entrada'><span class=ojo>Mostrar</span></div></div><div class='acciones'><span class='boton'>Guardar nueva contraseña</span></div></div></section><section class='sec sec--peligro sube d6'><h2><span>03</span>Eliminar cuenta</h2><p class='d'></p><p class='txt'>Se borran tu cuenta y tus preferencias. Los datos del torneo, como resultados y planillas, no cambian. Te vamos a pedir tu contraseña para confirmar.</p><span class='boton boton--peligro'>Eliminar cuenta</span></section></div></div></div></div><div><p class='rotulo-frame'>Celular · Datos</p><div class='frame frame--m'><div class='nav'><img src='../../public/fotos/Logo_Mitai_SinFondo.png' alt=''><strong>Torneo Mita'í</strong><div class='der'><span class='tema'>SISTEMA</span><span class='chip'><i>L</i><span>Lucía Benítez</span></span></div></div><header class='cab'><svg class='lineas' viewBox='0 0 620 300'><rect x='20' y='20' width='700' height='260' rx='4'/><circle cx='320' cy='150' r='90'/><line x1='320' y1='20' x2='320' y2='280'/></svg><div class='cab-in'><div class='avatar'>L</div><div><span class='sobre sube d1'>Tu cuenta</span><h1 class='sube d2'>Lucía Benítez</h1><div class='meta sube d3'><span>lucia.benitez@gmail.com</span><span>Desde 14 de marzo de 2025</span><span>Usuario</span></div></div></div></header><div class='cuerpo'><div class='desplegable sube d3'>Secciones <em>3 ▾</em></div><div class='secciones'><section class='sec sube d4'><h2><span>01</span>Tus datos</h2><p class='d'>El nombre aparece en el menú y en los correos del torneo.</p><div class='f'><div class='aviso'><b>Tu correo todavía no está verificado.</b>Verificalo para recibir los avisos del torneo. <a href='#'>Reenviar código</a></div><div class='campo'><label>Nombre completo</label><div class='entrada entrada--foco'>Lucía Benítez</div></div><div class='campo'><label>Correo electrónico</label><div class='entrada'>lucia.benitez@gmail.com</div></div><div class='acciones'><span class='boton'>Guardar cambios</span><span class=ok>Datos guardados</span></div></div></section><section class='sec sube d5'><h2><span>02</span>Contraseña</h2><p class='d'>Usá al menos ocho caracteres.</p><div class='f'><div class='campo'><label>Contraseña actual</label><div class='entrada'>••••••••<span class=ojo>Mostrar</span></div></div><div class='campo'><label>Nueva contraseña</label><div class='entrada'><span class=ojo>Mostrar</span></div></div><div class='campo'><label>Confirmar contraseña</label><div class='entrada'><span class=ojo>Mostrar</span></div></div><div class='acciones'><span class='boton'>Guardar nueva contraseña</span></div></div></section><section class='sec sec--peligro sube d6'><h2><span>03</span>Eliminar cuenta</h2><p class='d'></p><p class='txt'>Se borran tu cuenta y tus preferencias. Los datos del torneo, como resultados y planillas, no cambian. Te vamos a pedir tu contraseña para confirmar.</p><span class='boton boton--peligro'>Eliminar cuenta</span></section></div></div></div></div><div><p class='rotulo-frame'>Celular · Cuenta con Google</p><div class='frame frame--m'><div class='nav'><img src='../../public/fotos/Logo_Mitai_SinFondo.png' alt=''><strong>Torneo Mita'í</strong><div class='der'><span class='tema'>SISTEMA</span><span class='chip'><i>L</i><span>Lucía Benítez</span></span></div></div><header class='cab'><svg class='lineas' viewBox='0 0 620 300'><rect x='20' y='20' width='700' height='260' rx='4'/><circle cx='320' cy='150' r='90'/><line x1='320' y1='20' x2='320' y2='280'/></svg><div class='cab-in'><div class='avatar'>L</div><div><span class='sobre sube d1'>Tu cuenta</span><h1 class='sube d2'>Lucía Benítez</h1><div class='meta sube d3'><span>lucia.benitez@gmail.com</span><span>Desde 14 de marzo de 2025</span><span>Usuario</span><span class=g>Con Google</span></div></div></div></header><div class='cuerpo'><div class='desplegable sube d3'>Secciones <em>2 ▾</em></div><div class='secciones'><section class='sec sube d4'><h2><span>01</span>Tus datos</h2><p class='d'>El nombre aparece en el menú y en los correos del torneo.</p><div class='f'><div class='campo'><label>Nombre completo</label><div class='entrada entrada--foco'>Lucía Benítez</div></div><div class='campo'><label>Correo electrónico</label><div class='entrada'>lucia.benitez@gmail.com</div></div><div class='acciones'><span class='boton'>Guardar cambios</span><span class=ok>Datos guardados</span></div></div></section><section class='sec sec--peligro sube d6'><h2><span>02</span>Eliminar cuenta</h2><p class='d'></p><p class='txt'>Se borran tu cuenta y tus preferencias. Los datos del torneo, como resultados y planillas, no cambian. Te vamos a pedir tu contraseña para confirmar.</p><span class='boton boton--peligro'>Eliminar cuenta</span></section></div></div></div></div></div>
+</body>
+</html>

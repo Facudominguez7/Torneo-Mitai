@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "chosen": "03-reglamento.html",
+  "handoffs": {
+    "03-reglamento.html": {
+      "status": "chosen",
+      "queued": false,
+      "note": "Elegido por el usuario. Reutiliza la cabecera, el índice y las secciones del diseño Reglamento de las páginas legales."
+    }
+  }
+}

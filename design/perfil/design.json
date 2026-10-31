@@ -1,0 +1,27 @@
+{
+  "title": "Perfil",
+  "brief": "Tres direcciones para el perfil del usuario. Mantienen lo que ya existe: datos, verificación de correo, contraseña (solo sin Google) y eliminar cuenta. Los campos y botones son los del acceso Medio campo. Cada artboard muestra escritorio, celular y celular con cuenta de Google.",
+  "artboards": [
+    {
+      "file": "01-medio-campo.html",
+      "title": "Medio campo",
+      "tradeoff": "Igual que el acceso: cancha navy a la izquierda con tu inicial, tus datos y chips; secciones numeradas a la derecha. La más coherente con el login; en celular la cancha pasa a ser una cabecera compacta.",
+      "width": 2400,
+      "height": 1100
+    },
+    {
+      "file": "02-credencial.html",
+      "title": "Credencial",
+      "tradeoff": "Tu cuenta como una credencial del torneo y pestañas Tus datos / Contraseña / Cuenta. La más ordenada y corta; esconde secciones detrás de pestañas.",
+      "width": 2400,
+      "height": 1100
+    },
+    {
+      "file": "03-reglamento.html",
+      "title": "Reglamento",
+      "tradeoff": "Misma estructura que Términos y Privacidad: cabecera con cancha, índice lateral y secciones; eliminar cuenta en un recuadro rojo. Coherente con las páginas legales; más larga de recorrer.",
+      "width": 2400,
+      "height": 1100
+    }
+  ]
+}
