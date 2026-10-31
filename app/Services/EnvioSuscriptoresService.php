@@ -10,6 +10,8 @@ use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Mail;
 use Resend\Client;
+use Resend\Exceptions\ErrorException;
+use Throwable;
 
 /**
  * Envía los avisos masivos a los suscriptores. El pedido del panel solo registra el envío y lo
@@ -67,7 +69,14 @@ class EnvioSuscriptoresService
             $envio = EnvioSuscriptores::query()->where('clave', $clave)->firstOrFail();
         }
 
-        EnviarResumenFechaSuscriptores::dispatch($envio->id);
+        try {
+            EnviarResumenFechaSuscriptores::dispatch($envio->id);
+        } catch (Throwable $error) {
+            // Sin job en la cola nadie lo mandaría: queda fallido para poder pedirlo de nuevo.
+            $envio->forceFill(['estado' => EnvioSuscriptores::ESTADO_FALLIDO])->save();
+
+            throw $error;
+        }
 
         return $envio;
     }
@@ -118,25 +127,20 @@ class EnvioSuscriptoresService
      */
     private function enviarBroadcast(EnvioSuscriptores $envio, array $resumen): int
     {
-        if ($envio->broadcast_id === null) {
-            $correo = new ResumenResultadosFechaMail($resumen, self::URL_PREFERENCIAS_CONTACTO);
+        $contenido = $this->contenidoBroadcast($resumen);
+        $estadoEnResend = $envio->broadcast_id === null ? null : $this->estadoBroadcast($envio->broadcast_id);
 
+        if ($estadoEnResend === null) {
             $borrador = $this->resend->broadcasts->create([
                 'segment_id' => (string) config('suscripciones.resend.segmento'),
                 'topic_id' => (string) config('suscripciones.resend.topicos.resumen_fecha'),
-                'from' => EmailDeliverabilityHeaders::fromName().' <'.config('suscripciones.remitente').'>',
-                'reply_to' => EmailDeliverabilityHeaders::replyToAddress(),
-                'subject' => $correo->asunto(),
-                'name' => $correo->asunto(),
-                'html' => $correo->render(),
-                'text' => view('emails.resumen-resultados-fecha-text', [
-                    'resumen' => $resumen,
-                    'urlBajaGeneral' => self::URL_PREFERENCIAS_CONTACTO,
-                ])->render(),
+                ...$contenido,
             ]);
-
             $envio->forceFill(['broadcast_id' => $borrador->id])->save();
-        } elseif ($this->resend->broadcasts->get($envio->broadcast_id)->status !== 'draft') {
+        } elseif ($estadoEnResend === 'draft') {
+            // El borrador de un intento anterior se actualiza: los resultados pueden haber cambiado.
+            $this->resend->broadcasts->update($envio->broadcast_id, $contenido);
+        } else {
             // El intento anterior lo mandó pero no llegó a guardarlo.
             return $this->destinatariosResumenFecha();
         }
@@ -144,6 +148,41 @@ class EnvioSuscriptoresService
         $this->resend->broadcasts->send($envio->broadcast_id, []);
 
         return $this->destinatariosResumenFecha();
+    }
+
+    /** null si el borrador ya no existe en Resend (lo borraron): se crea otro. */
+    private function estadoBroadcast(string $idBroadcast): ?string
+    {
+        try {
+            return $this->resend->broadcasts->get($idBroadcast)->status;
+        } catch (ErrorException $error) {
+            if ($error->getErrorCode() === 404) {
+                return null;
+            }
+
+            throw $error;
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $resumen
+     * @return array<string, string>
+     */
+    private function contenidoBroadcast(array $resumen): array
+    {
+        $correo = new ResumenResultadosFechaMail($resumen, self::URL_PREFERENCIAS_CONTACTO);
+
+        return [
+            'from' => EmailDeliverabilityHeaders::fromName().' <'.config('suscripciones.remitente').'>',
+            'reply_to' => EmailDeliverabilityHeaders::replyToAddress(),
+            'subject' => $correo->asunto(),
+            'name' => $correo->asunto(),
+            'html' => $correo->render(),
+            'text' => view('emails.resumen-resultados-fecha-text', [
+                'resumen' => $resumen,
+                'urlBajaGeneral' => self::URL_PREFERENCIAS_CONTACTO,
+            ])->render(),
+        ];
     }
 
     /**

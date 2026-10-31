@@ -8,6 +8,8 @@ use App\Models\EnvioSuscriptores;
 use App\Services\EnvioSuscriptoresService;
 use App\Services\ResumenFechaService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Avisos masivos del panel a los suscriptores: cuenta los destinatarios y dispara el envío.
@@ -78,7 +80,21 @@ class ControladorEnvioSuscriptores extends Controller
             return response()->json(['success' => false, 'message' => 'No hay resultados para enviar en esa fecha.'], 422);
         }
 
-        $envio = $this->envios->registrarResumenFecha($resumen, $request->user());
+        if ($this->envios->destinatariosResumenFecha() === 0) {
+            return response()->json(['success' => false, 'message' => 'Todavía nadie eligió recibir el resumen de la fecha.'], 422);
+        }
+
+        try {
+            $envio = $this->envios->registrarResumenFecha($resumen, $request->user());
+        } catch (Throwable $error) {
+            Log::error('No se pudo encolar el resumen de fecha para los suscriptores.', [
+                'error' => $error::class,
+                'idFecha' => $resumen['id_fecha'],
+                'idCategoria' => $resumen['id_categoria'],
+            ]);
+
+            return response()->json(['success' => false, 'message' => 'No se pudo dejar el envío en cola. Probá de nuevo en unos minutos.'], 503);
+        }
 
         if ($envio === null) {
             $previo = $this->envios->envioResumenFecha($resumen['id_fecha'], $resumen['id_categoria']);
