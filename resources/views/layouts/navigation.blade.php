@@ -47,7 +47,7 @@
         </div>
 
         <div
-            class="{{ $navPublica ? 'nav-compactable' : '[.nav-compacta_&]:hidden' }} flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap">
+            class="{{ $navPublica ? 'nav-compactable' : '[.nav-compacta_&]:hidden' }} flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap">
             <button type="button" id="btn-tema" aria-label="Cambiar tema"
                 class="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 transition hover:border-yellow-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40">
                 <svg id="icono-tema" class="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" aria-hidden="true"></svg>
@@ -58,7 +58,8 @@
                 @if (Auth::user()->rol === 'admin')
                     <a href="{{ route('admin', ['idEdicion' => optional($edicionActiva)->id]) }}"
                         class="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70 transition hover:border-yellow-300 hover:bg-yellow-300/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40">
-                        Panel de administración
+                        <span class="xl:hidden">Panel</span>
+                        <span class="hidden xl:inline">Panel de administración</span>
                     </a>
                 @endif
             @endauth
@@ -70,19 +71,18 @@
                     @endphp
                     <x-dropdown align="right" width="56">
                         <x-slot name="trigger">
-                            <button
+                            <button aria-label="Cuenta de {{ $nombreUsuario }}"
                                 class="inline-flex items-center gap-3 rounded-full border border-brand-gold/40 bg-gradient-to-r from-brand-navy/90 via-brand-teal/85 to-brand-navy/85 px-3 py-2 text-sm font-semibold text-white transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-brand-gold/40">
                                 <div class="flex items-center gap-2">
+                                    {{-- Google rechaza las fotos pedidas con referer; si igual fallan, queda la inicial. --}}
                                     @if (!empty(Auth::user()->google_avatar))
                                         <img class="h-9 w-9 rounded-2xl border border-white/20 object-cover"
-                                            src="{{ Auth::user()->google_avatar }}" alt="Avatar de {{ $nombreUsuario }}">
-                                    @else
-                                        <span
-                                            class="flex h-9 w-9 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-sm font-bold uppercase text-white">
-                                            {{ mb_substr($nombreUsuario, 0, 1) }}
-                                        </span>
+                                            src="{{ Auth::user()->google_avatar }}" alt="" referrerpolicy="no-referrer"
+                                            onerror="this.hidden = true; this.nextElementSibling.hidden = false">
                                     @endif
-                                    <span class="text-sm font-semibold text-white">{{ $nombreUsuario }}</span>
+                                    <span @if (!empty(Auth::user()->google_avatar)) hidden @endif
+                                        class="flex h-9 w-9 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-sm font-bold uppercase text-white [&[hidden]]:hidden">{{ mb_substr($nombreUsuario, 0, 1) }}</span>
+                                    <span class="hidden max-w-[12rem] text-sm font-semibold text-white lg:inline-block truncate">{{ $nombreUsuario }}</span>
                                 </div>
                                 <svg class="ml-1 h-4 w-4 text-brand-gold" xmlns="http://www.w3.org/2000/svg" fill="none"
                                     viewBox="0 0 20 20">

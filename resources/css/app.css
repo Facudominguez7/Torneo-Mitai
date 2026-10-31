@@ -771,7 +771,7 @@
 }
 
 @media (min-width: 640px) {
-    .nav-compactable { max-width: 32rem; max-height: 5rem; opacity: 1; }
+    .nav-compactable { max-width: 48rem; max-height: 5rem; opacity: 1; }
     .nav-compacta .nav-compactable { max-width: 0; max-height: 0; opacity: 0; overflow: clip; pointer-events: none; }
     .nav-fila { overflow-anchor: none; }
     @media (prefers-reduced-motion: no-preference) {
@@ -805,20 +805,20 @@
     border-bottom-color: rgb(var(--tm-linea) / .14);
 }
 
-.tm-home #nav-principal [class*="text-white"]:not([class*="bg-gradient"]):not([class*="text-white/"]),
-.fixture-tablero #nav-principal [class*="text-white"]:not([class*="bg-gradient"]):not([class*="text-white/"]) {
+.tm-home #nav-principal [class*="text-white"]:not([class*="bg-gradient"]):not([class*="text-white/"]):not([class*="bg-gradient"] *),
+.fixture-tablero #nav-principal [class*="text-white"]:not([class*="bg-gradient"]):not([class*="text-white/"]):not([class*="bg-gradient"] *) {
     color: rgb(var(--tm-tinta));
 }
 
-.tm-home #nav-principal [class*="text-white/60"],
-.fixture-tablero #nav-principal [class*="text-white/60"] {
+.tm-home #nav-principal [class*="text-white/60"]:not([class*="bg-gradient"] *),
+.fixture-tablero #nav-principal [class*="text-white/60"]:not([class*="bg-gradient"] *) {
     color: rgb(var(--tm-dim) / .6);
 }
 
-.tm-home #nav-principal [class*="text-white/70"],
-.fixture-tablero #nav-principal [class*="text-white/70"],
-.tm-home #nav-principal [class*="text-white/80"],
-.fixture-tablero #nav-principal [class*="text-white/80"] {
+.tm-home #nav-principal [class*="text-white/70"]:not([class*="bg-gradient"] *),
+.fixture-tablero #nav-principal [class*="text-white/70"]:not([class*="bg-gradient"] *),
+.tm-home #nav-principal [class*="text-white/80"]:not([class*="bg-gradient"] *),
+.fixture-tablero #nav-principal [class*="text-white/80"]:not([class*="bg-gradient"] *) {
     color: rgb(var(--tm-dim) / .8);
 }
 
@@ -834,10 +834,10 @@
     border-bottom-color: #997300;
 }
 
-:root[data-tema="claro"] .tm-home #nav-principal a:hover:not([class*="bg-gradient"]),
-:root[data-tema="claro"] .fixture-tablero #nav-principal a:hover:not([class*="bg-gradient"]),
-:root[data-tema="claro"] .tm-home #nav-principal button:hover,
-:root[data-tema="claro"] .fixture-tablero #nav-principal button:hover {
+:root[data-tema="claro"] .tm-home #nav-principal a:hover:not([class*="bg-gradient"]):not([class*="bg-gradient"] *),
+:root[data-tema="claro"] .fixture-tablero #nav-principal a:hover:not([class*="bg-gradient"]):not([class*="bg-gradient"] *),
+:root[data-tema="claro"] .tm-home #nav-principal button:hover:not([class*="bg-gradient"] *),
+:root[data-tema="claro"] .fixture-tablero #nav-principal button:hover:not([class*="bg-gradient"] *) {
     color: #997300;
 }
 
@@ -847,10 +847,10 @@
         border-bottom-color: #997300;
     }
 
-    :root:not([data-tema="oscuro"]) .tm-home #nav-principal a:hover:not([class*="bg-gradient"]),
-    :root:not([data-tema="oscuro"]) .fixture-tablero #nav-principal a:hover:not([class*="bg-gradient"]),
-    :root:not([data-tema="oscuro"]) .tm-home #nav-principal button:hover,
-    :root:not([data-tema="oscuro"]) .fixture-tablero #nav-principal button:hover {
+    :root:not([data-tema="oscuro"]) .tm-home #nav-principal a:hover:not([class*="bg-gradient"]):not([class*="bg-gradient"] *),
+    :root:not([data-tema="oscuro"]) .fixture-tablero #nav-principal a:hover:not([class*="bg-gradient"]):not([class*="bg-gradient"] *),
+    :root:not([data-tema="oscuro"]) .tm-home #nav-principal button:hover:not([class*="bg-gradient"] *),
+    :root:not([data-tema="oscuro"]) .fixture-tablero #nav-principal button:hover:not([class*="bg-gradient"] *) {
         color: #997300;
     }
 }

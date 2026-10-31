@@ -34,7 +34,7 @@ it('ofrece premios y accesos existentes para la edición seleccionada', function
         'tabla-posiciones' => 'Tabla de posiciones',
         'tabla-goleadores' => 'Goleadores',
         'instancias-finales' => 'Finales',
-        'tabla-vallas' => 'Vallas',
+        'tabla-vallas' => 'Vallas menos vencidas',
     ] as $ruta => $etiqueta) {
         $url = route($ruta, ['idEdicion' => $edicion->id]);
         $enlaces = $xpath->query('//section[@aria-label="Accesos al torneo"]//a[@href="'.$url.'"]');
