@@ -64,7 +64,6 @@ function descargarPDF() {
     const buscador = document.getElementById('seguir-equipo-buscador');
     const lista = document.getElementById('seguir-equipo-lista');
     const sinResultados = document.getElementById('seguir-equipo-sin-resultados');
-    const plantillaSuscripcion = document.getElementById('seguir-equipo-suscripcion');
     const main = document.querySelector('main.tm-velo-host');
 
     function normalizar(texto) {
@@ -220,11 +219,6 @@ function descargarPDF() {
         return escudo;
     }
 
-    // Formulario "Avisame por correo": los avisos son los mismos para todos, sin depender del equipo seguido.
-    function crearSuscripcion() {
-        return plantillaSuscripcion.content.cloneNode(true);
-    }
-
     function renderCard(nombre, datos) {
         card.textContent = '';
         buscador.value = nombre;
@@ -333,10 +327,6 @@ function descargarPDF() {
         acciones.appendChild(crearBotonAccion('Cambiar equipo', 'cambiar'));
         acciones.appendChild(crearBotonAccion('Quitar', 'quitar'));
         panel.appendChild(acciones);
-
-        if (plantillaSuscripcion) {
-            panel.appendChild(crearSuscripcion());
-        }
 
         card.appendChild(panel);
         card.classList.remove('hidden');

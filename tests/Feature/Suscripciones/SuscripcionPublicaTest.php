@@ -1,6 +1,6 @@
 <?php
 
-// Interfaz pública de la suscripción: formulario en la tarjeta del equipo seguido, aviso en la home, footer y página propia.
+// Interfaz pública de la suscripción: bloque de avisos por correo, aviso en la home, footer y página propia.
 
 use App\Models\Categoria;
 use App\Models\Edicion;
@@ -22,14 +22,14 @@ function suscripcionPublicaEquipo(): Equipo
     return Equipo::create(['nombre' => 'Huracán', 'idCategoria' => $categoria->id, 'idEdicion' => $edicion->id, 'foto' => 'h.png']);
 }
 
-it('la home trae el formulario de avisos para la tarjeta del equipo seguido', function (): void {
+it('la home trae el bloque de avisos por correo aunque no se siga un equipo', function (): void {
     suscripcionPublicaEquipo();
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('id="seguir-equipo-suscripcion"', false)
+        ->assertSee('id="avisos-por-correo"', false)
+        ->assertDontSee('id="seguir-equipo-suscripcion"', false)
         ->assertSee('action="'.route('suscripcion.store').'"', false)
-        ->assertSee('Avisame por correo')
         ->assertDontSee('name="equipos[]"', false)
         ->assertSee('value="resumen_fecha" checked', false)
         ->assertSee('value="proxima_fecha" checked', false)

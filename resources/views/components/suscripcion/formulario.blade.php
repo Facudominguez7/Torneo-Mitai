@@ -1,6 +1,4 @@
-@props(['conEquipo' => false])
-
-{{-- Formulario de suscripción: correo y avisos. Con equipo es la versión de la tarjeta "Seguir mi equipo" de la portada. --}}
+{{-- Formulario de suscripción: correo y avisos. --}}
 @php
     $errores = $errors->getBag('suscripcion');
     $conDatosPrevios = session()->hasOldInput('email');
@@ -17,16 +15,7 @@
     x-data="{ enviando: false }" x-on:submit="enviando = true" x-on:pageshow.window="enviando = false">
     @csrf
 
-    @if ($conEquipo)
-        <p class="flex items-center gap-2 text-lg font-bold text-tema-tinta">
-            <svg aria-hidden="true" class="h-5 w-5 text-tema-acento" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />
-            </svg>
-            Avisame por correo
-        </p>
-    @endif
-
-    <x-acceso.campo id="{{ $conEquipo ? 'suscripcion-email-equipo' : 'suscripcion-email' }}" label="Correo electrónico" type="email"
+    <x-acceso.campo id="suscripcion-email" label="Correo electrónico" type="email"
         name="email" :value="old('email')" :errores="$errores->get('email')" placeholder="nombre@correo.com" clase-rotulo="text-tema-acento"
         required autocomplete="email" />
 
