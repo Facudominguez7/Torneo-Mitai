@@ -82,7 +82,9 @@ services:
     container_name: mitai-scheduler
     restart: unless-stopped
     working_dir: /var/www/html
-    command: php artisan schedule:work
+    # La imagen instala sin dependencias de desarrollo, pero bootstrap/cache (montado) las incluye:
+    # se instalan completas al arrancar, como en el vendor del servicio app.
+    command: sh -c "composer install --no-interaction --prefer-dist && php artisan schedule:work"
     volumes:
       - .:/var/www/html
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
