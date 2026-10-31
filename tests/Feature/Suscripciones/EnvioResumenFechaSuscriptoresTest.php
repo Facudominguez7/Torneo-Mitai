@@ -1,20 +1,25 @@
 <?php
 
-// Envío del resumen de la fecha a los suscriptores: broadcast de Resend o, sin sincronización, el mailer local.
+// Envío del resumen de la fecha a los suscriptores: se registra en la auditoría, se encola y el job
+// lo manda como broadcast de Resend o, sin sincronización, por el mailer local.
 
+use App\Jobs\EnviarResumenFechaSuscriptores;
 use App\Mail\ResumenResultadosFechaMail;
 use App\Models\Categoria;
 use App\Models\Edicion;
+use App\Models\EnvioSuscriptores;
 use App\Models\Equipo;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Partido;
 use App\Models\Suscriptor;
 use App\Models\User;
+use App\Services\EnvioSuscriptoresService;
 use App\Services\SuscripcionService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
 
@@ -68,32 +73,100 @@ function enviarResumenASuscriptores(object $prueba, ?User $usuario, array $datos
         ->postJson(route('notificaciones.resumen-fecha.suscriptores'), $datos, ['X-CSRF-TOKEN' => 'token-resumen']);
 }
 
-it('envia el resumen como broadcast de resend al segmento y al topico del resumen', function (): void {
-    $historial = resendFalso([respuestaResend(['id' => 'broadcast-1'])]);
+function procesarEnvio(EnvioSuscriptores $envio): EnviarResumenFechaSuscriptores
+{
+    $job = (new EnviarResumenFechaSuscriptores($envio->id))->withFakeQueueInteractions();
+    $job->handle(app(EnvioSuscriptoresService::class));
+
+    return $job;
+}
+
+it('registra el envio en la auditoria y lo deja en cola sin llamar a resend', function (): void {
+    Queue::fake();
+    $historial = resendFalso([]);
+    ['fecha' => $fecha, 'categoria' => $categoria] = fechaConResultados();
+    Suscriptor::factory()->activo()->count(2)->create(['recibe_resumen_fecha' => true]);
+    $admin = adminEnvioResumen();
+
+    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])
+        ->assertAccepted()
+        ->assertJson([
+            'success' => true,
+            'estado' => 'pendiente',
+            'destinatarios' => 2,
+            'message' => 'El resumen quedó en cola para 2 destinatario(s): sale en el próximo minuto.',
+        ]);
+
+    $envio = EnvioSuscriptores::query()->sole();
+    expect($envio->only(['tipo', 'clave', 'idFecha', 'idCategoria', 'usuario_id', 'estado', 'destinatarios']))->toBe([
+        'tipo' => 'resumen_fecha',
+        'clave' => "resumen_fecha:{$fecha->id}:{$categoria->id}",
+        'idFecha' => $fecha->id,
+        'idCategoria' => $categoria->id,
+        'usuario_id' => $admin->id,
+        'estado' => 'pendiente',
+        'destinatarios' => 2,
+    ])->and($historial)->toHaveCount(0);
+    Queue::assertPushed(EnviarResumenFechaSuscriptores::class, fn (EnviarResumenFechaSuscriptores $job): bool => $job->envioId === $envio->id && $job->afterCommit === true);
+});
+
+it('el job crea el broadcast como borrador, guarda su id y recien despues lo manda', function (): void {
+    Queue::fake();
+    $historial = resendFalso([respuestaResend(['id' => 'broadcast-1']), respuestaResend(['id' => 'broadcast-1'])]);
     ['fecha' => $fecha] = fechaConResultados();
+    Suscriptor::factory()->activo()->create(['recibe_resumen_fecha' => true]);
+    enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id])->assertAccepted();
 
-    $respuesta = enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id]);
+    procesarEnvio($envio = EnvioSuscriptores::query()->sole())->assertNotReleased();
 
-    $respuesta->assertOk()->assertJson(['success' => true, 'canal' => 'resend', 'broadcast_id' => 'broadcast-1']);
-    expect($historial)->toHaveCount(1);
-
-    $pedido = pedidoResend($historial, 0);
-    expect($pedido['metodo'])->toBe('POST')
-        ->and($pedido['ruta'])->toBe('/broadcasts')
-        ->and($pedido['cuerpo'])->toMatchArray([
+    expect($historial)->toHaveCount(2);
+    $borrador = pedidoResend($historial, 0);
+    expect($borrador['metodo'])->toBe('POST')
+        ->and($borrador['ruta'])->toBe('/broadcasts')
+        ->and($borrador['cuerpo'])->toMatchArray([
             'segment_id' => 'segmento-sitio',
             'topic_id' => 'topico-resumen',
             'from' => 'Torneos Mitai <avisos@notificaciones.torneosmitai.com>',
             'subject' => "Resultados Fecha 3 - Torneos Mita'i (Sub 12)",
-            'send' => true,
         ])
-        ->and($pedido['cuerpo']['html'])->toContain('Halcones')->toContain('Pumitas')
+        ->and($borrador['cuerpo'])->not->toHaveKey('send')
+        ->and($borrador['cuerpo']['html'])->toContain('Halcones')->toContain('Pumitas')
         ->toContain('href="{{{contact.url_preferencias}}}"')
-        ->and($pedido['cuerpo']['text'])->toContain('{{{contact.url_preferencias}}}');
+        ->and($borrador['cuerpo']['text'])->toContain('{{{contact.url_preferencias}}}')
+        ->and(pedidoResend($historial, 1))->toMatchArray(['metodo' => 'POST', 'ruta' => '/broadcasts/broadcast-1/send']);
+
+    $envio->refresh();
+    expect($envio->estado)->toBe('enviado')
+        ->and($envio->broadcast_id)->toBe('broadcast-1')
+        ->and($envio->destinatarios)->toBe(1)
+        ->and($envio->enviado_at)->not->toBeNull();
 });
 
-it('sin sincronizacion envia el resumen por el mailer solo a los activos que lo eligieron, cada uno con su enlace', function (): void {
+it('un reintento reutiliza el borrador y no lo manda dos veces', function (string $estadoEnResend, int $pedidos): void {
+    $respuestas = [respuestaResend(['object' => 'broadcast', 'id' => 'broadcast-1', 'status' => $estadoEnResend])];
+    if ($estadoEnResend === 'draft') {
+        $respuestas[] = respuestaResend(['id' => 'broadcast-1']);
+    }
+    $historial = resendFalso($respuestas);
+    ['fecha' => $fecha] = fechaConResultados();
+    $envio = EnvioSuscriptores::query()->create([
+        'tipo' => 'resumen_fecha', 'clave' => "resumen_fecha:{$fecha->id}:{$fecha->idCategoria}", 'idEdicion' => $fecha->idEdicion,
+        'idFecha' => $fecha->id, 'idCategoria' => $fecha->idCategoria, 'estado' => 'pendiente', 'broadcast_id' => 'broadcast-1',
+    ]);
+
+    procesarEnvio($envio);
+
+    expect($historial)->toHaveCount($pedidos)
+        ->and(pedidoResend($historial, 0))->toMatchArray(['metodo' => 'GET', 'ruta' => '/broadcasts/broadcast-1'])
+        ->and($envio->fresh()->estado)->toBe('enviado');
+})->with([
+    'quedo en borrador' => ['draft', 2],
+    'ya habia salido' => ['sent', 1],
+]);
+
+it('sin sincronizacion el job envia el resumen por el mailer solo a los activos que lo eligieron, cada uno con su enlace', function (): void {
     config(['suscripciones.resend.sincronizar' => false]);
+    Queue::fake();
     Mail::fake();
     $historial = resendFalso([]);
     ['fecha' => $fecha] = fechaConResultados();
@@ -101,57 +174,97 @@ it('sin sincronizacion envia el resumen por el mailer solo a los activos que lo 
     Suscriptor::factory()->activo()->create(['email' => 'no-elige@correo.com', 'recibe_resumen_fecha' => false]);
     Suscriptor::factory()->pendiente()->create(['email' => 'pendiente@correo.com', 'recibe_resumen_fecha' => true]);
     Suscriptor::factory()->deBaja()->create(['email' => 'baja@correo.com', 'recibe_resumen_fecha' => true]);
+    enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id])->assertAccepted();
 
-    enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id])
-        ->assertOk()
-        ->assertJson(['success' => true, 'canal' => 'mailer', 'enviados' => 1]);
+    procesarEnvio($envio = EnvioSuscriptores::query()->sole());
 
-    expect($historial)->toHaveCount(0);
+    expect($historial)->toHaveCount(0)
+        ->and($envio->fresh()->only(['estado', 'destinatarios']))->toBe(['estado' => 'enviado', 'destinatarios' => 1]);
     Mail::assertSent(ResumenResultadosFechaMail::class, 1);
     Mail::assertSent(ResumenResultadosFechaMail::class, fn (ResumenResultadosFechaMail $correo): bool => $correo->hasTo('elige@correo.com')
         && $correo->urlBajaGeneral === app(SuscripcionService::class)->urlPreferencias($elige));
 });
 
-it('rechaza la fecha sin resultados cargados sin llamar a resend', function (): void {
-    $historial = resendFalso([]);
+it('rechaza la fecha sin resultados cargados sin registrar nada', function (): void {
+    Queue::fake();
     ['fecha' => $fecha] = fechaConResultados(false);
 
     enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id])
         ->assertUnprocessable()
         ->assertJson(['success' => false, 'message' => 'No hay resultados para enviar en esa fecha.']);
 
-    expect($historial)->toHaveCount(0);
+    expect(EnvioSuscriptores::query()->count())->toBe(0);
+    Queue::assertNothingPushed();
 });
 
-it('no repite el envio de la misma fecha durante diez minutos', function (): void {
-    $historial = resendFalso([respuestaResend(['id' => 'broadcast-1'])]);
+it('bloquea el segundo envio del mismo resumen, en cola o ya enviado', function (): void {
+    Queue::fake();
+    resendFalso([respuestaResend(['id' => 'broadcast-1']), respuestaResend(['id' => 'broadcast-1'])]);
     ['fecha' => $fecha] = fechaConResultados();
     $admin = adminEnvioResumen();
 
-    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])->assertOk();
+    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])->assertAccepted();
     enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])
-        ->assertStatus(409)
-        ->assertJson(['success' => false, 'message' => 'Este resumen ya se envió a los suscriptores hace menos de 10 minutos.']);
+        ->assertConflict()
+        ->assertJson(['success' => false, 'message' => 'Este resumen ya está en cola para enviarse.']);
 
-    expect($historial)->toHaveCount(1);
+    $this->travelTo(now()->addDays(3));
+    procesarEnvio($envio = EnvioSuscriptores::query()->sole());
+
+    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])
+        ->assertConflict()
+        ->assertJson(['success' => false, 'message' => 'Este resumen ya se envió a los suscriptores el '.$envio->fresh()->enviado_at->format('d/m/Y H:i').'.']);
+
+    Queue::assertPushed(EnviarResumenFechaSuscriptores::class, 1);
+    expect(EnvioSuscriptores::query()->count())->toBe(1);
 });
 
-it('si resend falla responde el error, no loguea correos y permite reintentar', function (): void {
+it('si resend falla vuelve a intentar y al agotar los intentos queda fallido sin loguear correos', function (): void {
+    Queue::fake();
     Log::spy();
-    $historial = resendFalso([
-        respuestaResend(['statusCode' => 422, 'name' => 'validation_error', 'message' => 'Invalid from'], 422),
-        respuestaResend(['id' => 'broadcast-2']),
-    ]);
+    resendFalso([respuestaResend(['statusCode' => 422, 'name' => 'validation_error', 'message' => 'Invalid from madre@correo.com'], 422)]);
+    ['fecha' => $fecha] = fechaConResultados();
+    enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id])->assertAccepted();
+    $envio = EnvioSuscriptores::query()->sole();
+    $job = (new EnviarResumenFechaSuscriptores($envio->id))->withFakeQueueInteractions();
+
+    expect(fn () => $job->handle(app(EnvioSuscriptoresService::class)))->toThrow(Exception::class);
+    expect($envio->fresh()->estado)->toBe('pendiente')
+        ->and($job->tries)->toBe(3)
+        ->and($job->backoff)->toBe([60, 300]);
+
+    $job->failed(new RuntimeException('Invalid from madre@correo.com', 422));
+
+    expect($envio->fresh()->estado)->toBe('fallido');
+    Log::shouldHaveReceived('error')->once()->withArgs(fn (string $mensaje, array $contexto): bool => $contexto['envio_id'] === $envio->id
+        && ! str_contains(json_encode($contexto), 'madre@correo.com'));
+});
+
+it('un envio fallido se puede volver a pedir y reutiliza su registro', function (): void {
+    Queue::fake();
     ['fecha' => $fecha] = fechaConResultados();
     $admin = adminEnvioResumen();
+    enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id])->assertAccepted();
+    EnvioSuscriptores::query()->update(['estado' => 'fallido', 'broadcast_id' => 'broadcast-viejo']);
 
-    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])
-        ->assertStatus(502)
-        ->assertJson(['success' => false, 'message' => 'Resend no aceptó el envío. Probá de nuevo en unos minutos.']);
-    Log::shouldHaveReceived('error')->once()->withArgs(fn (string $mensaje, array $contexto): bool => ! array_key_exists('error_mensaje', $contexto));
+    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])->assertAccepted()->assertJson(['estado' => 'pendiente']);
 
-    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])->assertOk()->assertJson(['broadcast_id' => 'broadcast-2']);
-    expect($historial)->toHaveCount(2);
+    $envio = EnvioSuscriptores::query()->sole();
+    expect($envio->only(['estado', 'usuario_id', 'broadcast_id']))->toBe(['estado' => 'pendiente', 'usuario_id' => $admin->id, 'broadcast_id' => 'broadcast-viejo']);
+    Queue::assertPushed(EnviarResumenFechaSuscriptores::class, 2);
+});
+
+it('si al procesarse la fecha ya no tiene resultados queda fallido sin llamar a resend', function (): void {
+    Queue::fake();
+    $historial = resendFalso([]);
+    ['fecha' => $fecha] = fechaConResultados();
+    enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id])->assertAccepted();
+    Partido::query()->update(['golesEquipoLocal' => null, 'golesEquipoVisitante' => null]);
+
+    procesarEnvio($envio = EnvioSuscriptores::query()->sole());
+
+    expect($envio->fresh()->estado)->toBe('fallido')
+        ->and($historial)->toHaveCount(0);
 });
 
 it('solo un administrador puede enviar el resumen a los suscriptores', function (): void {
@@ -172,7 +285,21 @@ it('el conteo del resumen informa cuantos suscriptores lo van a recibir', functi
     $this->actingAs(adminEnvioResumen())
         ->getJson(route('notificaciones.resumen-fecha.contar', ['idFecha' => $fecha->id]))
         ->assertOk()
-        ->assertJson(['success' => true, 'suscriptores' => 2, 'partidos_count' => 1]);
+        ->assertJson(['success' => true, 'destinatarios' => 2, 'partidos_count' => 1, 'envio' => null]);
+});
+
+it('el conteo informa si el resumen ya se envio, para no volver a ofrecerlo', function (): void {
+    ['fecha' => $fecha] = fechaConResultados();
+    EnvioSuscriptores::query()->create([
+        'tipo' => 'resumen_fecha', 'clave' => "resumen_fecha:{$fecha->id}:{$fecha->idCategoria}", 'idEdicion' => $fecha->idEdicion,
+        'idFecha' => $fecha->id, 'idCategoria' => $fecha->idCategoria, 'estado' => 'enviado', 'destinatarios' => 7,
+        'enviado_at' => '2026-10-30 21:15:00',
+    ]);
+
+    $this->actingAs(adminEnvioResumen())
+        ->getJson(route('notificaciones.resumen-fecha.contar', ['idFecha' => $fecha->id]))
+        ->assertOk()
+        ->assertJson(['envio' => ['estado' => 'enviado', 'destinatarios' => 7, 'enviado_at' => '30/10/2026 21:15']]);
 });
 
 it('la tarjeta del resumen lo envia solo a los suscriptores', function (): void {

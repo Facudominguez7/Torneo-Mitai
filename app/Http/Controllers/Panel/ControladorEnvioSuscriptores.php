@@ -4,11 +4,10 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Suscripcion\ResumenFechaRequest;
+use App\Models\EnvioSuscriptores;
 use App\Services\EnvioSuscriptoresService;
 use App\Services\ResumenFechaService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
 /**
  * Avisos masivos del panel a los suscriptores: cuenta los destinatarios y dispara el envío.
@@ -46,20 +45,27 @@ class ControladorEnvioSuscriptores extends Controller
             ], 422);
         }
 
-        $suscriptores = $this->envios->destinatariosResumenFecha();
+        $destinatarios = $this->envios->destinatariosResumenFecha();
+        $envio = $this->envios->envioResumenFecha($resumen['id_fecha'], $resumen['id_categoria']);
 
         return response()->json([
             'success' => true,
-            'suscriptores' => $suscriptores,
+            'destinatarios' => $destinatarios,
             'partidos_count' => $resumen['partidos_count'],
             'fecha_nombre' => $resumen['fecha_nombre'],
             'categoria_nombre' => $resumen['categoria_nombre'],
-            'message' => "Se enviará a {$suscriptores} suscriptor(es).",
+            'envio' => $envio === null ? null : [
+                'estado' => $envio->estado,
+                'destinatarios' => $envio->destinatarios,
+                'enviado_at' => $envio->enviado_at?->format('d/m/Y H:i'),
+            ],
+            'message' => "Se enviará a {$destinatarios} destinatario(s).",
         ]);
     }
 
     /**
-     * Envía el resumen de una fecha a los suscriptores que lo eligieron.
+     * Registra el envío del resumen y lo deja en cola. Cada fecha y categoría sale una sola vez;
+     * solo se puede volver a pedir uno que falló.
      */
     public function enviarResumenFecha(ResumenFechaRequest $request): JsonResponse
     {
@@ -72,31 +78,25 @@ class ControladorEnvioSuscriptores extends Controller
             return response()->json(['success' => false, 'message' => 'No hay resultados para enviar en esa fecha.'], 422);
         }
 
-        try {
-            $envio = $this->envios->enviarResumenFecha($resumen);
-        } catch (Throwable $e) {
-            // Sin el mensaje del proveedor: puede incluir correos de suscriptores.
-            Log::error('No se pudo enviar el resumen de fecha a los suscriptores.', [
-                'error' => $e::class,
-                'codigo' => $e->getCode(),
-                'idFecha' => $resumen['id_fecha'],
-                'idCategoria' => $resumen['id_categoria'],
-            ]);
-
-            return response()->json(['success' => false, 'message' => 'Resend no aceptó el envío. Probá de nuevo en unos minutos.'], 502);
-        }
+        $envio = $this->envios->registrarResumenFecha($resumen, $request->user());
 
         if ($envio === null) {
+            $previo = $this->envios->envioResumenFecha($resumen['id_fecha'], $resumen['id_categoria']);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Este resumen ya se envió a los suscriptores hace menos de '.EnvioSuscriptoresService::MINUTOS_ENTRE_ENVIOS.' minutos.',
+                'message' => $previo?->estado === EnvioSuscriptores::ESTADO_ENVIADO
+                    ? 'Este resumen ya se envió a los suscriptores el '.$previo->enviado_at?->format('d/m/Y H:i').'.'
+                    : 'Este resumen ya está en cola para enviarse.',
             ], 409);
         }
 
         return response()->json([
             'success' => true,
-            ...$envio,
-            'message' => "Resumen enviado a {$envio['enviados']} suscriptor(es).",
-        ]);
+            'envio_id' => $envio->id,
+            'estado' => $envio->estado,
+            'destinatarios' => $envio->destinatarios,
+            'message' => "El resumen quedó en cola para {$envio->destinatarios} destinatario(s): sale en el próximo minuto.",
+        ], 202);
     }
 }

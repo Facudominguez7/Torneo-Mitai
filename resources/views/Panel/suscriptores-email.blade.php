@@ -344,7 +344,7 @@
                 log_route: '{{ route("notificaciones.log-completo") }}',
                 batch_size: 20,
             },
-            // Sin lotes: un único broadcast de Resend a los suscriptores.
+            // Sin lotes: el envío queda en cola y sale como un único broadcast de Resend.
             resumen_fecha: {
                 count_route: '{{ route("notificaciones.resumen-fecha.contar") }}',
                 send_route: '{{ route("notificaciones.resumen-fecha.suscriptores") }}',
@@ -645,7 +645,8 @@
         }
 
         /**
-         * Envía el resumen de la fecha a los suscriptores (un único broadcast de Resend).
+         * Deja en cola el resumen de la fecha para los suscriptores (un único broadcast de Resend).
+         * Cada fecha y categoría sale una sola vez; solo se puede reintentar un envío fallido.
          */
         async function iniciarEnvioResumenFecha() {
             const boton = document.getElementById('btn-enviar-resumen-fecha');
@@ -672,17 +673,30 @@
                     throw new Error(resumen.message || 'No hay resultados para enviar en la fecha seleccionada.');
                 }
 
-                if (resumen.suscriptores === 0) {
-                    await Swal.fire('Sin suscriptores', 'Todavía nadie eligió recibir el resumen de la fecha.', 'info');
+                if (resumen.envio?.estado === 'enviado') {
+                    await Swal.fire('Ya enviado', `Este resumen ya se envió el ${resumen.envio.enviado_at} a ${resumen.envio.destinatarios} destinatario(s).`, 'info');
                     return;
                 }
 
+                if (resumen.envio?.estado === 'pendiente') {
+                    await Swal.fire('En cola', 'Este resumen ya está en cola: sale en el próximo minuto.', 'info');
+                    return;
+                }
+
+                if (resumen.destinatarios === 0) {
+                    await Swal.fire('Sin destinatarios', 'Todavía nadie eligió recibir el resumen de la fecha.', 'info');
+                    return;
+                }
+
+                const reintento = resumen.envio?.estado === 'fallido';
                 const confirmacion = await Swal.fire({
-                    title: 'Enviar a suscriptores',
+                    title: reintento ? 'Reintentar el envío' : 'Enviar a suscriptores',
                     html: `<div style="text-align:left">` +
+                        (reintento ? `<p>El envío anterior de este resumen falló.</p>` : '') +
                         `<p><strong>Fecha:</strong> ${resumen.fecha_nombre}</p>` +
                         `<p><strong>Partidos:</strong> ${resumen.partidos_count}</p>` +
-                        `<p><strong>Suscriptores:</strong> ${resumen.suscriptores}</p>` +
+                        `<p><strong>Destinatarios:</strong> ${resumen.destinatarios}</p>` +
+                        `<p>Cada resumen se envía una sola vez.</p>` +
                         `</div>`,
                     icon: 'question',
                     showCancelButton: true,
@@ -713,7 +727,7 @@
                     throw new Error(envio.message || 'No se pudo enviar el resumen.');
                 }
 
-                await Swal.fire('Resumen enviado', envio.message, 'success');
+                await Swal.fire('Resumen en cola', envio.message, 'success');
             } catch (error) {
                 await Swal.fire('No se pudo enviar', error.message || 'Error al enviar el resumen.', 'error');
             } finally {

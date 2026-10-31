@@ -2,55 +2,80 @@
 
 namespace App\Services;
 
+use App\Jobs\EnviarResumenFechaSuscriptores;
 use App\Mail\ResumenResultadosFechaMail;
+use App\Models\EnvioSuscriptores;
 use App\Models\Suscriptor;
-use Illuminate\Support\Facades\Cache;
+use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Mail;
 use Resend\Client;
-use Throwable;
 
 /**
- * Envía los avisos masivos a los suscriptores. Con Resend sale un único broadcast al segmento,
- * acotado al tópico del aviso: no consume el cupo diario de correos individuales. Con la
- * sincronización apagada (MailHog en local) se envía un correo por suscriptor con el mailer.
+ * Envía los avisos masivos a los suscriptores. El pedido del panel solo registra el envío y lo
+ * encola; el job arma el broadcast de Resend (un único envío al segmento, acotado al tópico del
+ * aviso, que no consume el cupo diario de correos individuales). Con la sincronización apagada
+ * (MailHog en local) se manda un correo por suscriptor con el mailer.
  */
 class EnvioSuscriptoresService
 {
     /** El broadcast lleva el mismo HTML para todos: el enlace de cada uno sale de su contacto. */
     public const URL_PREFERENCIAS_CONTACTO = '{{{contact.url_preferencias}}}';
 
-    public const MINUTOS_ENTRE_ENVIOS = 10;
-
     public function __construct(
         private readonly Client $resend,
         private readonly SuscripcionService $suscripciones,
+        private readonly ResumenFechaService $resumenes,
     ) {}
 
     /**
-     * @param  array<string, mixed>  $resumen  resumen armado por ControladorNotificacionesEmail
-     * @return array{canal: string, broadcast_id: ?string, enviados: int}|null null si ese resumen ya se envió hace poco
+     * Registra el envío del resumen y lo encola. Un resumen de la misma fecha y categoría que ya
+     * salió o está en cola no se vuelve a enviar; uno que falló sí se puede reintentar.
+     *
+     * @param  array<string, mixed>  $resumen  armado por ResumenFechaService
+     * @return EnvioSuscriptores|null null si ese resumen ya se envió o está en cola
      */
-    public function enviarResumenFecha(array $resumen): ?array
+    public function registrarResumenFecha(array $resumen, ?User $administrador): ?EnvioSuscriptores
     {
-        $candado = Cache::lock(
-            "suscriptores:resumen-fecha:{$resumen['id_fecha']}:".($resumen['id_categoria'] ?? 'todas'),
-            self::MINUTOS_ENTRE_ENVIOS * 60,
-        );
-
-        // El candado no se libera al terminar: evita un segundo envío por doble clic o recarga.
-        if (! $candado->get()) {
-            return null;
-        }
+        $clave = EnvioSuscriptores::claveResumenFecha((int) $resumen['id_fecha'], $resumen['id_categoria']);
+        $datos = [
+            'usuario_id' => $administrador?->id,
+            'estado' => EnvioSuscriptores::ESTADO_PENDIENTE,
+            'destinatarios' => $this->destinatariosResumenFecha(),
+        ];
 
         try {
-            return config('suscripciones.resend.sincronizar')
-                ? $this->enviarBroadcast($resumen)
-                : $this->enviarPorMailer($resumen);
-        } catch (Throwable $error) {
-            $candado->release();
+            $envio = EnvioSuscriptores::query()->create([
+                ...$datos,
+                'tipo' => EnvioSuscriptores::TIPO_RESUMEN_FECHA,
+                'clave' => $clave,
+                'idEdicion' => (int) $resumen['id_edicion'],
+                'idFecha' => (int) $resumen['id_fecha'],
+                'idCategoria' => $resumen['id_categoria'],
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            // Solo un pedido puede reactivar el que falló: el update condicionado es atómico.
+            $reactivados = EnvioSuscriptores::query()
+                ->where('clave', $clave)
+                ->where('estado', EnvioSuscriptores::ESTADO_FALLIDO)
+                ->update($datos);
 
-            throw $error;
+            if ($reactivados === 0) {
+                return null;
+            }
+
+            $envio = EnvioSuscriptores::query()->where('clave', $clave)->firstOrFail();
         }
+
+        EnviarResumenFechaSuscriptores::dispatch($envio->id);
+
+        return $envio;
+    }
+
+    /** El envío registrado del resumen de esa fecha y categoría, si existe. */
+    public function envioResumenFecha(int $idFecha, ?int $idCategoria): ?EnvioSuscriptores
+    {
+        return EnvioSuscriptores::query()->where('clave', EnvioSuscriptores::claveResumenFecha($idFecha, $idCategoria))->first();
     }
 
     /** Suscriptores que reciben el resumen de cada fecha. */
@@ -60,36 +85,71 @@ class EnvioSuscriptoresService
     }
 
     /**
-     * @param  array<string, mixed>  $resumen
-     * @return array{canal: string, broadcast_id: string, enviados: int}
+     * Lo corre el job. Es seguro reintentarlo: el broadcast se crea como borrador, se guarda su id
+     * y recién después se manda; un reintento reutiliza ese borrador y no lo manda dos veces.
      */
-    private function enviarBroadcast(array $resumen): array
+    public function procesarResumenFecha(EnvioSuscriptores $envio): void
     {
-        $correo = new ResumenResultadosFechaMail($resumen, self::URL_PREFERENCIAS_CONTACTO);
+        if ($envio->estado !== EnvioSuscriptores::ESTADO_PENDIENTE) {
+            return;
+        }
 
-        $broadcast = $this->resend->broadcasts->create([
-            'segment_id' => (string) config('suscripciones.resend.segmento'),
-            'topic_id' => (string) config('suscripciones.resend.topicos.resumen_fecha'),
-            'from' => EmailDeliverabilityHeaders::fromName().' <'.config('suscripciones.remitente').'>',
-            'reply_to' => EmailDeliverabilityHeaders::replyToAddress(),
-            'subject' => $correo->asunto(),
-            'name' => $correo->asunto(),
-            'html' => $correo->render(),
-            'text' => view('emails.resumen-resultados-fecha-text', [
-                'resumen' => $resumen,
-                'urlBajaGeneral' => self::URL_PREFERENCIAS_CONTACTO,
-            ])->render(),
-            'send' => true,
-        ]);
+        $resumen = $this->resumenes->armar($envio->idEdicion, (int) $envio->idFecha, $envio->idCategoria);
 
-        return ['canal' => 'resend', 'broadcast_id' => $broadcast->id, 'enviados' => $this->destinatariosResumenFecha()];
+        if ($resumen === null) {
+            $envio->forceFill(['estado' => EnvioSuscriptores::ESTADO_FALLIDO])->save();
+
+            return;
+        }
+
+        $destinatarios = config('suscripciones.resend.sincronizar')
+            ? $this->enviarBroadcast($envio, $resumen)
+            : $this->enviarPorMailer($resumen);
+
+        $envio->forceFill([
+            'estado' => EnvioSuscriptores::ESTADO_ENVIADO,
+            'destinatarios' => $destinatarios,
+            'enviado_at' => now(),
+        ])->save();
     }
 
     /**
      * @param  array<string, mixed>  $resumen
-     * @return array{canal: string, broadcast_id: null, enviados: int}
      */
-    private function enviarPorMailer(array $resumen): array
+    private function enviarBroadcast(EnvioSuscriptores $envio, array $resumen): int
+    {
+        if ($envio->broadcast_id === null) {
+            $correo = new ResumenResultadosFechaMail($resumen, self::URL_PREFERENCIAS_CONTACTO);
+
+            $borrador = $this->resend->broadcasts->create([
+                'segment_id' => (string) config('suscripciones.resend.segmento'),
+                'topic_id' => (string) config('suscripciones.resend.topicos.resumen_fecha'),
+                'from' => EmailDeliverabilityHeaders::fromName().' <'.config('suscripciones.remitente').'>',
+                'reply_to' => EmailDeliverabilityHeaders::replyToAddress(),
+                'subject' => $correo->asunto(),
+                'name' => $correo->asunto(),
+                'html' => $correo->render(),
+                'text' => view('emails.resumen-resultados-fecha-text', [
+                    'resumen' => $resumen,
+                    'urlBajaGeneral' => self::URL_PREFERENCIAS_CONTACTO,
+                ])->render(),
+            ]);
+
+            $envio->forceFill(['broadcast_id' => $borrador->id])->save();
+        } elseif ($this->resend->broadcasts->get($envio->broadcast_id)->status !== 'draft') {
+            // El intento anterior lo mandó pero no llegó a guardarlo.
+            return $this->destinatariosResumenFecha();
+        }
+
+        $this->resend->broadcasts->send($envio->broadcast_id, []);
+
+        return $this->destinatariosResumenFecha();
+    }
+
+    /**
+     * @param  array<string, mixed>  $resumen
+     */
+    private function enviarPorMailer(array $resumen): int
     {
         $enviados = 0;
 
@@ -103,6 +163,6 @@ class EnvioSuscriptoresService
                 }
             });
 
-        return ['canal' => 'mailer', 'broadcast_id' => null, 'enviados' => $enviados];
+        return $enviados;
     }
 }
