@@ -14,8 +14,8 @@
     @endphp
 
     <div class="flex flex-col gap-1.5">
-        <h1 class="text-[26px] font-bold leading-tight sm:text-[28px]">Tus avisos por correo</h1>
-        <p class="text-[15px] text-white/75">Llegan a <span class="font-semibold text-white">{{ $suscriptor->email }}</span>.</p>
+        <h1 class="text-[26px] font-extrabold leading-tight sm:text-[32px]">Tus avisos por correo</h1>
+        <p class="text-[15px] text-brand-navy-deep/75">Llegan a <span class="font-semibold text-brand-navy-deep">{{ $suscriptor->email }}</span>.</p>
     </div>
 
     @if (session('suscripcion'))
@@ -29,8 +29,8 @@
         @csrf
         @method('PUT')
 
-        <fieldset class="flex flex-col gap-2" @if ($errorAvisos) aria-describedby="preferencias-avisos-error" @endif>
-            <legend class="mb-2 text-[15px] font-semibold text-white/90">Qué querés recibir</legend>
+        <fieldset class="suscripcion-avisos flex flex-col gap-2" @if ($errorAvisos) data-invalido aria-describedby="preferencias-avisos-error" @endif>
+            <legend class="mb-2 text-[15px] font-semibold text-brand-navy-deep">Qué querés recibir</legend>
             <input type="hidden" name="avisos" value="">
             @foreach ($avisos as $valor => [$titulo, $detalle])
                 <x-suscripcion.opcion nombre="avisos[]" :valor="$valor" :marcado="in_array($valor, $avisosMarcados, true)" :detalle="$detalle">
@@ -38,7 +38,7 @@
                 </x-suscripcion.opcion>
             @endforeach
             @if ($errorAvisos)
-                <p id="preferencias-avisos-error" class="text-sm text-red-300">{{ $errorAvisos }}</p>
+                <p id="preferencias-avisos-error" class="acceso-error text-sm font-semibold">{{ $errorAvisos }}</p>
             @endif
         </fieldset>
 
@@ -46,9 +46,9 @@
     </form>
 
     <x-slot:pie>
-        <p class="text-center text-[15px] text-white/80">
+        <p class="text-center text-[15px] text-brand-navy-deep/75">
             ¿No querés recibir más correos?
-            <a href="{{ $urlBaja }}" class="font-bold text-brand-teal-light underline-offset-4 hover:text-brand-gold hover:underline">Darme de baja</a>
+            <a href="{{ $urlBaja }}" class="acceso-enlace">Darme de baja</a>
         </p>
     </x-slot:pie>
 </x-guest-layout>

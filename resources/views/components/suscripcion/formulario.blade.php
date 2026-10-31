@@ -18,8 +18,8 @@
     @csrf
 
     @if ($conEquipo)
-        <p class="flex items-center gap-2 text-lg font-bold text-white">
-            <svg aria-hidden="true" class="h-5 w-5 text-brand-teal-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <p class="flex items-center gap-2 text-lg font-bold text-tema-tinta">
+            <svg aria-hidden="true" class="h-5 w-5 text-tema-acento" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />
             </svg>
             Avisame por correo
@@ -27,11 +27,11 @@
     @endif
 
     <x-acceso.campo id="{{ $conEquipo ? 'suscripcion-email-equipo' : 'suscripcion-email' }}" label="Correo electrónico" type="email"
-        name="email" :value="old('email')" :errores="$errores->get('email')" placeholder="nombre@correo.com"
+        name="email" :value="old('email')" :errores="$errores->get('email')" placeholder="nombre@correo.com" clase-rotulo="text-tema-acento"
         required autocomplete="email" />
 
-    <fieldset class="flex flex-col gap-2" @if ($errorAvisos) aria-describedby="suscripcion-avisos-error" @endif>
-        <legend class="mb-2 text-[15px] font-semibold text-white/90">Qué querés recibir</legend>
+    <fieldset class="suscripcion-avisos flex flex-col gap-2" @if ($errorAvisos) data-invalido aria-describedby="suscripcion-avisos-error" @endif>
+        <legend class="mb-2 text-[15px] font-semibold text-tema-tinta/90">Qué querés recibir</legend>
         {{-- Sin casillas marcadas el navegador no manda "avisos": este campo vacío indica que no eligió ninguno. --}}
         <input type="hidden" name="avisos" value="">
 
@@ -42,12 +42,12 @@
         @endforeach
 
         @if ($errorAvisos)
-            <p id="suscripcion-avisos-error" class="text-sm text-red-300">{{ $errorAvisos }}</p>
+            <p id="suscripcion-avisos-error" class="acceso-error text-sm font-semibold">{{ $errorAvisos }}</p>
         @endif
     </fieldset>
 
     <div class="flex flex-col gap-2">
         <x-acceso.boton x-bind:disabled="enviando">Suscribirme</x-acceso.boton>
-        <p class="text-center text-sm text-white/70">Te mandamos un correo para confirmar.</p>
+        <p class="text-center text-sm text-tema-dim/70">Te mandamos un correo para confirmar.</p>
     </div>
 </form>

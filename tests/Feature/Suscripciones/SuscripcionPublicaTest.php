@@ -1,6 +1,6 @@
 <?php
 
-// Interfaz pública de la suscripción: tarjeta de "Seguir mi equipo", aviso en la home, footer y página propia.
+// Interfaz pública de la suscripción: formulario en la tarjeta del equipo seguido, aviso en la home, footer y página propia.
 
 use App\Models\Categoria;
 use App\Models\Edicion;
@@ -98,7 +98,8 @@ it('tiene una pagina propia para suscribirse sin seguir un equipo', function ():
         ->assertSee('<title>Avisos por correo · Torneos Mita&#039;í</title>', false)
         ->assertSee('action="'.route('suscripcion.store').'"', false)
         ->assertSee('name="avisos[]"', false)
-        ->assertDontSee('name="equipos[]"', false);
+        ->assertDontSee('name="equipos[]"', false)
+        ->assertDontSee('Para los resultados de tu equipo');
 });
 
 it('la pagina propia muestra el resultado y los errores', function (): void {

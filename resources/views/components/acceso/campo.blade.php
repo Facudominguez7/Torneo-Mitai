@@ -1,4 +1,4 @@
-@props(['id', 'label', 'type' => 'text', 'errores' => [], 'revelable' => false])
+@props(['id', 'label', 'type' => 'text', 'errores' => [], 'revelable' => false, 'claseRotulo' => 'text-brand-teal'])
 
 {{-- Campo de las pantallas de acceso: label, input y errores. "revelable" suma el botón para mostrar la contraseña. --}}
 @php
@@ -8,7 +8,7 @@
 
 <div class="flex flex-col gap-2">
     <div class="flex items-baseline justify-between gap-3">
-        <label for="{{ $id }}" class="font-mono text-xs font-bold uppercase tracking-[.1em] text-brand-teal">{{ $label }}</label>
+        <label for="{{ $id }}" class="font-mono text-xs font-bold uppercase tracking-[.1em] {{ $claseRotulo }}">{{ $label }}</label>
         {{ $accion ?? '' }}
     </div>
 

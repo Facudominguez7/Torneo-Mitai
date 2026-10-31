@@ -1841,7 +1841,7 @@
 .acceso--compacto .acceso-bajada, .acceso--compacto .acceso-accesos { display: none; }
 .acceso--compacto .acceso-titulo { font-size: 1.875rem; }
 
-.acceso-formulario { display: flex; flex-direction: column; padding: 1.625rem 1.25rem 1.375rem; background: linear-gradient(rgb(var(--brand-navy) / .03), rgb(var(--brand-navy) / .03)), white; }
+.acceso-formulario { --tm-tinta: 8 47 59; --tm-dim: 8 47 59; --tm-linea: 8 47 59; --tm-acento: 42 109 129; --tm-superficie-bg: rgba(14, 75, 94, .055); display: flex; flex-direction: column; padding: 1.625rem 1.25rem 1.375rem; background: linear-gradient(rgb(var(--brand-navy) / .03), rgb(var(--brand-navy) / .03)), white; }
 .acceso-formulario-in { display: flex; flex: 1; flex-direction: column; gap: 1.25rem; width: 100%; max-width: 25rem; margin: 0 auto; }
 .acceso-legales { display: flex; flex-wrap: wrap; justify-content: center; gap: .25rem .875rem; margin-top: auto; padding-top: .5rem; font-size: .8125rem; color: rgb(var(--brand-navy-deep) / .6); }
 .acceso-legales a { color: rgb(var(--brand-navy-deep) / .75); }
@@ -2044,6 +2044,15 @@
 .perfil-formulario { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.125rem; }
 .perfil-formulario label { color: rgb(var(--tm-acento)); }
 .perfil .acceso-error { color: rgb(var(--perfil-error)); }
+
+/* Avisos de la suscripción: el error tiñe las opciones como el campo tiñe su línea; el rojo sigue al tema y el panel de acceso es siempre claro. */
+.suscripcion-avisos { --suscripcion-error: 252 165 165; }
+@media (prefers-color-scheme: light) {
+    :root:not([data-tema="oscuro"]) .suscripcion-avisos { --suscripcion-error: 180 35 24; }
+}
+:root[data-tema="claro"] .suscripcion-avisos, .acceso-formulario .suscripcion-avisos { --suscripcion-error: 180 35 24; }
+.suscripcion-avisos[data-invalido] label { border-color: rgb(var(--suscripcion-error) / .75); }
+.suscripcion-avisos .acceso-error { color: rgb(var(--suscripcion-error)); }
 .perfil-ancho, .perfil-acciones { grid-column: 1 / -1; }
 .perfil-papel { background: white; }
 .perfil-enlace { font-weight: 700; color: rgb(var(--brand-navy)); text-decoration: underline; text-underline-offset: 3px; }
