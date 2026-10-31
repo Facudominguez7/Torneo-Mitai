@@ -38,7 +38,7 @@
         <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
             <div>
                 <h2 class="text-base font-bold text-gray-800">Resumen de la fecha</h2>
-                <p class="mt-1 text-sm text-gray-500">Resultados de una fecha para los suscriptos de la categoría.</p>
+                <p class="mt-1 text-sm text-gray-500">Resultados de una fecha para los suscriptores que eligieron el resumen.</p>
                 <p class="mt-1 text-xs text-gray-400">Edición activa: {{ $resumenNombreEdicion }}</p>
             </div>
 
@@ -305,7 +305,7 @@
         let totalErrores = 0;
         let currentOffset = 0;
         let abortController = null;
-        let currentTask = 'recordatorios'; // 'recordatorios' | 'manual' | 'resumen_fecha'
+        let currentTask = 'recordatorios'; // 'recordatorios' | 'manual'
         let currentPayload = {};
         let rateLimitRetries = 0;
         let totalSesionEnviados = 0;
@@ -344,12 +344,10 @@
                 log_route: '{{ route("notificaciones.log-completo") }}',
                 batch_size: 20,
             },
+            // Sin lotes: un único broadcast de Resend a los suscriptores.
             resumen_fecha: {
-                start_msg: 'Enviando resumen de fecha...',
                 count_route: '{{ route("notificaciones.resumen-fecha.contar") }}',
-                send_route: '{{ route("notificaciones.resumen-fecha.enviar-lote") }}',
-                log_route: '{{ route("notificaciones.log-completo") }}',
-                batch_size: 20,
+                send_route: '{{ route("notificaciones.resumen-fecha.suscriptores") }}',
             }
         };
 
@@ -647,10 +645,11 @@
         }
 
         /**
-         * Dispara envío centralizado del resumen de resultados por fecha.
+         * Envía el resumen de la fecha a los suscriptores (un único broadcast de Resend).
          */
         async function iniciarEnvioResumenFecha() {
-            if (enviando) {
+            const boton = document.getElementById('btn-enviar-resumen-fecha');
+            if (enviando || boton?.disabled) {
                 return;
             }
 
@@ -662,37 +661,32 @@
                 return;
             }
 
-            const params = new URLSearchParams({
-                idFecha,
-            });
-
-            if (idCategoria) {
-                params.set('idCategoria', idCategoria);
-            }
+            const datos = { idFecha, ...(idCategoria ? { idCategoria } : {}) };
 
             try {
-                const response = await fetch(`${ENDPOINTS.resumen_fecha.count_route}?${params.toString()}`, {
-                    headers: {
-                        Accept: 'application/json',
-                    },
+                const conteo = await fetch(`${ENDPOINTS.resumen_fecha.count_route}?${new URLSearchParams(datos).toString()}`, {
+                    headers: { Accept: 'application/json' },
                 });
+                const resumen = await conteo.json();
+                if (!conteo.ok || !resumen.success) {
+                    throw new Error(resumen.message || 'No hay resultados para enviar en la fecha seleccionada.');
+                }
 
-                const data = await response.json();
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'No hay resultados para enviar en la fecha seleccionada.');
+                if (resumen.suscriptores === 0) {
+                    await Swal.fire('Sin suscriptores', 'Todavía nadie eligió recibir el resumen de la fecha.', 'info');
+                    return;
                 }
 
                 const confirmacion = await Swal.fire({
-                    title: 'Enviar resumen de fecha',
+                    title: 'Enviar a suscriptores',
                     html: `<div style="text-align:left">` +
-                        `<p><strong>Fecha:</strong> ${data.fecha_nombre}</p>` +
-                        `<p><strong>Partidos:</strong> ${data.partidos_count}</p>` +
-                        `<p><strong>Usuarios:</strong> ${data.count}</p>` +
-                        `<p><strong>Correos estimados:</strong> ${data.correos_estimados} (BCC de ${data.lote_bcc})</p>` +
+                        `<p><strong>Fecha:</strong> ${resumen.fecha_nombre}</p>` +
+                        `<p><strong>Partidos:</strong> ${resumen.partidos_count}</p>` +
+                        `<p><strong>Suscriptores:</strong> ${resumen.suscriptores}</p>` +
                         `</div>`,
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: 'Sí, enviar resumen',
+                    confirmButtonText: 'Sí, enviar',
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: '#2563eb',
                     cancelButtonColor: '#6b7280',
@@ -702,12 +696,31 @@
                     return;
                 }
 
-                iniciarProceso('resumen_fecha', {
-                    idFecha,
-                    ...(idCategoria ? { idCategoria } : {}),
+                boton.disabled = true;
+                boton.classList.add('opacity-50', 'cursor-not-allowed');
+
+                const respuesta = await fetch(ENDPOINTS.resumen_fecha.send_route, {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    },
+                    body: JSON.stringify(datos),
                 });
+                const envio = await respuesta.json();
+                if (!respuesta.ok || !envio.success) {
+                    throw new Error(envio.message || 'No se pudo enviar el resumen.');
+                }
+
+                await Swal.fire('Resumen enviado', envio.message, 'success');
             } catch (error) {
-                await Swal.fire('No se pudo iniciar', error.message || 'Error al preparar el envío.', 'error');
+                await Swal.fire('No se pudo enviar', error.message || 'Error al enviar el resumen.', 'error');
+            } finally {
+                if (boton) {
+                    boton.disabled = false;
+                    boton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
             }
         }
 
@@ -946,8 +959,6 @@
                     let msg = '';
                     if (currentTask === 'manual') {
                         msg = `Enviando notificación... Emails: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.metrics?.remaining ?? data.remaining ?? 0}`;
-                    } else if (currentTask === 'resumen_fecha') {
-                        msg = `Enviando resumen... Emails: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.metrics?.remaining ?? data.remaining ?? 0}`;
                     } else {
                         msg = `Enviando... Enviados: ${totalEnviados} | Errores: ${totalErrores} | Restantes aprox: ${data.metrics?.remaining ?? data.remaining}`;
                     }

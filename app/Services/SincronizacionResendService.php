@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Suscriptor;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Resend\Client;
 use Resend\Exceptions\ErrorException;
 use Throwable;
@@ -56,6 +57,7 @@ class SincronizacionResendService
                     'unsubscribed' => false,
                     'segments' => [['id' => $segmento]],
                     'topics' => $this->topicos($suscriptor),
+                    'properties' => $this->propiedades($suscriptor),
                 ]);
                 $suscriptor->forceFill(['resend_contacto_id' => $contacto->id])->save();
 
@@ -64,10 +66,10 @@ class SincronizacionResendService
 
             // Se guarda ya: si falla un paso siguiente, una baja posterior tiene que encontrar este contacto.
             $suscriptor->forceFill(['resend_contacto_id' => $idContacto])->save();
-            $this->resend->contacts->update($idContacto, ['unsubscribed' => false]);
+            $this->resend->contacts->update($idContacto, ['unsubscribed' => false, 'properties' => $this->propiedades($suscriptor)]);
             $this->resend->contacts->segments->add($idContacto, $segmento);
         } else {
-            $this->resend->contacts->update($idContacto, ['unsubscribed' => false]);
+            $this->resend->contacts->update($idContacto, ['unsubscribed' => false, 'properties' => $this->propiedades($suscriptor)]);
         }
 
         $this->resend->contacts->topics->update($idContacto, $this->topicos($suscriptor));
@@ -100,6 +102,17 @@ class SincronizacionResendService
 
             throw $error;
         }
+    }
+
+    /**
+     * Propiedades del contacto que usan los broadcasts: el HTML es el mismo para todos, así que cada
+     * contacto lleva su enlace firmado a preferencias (el mismo de SuscripcionService::urlPreferencias).
+     *
+     * @return array{url_preferencias: string}
+     */
+    private function propiedades(Suscriptor $suscriptor): array
+    {
+        return ['url_preferencias' => URL::signedRoute('suscripcion.preferencias', $suscriptor)];
     }
 
     /** @return list<array{id: string, subscription: string}> */

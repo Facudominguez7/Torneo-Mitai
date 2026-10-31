@@ -217,8 +217,8 @@ Route::prefix('Panel/notificaciones')->middleware(['auth', UserAccesPanelMiddlew
         ->name('notificaciones.manual.enviar-lote');
     Route::get('/resumen-fecha/contar', [ControladorNotificacionesEmail::class, 'contarDestinatariosResumenFecha'])
         ->name('notificaciones.resumen-fecha.contar');
-    Route::post('/resumen-fecha/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResumenFecha'])
-        ->name('notificaciones.resumen-fecha.enviar-lote');
+    Route::post('/resumen-fecha/suscriptores', [ControladorNotificacionesEmail::class, 'enviarResumenFechaSuscriptores'])
+        ->name('notificaciones.resumen-fecha.suscriptores');
     Route::post('/resultado/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResultado'])
         ->name('notificaciones.resultado.enviar-lote');
     Route::post('/resultado-instancia/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResultadoInstancia'])

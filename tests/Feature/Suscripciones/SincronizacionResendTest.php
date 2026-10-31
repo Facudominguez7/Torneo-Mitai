@@ -4,19 +4,9 @@
 
 use App\Models\Suscriptor;
 use App\Services\SuscripcionService;
-use GuzzleHttp\Client as ClienteGuzzle;
 use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\Log;
-use Resend\Client;
-use Resend\Transporters\HttpTransporter;
-use Resend\ValueObjects\ApiKey;
-use Resend\ValueObjects\Transporter\BaseUri;
-use Resend\ValueObjects\Transporter\Headers;
 
 beforeEach(function (): void {
     config([
@@ -30,44 +20,6 @@ beforeEach(function (): void {
         'suscripciones.resend.pausa_ms' => 0,
     ]);
 });
-
-/**
- * Reemplaza el cliente de Resend por uno que responde con $respuestas y guarda cada pedido.
- *
- * @param  list<Response>  $respuestas
- */
-function resendFalso(array $respuestas): ArrayObject
-{
-    $historial = new ArrayObject;
-    $pila = HandlerStack::create(new MockHandler($respuestas));
-    $pila->push(Middleware::history($historial));
-    $transporte = new HttpTransporter(
-        new ClienteGuzzle(['handler' => $pila]),
-        BaseUri::from('api.resend.com'),
-        Headers::withAuthorization(ApiKey::from('re_prueba')),
-    );
-    app()->instance(Client::class, new Client($transporte));
-
-    return $historial;
-}
-
-/** @param  array<string, mixed>  $cuerpo */
-function respuestaResend(array $cuerpo, int $estado = 200): Response
-{
-    return new Response($estado, ['Content-Type' => 'application/json'], json_encode($cuerpo));
-}
-
-/** @return array{metodo: string, ruta: string, cuerpo: mixed} */
-function pedidoResend(ArrayObject $historial, int $indice): array
-{
-    $pedido = $historial[$indice]['request'];
-
-    return [
-        'metodo' => $pedido->getMethod(),
-        'ruta' => $pedido->getUri()->getPath(),
-        'cuerpo' => json_decode((string) $pedido->getBody(), true),
-    ];
-}
 
 it('crea el contacto en resend al confirmar, con el segmento y solo los avisos elegidos', function (): void {
     $historial = resendFalso([
@@ -97,6 +49,7 @@ it('crea el contacto en resend al confirmar, con el segmento y solo los avisos e
                     ['id' => 'topico-avisos', 'subscription' => 'opt_out'],
                     ['id' => 'topico-proxima', 'subscription' => 'opt_in'],
                 ],
+                'properties' => ['url_preferencias' => app(SuscripcionService::class)->urlPreferencias($suscriptor)],
             ],
         ]);
 
@@ -116,7 +69,10 @@ it('reutiliza el contacto que ya existia en resend con ese correo', function ():
 
     app(SuscripcionService::class)->confirmar($suscriptor, now()->getTimestamp());
 
-    expect(pedidoResend($historial, 1))->toBe(['metodo' => 'PATCH', 'ruta' => '/contacts/contacto-previo', 'cuerpo' => ['unsubscribed' => false]])
+    expect(pedidoResend($historial, 1))->toBe(['metodo' => 'PATCH', 'ruta' => '/contacts/contacto-previo', 'cuerpo' => [
+        'unsubscribed' => false,
+        'properties' => ['url_preferencias' => app(SuscripcionService::class)->urlPreferencias($suscriptor)],
+    ]])
         ->and(pedidoResend($historial, 2))->toMatchArray(['metodo' => 'POST', 'ruta' => '/contacts/contacto-previo/segments/segmento-sitio'])
         ->and(pedidoResend($historial, 3))->toMatchArray(['metodo' => 'PATCH', 'ruta' => '/contacts/contacto-previo/topics'])
         ->and(pedidoResend($historial, 3)['cuerpo'])->toHaveCount(3)

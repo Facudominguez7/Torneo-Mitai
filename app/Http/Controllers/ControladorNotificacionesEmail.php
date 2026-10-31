@@ -11,6 +11,7 @@ use App\Models\Partido;
 use App\Models\User;
 use App\Notifications\ResultadoCargado;
 use App\Services\EmailDomainGuard;
+use App\Services\EnvioSuscriptoresService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -706,12 +707,10 @@ class ControladorNotificacionesEmail extends Controller
     }
 
     /**
-     * Cuenta destinatarios y valida disponibilidad del resumen por fecha.
-     *
-     * Se usa antes de iniciar el proceso en lotes para dar feedback claro
-     * al administrador sobre alcance del envío y partidos incluidos.
+     * Valida que la fecha tenga resultados y cuenta los suscriptores que van a recibir el resumen,
+     * para mostrarlo al administrador antes de confirmar el envío.
      */
-    public function contarDestinatariosResumenFecha(Request $request)
+    public function contarDestinatariosResumenFecha(Request $request, EnvioSuscriptoresService $envioSuscriptores)
     {
         $validated = $request->validate([
             'idFecha' => ['required', 'integer', 'exists:fechas,id'],
@@ -741,209 +740,64 @@ class ControladorNotificacionesEmail extends Controller
             ], 422);
         }
 
-        $totalNotificables = $this->usuariosEmailResumenQuery()->count();
-        $totalPermitidos = min($totalNotificables, self::MAX_DESTINATARIOS_RESUMEN_FECHA);
-        $correosEstimados = (int) ceil($totalPermitidos / self::MAX_DESTINATARIOS_BCC);
+        $suscriptores = $envioSuscriptores->destinatariosResumenFecha();
 
         return response()->json([
             'success' => true,
-            'count' => $totalPermitidos,
+            'suscriptores' => $suscriptores,
             'partidos_count' => $resumen['partidos_count'],
             'fecha_nombre' => $resumen['fecha_nombre'],
             'categoria_nombre' => $resumen['categoria_nombre'],
-            'limite_operativo' => self::MAX_DESTINATARIOS_RESUMEN_FECHA,
-            'lote_bcc' => self::MAX_DESTINATARIOS_BCC,
-            'correos_estimados' => $correosEstimados,
-            'message' => "Se enviará a {$totalPermitidos} usuario(s).",
+            'message' => "Se enviará a {$suscriptores} suscriptor(es).",
         ]);
     }
 
     /**
-     * Envía en lotes el correo resumen con todos los resultados de una fecha.
-     *
-     * El envío está acotado por un límite operativo para respetar cuotas
-     * diarias del proveedor SMTP y reducir riesgo de bloqueos.
+     * Envía el resumen de una fecha a los suscriptores que lo eligieron (broadcast de Resend).
      */
-    public function enviarLoteResumenFecha(Request $request)
+    public function enviarResumenFechaSuscriptores(Request $request, EnvioSuscriptoresService $envioSuscriptores): JsonResponse
     {
         $validated = $request->validate([
             'idFecha' => ['required', 'integer', 'exists:fechas,id'],
             'idCategoria' => ['nullable', 'integer', 'exists:categorias,id'],
-            'titulo' => ['nullable', 'string', 'max:120'],
-            'mensaje' => ['nullable', 'string', 'max:500'],
-            'url' => ['nullable', 'string', 'max:255'],
-            'offset' => ['required', 'integer', 'min:0'],
-            'limit' => ['required', 'integer', 'min:1', 'max:'.self::MAX_DESTINATARIOS_BCC],
         ]);
 
         $idEdicion = $this->obtenerIdUltimaEdicion();
-        if ($idEdicion === null) {
-            return response()->json([
-                'done' => true,
-                'sent' => 0,
-                'errors' => 1,
-                'remaining' => 0,
-                'message' => 'No hay edición activa para enviar resúmenes.',
-            ], 422);
-        }
-
-        $resumen = $this->obtenerResumenResultadosFecha(
+        $resumen = $idEdicion === null ? null : $this->obtenerResumenResultadosFecha(
             $idEdicion,
             (int) $validated['idFecha'],
             isset($validated['idCategoria']) ? (int) $validated['idCategoria'] : null
         );
 
-        if ($resumen !== null) {
-            if (! empty($validated['titulo'])) {
-                $resumen['titulo_personalizado'] = $validated['titulo'];
-            }
-
-            if (! empty($validated['mensaje'])) {
-                $resumen['mensaje_personalizado'] = $validated['mensaje'];
-            }
-
-            if (! empty($validated['url'])) {
-                $resumen['url_fixture'] = $validated['url'];
-            }
-        }
-
         if ($resumen === null) {
-            return response()->json([
-                'done' => true,
-                'sent' => 0,
-                'errors' => 0,
-                'remaining' => 0,
-                'message' => 'No hay resultados para enviar en esa fecha.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'No hay resultados para enviar en esa fecha.'], 422);
         }
 
-        $offset = (int) $validated['offset'];
-        $limit = (int) $validated['limit'];
-
-        $idsDestinatarios = $this->usuariosEmailResumenQuery()
-            ->orderBy('id')
-            ->limit(self::MAX_DESTINATARIOS_RESUMEN_FECHA)
-            ->pluck('id')
-            ->values();
-
-        $totalDestinatarios = $idsDestinatarios->count();
-        $metricas = $this->iniciarMetricasEnvio(
-            $request,
-            'resumen_fecha',
-            $totalDestinatarios,
-            [
-                'idEdicion' => $idEdicion,
-                'idFecha' => (int) $validated['idFecha'],
-                'idCategoria' => isset($validated['idCategoria']) ? (int) $validated['idCategoria'] : null,
-                'partidos_count' => $resumen['partidos_count'],
-            ],
-            $offset === 0
-        );
-
-        if ($totalDestinatarios === 0) {
-            return response()->json([
-                'done' => true,
-                'sent' => 0,
-                'errors' => 0,
-                'remaining' => 0,
-                'metrics' => $this->formatearMetricasEnvio($metricas),
-                'message' => 'No hay destinatarios activos para notificar.',
+        try {
+            $envio = $envioSuscriptores->enviarResumenFecha($resumen);
+        } catch (\Throwable $e) {
+            // Sin el mensaje del proveedor: puede incluir correos de suscriptores.
+            Log::error('No se pudo enviar el resumen de fecha a los suscriptores.', [
+                'error' => $e::class,
+                'codigo' => $e->getCode(),
+                'idFecha' => $resumen['id_fecha'],
+                'idCategoria' => $resumen['id_categoria'],
             ]);
+
+            return response()->json(['success' => false, 'message' => 'Resend no aceptó el envío. Probá de nuevo en unos minutos.'], 502);
         }
 
-        $idsLote = $idsDestinatarios->slice($offset, $limit)->values();
-        if ($idsLote->isEmpty()) {
+        if ($envio === null) {
             return response()->json([
-                'done' => true,
-                'sent' => 0,
-                'errors' => 0,
-                'remaining' => 0,
-                'metrics' => $this->formatearMetricasEnvio($metricas),
-                'message' => 'Fin del proceso.',
-            ]);
+                'success' => false,
+                'message' => 'Este resumen ya se envió a los suscriptores hace menos de '.EnvioSuscriptoresService::MINUTOS_ENTRE_ENVIOS.' minutos.',
+            ], 409);
         }
-
-        $usuarios = User::query()
-            ->whereIn('id', $idsLote)
-            ->orderBy('id')
-            ->get(['id', 'name', 'email']);
-
-        $enviados = 0;
-        $errores = [];
-        $lastError = null;
-        $contadorEmail = 0;
-        $esRateLimit = false;
-        $proveedorBloqueado = false;
-
-        $emails = $usuarios->pluck('email')
-            ->filter(static fn ($email) => ! empty($email))
-            ->unique()
-            ->values()
-            ->all();
-
-        if ($emails !== []) {
-            try {
-                $enviados = $this->enviarCorreoBccConFallback(
-                    $emails,
-                    fn () => new ResumenResultadosFechaMail($resumen, route('email.baja-general.form'))
-                );
-                $contadorEmail = $enviados;
-
-                User::query()
-                    ->whereIn('id', $usuarios->pluck('id'))
-                    ->update(['last_notification_at' => now()]);
-            } catch (\Exception $e) {
-                $proveedorBloqueado = $this->esErrorProveedorBloqueado($e);
-                $esRateLimit = ! $proveedorBloqueado && $this->esErrorRateLimit($e);
-                $errores = $emails;
-                $lastError = $e->getMessage();
-                Log::channel('single')->error(
-                    $proveedorBloqueado
-                        ? 'Hostinger bloqueó envío SMTP en resumen fecha (554) — se pausa para reanudación manual'
-                        : ($esRateLimit
-                            ? 'Rate limit SMTP en resumen fecha — se señaliza pausa al frontend'
-                            : 'Error enviando resumen fecha por BCC'),
-                    [
-                        'error' => $e->getMessage(),
-                        'rate_limited' => $esRateLimit,
-                        'provider_blocked' => $proveedorBloqueado,
-                        'idEdicion' => $idEdicion,
-                        'idFecha' => $validated['idFecha'],
-                        'idCategoria' => $validated['idCategoria'] ?? null,
-                    ]
-                );
-            }
-        }
-
-        $avanceLote = ($esRateLimit || $proveedorBloqueado) ? 0 : $usuarios->count();
-        $remaining = max(0, $totalDestinatarios - ($offset + $avanceLote));
-
-        $metricas = $this->actualizarMetricasEnvio($request, 'resumen_fecha', [
-            'attempted_delta' => count($emails),
-            'accepted_delta' => $enviados,
-            'failed_delta' => count($errores),
-            'processed_batches_delta' => 1,
-            'remaining' => $remaining,
-            'provider_blocked' => $proveedorBloqueado,
-            'rate_limited' => $esRateLimit,
-            'last_error' => $lastError,
-        ]);
 
         return response()->json([
-            'done' => ($esRateLimit || $proveedorBloqueado) ? false : ($remaining === 0),
-            'sent' => $enviados,
-            'errors' => count($errores),
-            'last_error' => $lastError,
-            'rate_limited' => $esRateLimit,
-            'provider_blocked' => $proveedorBloqueado,
-            'paused' => $proveedorBloqueado,
-            'remaining' => $remaining,
-            'email_count' => $contadorEmail,
-            'partidos_count' => $resumen['partidos_count'],
-            'metrics' => $this->formatearMetricasEnvio($metricas),
-            'message' => $proveedorBloqueado
-                ? 'Hostinger bloqueó temporalmente el envío (554). Rehabilitá el correo en hPanel y continuá desde el panel.'
-                : "Lote procesado ({$contadorEmail} emails enviados por BCC).",
+            'success' => true,
+            ...$envio,
+            'message' => "Resumen enviado a {$envio['enviados']} suscriptor(es).",
         ]);
     }
 

@@ -1,6 +1,16 @@
 <?php
 
+use GuzzleHttp\Client as ClienteGuzzle;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Resend\Client;
+use Resend\Transporters\HttpTransporter;
+use Resend\ValueObjects\ApiKey;
+use Resend\ValueObjects\Transporter\BaseUri;
+use Resend\ValueObjects\Transporter\Headers;
 use Tests\TestCase;
 
 /*
@@ -45,4 +55,42 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Reemplaza el cliente de Resend por uno que responde con $respuestas y guarda cada pedido.
+ *
+ * @param  list<Response>  $respuestas
+ */
+function resendFalso(array $respuestas): ArrayObject
+{
+    $historial = new ArrayObject;
+    $pila = HandlerStack::create(new MockHandler($respuestas));
+    $pila->push(Middleware::history($historial));
+    $transporte = new HttpTransporter(
+        new ClienteGuzzle(['handler' => $pila]),
+        BaseUri::from('api.resend.com'),
+        Headers::withAuthorization(ApiKey::from('re_prueba')),
+    );
+    app()->instance(Client::class, new Client($transporte));
+
+    return $historial;
+}
+
+/** @param  array<string, mixed>  $cuerpo */
+function respuestaResend(array $cuerpo, int $estado = 200): Response
+{
+    return new Response($estado, ['Content-Type' => 'application/json'], json_encode($cuerpo));
+}
+
+/** @return array{metodo: string, ruta: string, cuerpo: mixed} */
+function pedidoResend(ArrayObject $historial, int $indice): array
+{
+    $pedido = $historial[$indice]['request'];
+
+    return [
+        'metodo' => $pedido->getMethod(),
+        'ruta' => $pedido->getUri()->getPath(),
+        'cuerpo' => json_decode((string) $pedido->getBody(), true),
+    ];
 }
