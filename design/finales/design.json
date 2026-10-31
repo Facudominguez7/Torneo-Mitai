@@ -1,0 +1,20 @@
+{
+  "title": "Instancias finales",
+  "brief": "Dos propuestas para consultar cruces de finales por edición, categoría, copa y fase, con acceso a la planilla pública.",
+  "artboards": [
+    {
+      "file": "01-agenda-finales.html",
+      "title": "Agenda de finales",
+      "tradeoff": "Prioriza horarios y canchas; muestra menos el recorrido entre fases.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-camino-copa.html",
+      "title": "Camino a la copa",
+      "tradeoff": "Destaca fases y cruces; requiere más espacio para comparar horarios.",
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}

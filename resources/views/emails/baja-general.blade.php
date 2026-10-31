@@ -15,7 +15,8 @@
             <div class="absolute inset-0 bg-gradient-to-b from-black/85 via-black/80 to-black/95"></div>
         </div>
 
-        <div class="mx-auto flex min-h-screen w-full max-w-xl items-center px-4 py-10">
+        <x-marca-agua-portal />
+        <div class="relative z-0 mx-auto flex min-h-screen w-full max-w-xl items-center px-4 py-10">
             <section class="w-full rounded-3xl border border-white/15 bg-white/10 p-6 shadow-xl backdrop-blur sm:p-8">
                 <div class="flex items-center gap-3">
                     <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="Logo Torneo Mita'i"

@@ -1,0 +1,69 @@
+{
+  "title": "Mejora de la primer pantalla de inicio",
+  "brief": "Mejorar la experiencia de la primer pantalla de inicio de torneosmitai.com. La home actual abre con un hero fotográfico con selector de edición y un único CTA; no muestra contenido del torneo arriba del doblez. Tres direcciones que priorizan de forma distinta la primera impresión.",
+  "artboards": [
+    {
+      "file": "01-tablero-partido.html",
+      "title": "Tablero de partido",
+      "tradeoff": "Máxima utilidad inmediata: próximos partidos y últimos resultados arriba del doblez; sacrifica el aire fotográfico y la emoción del hero actual",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-cancha-viva.html",
+      "title": "Cancha viva (categorías primero)",
+      "tradeoff": "Mantiene la emoción fotográfica y ordena la navegación por categoría con próximo partido embebido; requiere más scroll para llegar a tablas e historiales",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "03-tu-equipo-primero.html",
+      "title": "Tu equipo primero (búsqueda protagonista)",
+      "tradeoff": "Experiencia personal para el visitante recurrente (su equipo, su próximo partido, su posición); penaliza al visitante nuevo que quiere ver el torneo general. Animaciones 3D de entrada, tilt al puntero con brillo y profundidad por capas (se desactivan con prefers-reduced-motion) Fondo con logo de marca difuminado; el desplegable permanece cerrado y se despliega al hacer clic en el buscador; mientras está abierto, el resto baja con un velo y al elegir equipo se completa y cierra.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "04-tu-equipo-movil.html",
+      "title": "Tu equipo primero — móvil 390px",
+      "tradeoff": "Variante responsive de la 03: nav compacta con menú, stats apiladas, tab bar inferior; misma jerarquía buscador → equipo → explorar. Entradas 3D escalonadas y feedback táctil; sin tilt por no haber hover Fondo con logo difuminado y velo de foco en el buscador; tab bar siempre encendida.",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "file": "05-tu-equipo-tablet.html",
+      "title": "Tu equipo primero — tablet 834px",
+      "tradeoff": "Variante responsive de la 03: conserva nav con links, panel de equipo en 2 columnas con próximo partido a ancho completo. Animaciones 3D como la desktop; tilt activo solo con puntero fino Fondo con logo difuminado y velo de foco, igual que la desktop.",
+      "width": 834,
+      "height": 1112
+    },
+    {
+      "file": "06-tu-equipo-dual.html",
+      "title": "Tu equipo primero — tema dual (sistema + manual)",
+      "tradeoff": "La dirección elegida con sus animaciones 3D intactas (entradas escalonadas, tilt con brillo, cascada de sugerencias) y tema dual: sigue prefers-color-scheme del sistema y el botón de la navegación alterna sistema → claro → oscuro. En claro la búsqueda invierte (campo navy sobre blanco) para mantener el foco visual; no decide aún si el portal migra a claro u oscuro: soporta ambos",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "07-tu-equipo-dual-movil.html",
+      "title": "Tu equipo primero dual — móvil 390px",
+      "tradeoff": "Variante móvil del tema dual: nav compacta con botón de tema (icono), stats apiladas, tab bar animada y feedback táctil; el 3D se limita a entradas escalonadas y cascada de sugerencias (sin tilt: no hay puntero fino). Detecta prefers-color-scheme y permite override manual",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "file": "08-tu-equipo-dual-tablet.html",
+      "title": "Tu equipo primero dual — tablet 834px",
+      "tradeoff": "Variante tablet del tema dual: conserva nav con links, panel en 2 columnas con próximo partido a ancho completo; tilt con brillo activo solo con puntero fino, entradas 3D y velo de foco. Detecta prefers-color-scheme y permite override manual",
+      "width": 834,
+      "height": 1112
+    },
+    {
+      "file": "09-logo-fondo.html",
+      "title": "Inicio — logo visible de fondo",
+      "tradeoff": "Logo identificable como marca de agua en ambos temas; se mantiene tenue para priorizar el buscador.",
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Planilla pública",
+  "brief": "Dos alternativas de consulta pública de planilla, con datos ilustrativos y temas claro y oscuro.",
+  "artboards": [
+    { "file": "01-planilla-cancha.html", "title": "Planilla de cancha", "tradeoff": "Filas compactas y comparación por equipo; el partido tiene menos protagonismo visual.", "width": 1440, "height": 900 },
+    { "file": "02-tablero-partido.html", "title": "Tablero de partido", "tradeoff": "Marcador y jerarquía del partido destacados; requiere más desplazamiento para consultar las filas.", "width": 1440, "height": 900 }
+  ]
+}

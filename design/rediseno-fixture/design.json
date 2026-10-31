@@ -1,0 +1,34 @@
+{
+  "title": "Rediseño del fixture",
+  "brief": "Rediseño de la pantalla pública /fixture del Torneo Apertura 2026 con la identidad aprobada (navy/teal/oro, tema oscuro único con estructura lista para bloque claro). La pantalla actual abre con un selector de fecha, un botón \"Ver instancias finales\", un filtro de categoría y un buscador de equipo sobre un fondo fotográfico. Tres direcciones con estrategias visuales y estructurales distintas: cartel tipográfico de jornada, tablero operativo con timeline y búsqueda protagonista al estilo de la home.",
+  "artboards": [
+    {
+      "file": "01-cartel-de-jornada.html",
+      "title": "Cartel de jornada",
+      "tradeoff": "Máximo escaneo de una jornada (hero tipográfico + filas de cartel); menos contexto global del torneo.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-tablero-operativo.html",
+      "title": "Tablero operativo",
+      "tradeoff": "Potencia para el visitante recurrente (timeline de jornadas + tarjetas por estado + resumen de goles); más denso en pantalla.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "03-busqueda-protagonista.html",
+      "title": "Búsqueda protagonista",
+      "tradeoff": "Coherente con la home \"tu equipo primero\" (buscador grande + cascada de resultados); la navegación por fecha queda menos directa.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "04-tablero-movil.html",
+      "title": "Tablero operativo móvil",
+      "tradeoff": "Filtros y partidos accesibles en una columna; las fechas y categorías requieren desplazamiento horizontal.",
+      "width": 390,
+      "height": 844
+    }
+  ]
+}

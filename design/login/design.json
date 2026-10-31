@@ -1,0 +1,42 @@
+{
+  "title": "Login",
+  "brief": "Tres direcciones para la pantalla de ingreso, distintas de la Cancha nocturna actual. Cada artboard muestra escritorio y celular con un error de credenciales.",
+  "artboards": [
+    {
+      "file": "01-medio-campo.html",
+      "title": "Medio campo",
+      "tradeoff": "Pantalla partida: cancha navy con el logo a la izquierda y formulario claro a la derecha. Más espacio para la marca; en celular la cabecera ocupa altura.",
+      "width": 1920,
+      "height": 1000
+    },
+    {
+      "file": "02-planilla-de-acceso.html",
+      "title": "Planilla de acceso",
+      "tradeoff": "El formulario es una planilla de partido impresa con filas numeradas. Muy propia del torneo; más rígida y menos emotiva.",
+      "width": 1920,
+      "height": 1000,
+      "status": "descartado"
+    },
+    {
+      "file": "03-salida-al-campo.html",
+      "title": "Salida al campo",
+      "tradeoff": "Todo navy con MITA'Í gigante calado y botón dorado. La de más impacto; suma Barlow Condensed, que necesita tu aprobación como fuente nueva.",
+      "width": 1920,
+      "height": 1000
+    },
+    {
+      "file": "04-medio-campo-registro.html",
+      "title": "Medio campo · Registro",
+      "tradeoff": "Registro en el estilo elegido; en celular la página se desplaza por la cantidad de campos.",
+      "width": 1920,
+      "height": 1100
+    },
+    {
+      "file": "05-medio-campo-recuperar.html",
+      "title": "Medio campo · Recuperar contraseña",
+      "tradeoff": "Pedido del enlace de contraseña nueva en el estilo elegido.",
+      "width": 1920,
+      "height": 1000
+    }
+  ]
+}

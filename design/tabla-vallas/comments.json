@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "comments": [
+    {
+      "id": "kykl31na",
+      "file": "02-defensa-protagonista.html",
+      "selector": "body > main > div:nth-of-type(2) > label:nth-of-type(1) > span",
+      "excerpt": "CATEGORÍA",
+      "comment": "muy pegados los elementos",
+      "createdAt": "2026-10-30T23:12:58.653Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T23:14:45.497Z",
+      "resolvedAt": "2026-10-30T23:15:57.521Z"
+    },
+    {
+      "id": "mbqe3um5",
+      "file": "02-defensa-protagonista.html",
+      "selector": "body > main > div:nth-of-type(2) > label:nth-of-type(2) > span",
+      "excerpt": "BUSCAR EQUIPO",
+      "comment": "muy pegados los elementos",
+      "createdAt": "2026-10-30T23:13:05.441Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T23:14:45.497Z",
+      "resolvedAt": "2026-10-30T23:15:57.521Z"
+    },
+    {
+      "id": "6da5za8z",
+      "file": "02-defensa-protagonista.html",
+      "selector": "body",
+      "excerpt": "TORNEO MITAÍ Inicio Partidos Posiciones Goleadores Finales Tema 20° EDICIÓN · RANKING DEFENSIVO Vallas menos vencidas Los equipos con menos goles recibidos en la edición. Incluye fase de grupos e instancias finales. CATEGORÍA Todas las categorías Categoría 2018 Categoría 2019 BUSCAR EQUIPO 1° PUESTO",
+      "comment": "falta animacion sobre los cards y la tabla al pasar el mouse, tambien los logos de los equipos",
+      "createdAt": "2026-10-30T23:14:44.505Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T23:14:45.497Z",
+      "resolvedAt": "2026-10-30T23:33:48.142Z"
+    },
+    {
+      "id": "6haqbzjl",
+      "file": "02-defensa-protagonista.html",
+      "selector": "body > main > div:nth-of-type(2) > label:nth-of-type(1) > select",
+      "excerpt": "Todas las categorías Categoría 2018 Categoría 2019",
+      "comment": "el despliegeu esta pegado al borde",
+      "createdAt": "2026-10-30T23:16:35.910Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T23:16:36.900Z",
+      "resolvedAt": "2026-10-30T23:16:52.230Z"
+    },
+    {
+      "id": "4i9ii05t",
+      "file": "02-defensa-protagonista.html",
+      "selector": "body",
+      "excerpt": "TORNEO MITAÍ Inicio Partidos Posiciones Goleadores Finales Tema 20° EDICIÓN · RANKING DEFENSIVO Vallas menos vencidas Los equipos con menos goles recibidos en la edición. Incluye fase de grupos e instancias finales. CATEGORÍA Todas las categorías Categoría 2018 Categoría 2019 BUSCAR EQUIPO 1° PUESTO",
+      "comment": "mostrame en movil",
+      "createdAt": "2026-10-30T23:20:29.220Z",
+      "status": "resolved",
+      "sentAt": "2026-10-30T23:20:30.221Z",
+      "resolvedAt": "2026-10-30T23:20:47.209Z"
+    }
+  ]
+}

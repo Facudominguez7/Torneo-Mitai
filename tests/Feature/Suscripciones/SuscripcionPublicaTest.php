@@ -6,6 +6,7 @@ use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\Suscriptor;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Mail;
 
 beforeEach(function (): void {
@@ -110,5 +111,5 @@ it('los footers enlazan a los avisos por correo', function (): void {
     $enlace = 'href="'.route('suscripcion.create').'"';
 
     $this->get(route('home'))->assertSee($enlace, false);
-    $this->get(route('terminos'))->assertSee($enlace, false);
+    expect(Blade::render('<x-links-legales />'))->toContain($enlace);
 });

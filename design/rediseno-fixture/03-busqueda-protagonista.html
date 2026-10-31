@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<!-- Dirección 3: "Búsqueda protagonista" — mismo patrón que la home "tu equipo primero".
+     Tradeoff: coherente con la home; la navegación por fecha queda menos directa. -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Búsqueda protagonista — Fixture · Torneos Mita'í</title>
+<style>
+  :root {
+    --navy-deep: #082F3B;
+    --navy: #0E4B5E;
+    --teal: #2A6D81;
+    --teal-claro: #9BD3E2;
+    --oro: #F7F280;
+    --oro-400: #FFCC33;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+    /* Tema oscuro (por defecto). Bloque claro agregable después: */
+    /* @media (prefers-color-scheme: light) { :root:not([data-tema="oscuro"]) { ... } } */
+    --fondo: #082F3B;
+    --tinta: #FFFFFF;
+    --dim: rgba(235,244,248,.72);
+    --linea: rgba(255,255,255,.14);
+    --fila: rgba(255,255,255,.06);
+    --panel-fondo: rgba(255,255,255,.05);
+    --campo-fondo: #FFFFFF;
+    --campo-tinta: #12263F;
+    --campo-placeholder: rgba(18,38,63,.45);
+    --sombra-campo: 0 30px 70px -30px rgba(255,204,51,.35);
+    --velo: rgba(8,47,59,.52);
+    --marca-agua: .17;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:var(--font); background:var(--fondo); color:var(--tinta); min-height:100vh; }
+
+  /* Marca de agua difusa del logo (trick de las pantallas de la home) */
+  body::before {
+    content:""; position:fixed; left:50%; top:-8%;
+    width:760px; height:760px; transform:translateX(-50%);
+    background: radial-gradient(circle at 50% 40%, var(--teal) 0%, transparent 62%);
+    filter: blur(90px); opacity:var(--marca-agua);
+    pointer-events:none; z-index:0;
+  }
+  .page { position:relative; z-index:1; }
+
+  a { color:inherit; text-decoration:none; }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline:3px solid var(--teal-claro); outline-offset:2px; border-radius:8px; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+
+  .top { display:flex; align-items:center; gap:22px; padding:16px 48px; border-bottom:1px solid var(--linea); }
+  .marca { font-weight:800; font-size:17px; white-space:nowrap; }
+  .marca em { font-style:normal; color:var(--oro-400); }
+  .btn-final { margin-left:auto; display:inline-flex; align-items:center; gap:8px; background:transparent; color:var(--tinta); border:1px solid var(--linea); border-radius:999px; padding:9px 17px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
+  .btn-final:hover { background:var(--fila); }
+  .btn-final svg { color:var(--oro-400); }
+
+  main.busqueda { max-width:820px; margin:0 auto; padding:64px 24px 80px; text-align:center; position:relative; }
+  .kicker { font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--teal-claro); }
+  h1 { font-size:42px; font-weight:800; letter-spacing:-.7px; margin-top:14px; line-height:1.1; }
+  .sub { margin-top:12px; font-size:16px; color:var(--dim); }
+
+  /* Buscador protagonista: misma cápsula que la home */
+  .buscador { position:relative; z-index:5; margin:36px auto 0; max-width:640px; text-align:left; }
+  .buscador .campo { display:flex; align-items:center; gap:14px; background:var(--campo-fondo); color:var(--campo-tinta); border-radius:22px; padding:18px 22px; box-shadow:var(--sombra-campo); transition:transform .3s ease, box-shadow .3s ease; }
+  .buscador input { flex:1; border:0; outline:none; font-family:inherit; font-size:18px; font-weight:600; color:var(--campo-tinta); background:transparent; min-width:0; }
+  .buscador input::placeholder { color:var(--campo-placeholder); font-weight:500; }
+  .buscador kbd { font-family:inherit; font-size:11px; font-weight:700; border:1px solid rgba(18,38,63,.3); border-radius:6px; padding:3px 7px; color:var(--campo-tinta); }
+  @media (prefers-reduced-motion: no-preference) {
+    .buscador.abierto .campo:focus-within { transform:perspective(800px) translateZ(16px); }
+  }
+  .sugerencias { position:absolute; inset-inline:0; top:calc(100% + 8px); background:#FFFFFF; color:#12263F; border:1px solid var(--linea); border-radius:18px; box-shadow:0 30px 60px -20px rgba(0,0,0,.5); overflow:hidden; z-index:6; display:none; }
+  .buscador.abierto .sugerencias { display:block; }
+  .sugerencias button { display:flex; width:100%; align-items:center; gap:12px; padding:14px 20px; background:none; border:0; cursor:pointer; font-family:inherit; font-size:15px; font-weight:600; text-align:left; }
+  .sugerencias button:hover, .sugerencias button:focus-visible { background:rgba(42,109,129,.12); outline:none; }
+  .sugerencias .cat { margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--navy-deep); background:var(--teal-claro); padding:3px 9px; border-radius:999px; }
+  .sugerencias .cuando { font-family:var(--mono); font-size:11px; color:#5B7684; }
+
+  /* Velo de foco: mismo mecanismo que la home */
+  main.busqueda::after { content:""; position:fixed; inset:0; background:var(--velo); backdrop-filter:blur(2px); pointer-events:none; z-index:4; opacity:0; transition:opacity .35s ease; }
+  main.busqueda.abierto::after { opacity:1; }
+
+  /* Chips de categoría debajo del buscador */
+  .chips { margin-top:20px; display:flex; justify-content:center; gap:8px; flex-wrap:wrap; position:relative; z-index:3; }
+  .chips button { background:transparent; border:1px solid var(--linea); color:var(--dim); border-radius:999px; padding:8px 16px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; transition:background .2s ease, color .2s ease, border-color .2s ease; }
+  .chips button:hover { background:var(--fila); color:var(--tinta); }
+  .chips button[aria-pressed="true"] { background:var(--teal-claro); border-color:var(--teal-claro); color:var(--navy-deep); }
+
+  /* Resultados agrupados por categoría, en cascada */
+  .resultados { margin-top:44px; text-align:left; display:flex; flex-direction:column; gap:26px; }
+  .grupo h2 { font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--teal-claro); margin-bottom:12px; }
+  .grupo .partidos { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }
+  .partido { background:var(--panel-fondo); border:1px solid var(--linea); border-radius:18px; padding:18px 20px; }
+  .partido .enc { display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+  .partido .enc .vivo { color:var(--oro-400); display:inline-flex; align-items:center; gap:6px; }
+  .partido .enc .vivo::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--oro-400); }
+  .partido .duelo { margin-top:10px; font-size:17px; font-weight:800; letter-spacing:-.2px; }
+  .partido .duelo .marcador { font-family:var(--mono); color:var(--oro-400); }
+  .partido .donde { margin-top:8px; font-size:12px; font-weight:600; color:var(--dim); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .anim-in { animation: aparecer .7s cubic-bezier(.22,.68,.3,1) both; }
+    .d1 { animation-delay:.09s } .d2 { animation-delay:.18s } .d3 { animation-delay:.26s }
+    @keyframes aparecer { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:none; } }
+    /* Cascada de las tarjetas de resultados */
+    .anim-card { animation: aparecer .5s cubic-bezier(.2,.7,.3,1.1) both; }
+    .anim-card:nth-child(1) { animation-delay:.05s } .anim-card:nth-child(2) { animation-delay:.11s }
+    .anim-card:nth-child(3) { animation-delay:.17s } .anim-card:nth-child(4) { animation-delay:.23s }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <p class="marca">Torneos <em>Mita'í</em></p>
+    <button type="button" class="btn-final">Ver instancias finales
+      <svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h8M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </header>
+
+  <main class="busqueda">
+    <p class="kicker anim-in">Torneo Apertura 2026 · Fecha 7</p>
+    <h1 class="anim-in d1">¿Qué partido buscás?</h1>
+    <p class="sub anim-in d1">Escribí tu equipo y mirá cuándo y dónde juega en toda la fecha.</p>
+
+    <div class="buscador anim-in d2">
+      <label class="campo" for="partido">
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="9.5" cy="9.5" r="6.5" fill="none" stroke="#2A6D81" stroke-width="2.2"/><path d="M14.5 14.5L19 19" stroke="#2A6D81" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <input id="partido" type="search" placeholder="Buscá un equipo, ej: Talleres" autocomplete="off" aria-expanded="false">
+        <kbd>Enter</kbd>
+      </label>
+      <div class="sugerencias" role="listbox" aria-label="Coincidencias de equipos">
+        <button type="button" role="option" aria-selected="false">Talleres Jujuy <span class="cuando">Sáb 09:30 · Cancha 1</span><span class="cat">Sub-10</span></button>
+        <button type="button" role="option" aria-selected="false">Talleres de Palpalá <span class="cuando">Sáb 10:45 · Cancha 2</span><span class="cat">Sub-12</span></button>
+        <button type="button" role="option" aria-selected="false">Juventud Unida <span class="cuando">Sáb 12:00 · Cancha 3</span><span class="cat">Sub-14</span></button>
+      </div>
+    </div>
+
+    <div class="chips anim-in d2" role="group" aria-label="Filtrar por categoría">
+      <button type="button" aria-pressed="true">Todas</button>
+      <button type="button" aria-pressed="false">Sub-8</button>
+      <button type="button" aria-pressed="false">Sub-10</button>
+      <button type="button" aria-pressed="false">Sub-12</button>
+      <button type="button" aria-pressed="false">Sub-14</button>
+      <button type="button" aria-pressed="false">Sub-16</button>
+    </div>
+
+    <section class="resultados anim-in d3" aria-label="Resultados por categoría">
+      <div class="grupo">
+        <h2>Sub-10 · Fecha 7</h2>
+        <div class="partidos">
+          <article class="partido anim-card">
+            <p class="enc">Finalizado · Sáb 09:30</p>
+            <p class="duelo">Talleres Jujuy <span class="marcador">2 - 1</span> Club Cuyaya</p>
+            <p class="donde">Cancha 1</p>
+          </article>
+          <article class="partido anim-card">
+            <p class="enc">Próximo · Sáb 15:45</p>
+            <p class="duelo">Dep. Lynch VS Talleres de Palpalá</p>
+            <p class="donde">Cancha 1</p>
+          </article>
+        </div>
+      </div>
+      <div class="grupo">
+        <h2>Sub-12 · Fecha 7</h2>
+        <div class="partidos">
+          <article class="partido anim-card">
+            <p class="enc"><span class="vivo">En juego · 67'</span></p>
+            <p class="duelo">Talleres de Palpalá <span class="marcador">1 - 0</span> Huracán</p>
+            <p class="donde">Cancha 2</p>
+          </article>
+        </div>
+      </div>
+      <div class="grupo">
+        <h2>Sub-14 · Fecha 7</h2>
+        <div class="partidos">
+          <article class="partido anim-card">
+            <p class="enc">Próximo · Sáb 12:00</p>
+            <p class="duelo">Juventud Unida VS Dep. Lynch</p>
+            <p class="donde">Cancha 3</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  /* Buscador: mismo flujo de apertura que la home (velo + sugerencias, Esc/clic afuera cierra) */
+  (function () {
+    var buscador = document.querySelector('.buscador');
+    var input = document.getElementById('partido');
+    var main = document.querySelector('main');
+    if (!buscador || !input || !main) return;
+    function abrir() {
+      buscador.classList.add('abierto');
+      main.classList.add('abierto');
+      input.setAttribute('aria-expanded', 'true');
+    }
+    function cerrar() {
+      buscador.classList.remove('abierto');
+      main.classList.remove('abierto');
+      input.setAttribute('aria-expanded', 'false');
+    }
+    input.addEventListener('focus', abrir);
+    input.addEventListener('input', abrir);
+    input.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrar(); });
+    document.addEventListener('click', function (e) { if (!buscador.contains(e.target)) cerrar(); });
+    buscador.querySelectorAll('.sugerencias button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        input.value = b.textContent.trim().split(/\s{2,}|\s·\s/)[0];
+        cerrar();
+        input.focus();
+      });
+    });
+    /* Chips de categoría: estado visual del filtro */
+    document.querySelectorAll('.chips button').forEach(function (c) {
+      c.addEventListener('click', function () {
+        document.querySelectorAll('.chips button').forEach(function (o) { o.setAttribute('aria-pressed', 'false'); });
+        c.setAttribute('aria-pressed', 'true');
+      });
+    });
+  })();
+</script>
+</body>
+</html>

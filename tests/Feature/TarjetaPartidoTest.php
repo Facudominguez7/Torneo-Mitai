@@ -66,6 +66,35 @@ function tarjetaPartido(
     ]);
 }
 
+it('conserva las variantes predeterminada y compacta de la tarjeta compartida', function () {
+    $partido = (object) [
+        'id' => 1, 'idEdicion' => 1, 'jugado' => 0, 'horario_datetime' => null,
+        'cancha' => 1, 'golesEquipoLocal' => null, 'golesEquipoVisitante' => null,
+        'nombre_local' => 'Local', 'nombre_visitante' => 'Visitante',
+        'foto_local' => 'local.png', 'foto_visitante' => 'visita.png',
+        'fecha' => (object) ['nombre' => 'Fecha 1'],
+    ];
+
+    $this->blade('<x-tarjeta-partido :partido="$partido" />', ['partido' => $partido])
+        ->assertSee('partido-card rounded-3xl', false)
+        ->assertSee('Local')
+        ->assertDontSee('finales-partido', false);
+    $this->blade('<x-tarjeta-partido :partido="$partido" :compacto="true" />', ['partido' => $partido])
+        ->assertSee('partido-card tarjeta-compacta', false)
+        ->assertSee('Visitante')
+        ->assertDontSee('finales-partido', false);
+});
+
+it('hace translúcidas solo las tarjetas compactas del fixture en tema claro', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)
+        ->toContain(".fixture-tablero .tarjeta-compacta {\n    min-width: 0;")
+        ->toContain('background: var(--tm-panel-bg);')
+        ->toContain(":root[data-tema=\"claro\"] .fixture-tablero .tarjeta-compacta {\n    background: rgb(255 255 255 / .20);\n}")
+        ->toContain(":root:not([data-tema=\"oscuro\"]) .fixture-tablero .tarjeta-compacta {\n        background: rgb(255 255 255 / .20);\n    }");
+});
+
 describe('fixture: tarjeta de partido (caracterización previa al refactor)', function () {
     it('renderiza las tarjetas estandar con equipos marcador y estado', function () {
         $contexto = tarjetaBase();
@@ -121,6 +150,6 @@ describe('fixture: tarjeta de partido (caracterización previa al refactor)', fu
             ->toContain('data-local="union del este"')
             ->toContain('data-visitante="federal misiones"')
             ->toContain('Interzonal')
-            ->toContain('via-amber-900/30');
+            ->toContain('tarjeta-compacta--interzonal');
     });
 });

@@ -1,8 +1,12 @@
-<x-guest-layout>
+<x-guest-layout compacto>
+    <x-slot:sobre>Último paso</x-slot:sobre>
+    <x-slot:titular><span class="acceso-corto">Verificá tu correo.</span><span class="acceso-largo">Un código y ya estás en la cancha.</span></x-slot:titular>
+    <x-slot:bajada>Con el correo verificado recibís los resultados, los partidos programados y los anuncios del torneo.</x-slot:bajada>
+
     <div class="flex flex-col gap-1.5">
-        <h1 class="text-[26px] font-bold leading-tight sm:text-[28px]">Verificá tu correo</h1>
-        <p class="text-[15px] text-white/75">
-            Te enviamos un código de 6 dígitos a <strong class="text-white">{{ auth()->user()->email }}</strong>.
+        <h1 class="text-[26px] font-extrabold leading-tight sm:text-[32px]">Verificá tu correo</h1>
+        <p class="text-[15px] text-brand-navy-deep/75">
+            Te enviamos un código de 6 dígitos a <strong class="text-brand-navy-deep">{{ auth()->user()->email }}</strong>.
             Si no lo ves, revisá la carpeta de spam o pedí uno nuevo.
         </p>
     </div>
@@ -10,7 +14,7 @@
     @if (session('status') === 'verification-code-sent')
         <x-acceso.aviso tipo="exito">
             <p>{{ session('email-success', 'Te enviamos un nuevo código de verificación.') }}</p>
-            <p class="text-sm font-normal text-emerald-200/90">Revisá tu bandeja de entrada y también la carpeta de spam.</p>
+            <p class="text-sm font-normal text-brand-navy-deep/80">Revisá tu bandeja de entrada y también la carpeta de spam.</p>
         </x-acceso.aviso>
     @endif
 
@@ -41,19 +45,19 @@
         </x-acceso.boton>
     </form>
 
-    <div class="flex flex-col gap-2 rounded-[10px] border border-white/10 bg-white/[0.04] p-4 text-[15px] text-white/80">
-        <h2 class="font-semibold text-white">¿Para qué verificar?</h2>
+    <div class="flex flex-col gap-2 border border-brand-navy/15 bg-white p-4 text-[15px] text-brand-navy-deep/80">
+        <h2 class="font-bold text-brand-navy-deep">¿Para qué verificar?</h2>
         <ul class="flex list-disc flex-col gap-1 pl-5">
             <li>Recibir los resultados de los partidos por correo.</li>
             <li>Enterarte de los partidos programados.</li>
             <li>Recibir los anuncios del torneo.</li>
         </ul>
-        <p class="text-sm text-white/75">Podés darte de baja en cualquier momento desde el correo.</p>
+        <p class="text-sm text-brand-navy-deep/70">Podés darte de baja en cualquier momento desde el correo.</p>
     </div>
 
     <x-slot:pie>
-        <p class="text-center text-[15px]">
-            <a href="{{ route('home') }}" class="font-bold text-brand-teal-light underline-offset-4 hover:text-brand-gold hover:underline">Volver al inicio</a>
+        <p class="text-center text-[15px] lg:text-left">
+            <a href="{{ route('home') }}" class="acceso-enlace">Volver al inicio</a>
         </p>
     </x-slot:pie>
 </x-guest-layout>

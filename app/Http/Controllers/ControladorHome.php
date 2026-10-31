@@ -400,7 +400,7 @@ class ControladorHome extends Controller
             ->where('equipo_ediciones.idEdicion', $idEdicion);
 
         // Filtro por categoría
-        if (! is_null($idCategoria)) {
+        if ($idCategoria !== null && $idCategoria !== '') {
             $baseQuery->where('equipo_ediciones.idCategoria', $idCategoria);
         }
 

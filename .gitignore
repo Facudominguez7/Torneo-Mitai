@@ -64,3 +64,7 @@ EMAIL_CONFIG.md
 .pi/
 odd/
 .gentle-ai-default-agent.json
+__pycache__/
+.playwright-mcp/
+design/**/.screenshots/
+/*.png

@@ -49,6 +49,7 @@ Evalúa tu tarea antes de implementar y **ejecuta/invoca la herramienta correspo
 - Esto incluye, sin excepción: `php artisan`, `./vendor/bin/pest`, `./vendor/bin/pint`, `composer`, `phpunit` y cualquier script PHP.
 - Comando base obligatorio: `docker compose exec app <comando>`.
 - Si el contenedor no está levantado, primero iniciarlo y recién después ejecutar validaciones/comandos.
+- Las pruebas que modifican datos deben usar exclusivamente una base de pruebas aislada, nunca la base de desarrollo. Si otra instancia está usando `mitai_testing`, crear y usar otra base de pruebas aislada. Al terminar, borrar la base de pruebas utilizada, incluso si las pruebas fallan; antes de borrarla, verificar su identidad exacta y que ninguna otra sesión la esté usando. Si no puede comprobarse, no hay permisos para crear otra base o falla la limpieza, detenerse e informar el bloqueo.
 
 ===
 

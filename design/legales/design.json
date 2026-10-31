@@ -1,0 +1,27 @@
+{
+  "title": "Términos y privacidad",
+  "brief": "Tres direcciones para las páginas de Términos y condiciones y Política de privacidad. Ambas comparten el componente x-legales.documento; cada artboard muestra escritorio con términos y celular con los dos documentos.",
+  "artboards": [
+    {
+      "file": "01-reglamento.html",
+      "title": "Reglamento",
+      "tradeoff": "Cabecera navy con líneas de cancha (sigue al acceso Medio campo), pestañas Términos/Privacidad, índice lateral fijo y resumen en tres puntos. La más cómoda para leer y navegar; en celular el índice queda plegado.",
+      "width": 2400,
+      "height": 1100
+    },
+    {
+      "file": "02-acta-oficial.html",
+      "title": "Acta oficial",
+      "tradeoff": "El documento como un acta del torneo: sello de vigencia, datos en grilla y artículos con números grandes calados. Muy propia del torneo; sin índice, hay que desplazarse para llegar a un artículo.",
+      "width": 2400,
+      "height": 1100
+    },
+    {
+      "file": "03-vestuario.html",
+      "title": "Vestuario",
+      "tradeoff": "Mantiene el fondo oscuro del sitio público y presenta los artículos como acordeón. La más compacta; esconde el texto detrás de clics, peor para leer el documento completo o buscar con Ctrl+F.",
+      "width": 2400,
+      "height": 1100
+    }
+  ]
+}

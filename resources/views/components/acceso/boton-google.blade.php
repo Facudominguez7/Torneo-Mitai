@@ -1,5 +1,5 @@
 <a href="/auth/redirect"
-    class="flex h-[50px] items-center justify-center gap-3 rounded-[10px] border border-white/25 text-base font-semibold text-white transition hover:border-white/50 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-gold">
+    class="acceso-boton-google flex h-[52px] items-center justify-center gap-3 rounded border border-brand-navy/30 bg-white text-base font-bold text-brand-navy-deep transition hover:border-brand-navy hover:bg-brand-teal-light/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-navy">
     <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 48 48">
         <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z" />
         <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />

@@ -1,6 +1,6 @@
 <?php
 
-// Las pantallas de acceso usan el diseño "Cancha nocturna" y conservan sus formularios y los enlaces legales.
+// Las pantallas de acceso usan el diseño "Medio campo" y conservan sus formularios y los enlaces legales.
 
 use App\Models\User;
 
@@ -8,7 +8,8 @@ it('renderiza cada pantalla de invitado con su formulario y los enlaces legales'
     $this->get($url)->assertOk()
         ->assertSeeText($titulo)
         ->assertSee('action="'.route($accion).'"', false)
-        ->assertSee('bg-brand-navy-deep', false)
+        ->assertSee('class="acceso-cancha', false)
+        ->assertSee('class="acceso-formulario', false)
         ->assertSee(route('terminos'), false)
         ->assertSee(route('privacidad'), false);
 })->with([
@@ -35,4 +36,29 @@ it('ofrece mostrar la contrasena en el login', function (): void {
     $this->get('/login')->assertOk()
         ->assertSee('aria-label="Mostrar contraseña"', false)
         ->assertSee("x-bind:type=\"visible ? 'text' : 'password'\"", false);
+});
+
+it('muestra en la cancha el titular propio de cada pantalla', function (string $url, string $sobre, string $titular): void {
+    $this->get($url)->assertOk()
+        ->assertSeeText($sobre)
+        ->assertSeeText($titular)
+        ->assertSee('Logo_Mitai_SinFondo.png', false);
+})->with([
+    'login' => ['/login', 'Fecha a fecha', 'Todo lo de tu equipo'],
+    'registro' => ['/register', 'Nueva cuenta', 'Seguí a tu equipo fecha a fecha.'],
+    'olvidé mi contraseña' => ['/forgot-password', 'Recuperar acceso', 'Volvé a la cancha en un minuto.'],
+]);
+
+it('mantiene el registro con la aceptacion de terminos y el ingreso con google', function (): void {
+    $this->get('/register')->assertOk()
+        ->assertSee('name="terminos"', false)
+        ->assertSee('href="/auth/redirect"', false)
+        ->assertSeeText('Registrarme con Google')
+        ->assertSeeText('Si te registrás con Google, también aceptás los Términos y condiciones y la Política de privacidad.');
+});
+
+it('ofrece volver a ingresar desde olvidé mi contraseña', function (): void {
+    $this->get('/forgot-password')->assertOk()
+        ->assertSee('href="'.route('login').'"', false)
+        ->assertSeeText('Volver a ingresar');
 });

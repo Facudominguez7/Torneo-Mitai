@@ -3,13 +3,13 @@
 {{-- Aviso de las pantallas de acceso: "info" (sesión expirada), "exito" (código o enlace enviado), "error". --}}
 @php
     $clases = match ($tipo) {
-        'exito' => 'border-emerald-300/40 bg-emerald-300/10 text-emerald-200',
-        'error' => 'border-red-300/40 bg-red-300/10 text-red-200',
-        default => 'border-brand-gold/40 bg-brand-gold/[0.08] text-brand-gold',
+        'exito' => 'border-brand-teal bg-brand-teal-light/25 text-brand-navy-deep',
+        'error' => 'border-red-700 bg-red-50 text-red-800',
+        default => 'border-brand-navy bg-brand-gold/40 text-brand-navy-deep',
     };
 @endphp
 
-<div role="{{ $tipo === 'error' ? 'alert' : 'status' }}" {{ $attributes->merge(['class' => 'flex items-start gap-2.5 rounded-[10px] border px-3.5 py-3 text-[15px] font-medium '.$clases]) }}>
+<div role="{{ $tipo === 'error' ? 'alert' : 'status' }}" {{ $attributes->merge(['class' => 'flex items-start gap-2.5 border-l-4 px-3.5 py-3 text-[15px] font-medium '.$clases]) }}>
     <svg aria-hidden="true" class="mt-0.5 h-[18px] w-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         @if ($tipo === 'exito')
             <path d="M20 6 9 17l-5-5" />

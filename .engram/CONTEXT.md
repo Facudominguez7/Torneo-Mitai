@@ -4,6 +4,34 @@ Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como par
 
 Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
 
+## Goleadores premiados del portal público (rama `feat/home-new`)
+
+- Implementado `design/goleadores-premiados/01-premiados-de-cancha.html` con jugadores, categorías y equipos reales; escudos con respaldo y selector estilizado con alternativa GET sin JavaScript. No se inventan cantidades de goles. Pest: 34 pruebas/267 aserciones incluyendo regresión de Campeones y Subcampeones; Pint en 545 archivos. Playwright comprobó 1920×1080, 1280×720 y 390×844, selector, temas, scroll, hover y movimiento reducido. La base temporal se eliminó al terminar. La evaluación nativa no pudo clasificar por archivos sin seguimiento ajenos; no se obtuvo aprobación nativa.
+
+## Subcampeones del portal público (rama `feat/home-new`)
+
+- Implementado `design/subcampeones/01-podio-de-cancha.html` con datos reales, jerarquía de las cuatro copas, escudos con respaldo y selector estilizado con alternativa GET sin JavaScript. Pest: 36 pruebas/246 aserciones incluyendo regresión de Campeones; Pint en 544 archivos. Playwright comprobó 1920×1080, 1280×720 y 390×844, selector, temas, scroll, hover y movimiento reducido. La base de pruebas temporal se eliminó al terminar. La evaluación nativa no pudo clasificar por archivos sin seguimiento ajenos; no se obtuvo aprobación nativa.
+
+## Campeones del portal público (rama `feat/home-new`)
+
+- Implementado `design/campeones/02-noche-de-campeones.html`: copas y categorías con datos reales, selector de edición, escudos con respaldo y jerarquía visual por copa. Hover respeta movimiento reducido. Pest: 34 pruebas/189 aserciones y Pint en 543 archivos; Playwright comprobó escritorio y móvil, cambio de edición, temas y scroll. La base temporal de pruebas se eliminó al finalizar. El selector de edición usa un menú estilizado con enlaces y alternativa GET sin JavaScript; pruebas focales 5/70 y regresión 25/159 aprobadas, con bases temporales eliminadas. La evaluación nativa no pudo clasificar por archivos sin seguimiento ajenos; no se obtuvo aprobación nativa. Los cambios de Vallas continúan pendientes de cierre y no forman parte de esta verificación.
+
+## Portal público (rama `feat/home-new`)
+
+- Inicio separa partidos y tablas de premios de la edición, conserva la edición en los accesos y usa River Plate como ejemplo. El logo centrado y sin desenfoque se muestra como marca de agua en el sitio público, no en acceso, panel ni impresiones. La navegación de escritorio se compacta con transición e histéresis; en móvil conserva el comportamiento anterior. Pest focal: 43 pruebas/212 aserciones y Pint en 542 archivos. Playwright comprobó portada, finales, fixture, tablas, campeones y baja, tamaños 1920×1080, 1280×720 y 390×844, temas y scroll. La revisión nativa no pudo clasificar por archivos sin seguimiento ajenos; no se comprobó visualmente el perfil autenticado.
+
+## Instancias finales (rama `feat/home-new`)
+
+- Implementado `design/finales/02-camino-copa.html` con datos reales, escudos, filtros de categoría/copa/fase y ganador del partido cuando el marcador o los penales lo determinan. La edición se conserva desde Inicio y no se selecciona en el panel; al elegir un filtro, el panel se cierra. La planilla pública y las variantes previas de tarjeta se conservan. En escritorio las etapas se ordenan de izquierda a derecha y las finales quedan a la derecha; en móvil se apilan. El marcador aparece una sola vez junto a los equipos. El estado vacío distingue edición sin partidos de filtros sin resultados y solo ofrece limpiar cuando hay filtros activos. Pest focal y regresión: 33 pruebas/190 aserciones; Pint y Playwright en escritorio y móvil aprobados. La verificación independiente detectó el caso Gran Final; fue corregido y probado. La evaluación nativa no clasificó por archivos sin seguimiento ajenos.
+
+## Tabla pública de goleadores (rama `feat/home-new`)
+
+- Implementado `design/tabla-goleadores/02-ranking-protagonista.html` con podio para el orden canónico, filtros URL/AJAX, paginación adaptable, tema dual y movimiento reducido. En móvil, el ranking aparece antes y los filtros compactos quedan disponibles desde el inicio; también persisten al desplazar en escritorio y tablet. La pestaña inferior de Goleadores abre esta tabla conservando la edición. Pest focal (22 pruebas, 118 aserciones) y Pint aprobados en Docker; flujos visuales y recuperación de error comprobados con Playwright. La simulación inicial de error no llegó al servidor por el service worker; se verificó luego con un fallo controlado de `fetch` en la página.
+
+## Tabla pública de posiciones (rama `feat/home-new`)
+
+- Implementado el artboard `design/tabla-posiciones/01-tabla-cancha.html`: tabla adaptable con escudos, filtros existentes, temas y estadísticas accesibles en móvil. Verificada en Playwright a 1920×1080, 1280×720 y 390×844; pruebas focales y Pint en Docker aprobados. Los escudos tienen una base clara para mantener el contraste.
+
 ## SEO del sitio público (2026-10-25, rama `feat/seo-publico`)
 
 - `config/seo.php` y `SeoComposer` (vista `head`) generan el título, la descripción, la canónica (conserva solo `idEdicion`, `idCategoria`, `idGrupo` y `tipo`), Open Graph/Twitter y robots. El título nombra la edición solo cuando la página la muestra. Sin `idEdicion`, solo `/` e `/instancias-finales` muestran la última edición; el resto muestra el selector y usa `descripcion_general`.

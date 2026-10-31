@@ -216,6 +216,24 @@ it('el ranking canonico en pagina 1 destaca el top tres y compacta desde el cuar
     expect(substr_count($response->getContent(), 'data-destacado="secundario"'))->toBe(2);
 });
 
+it('presenta el ranking protagonista con podio compartido y controles de orden', function () {
+    $contexto = crearContextoUrlFiltros();
+    crearGoleadorUrlFiltros($contexto, 300071, 'Uno', 'Alvarez', 12);
+    crearGoleadorUrlFiltros($contexto, 300072, 'Dos', 'Bianchi', 9);
+    crearGoleadorUrlFiltros($contexto, 300073, 'Tres', 'Costa', 7);
+    crearGoleadorUrlFiltros($contexto, 300074, 'Cuatro', 'Duarte', 5);
+
+    $response = $this->get(route('tabla-goleadores', ['idEdicion' => $contexto['edicion']->id]));
+
+    $response->assertOk()
+        ->assertSee('Los primeros goleadores')
+        ->assertSee('El resto del ranking')
+        ->assertSee('id="orden-goleadores"', false)
+        ->assertSee('data-zona="podio"', false)
+        ->assertSee('data-variante="compacta" data-posicion="4"', false);
+    expect(substr_count($response->getContent(), 'data-variante="podio"'))->toBe(3);
+});
+
 it('un orden alternativo muestra todas las filas compactas sin podio', function () {
     $contexto = crearContextoUrlFiltros();
 
@@ -254,7 +272,35 @@ it('la pagina dos del ranking canonico no muestra podio y conserva el offset glo
     $response->assertOk()
         ->assertDontSee('data-zona="podio"', false)
         ->assertDontSee('data-variante="podio"', false)
-        ->assertSee('data-variante="compacta" data-posicion="31"', false);
+        ->assertSee('data-variante="compacta" data-posicion="31"', false)
+        ->assertSee('Página 2 de 2')
+        ->assertSee('Anterior');
+});
+
+it('publica controles compactos sin duplicar los filtros originales', function () {
+    $contexto = crearContextoUrlFiltros();
+
+    $response = $this->get(route('tabla-goleadores', ['idEdicion' => $contexto['edicion']->id]));
+
+    $response->assertOk()
+        ->assertSee('id="goleadores-compacto"', false)
+        ->assertSee('goleadores-compacto-inicial-movil', false)
+        ->assertSee('aria-controls="goleadores-panel-categoria"', false)
+        ->assertSee('aria-controls="goleadores-panel-orden"', false)
+        ->assertSee('aria-controls="goleadores-panel-buscar"', false);
+
+    foreach (['categoria-goleadores', 'orden-goleadores', 'buscador-goleadores'] as $id) {
+        expect(substr_count($response->getContent(), 'id="'.$id.'"'))->toBe(1);
+    }
+});
+
+it('usa la misma lupa que el fixture en el buscador compacto', function () {
+    $contexto = crearContextoUrlFiltros();
+
+    $this->get(route('tabla-goleadores', ['idEdicion' => $contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSee('<circle cx="7" cy="7" r="5"', false)
+        ->assertSee('<path d="M11 11l3.5 3.5"', false);
 });
 
 it('la pagina completa publica los estados de carga error y delegacion de limpiar', function () {

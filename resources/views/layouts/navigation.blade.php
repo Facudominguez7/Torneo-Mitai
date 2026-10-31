@@ -1,6 +1,10 @@
+@if (request()->routeIs('campeones', 'subcampeones', 'goleadores', 'vallas', 'fixture', 'tabla-posiciones', 'tabla-goleadores', 'tabla-vallas', 'instancias-finales', 'terminos', 'privacidad'))
+    <x-marca-agua-portal />
+@endif
 <div id="nav-centinela" class="h-px" aria-hidden="true"></div>
 <nav aria-label="Navegación principal" id="nav-principal" class="sticky top-0 z-50 border-b border-white/10 bg-black/40 backdrop-blur">
         @php
+            $navPublica = request()->routeIs('home', 'campeones', 'subcampeones', 'goleadores', 'vallas', 'fixture', 'tabla-posiciones', 'tabla-goleadores', 'tabla-vallas', 'instancias-finales', 'terminos', 'privacidad');
             $navInlineSecciones = ! (auth()->check() && (Auth::user()->rol ?? '') === 'admin');
             $itemsSeccion = [
             ['label' => 'Inicio', 'ruta' => 'home', 'patterns' => ['home']],
@@ -12,7 +16,7 @@
     @endphp
 
     <div
-        class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 lg:gap-6 lg:px-8 [.nav-compacta_&]:py-2">
+        class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 lg:gap-6 lg:px-8 {{ $navPublica ? 'nav-fila' : '[.nav-compacta_&]:py-2' }}">
         @php
             $edicionActiva = $EdicionSeleccionada ?? $ultimaEdicion ?? null;
         @endphp
@@ -21,8 +25,8 @@
             $homeUrl = optional($edicionActiva)->id ? route('home', ['idEdicion' => $edicionActiva->id]) : route('home');
         @endphp
         <a href="{{ $homeUrl }}"
-            class="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40 sm:self-auto [.nav-compacta_&]:hidden">
-            <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" class="h-10 w-10" alt="MITAI Logo">
+            class="{{ $navPublica ? 'nav-compactable' : '[.nav-compacta_&]:hidden' }} flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg text-white {{ $navPublica ? '' : 'transition' }} hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40 sm:self-auto">
+            <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" class="h-10 w-10 brand-anim" alt="MITAI Logo">
             <div class="flex flex-col text-center sm:text-left">
                 <span class="text-sm font-semibold uppercase tracking-[0.3em] text-white/60">Torneo Mitai</span>
                 <span
@@ -43,12 +47,19 @@
         </div>
 
         <div
-            class="flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap [.nav-compacta_&]:hidden">
+            class="{{ $navPublica ? 'nav-compactable' : '[.nav-compacta_&]:hidden' }} flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap">
+            <button type="button" id="btn-tema" aria-label="Cambiar tema"
+                class="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 transition hover:border-yellow-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40">
+                <svg id="icono-tema" class="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" aria-hidden="true"></svg>
+                <span id="etiqueta-tema">Sistema</span>
+            </button>
+
             @auth
                 @if (Auth::user()->rol === 'admin')
                     <a href="{{ route('admin', ['idEdicion' => optional($edicionActiva)->id]) }}"
                         class="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70 transition hover:border-yellow-300 hover:bg-yellow-300/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40">
-                        Panel de administración
+                        <span class="xl:hidden">Panel</span>
+                        <span class="hidden xl:inline">Panel de administración</span>
                     </a>
                 @endif
             @endauth
@@ -60,19 +71,18 @@
                     @endphp
                     <x-dropdown align="right" width="56">
                         <x-slot name="trigger">
-                            <button
+                            <button aria-label="Cuenta de {{ $nombreUsuario }}"
                                 class="inline-flex items-center gap-3 rounded-full border border-brand-gold/40 bg-gradient-to-r from-brand-navy/90 via-brand-teal/85 to-brand-navy/85 px-3 py-2 text-sm font-semibold text-white transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-brand-gold/40">
                                 <div class="flex items-center gap-2">
+                                    {{-- Google rechaza las fotos pedidas con referer; si igual fallan, queda la inicial. --}}
                                     @if (!empty(Auth::user()->google_avatar))
                                         <img class="h-9 w-9 rounded-2xl border border-white/20 object-cover"
-                                            src="{{ Auth::user()->google_avatar }}" alt="Avatar de {{ $nombreUsuario }}">
-                                    @else
-                                        <span
-                                            class="flex h-9 w-9 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-sm font-bold uppercase text-white">
-                                            {{ mb_substr($nombreUsuario, 0, 1) }}
-                                        </span>
+                                            src="{{ Auth::user()->google_avatar }}" alt="" referrerpolicy="no-referrer"
+                                            onerror="this.hidden = true; this.nextElementSibling.hidden = false">
                                     @endif
-                                    <span class="text-sm font-semibold text-white">{{ $nombreUsuario }}</span>
+                                    <span @if (!empty(Auth::user()->google_avatar)) hidden @endif
+                                        class="flex h-9 w-9 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-sm font-bold uppercase text-white [&[hidden]]:hidden">{{ mb_substr($nombreUsuario, 0, 1) }}</span>
+                                    <span class="hidden max-w-[12rem] text-sm font-semibold text-white lg:inline-block truncate">{{ $nombreUsuario }}</span>
                                 </div>
                                 <svg class="ml-1 h-4 w-4 text-brand-gold" xmlns="http://www.w3.org/2000/svg" fill="none"
                                     viewBox="0 0 20 20">
@@ -118,7 +128,7 @@
     </div>
 
     <div id="nav-secciones-mobile"
-        class="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-6 gap-y-2 overflow-x-auto border-t border-white/10 px-4 pt-3 pb-4 sm:flex-nowrap sm:px-6 {{ $navInlineSecciones ? 'xl:hidden' : '' }} xl:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        class="mx-auto hidden max-w-6xl flex-wrap justify-center gap-x-6 gap-y-2 overflow-x-auto border-t border-white/10 px-4 pt-3 pb-4 sm:flex sm:flex-nowrap sm:px-6 {{ $navInlineSecciones ? 'xl:hidden' : '' }} xl:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         @foreach ($itemsSeccion as $item)
             <a href="{{ route($item['ruta'], ['idEdicion' => optional($edicionActiva)->id]) }}"
                 @if (request()->routeIs($item['patterns']))
@@ -141,17 +151,46 @@
         });
     </script>
     <script>
-        // Al scrollear la barra queda fija solo con la navegación de
-        // secciones: el bloque de logo/sesión se oculta vía .nav-compacta.
         document.addEventListener('DOMContentLoaded', function () {
-            var barra = document.getElementById('nav-principal');
-            var centinela = document.getElementById('nav-centinela');
-            if (!barra || !centinela || !('IntersectionObserver' in window)) {
-                return;
+            const barra = document.getElementById('nav-principal');
+            const centinela = document.getElementById('nav-centinela');
+            @if ($navPublica)
+            const bloques = barra.querySelectorAll('.nav-compactable');
+            const movil = window.matchMedia('(max-width: 639px)');
+            let compacta = false;
+            let centinelaVisible = true;
+
+            function actualizar() {
+                if (window.scrollY > 120) compacta = true;
+                if (window.scrollY <= 2) compacta = false;
+                barra.classList.toggle('nav-compacta', movil.matches ? !centinelaVisible : compacta);
+                bloques.forEach(function (bloque) {
+                    const oculto = !movil.matches && compacta;
+                    if (oculto && bloque.contains(document.activeElement)) document.activeElement.blur();
+                    bloque.inert = oculto;
+                });
             }
+
+            if ('IntersectionObserver' in window) {
+                new IntersectionObserver(function (entrada) {
+                    centinelaVisible = entrada[0].isIntersecting;
+                    if (movil.matches) actualizar();
+                }).observe(centinela);
+            }
+            window.addEventListener('scroll', actualizar, { passive: true });
+            window.addEventListener('resize', actualizar);
+            actualizar();
+            @else
+            if (!barra || !centinela || !('IntersectionObserver' in window)) return;
+            // Compactar achica la barra. Con scroll anchoring el navegador descuenta esa altura del scroll, vuelve a 0 y la barra se
+            // expande otra vez (bucle). Sin anchoring, alcanza con no compactar cuando la página no tiene recorrido para absorberlo.
+            document.documentElement.style.overflowAnchor = 'none';
             new IntersectionObserver(function (entrada) {
-                barra.classList.toggle('nav-compacta', !entrada[0].isIntersecting);
+                const recorrido = document.documentElement.scrollHeight - window.innerHeight;
+                const compacta = barra.classList.contains('nav-compacta');
+                barra.classList.toggle('nav-compacta', !entrada[0].isIntersecting && (compacta || recorrido > barra.offsetHeight + 16));
             }).observe(centinela);
+            @endif
         });
     </script>
 </nav>

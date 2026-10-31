@@ -3,9 +3,12 @@
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Partido;
+use App\Models\TablaPosicion;
+use App\Services\EquiposDeEdicionService;
 
 function seguirEquipoBase(): array
 {
@@ -65,6 +68,29 @@ function seguirEquipoUrl(array $parametros): string
     return '/equipo-seguido?'.http_build_query($parametros);
 }
 
+it('conserva las fotos de participantes directos y por pivote', function () {
+    $contexto = seguirEquipoBase();
+    $otraEdicion = Edicion::create(['nombre' => 'Edicion anterior']);
+    $directo = equipoSeguido($contexto, 'Equipo directo');
+    $heredado = Equipo::create([
+        'idCategoria' => $contexto['categoria']->id,
+        'idEdicion' => $otraEdicion->id,
+        'nombre' => 'Equipo heredado',
+        'foto' => 'heredado.png',
+    ]);
+    EquipoEdicion::create([
+        'idEquipo' => $heredado->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'golesContra' => 0,
+    ]);
+
+    $participantes = app(EquiposDeEdicionService::class)->participantes($contexto['edicion']->id)->keyBy('id');
+
+    expect($participantes->get($directo->id)['foto'])->toBe('equipo.png')
+        ->and($participantes->get($heredado->id)['foto'])->toBe('heredado.png');
+});
+
 it('devuelve proximo y ultimo con rival localia horario marcador y links', function () {
     $contexto = seguirEquipoBase();
     $amigos = equipoSeguido($contexto, 'Amigos F.c.');
@@ -85,7 +111,7 @@ it('devuelve proximo y ultimo con rival localia horario marcador y links', funct
 
     $datos = $respuesta->assertJson([
         'disponible' => true,
-        'equipo' => ['nombre' => 'Amigos F.c.', 'idCategoria' => $contexto['categoria']->id],
+        'equipo' => ['nombre' => 'Amigos F.c.', 'idCategoria' => $contexto['categoria']->id, 'foto' => 'equipo.png'],
         'proximo' => [
             'rival' => 'Boca Chicos',
             'esLocal' => true,
@@ -108,6 +134,50 @@ it('devuelve proximo y ultimo con rival localia horario marcador y links', funct
         ->and($datos['links']['fixture'])->toContain('equipo=Amigos%20F.c.')
         ->and($datos['links']['tabla'])->toContain('idCategoria='.$contexto['categoria']->id)
         ->and($datos['links']['tabla'])->toContain('idGrupo='.$contexto['grupo']->id);
+});
+
+it('devuelve posicion en su grupo y forma de los ultimos cinco', function () {
+    $contexto = seguirEquipoBase();
+    $amigos = equipoSeguido($contexto, 'Amigos F.c.');
+    $boca = equipoSeguido($contexto, 'Boca Chicos');
+    $river = equipoSeguido($contexto, 'River Junior');
+    $fecha = fechaSeguido($contexto, 'Fecha 1');
+
+    // Mismos puntos que Boca, pero mejor diferencia: va primero en la tabla.
+    TablaPosicion::create([
+        'idGrupo' => $contexto['grupo']->id, 'idEquipo' => $amigos->id,
+        'idEdicion' => $contexto['edicion']->id, 'puntos' => 6,
+        'golesFavor' => 6, 'golesContra' => 3, 'diferenciaGoles' => 3,
+        'jugado' => 5, 'ganado' => 2, 'perdido' => 2, 'empatado' => 1,
+    ]);
+    TablaPosicion::create([
+        'idGrupo' => $contexto['grupo']->id, 'idEquipo' => $boca->id,
+        'idEdicion' => $contexto['edicion']->id, 'puntos' => 6,
+        'golesFavor' => 4, 'golesContra' => 3, 'diferenciaGoles' => 1,
+        'jugado' => 5, 'ganado' => 2, 'perdido' => 2, 'empatado' => 1,
+    ]);
+
+    // Cronologico: G, E, P, P, G — la forma se lee del mas reciente al mas viejo.
+    partidoSeguido($contexto, $fecha, $amigos, $boca, now()->subDays(12)->format('Y-m-d H:i:s'), 1, 2, 0);
+    partidoSeguido($contexto, $fecha, $amigos, $river, now()->subDays(10)->format('Y-m-d H:i:s'), 1, 1, 1);
+    partidoSeguido($contexto, $fecha, $boca, $amigos, now()->subDays(8)->format('Y-m-d H:i:s'), 1, 2, 0);
+    partidoSeguido($contexto, $fecha, $river, $amigos, now()->subDays(5)->format('Y-m-d H:i:s'), 1, 3, 0);
+    partidoSeguido($contexto, $fecha, $amigos, $boca, now()->subDays(2)->format('Y-m-d H:i:s'), 1, 3, 1);
+
+    $respuesta = $this->get(seguirEquipoUrl([
+        'nombre' => 'Amigos F.c.',
+        'idEdicion' => $contexto['edicion']->id,
+    ]));
+
+    $respuesta->assertOk();
+
+    expect($respuesta->json('posicion'))->toBe([
+        'posicion' => 1,
+        'total' => 2,
+        'puntos' => 6,
+        'diferencia' => 3,
+    ]);
+    expect($respuesta->json('forma'))->toBe(['G', 'P', 'P', 'E', 'G']);
 });
 
 it('devuelve proximo nulo cuando no hay pendientes pero si ultimo', function () {
@@ -148,6 +218,8 @@ it('devuelve proximo y ultimo nulos con links para un equipo sin partidos', func
         'disponible' => true,
         'proximo' => null,
         'ultimo' => null,
+        'posicion' => null,
+        'forma' => [],
     ]);
 
     expect($respuesta->json('links.fixture'))->toContain('equipo=Deportivo%20Lago')

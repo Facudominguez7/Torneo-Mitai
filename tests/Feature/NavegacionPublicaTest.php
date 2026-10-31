@@ -79,10 +79,11 @@ it('marca con aria-current solo el link de partidos dentro de la vista fixture',
 
     $nav = navPublica($this->get(route('fixture', ['idEdicion' => $edicion->id]))->getContent());
 
-    // Cada link de seccion vive DOS veces en el DOM (links inline de desktop
-    // y chips mobile; por viewport solo uno es visible): el activo se marca
-    // exactamente una vez por representacion y los demas no se marcan.
-    expect(preg_match_all('/<a\b[^>]*aria-current="page"/', $nav))->toBe(2);
+    // Cada link de seccion vive TRES veces en el DOM (links inline de desktop,
+    // chips mobile y tab bar movil; por viewport solo uno es visible): el
+    // activo se marca exactamente una vez por representacion y los demas no
+    // se marcan.
+    expect(preg_match_all('/<a\b[^>]*aria-current="page"/', $nav))->toBe(3);
 
     expect(linkDeSeccion($nav, 'Partidos'))->toContain('aria-current="page"');
 
@@ -96,9 +97,9 @@ it('marca solo el link de inicio con aria-current en el home', function () {
 
     $nav = navPublica($this->get(route('home'))->getContent());
 
-    // Mismo criterio: el activo aparece marcado en ambas representaciones
-    // (desktop inline + chips mobile), nunca en los otros links.
-    expect(preg_match_all('/<a\b[^>]*aria-current="page"/', $nav))->toBe(2);
+    // Mismo criterio: el activo aparece marcado en las tres representaciones
+    // (desktop inline + chips mobile + tab bar movil), nunca en los otros links.
+    expect(preg_match_all('/<a\b[^>]*aria-current="page"/', $nav))->toBe(3);
 
     expect(linkDeSeccion($nav, 'Inicio'))->toContain('aria-current="page"');
 
@@ -144,4 +145,51 @@ it('responde correctamente en home y fixture con una edicion valida', function (
 
     $this->get(route('home'))->assertOk();
     $this->get(route('fixture', ['idEdicion' => $edicion->id]))->assertOk();
+});
+
+it('carga la foto de google sin referer y conserva la inicial si la foto falla', function () {
+    crearEdicionDePrueba('Edicion Avatar');
+    $usuario = User::factory()->create(['name' => 'Facundo Prueba']);
+    $usuario->forceFill(['google_avatar' => 'https://lh3.googleusercontent.com/a/foto-de-prueba'])->save();
+
+    $nav = navPublica($this->actingAs($usuario)->get(route('home'))->getContent());
+
+    expect($nav)->toContain('src="https://lh3.googleusercontent.com/a/foto-de-prueba"')
+        ->and($nav)->toContain('referrerpolicy="no-referrer"')
+        ->and($nav)->toMatch('/onerror="[^"]*nextElementSibling[^"]*"/')
+        ->and($nav)->toMatch('/<span[^>]*hidden[^>]*>\s*F\s*<\/span>/');
+});
+
+it('mantiene en una sola fila los controles de la cuenta del administrador', function () {
+    crearEdicionDePrueba('Edicion Admin');
+    $admin = User::factory()->create(['name' => 'Admin Con Un Nombre Bastante Largo', 'rol' => 'admin']);
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    $nav = navPublica($this->actingAs($admin)->get(route('home'))->getContent());
+
+    expect($nav)->toContain('sm:flex-nowrap')
+        ->and($nav)->toMatch('/<span class="xl:hidden">Panel<\/span>/')
+        ->and($nav)->toMatch('/class="[^"]*truncate[^"]*">Admin Con Un Nombre Bastante Largo</')
+        ->and($css)->not->toContain('.nav-compactable { max-width: 32rem;');
+});
+
+it('no tiñe con el tema claro el texto del menu de la cuenta sobre fondo oscuro', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    // El botón y el menú de la cuenta conservan su degradado navy en ambos temas;
+    // su texto tiene que seguir blanco aunque el resto de la barra pase a navy.
+    foreach (['[class*="text-white"]:not([class*="bg-gradient"]):not([class*="text-white/"])', '[class*="text-white/60"]', '[class*="text-white/80"]', 'a:hover:not([class*="bg-gradient"])', 'button:hover'] as $selector) {
+        expect($css)->toContain('.tm-home #nav-principal '.$selector.':not([class*="bg-gradient"] *)');
+    }
+});
+
+it('ancla a la derecha el menu de la cuenta para que no desborde en el celular', function () {
+    crearEdicionDePrueba('Edicion Menu');
+    $usuario = User::factory()->create(['name' => 'Usuario Menu']);
+
+    $nav = navPublica($this->actingAs($usuario)->get(route('home'))->getContent());
+
+    // El contenedor del menú es absoluto: sin end-0 arranca en el borde izquierdo
+    // del botón y, con el botón angosto del celular, se sale de la pantalla.
+    expect($nav)->toMatch('/<div x-show="open"[^>]*class="absolute[^"]*\bend-0\b/');
 });

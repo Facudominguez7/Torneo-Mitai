@@ -3,6 +3,7 @@
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Partido;
@@ -85,8 +86,8 @@ function ordenEnHtml(string $html, array $marcadores): bool
     return true;
 }
 
-describe('home: jerarquía de bloques y prosa eliminada', function () {
-    it('renderiza los bloques en el orden definido por el spec', function () {
+describe('home: buscador protagonista y tema dual (artboard 06)', function () {
+    it('renderiza los bloques en el orden definido por el artboard', function () {
         $contexto = homeBase();
         $futura = homeFecha($contexto, 'Fecha 2');
         homePartido($contexto, $futura, now()->addDays(2)->format('Y-m-d H:i:s'));
@@ -100,11 +101,92 @@ describe('home: jerarquía de bloques y prosa eliminada', function () {
         $html = $this->get(route('home'))->assertOk()->getContent();
 
         expect(ordenEnHtml($html, [
-            'id="ediciones-select"',
+            'id="idEdicion"',
+            '¿De qué equipo sos?',
             'id="seguir-equipo-bloque"',
-            'id="accesos-secundarios"',
-            'Ver más',
+            'O explorá todo el torneo',
         ]))->toBeTrue();
+    });
+
+    it('mantiene el buscador cerrado con sus datos y el botón de tema disponibles', function () {
+        $contexto = homeBase();
+        Equipo::create([
+            'idCategoria' => $contexto['categoria']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'nombre' => 'Equipo Buscador',
+            'foto' => 'equipo.png',
+        ]);
+
+        $html = $this->get(route('home'))->assertOk()->getContent();
+
+        // Desplegable cerrado por defecto: la lista existe pero arranca oculta.
+        expect($html)->toContain('id="seguir-equipo-buscador"');
+        expect($html)->toContain('Buscá tu equipo, ej: River Plate');
+        expect($html)->toContain('id="seguir-equipo-lista"');
+        expect($html)->toContain('id="seguir-equipo-datos"');
+        expect($html)->toContain('hidden overflow-hidden rounded-2xl');
+        // Override manual de tema en la navegación compartida.
+        expect($html)->toContain('id="btn-tema"');
+        expect($html)->toContain('Cambiar tema');
+    });
+
+    it('expone fotos de equipos directos y heredados en los datos del buscador', function () {
+        $contexto = homeBase();
+        $otraEdicion = Edicion::create(['nombre' => 'Edicion anterior']);
+        $directo = Equipo::create([
+            'idCategoria' => $contexto['categoria']->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'nombre' => 'Equipo compartido',
+            'foto' => 'directo.png',
+        ]);
+        $heredado = Equipo::create([
+            'idCategoria' => $contexto['categoria']->id,
+            'idEdicion' => $otraEdicion->id,
+            'nombre' => 'Equipo compartido',
+            'foto' => 'heredado.png',
+        ]);
+        EquipoEdicion::create([
+            'idEquipo' => $heredado->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'golesContra' => 0,
+        ]);
+
+        $html = $this->get(route('home', ['idEdicion' => $contexto['edicion']->id]))->assertOk()->getContent();
+        expect(preg_match('/<script\b[^>]*\bid="seguir-equipo-datos"[^>]*>(.*?)<\/script>/s', $html, $coincidencias))->toBe(1);
+        $participantes = json_decode($coincidencias[1], true, 512, JSON_THROW_ON_ERROR);
+
+        $fotosPorEquipo = array_column($participantes, 'foto', 'id');
+
+        expect($participantes)->toHaveCount(2)
+            ->and($fotosPorEquipo)->toHaveCount(2)
+            ->and($fotosPorEquipo[$directo->id])->toBe('directo.png')
+            ->and($fotosPorEquipo[$heredado->id])->toBe('heredado.png');
+    });
+
+    it('recuerda la edición elegida en el selector', function () {
+        $contexto = homeBase();
+        homePartido($contexto, homeFecha($contexto, 'Fecha 2'), now()->addDays(2)->format('Y-m-d H:i:s'));
+
+        $html = $this->get(route('home', ['idEdicion' => $contexto['edicion']->id]))->assertOk()->getContent();
+
+        // Dropdown diseñado: la edición activa queda marcada en la listbox.
+        expect(preg_match('/id="opcion-edicion-'.preg_quote($contexto['edicion']->id, '/').'"[^>]*aria-selected="true"/', $html))->toBe(1);
+        expect($html)->toContain('id="opcion-edicion-vacia" data-url="'.route('home').'"');
+    });
+
+    it('renderiza el selector de edición como dropdown navegable', function () {
+        $contexto = homeBase();
+
+        $html = $this->get(route('home'))->assertOk()->getContent();
+
+        // Disparador con ARIA del listbox y opción nula primero (misma semántica
+        // que el <select> anterior: elegir una edición navega a ?idEdicion=N).
+        expect($html)->toContain('aria-haspopup="listbox"');
+        expect($html)->toContain('aria-expanded="false"');
+        expect($html)->toContain('data-url="'.route('home').'"');
+        expect($html)->toContain('data-url="'.route('home', ['idEdicion' => $contexto['edicion']->id]).'"');
+        expect($html)->toContain('Seleccione una edición');
     });
 
     it('no contiene la prosa institucional ni los ctas duplicados eliminados', function () {
@@ -152,7 +234,19 @@ describe('home: jerarquía de bloques y prosa eliminada', function () {
         $sinNav = trim((string) preg_replace('/<nav\b.*?<\/nav>/s', '', $html));
         $urlFixture = route('fixture', ['idEdicion' => $contexto['edicion']->id]);
 
-        expect(preg_match_all('/href="'.preg_quote($urlFixture, '/').'"/', $sinNav))->toBe(1);
+        expect(preg_match_all('/href="'.preg_quote($urlFixture, '/').'"/', $sinNav))->toBe(0);
+    });
+
+    it('expone los accesos del torneo con la edición activa', function () {
+        $contexto = homeBase();
+        homePartido($contexto, homeFecha($contexto, 'Fecha 2'), now()->addDays(2)->format('Y-m-d H:i:s'));
+
+        $html = $this->get(route('home'))->assertOk()->getContent();
+
+        expect($html)->toContain(route('tabla-posiciones', ['idEdicion' => $contexto['edicion']->id]));
+        expect($html)->toContain(route('tabla-goleadores', ['idEdicion' => $contexto['edicion']->id]));
+        expect($html)->toContain(route('instancias-finales', ['idEdicion' => $contexto['edicion']->id]));
+        expect($html)->toContain(route('tabla-vallas', ['idEdicion' => $contexto['edicion']->id]));
     });
 
     it('muestra los mismos bloques para guest y para admin', function () {
@@ -167,10 +261,10 @@ describe('home: jerarquía de bloques y prosa eliminada', function () {
         ]);
 
         $marcadores = [
-            'id="ediciones-select"',
+            'id="idEdicion"',
+            '¿De qué equipo sos?',
             'id="seguir-equipo-bloque"',
-            'id="accesos-secundarios"',
-            'Ver más',
+            'O explorá todo el torneo',
         ];
 
         $guest = $this->get(route('home'))->assertOk()->getContent();

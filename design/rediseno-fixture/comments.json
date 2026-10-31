@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "comments": [
+    {
+      "id": "hrbced84",
+      "file": "02-tablero-operativo.html",
+      "selector": "body > div",
+      "excerpt": "Torneos Mita'í Todas Sub-8 Sub-10 Sub-12 Sub-14 Sub-16 FECHAS F1 12 ⚽ F2 9 ⚽ F3 15 ⚽ F4 8 ⚽ F5 11 ⚽ F6 13 ⚽ F7 en curso F8 F9 F10 F11 F12 F13 F14 TORNEO APERTURA 2026 · 21ª EDICIÓN Fecha 7 · Sábado 31 de octubre 7 goles jugados en la fecha · 5 partidos EN JUEGO · 67' SUB-12 Talleres de Palpalá 1 - 0",
+      "comment": "me gusta esta idea pero me falta ver el logo de los equipos",
+      "createdAt": "2026-10-29T00:56:18.013Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T00:57:25.397Z",
+      "resolvedAt": "2026-10-29T01:05:19.402Z"
+    },
+    {
+      "id": "b9ai1e4x",
+      "file": "02-tablero-operativo.html",
+      "selector": "body > div",
+      "excerpt": "Torneos Mita'í Todas Sub-8 Sub-10 Sub-12 Sub-14 Sub-16 FECHAS F1 12 ⚽ F2 9 ⚽ F3 15 ⚽ F4 8 ⚽ F5 11 ⚽ F6 13 ⚽ F7 en curso F8 F9 F10 F11 F12 F13 F14 TORNEO APERTURA 2026 · 21ª EDICIÓN Fecha 7 · Sábado 31 de octubre 7 goles jugados en la fecha · 5 partidos EN JUEGO · 67' SUB-12 Talleres de Palpalá 1 - 0",
+      "comment": "me faltan animaciones en la pagina esta muy vacia, y acordate lo que dije del navbar",
+      "createdAt": "2026-10-29T00:56:57.304Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T00:57:25.397Z",
+      "resolvedAt": "2026-10-29T00:59:26.062Z"
+    },
+    {
+      "id": "a2cg9od8",
+      "file": "02-tablero-operativo.html",
+      "selector": "body > div > div > main > section > article:nth-of-type(1) > p:nth-of-type(3)",
+      "excerpt": "Cancha 2 · Arrancó 10:45",
+      "comment": "arranco y termino nunca se uso, mira el codigo",
+      "createdAt": "2026-10-29T00:57:15.400Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T00:57:25.397Z",
+      "resolvedAt": "2026-10-29T00:59:26.062Z"
+    },
+    {
+      "id": "tgcto6g0",
+      "file": "02-tablero-operativo.html",
+      "selector": "body > div",
+      "excerpt": "TORNEO MITAI 21° Edición Torneos Mita'í Inicio Partidos Posiciones Goleadores Finales ☾ OSCURO Iniciar sesión → Todas Sub-8 Sub-10 Sub-12 Sub-14 Sub-16 FECHAS F1 12 ⚽ F2 9 ⚽ F3 15 ⚽ F4 8 ⚽ F5 11 ⚽ F6 13 ⚽ F7 F8 F9 F10 F11 F12 F13 F14 TORNEO APERTURA 2026 · 21ª EDICIÓN Fecha 7 · Sábado 31 de octubre",
+      "comment": "te falto implementar ese fondo tipo grilla",
+      "createdAt": "2026-10-29T01:10:04.420Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T01:16:04.310Z",
+      "resolvedAt": "2026-10-29T01:30:50.508Z"
+    },
+    {
+      "id": "a0kfjwly",
+      "file": "02-tablero-operativo.html",
+      "selector": "body > div > div > nav",
+      "excerpt": "FECHAS F1 12 ⚽ F2 9 ⚽ F3 15 ⚽ F4 8 ⚽ F5 11 ⚽ F6 13 ⚽ F7 F8 F9 F10 F11 F12 F13 F14",
+      "comment": "no implementaste eso del circulo de seleccion",
+      "createdAt": "2026-10-29T01:10:19.028Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T01:16:04.310Z",
+      "resolvedAt": "2026-10-29T01:30:50.508Z"
+    },
+    {
+      "id": "wsqd0kap",
+      "file": "02-tablero-operativo.html",
+      "selector": "body > div > nav:nth-of-type(1) > div > div:nth-of-type(2) > button",
+      "excerpt": "☾ OSCURO",
+      "comment": "no quedo funcional no veo modo claro",
+      "createdAt": "2026-10-29T01:15:57.765Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T01:16:04.310Z",
+      "resolvedAt": "2026-10-29T01:17:27.653Z"
+    },
+    {
+      "id": "zrlc7960",
+      "file": "04-tablero-movil.html",
+      "selector": "body > div > nav:nth-of-type(1)",
+      "excerpt": "TORNEO MITAI Edición vigente Tema: sistema Iniciar sesión →",
+      "comment": "no me gusta que quede tema e iniciar sesion al hacer scroll",
+      "createdAt": "2026-10-29T17:04:24.552Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T17:04:24.574Z",
+      "resolvedAt": "2026-10-29T17:05:48.374Z"
+    },
+    {
+      "id": "kwv1krgw",
+      "file": "04-tablero-movil.html",
+      "selector": "#form-buscar",
+      "excerpt": "Buscar equipo por nombre Buscar Demostración: presioná Enter o tocá Buscar.",
+      "comment": "esto esta horrible no tiene sentido el boton buscar",
+      "createdAt": "2026-10-29T17:05:14.509Z",
+      "status": "resolved",
+      "sentAt": "2026-10-29T17:05:14.532Z",
+      "resolvedAt": "2026-10-29T17:06:42.798Z"
+    }
+  ]
+}

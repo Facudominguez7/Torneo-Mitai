@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acta oficial · Torneo Mita'í</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--navy:#0E4B5E;--navy-deep:#082F3B;--teal:#2A6D81;--teal-light:#9BD3E2;--gold:#F7F280;--papel:#F6F8F9;--tinta:#082F3B;--mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;}
+*{box-sizing:border-box}
+body{margin:0;padding:48px;background:#E4E1DA;font-family:Barlow,sans-serif;color:var(--tinta)}
+.tablero{display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}
+.rotulo-frame{margin:0 0 12px;font:600 13px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#5B6770}
+.frame{position:relative;overflow:hidden;border-radius:6px;box-shadow:0 1px 0 rgba(0,0,0,.08)}
+.frame--d{width:1440px;height:1000px}
+.frame--m{width:390px;height:844px}
+.nav{display:flex;align-items:center;gap:32px;height:64px;padding:0 40px;background:var(--navy-deep);color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
+.nav img{width:36px;height:36px;object-fit:contain}
+.nav strong{font-size:18px}
+.nav .links{display:flex;gap:24px;margin-left:auto;font-size:15px;font-weight:600;color:rgba(255,255,255,.8)}
+.frame--m .nav{padding:0 16px;gap:10px;height:56px}.frame--m .nav .links{display:none}
+.frame--m .nav .menu{margin-left:auto;font:700 12px var(--mono);letter-spacing:.1em;color:var(--teal-light)}
+.nav .menu{display:none}.frame--m .nav .menu{display:block}
+a{color:inherit}
+
+.hoja{min-height:100%;padding:56px 0;background:#E9EEF0 repeating-linear-gradient(0deg,transparent 0 35px,rgba(14,75,94,.05) 35px 36px)}
+.acta{width:960px;margin:0 auto;background:#fff;border-top:6px solid var(--navy)}
+.acta-cab{display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;padding:32px 48px;border-bottom:2px solid var(--navy-deep)}
+.acta-cab img{width:72px;height:72px;object-fit:contain}
+.acta-cab small{font:700 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--teal)}
+.acta-cab h1{margin:6px 0 0;font-size:44px;font-weight:800;line-height:1}
+.sello{padding:10px 14px;border:2px solid var(--navy);transform:rotate(-3deg);font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;text-align:center;color:var(--navy);line-height:1.6}
+.sello b{display:block;font-size:15px}
+.datos{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #C7D5DA}
+.datos div{padding:12px 20px;border-right:1px solid #C7D5DA;font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#6B7F87}
+.datos div:first-child{padding-left:48px}.datos div:last-child{border:0}
+.datos b{display:block;margin-top:4px;font:700 16px Barlow,sans-serif;letter-spacing:0;text-transform:none;color:var(--navy-deep)}
+.datos a{text-decoration:none;color:var(--navy)}.datos a.activa{background:var(--gold);padding:0 6px}
+.fila{display:grid;grid-template-columns:120px 1fr;border-bottom:1px solid #E1E8EA;transition:background .2s}
+.fila:hover{background:rgba(155,211,226,.12)}
+.fila .n{padding:28px 0 0 48px;font-size:44px;font-weight:800;line-height:1;color:transparent;-webkit-text-stroke:1.5px var(--teal)}
+.fila .c{padding:28px 48px 28px 0}
+.fila h2{margin:0;font-size:22px;font-weight:800}
+.fila p,.fila li{font-size:17px;line-height:1.65;color:#2E4A55}.fila p{margin:10px 0 0}.fila ul{margin:10px 0 0;padding-left:20px}
+.fila a{font-weight:700;color:var(--navy)}
+.clave{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--navy-deep)}
+.clave div{padding:20px 24px;background:var(--navy);color:#fff}
+.clave strong{font:700 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.clave p{margin:8px 0 0;font-size:15px;line-height:1.45;color:rgba(255,255,255,.88)}
+.frame--m .hoja{padding:0}.frame--m .acta{width:auto;border-top-width:4px}
+.frame--m .acta-cab{grid-template-columns:auto 1fr;padding:20px 16px;gap:14px}.frame--m .acta-cab img{width:48px;height:48px}
+.frame--m .acta-cab h1{font-size:28px}.frame--m .sello{display:none}
+.frame--m .datos{grid-template-columns:1fr 1fr}.frame--m .datos div{padding:10px 16px}.frame--m .datos div:nth-child(2){border-right:0}.frame--m .datos div:nth-child(-n+2){border-bottom:1px solid #C7D5DA}
+.frame--m .clave{grid-template-columns:1fr}.frame--m .clave div{padding:14px 16px}
+.frame--m .fila{grid-template-columns:52px 1fr}.frame--m .fila .n{padding:22px 0 0 16px;font-size:26px}.frame--m .fila .c{padding:22px 16px 22px 0}
+.frame--m .fila h2{font-size:19px}.frame--m .fila p,.frame--m .fila li{font-size:16px}
+
+</style>
+</head>
+<body>
+<div class='tablero'>
+<div><p class='rotulo-frame'>Escritorio · Términos y condiciones</p><div class='frame frame--d'><div class='nav'><img src='../../public/fotos/Logo_Mitai_SinFondo.png' alt=''><strong>Torneo Mita'í</strong><div class='links'><span>Inicio</span><span>Fixture</span><span>Posiciones</span><span>Campeones</span></div><span class='menu'>MENÚ</span></div><div class='hoja'><article class='acta'>
+<header class='acta-cab'><img src='../../public/fotos/Logo_Mitai_SinFondo.png' alt=''><div><small>Torneo Mita'í · Fútbol formativo</small><h1>Términos y condiciones</h1></div><div class='sello'>Vigente desde<b>25/10/2026</b></div></header>
+<div class='datos'><div>Documento<b><a href='#' class='activa'>Términos</a> · <a href='#'>Privacidad</a></b></div><div>Artículos<b>12</b></div><div>Lectura<b>4 minutos</b></div><div>Jurisdicción<b>Argentina</b></div></div>
+<div class='clave'><div><strong>Información pública</strong><p>Fixture, resultados y tablas se pueden ver sin cuenta.</p></div><div><strong>Planilla oficial</strong><p>Ante una diferencia, vale lo que dice la planilla del partido.</p></div><div><strong>Menores</strong><p>Quien tenga menos de 18 años se registra con autorización de un adulto.</p></div></div>
+<div class='fila'><div class='n'>01</div><div class='c'><h2>Alcance</h2><p>Estos términos regulan el uso del sitio del Torneo Mita'í, un torneo de fútbol formativo: las páginas públicas (fixture, resultados, tablas y estadísticas), las cuentas de usuario y el panel de administración del torneo.</p></div></div><div class='fila'><div class='n'>02</div><div class='c'><h2>Aceptación</h2><p>Al crear una cuenta, ya sea con correo electrónico y contraseña o con una cuenta de Google, la persona usuaria acepta estos términos y la <a href='#'>Política de privacidad</a>. Quien no esté de acuerdo puede seguir consultando la información pública sin registrarse.</p></div></div><div class='fila'><div class='n'>03</div><div class='c'><h2>Cuentas</h2><ul><li>Los datos de registro deben ser verdaderos y mantenerse actualizados.</li><li>La cuenta es personal. Cada persona es responsable de mantener su contraseña en reserva y de la actividad realizada con su cuenta.</li><li>Si quien se registra es menor de edad, debe hacerlo con la autorización de su madre, padre o persona responsable.</li></ul></div></div><div class='fila'><div class='n'>04</div><div class='c'><h2>Información del torneo</h2><p>El fixture, los resultados, las tablas de posiciones y las estadísticas se publican con fines informativos. Pueden tener demoras o errores de carga, y la organización puede corregirlos en cualquier momento. Ante una diferencia, prevalece lo registrado en la planilla oficial del partido.</p></div></div><div class='fila'><div class='n'>05</div><div class='c'><h2>Uso permitido</h2><p>No está permitido:</p><ul><li>intentar acceder a cuentas, datos o secciones restringidas sin autorización;</li><li>interferir con el funcionamiento del sitio o extraer su contenido de forma masiva o automatizada;</li><li>usar los datos de jugadores, equipos o personas para fines ajenos al torneo.</li></ul></div></div></article></div></div></div>
+<div><p class='rotulo-frame'>Celular · Términos</p><div class='frame frame--m'><div class='nav'><img src='../../public/fotos/Logo_Mitai_SinFondo.png' alt=''><strong>Torneo Mita'í</strong><div class='links'><span>Inicio</span><span>Fixture</span><span>Posiciones</span><span>Campeones</span></div><span class='menu'>MENÚ</span></div><div class='hoja'><article class='acta'>
+<header class='acta-cab'><img src='../../public/fotos/Logo_Mitai_SinFondo.png' alt=''><div><small>Torneo Mita'í · Fútbol formativo</small><h1>Términos y condiciones</h1></div><div class='sello'>Vigente desde<b>25/10/2026</b></div></header>
+<div class='datos'><div>Documento<b><a href='#' class='activa'>Términos</a> · <a href='#'>Privacidad</a></b></div><div>Artículos<b>12</b></div><div>Lectura<b>4 minutos</b></div><div>Jurisdicción<b>Argentina</b></div></div>
+<div class='clave'><div><strong>Información pública</strong><p>Fixture, resultados y tablas se pueden ver sin cuenta.</p></div><div><strong>Planilla oficial</strong><p>Ante una diferencia, vale lo que dice la planilla del partido.</p></div><div><strong>Menores</strong><p>Quien tenga menos de 18 años se registra con autorización de un adulto.</p></div></div>
+<div class='fila'><div class='n'>01</div><div class='c'><h2>Alcance</h2><p>Estos términos regulan el uso del sitio del Torneo Mita'í, un torneo de fútbol formativo: las páginas públicas (fixture, resultados, tablas y estadísticas), las cuentas de usuario y el panel de administración del torneo.</p></div></div><div class='fila'><div class='n'>02</div><div class='c'><h2>Aceptación</h2><p>Al crear una cuenta, ya sea con correo electrónico y contraseña o con una cuenta de Google, la persona usuaria acepta estos términos y la <a href='#'>Política de privacidad</a>. Quien no esté de acuerdo puede seguir consultando la información pública sin registrarse.</p></div></div><div class='fila'><div class='n'>03</div><div class='c'><h2>Cuentas</h2><ul><li>Los datos de registro deben ser verdaderos y mantenerse actualizados.</li><li>La cuenta es personal. Cada persona es responsable de mantener su contraseña en reserva y de la actividad realizada con su cuenta.</li><li>Si quien se registra es menor de edad, debe hacerlo con la autorización de su madre, padre o persona responsable.</li></ul></div></div><div class='fila'><div class='n'>04</div><div class='c'><h2>Información del torneo</h2><p>El fixture, los resultados, las tablas de posiciones y las estadísticas se publican con fines informativos. Pueden tener demoras o errores de carga, y la organización puede corregirlos en cualquier momento. Ante una diferencia, prevalece lo registrado en la planilla oficial del partido.</p></div></div></article></div></div></div>
+<div><p class='rotulo-frame'>Celular · Privacidad</p><div class='frame frame--m'><div class='nav'><img src='../../public/fotos/Logo_Mitai_SinFondo.png' alt=''><strong>Torneo Mita'í</strong><div class='links'><span>Inicio</span><span>Fixture</span><span>Posiciones</span><span>Campeones</span></div><span class='menu'>MENÚ</span></div><div class='hoja'><article class='acta'>
+<header class='acta-cab'><img src='../../public/fotos/Logo_Mitai_SinFondo.png' alt=''><div><small>Torneo Mita'í · Fútbol formativo</small><h1>Política de privacidad</h1></div><div class='sello'>Vigente desde<b>25/10/2026</b></div></header>
+<div class='datos'><div>Documento<b><a href='#'>Términos</a> · <a href='#' class='activa'>Privacidad</a></b></div><div>Artículos<b>10</b></div><div>Lectura<b>4 minutos</b></div><div>Jurisdicción<b>Argentina</b></div></div>
+<div class='clave'><div><strong>No se publica</strong><p>El DNI y la fecha de nacimiento solo los ve la organización.</p></div><div><strong>Contraseña cifrada</strong><p>Nadie puede leer tu contraseña, ni siquiera la organización.</p></div><div><strong>Darte de baja</strong><p>Cada correo trae un enlace para dejar de recibir avisos.</p></div></div>
+<div class='fila'><div class='n'>01</div><div class='c'><h2>Responsable</h2><p>La organización del Torneo Mita'í es responsable de los datos personales que se tratan en este sitio. Para cualquier consulta, escribí a <a href='#'>info@torneosmitai.com</a>.</p></div></div><div class='fila'><div class='n'>02</div><div class='c'><h2>Qué datos se guardan</h2><ul><li><strong>Cuenta de usuario:</strong> nombre, correo electrónico y contraseña. La contraseña se guarda cifrada y nadie puede leerla.</li><li><strong>Jugadores:</strong> nombre, apellido, DNI, fecha de nacimiento, equipo, categoría y estadísticas deportivas.</li><li><strong>Uso del sitio:</strong> una cookie técnica de sesión y estadísticas de visitas.</li></ul></div></div><div class='fila'><div class='n'>03</div><div class='c'><h2>Para qué se usan</h2><ul><li>Administrar las cuentas y el inicio de sesión.</li><li>Organizar el torneo y publicar el fixture, los resultados y las tablas.</li></ul></div></div><div class='fila'><div class='n'>04</div><div class='c'><h2>Qué se publica</h2><p>En las páginas públicas se muestran el nombre y apellido de los jugadores junto con sus estadísticas deportivas. El DNI y la fecha de nacimiento no se publican.</p></div></div></article></div></div></div>
+</div>
+</body>
+</html>

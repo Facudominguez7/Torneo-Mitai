@@ -8,7 +8,6 @@
         <main class="flex-grow">
             {{ $slot }}
         </main>
-        @include('layouts.footer')
     </div>
 </body>
 
