@@ -182,3 +182,14 @@ it('no tiñe con el tema claro el texto del menu de la cuenta sobre fondo oscuro
         expect($css)->toContain('.tm-home #nav-principal '.$selector.':not([class*="bg-gradient"] *)');
     }
 });
+
+it('ancla a la derecha el menu de la cuenta para que no desborde en el celular', function () {
+    crearEdicionDePrueba('Edicion Menu');
+    $usuario = User::factory()->create(['name' => 'Usuario Menu']);
+
+    $nav = navPublica($this->actingAs($usuario)->get(route('home'))->getContent());
+
+    // El contenedor del menú es absoluto: sin end-0 arranca en el borde izquierdo
+    // del botón y, con el botón angosto del celular, se sale de la pantalla.
+    expect($nav)->toMatch('/<div x-show="open"[^>]*class="absolute[^"]*\bend-0\b/');
+});
