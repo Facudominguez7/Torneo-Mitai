@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "chosen": "01-medio-campo.html",
+  "handoffs": {
+    "01-medio-campo.html": {
+      "status": "implemented",
+      "queued": false,
+      "note": "Implementado en feat/acceso-medio-campo: layouts/guest, componentes x-acceso.* y las seis pantallas de acceso (registro y recuperar contraseña según 04 y 05).",
+      "previewUrl": "http://localhost:8000/login"
+    }
+  }
+}

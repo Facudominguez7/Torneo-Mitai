@@ -1,9 +1,13 @@
 <x-guest-layout>
+    <x-slot:sobre>Recuperar acceso</x-slot:sobre>
+    <x-slot:titular><span class="acceso-corto">Volvé a la cancha.</span><span class="acceso-largo">Volvé a la cancha en un minuto.</span></x-slot:titular>
+    <x-slot:bajada><span class="acceso-corto">Te mandamos un enlace para elegir una contraseña nueva.</span><span class="acceso-largo">Te mandamos un enlace a tu correo para que elijas una contraseña nueva.</span></x-slot:bajada>
+
     <div class="flex flex-col gap-1.5">
-        <h1 class="text-[26px] font-bold leading-tight sm:text-[28px]">
+        <h1 class="text-[26px] font-extrabold leading-tight sm:text-[32px]">
             {{ isset($restablecer) ? 'Restablecé tu contraseña' : '¿Olvidaste tu contraseña?' }}
         </h1>
-        <p class="text-[15px] text-white/75">
+        <p class="text-[15px] text-brand-navy-deep/75">
             @if (isset($restablecer))
                 Por tu seguridad tenés que elegir una contraseña nueva. Ingresá tu correo y te enviamos un enlace para hacerlo.
             @else
@@ -27,8 +31,8 @@
     </form>
 
     <x-slot:pie>
-        <p class="text-center text-[15px] text-white/80">
-            <a href="{{ route('login') }}" class="font-bold text-brand-teal-light underline-offset-4 hover:text-brand-gold hover:underline">Volver a ingresar</a>
-        </p>
+        <a href="{{ route('login') }}" class="acceso-volver inline-flex items-center gap-2 self-center text-[15px] font-bold text-brand-navy hover:text-brand-teal lg:self-start">
+            <span aria-hidden="true">←</span> Volver a ingresar
+        </a>
     </x-slot:pie>
 </x-guest-layout>
