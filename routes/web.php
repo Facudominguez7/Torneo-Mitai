@@ -15,6 +15,7 @@ use App\Http\Controllers\Panel\ControladorCobros;
 use App\Http\Controllers\Panel\ControladorConsultaJugador;
 use App\Http\Controllers\Panel\ControladorCopa;
 use App\Http\Controllers\Panel\ControladorEdicion;
+use App\Http\Controllers\Panel\ControladorEnvioSuscriptores;
 use App\Http\Controllers\Panel\ControladorEquipo;
 use App\Http\Controllers\Panel\ControladorEquiposEdiciones;
 use App\Http\Controllers\Panel\ControladorEquiposGrupos;
@@ -215,9 +216,9 @@ Route::prefix('Panel/notificaciones')->middleware([UserAccesPanelMiddleware::cla
         ->name('notificaciones.manual.contar');
     Route::post('/manual/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteNotificacionManual'])
         ->name('notificaciones.manual.enviar-lote');
-    Route::get('/resumen-fecha/contar', [ControladorNotificacionesEmail::class, 'contarDestinatariosResumenFecha'])
+    Route::get('/resumen-fecha/contar', [ControladorEnvioSuscriptores::class, 'contarResumenFecha'])
         ->name('notificaciones.resumen-fecha.contar');
-    Route::post('/resumen-fecha/suscriptores', [ControladorNotificacionesEmail::class, 'enviarResumenFechaSuscriptores'])
+    Route::post('/resumen-fecha/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarResumenFecha'])
         ->name('notificaciones.resumen-fecha.suscriptores');
     Route::post('/resultado/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResultado'])
         ->name('notificaciones.resultado.enviar-lote');
