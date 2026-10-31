@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "chosen": "01-reglamento.html",
+  "handoffs": {
+    "01-reglamento.html": {
+      "status": "implemented",
+      "queued": false,
+      "note": "Implementado en feat/legales-reglamento: x-legales.documento y x-legales.articulo, con el cuerpo en el tema dual del sitio público.",
+      "previewUrl": "http://localhost:8000/terminos-y-condiciones"
+    }
+  }
+}
