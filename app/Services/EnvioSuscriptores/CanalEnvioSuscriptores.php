@@ -3,6 +3,8 @@
 namespace App\Services\EnvioSuscriptores;
 
 use App\Models\EnvioSuscriptores;
+use Closure;
+use Illuminate\Mail\Mailable;
 
 /**
  * Último tramo de un aviso masivo: cómo llega a los suscriptores. Registro, cola, job y estados
@@ -11,10 +13,13 @@ use App\Models\EnvioSuscriptores;
 interface CanalEnvioSuscriptores
 {
     /**
-     * Manda el resumen ya armado. Lo llama el job y puede reintentarse.
+     * Manda un aviso ya registrado a los suscriptores activos que lo eligieron. Lo llama el job y
+     * puede reintentarse sin mandarlo dos veces.
      *
-     * @param  array<string, mixed>  $resumen  armado por ResumenFechaService
+     * @param  string|null  $aviso  clave de config('suscripciones.avisos'); null = todos los activos (el segmento entero)
+     * @param  Closure(string): Mailable  $correo  arma el correo con el enlace de preferencias que recibe
+     * @param  string  $vistaTexto  versión de texto plano; recibe los datos de la vista del correo
      * @return int destinatarios
      */
-    public function enviarResumenFecha(EnvioSuscriptores $envio, array $resumen): int;
+    public function enviar(EnvioSuscriptores $envio, ?string $aviso, Closure $correo, string $vistaTexto): int;
 }

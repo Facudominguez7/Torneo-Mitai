@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use InvalidArgumentException;
 
 class Suscriptor extends Model
 {
@@ -46,10 +47,30 @@ class Suscriptor extends Model
         return $query->whereNotNull('confirmado_at')->whereNull('baja_at');
     }
 
+    /**
+     * Activos que eligieron ese aviso (clave de config('suscripciones.avisos')); sin aviso, todos los activos.
+     */
+    public function scopeRecibenAviso(Builder $query, ?string $aviso): Builder
+    {
+        $query->activos();
+
+        if ($aviso === null) {
+            return $query;
+        }
+
+        $columna = config("suscripciones.avisos.{$aviso}");
+
+        if (! is_string($columna)) {
+            throw new InvalidArgumentException("El aviso {$aviso} no está configurado.");
+        }
+
+        return $query->where($columna, true);
+    }
+
     /** Activos que eligieron recibir el resumen de cada fecha. */
     public function scopeRecibenResumenFecha(Builder $query): Builder
     {
-        return $query->activos()->where('recibe_resumen_fecha', true);
+        return $query->recibenAviso('resumen_fecha');
     }
 
     public function estaActivo(): bool

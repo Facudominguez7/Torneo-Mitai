@@ -2,15 +2,17 @@
 
 namespace App\Services\EnvioSuscriptores;
 
-use App\Mail\ResumenResultadosFechaMail;
 use App\Models\EnvioSuscriptores;
 use App\Models\Suscriptor;
 use App\Services\EmailDeliverabilityHeaders;
+use Closure;
+use Illuminate\Mail\Mailable;
 use Resend\Client;
 use Resend\Exceptions\ErrorException;
 
 /**
- * Producción: un único broadcast de Resend al segmento, acotado al tópico del aviso; no consume el
+ * Producción: un único broadcast de Resend al segmento, acotado al tópico del aviso (sin tópico, a
+ * todo el segmento: Resend igual excluye a los dados de baja); no consume el
  * cupo diario de correos individuales. Se crea como borrador, se guarda su id y recién después se
  * manda, así un reintento reutiliza ese borrador y no lo manda dos veces.
  */
@@ -21,29 +23,30 @@ class CanalBroadcastResend implements CanalEnvioSuscriptores
 
     public function __construct(private readonly Client $resend) {}
 
-    public function enviarResumenFecha(EnvioSuscriptores $envio, array $resumen): int
+    public function enviar(EnvioSuscriptores $envio, ?string $aviso, Closure $correo, string $vistaTexto): int
     {
-        $contenido = $this->contenido($resumen);
+        $contenido = $this->contenido($correo(self::URL_PREFERENCIAS_CONTACTO), $vistaTexto);
         $estadoEnResend = $envio->broadcast_id === null ? null : $this->estado($envio->broadcast_id);
 
         if ($estadoEnResend === null) {
-            $borrador = $this->resend->broadcasts->create([
-                'segment_id' => (string) config('suscripciones.resend.segmento'),
-                'topic_id' => (string) config('suscripciones.resend.topicos.resumen_fecha'),
-                ...$contenido,
-            ]);
+            $audiencia = ['segment_id' => (string) config('suscripciones.resend.segmento')];
+            if ($aviso !== null) {
+                $audiencia['topic_id'] = (string) config("suscripciones.resend.topicos.{$aviso}");
+            }
+
+            $borrador = $this->resend->broadcasts->create([...$audiencia, ...$contenido]);
             $envio->forceFill(['broadcast_id' => $borrador->id])->save();
         } elseif ($estadoEnResend === 'draft') {
-            // El borrador de un intento anterior se actualiza: los resultados pueden haber cambiado.
+            // El borrador de un intento anterior se actualiza: el contenido puede haber cambiado.
             $this->resend->broadcasts->update($envio->broadcast_id, $contenido);
         } else {
             // El intento anterior lo mandó pero no llegó a guardarlo.
-            return Suscriptor::query()->recibenResumenFecha()->count();
+            return Suscriptor::query()->recibenAviso($aviso)->count();
         }
 
         $this->resend->broadcasts->send($envio->broadcast_id, []);
 
-        return Suscriptor::query()->recibenResumenFecha()->count();
+        return Suscriptor::query()->recibenAviso($aviso)->count();
     }
 
     /** null si el borrador ya no existe en Resend (lo borraron): se crea otro. */
@@ -61,23 +64,21 @@ class CanalBroadcastResend implements CanalEnvioSuscriptores
     }
 
     /**
-     * @param  array<string, mixed>  $resumen
+     * El asunto, el HTML y los datos del texto plano salen del correo ya armado (render() corre su build()).
+     *
      * @return array<string, string>
      */
-    private function contenido(array $resumen): array
+    private function contenido(Mailable $correo, string $vistaTexto): array
     {
-        $correo = new ResumenResultadosFechaMail($resumen, self::URL_PREFERENCIAS_CONTACTO);
+        $html = $correo->render();
 
         return [
             'from' => EmailDeliverabilityHeaders::fromName().' <'.config('suscripciones.remitente').'>',
             'reply_to' => EmailDeliverabilityHeaders::replyToAddress(),
-            'subject' => $correo->asunto(),
-            'name' => $correo->asunto(),
-            'html' => $correo->render(),
-            'text' => view('emails.resumen-resultados-fecha-text', [
-                'resumen' => $resumen,
-                'urlBajaGeneral' => self::URL_PREFERENCIAS_CONTACTO,
-            ])->render(),
+            'subject' => (string) $correo->subject,
+            'name' => (string) $correo->subject,
+            'html' => $html,
+            'text' => view($vistaTexto, $correo->buildViewData())->render(),
         ];
     }
 }

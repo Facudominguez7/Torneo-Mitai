@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
-use App\Jobs\EnviarResumenFechaSuscriptores;
+use App\Jobs\EnviarAvisoSuscriptores;
+use App\Mail\AvisoMigracionSuscriptoresMail;
+use App\Mail\ResumenResultadosFechaMail;
+use App\Models\Edicion;
 use App\Models\EnvioSuscriptores;
 use App\Models\Suscriptor;
 use App\Models\User;
@@ -30,22 +33,49 @@ class EnvioSuscriptoresService
      */
     public function registrarResumenFecha(array $resumen, ?User $administrador): ?EnvioSuscriptores
     {
-        $clave = EnvioSuscriptores::claveResumenFecha((int) $resumen['id_fecha'], $resumen['id_categoria']);
+        return $this->registrar(
+            EnvioSuscriptores::TIPO_RESUMEN_FECHA,
+            EnvioSuscriptores::claveResumenFecha((int) $resumen['id_fecha'], $resumen['id_categoria']),
+            ['idEdicion' => (int) $resumen['id_edicion'], 'idFecha' => (int) $resumen['id_fecha'], 'idCategoria' => $resumen['id_categoria']],
+            $this->destinatariosResumenFecha(),
+            $administrador,
+        );
+    }
+
+    /**
+     * Registra el aviso único de la migración a todos los suscriptores activos y lo encola.
+     *
+     * @return EnvioSuscriptores|null null si ya se envió o está en cola
+     */
+    public function registrarAvisoMigracion(?User $administrador = null): ?EnvioSuscriptores
+    {
+        return $this->registrar(
+            EnvioSuscriptores::TIPO_AVISO_MIGRACION,
+            EnvioSuscriptores::CLAVE_AVISO_MIGRACION,
+            // La columna no admite nulos: queda la edición en curso cuando salió el aviso.
+            ['idEdicion' => (int) (Edicion::query()->latest('id')->value('id') ?? 0)],
+            $this->destinatarios(null),
+            $administrador,
+        );
+    }
+
+    /**
+     * Registra un aviso en la auditoría y lo encola. La clave única es el candado: un aviso con la
+     * misma clave que ya salió o está en cola no se vuelve a enviar; uno que falló sí se puede reintentar.
+     *
+     * @param  array<string, mixed>  $atributos  idEdicion, idFecha, idCategoria del aviso
+     * @return EnvioSuscriptores|null null si ese aviso ya se envió o está en cola
+     */
+    public function registrar(string $tipo, string $clave, array $atributos, int $destinatarios, ?User $administrador): ?EnvioSuscriptores
+    {
         $datos = [
             'usuario_id' => $administrador?->id,
             'estado' => EnvioSuscriptores::ESTADO_PENDIENTE,
-            'destinatarios' => $this->destinatariosResumenFecha(),
+            'destinatarios' => $destinatarios,
         ];
 
         try {
-            $envio = EnvioSuscriptores::query()->create([
-                ...$datos,
-                'tipo' => EnvioSuscriptores::TIPO_RESUMEN_FECHA,
-                'clave' => $clave,
-                'idEdicion' => (int) $resumen['id_edicion'],
-                'idFecha' => (int) $resumen['id_fecha'],
-                'idCategoria' => $resumen['id_categoria'],
-            ]);
+            $envio = EnvioSuscriptores::query()->create([...$datos, ...$atributos, 'tipo' => $tipo, 'clave' => $clave]);
         } catch (UniqueConstraintViolationException) {
             // Solo un pedido puede reactivar el que falló: el update condicionado es atómico.
             $reactivados = EnvioSuscriptores::query()
@@ -61,7 +91,7 @@ class EnvioSuscriptoresService
         }
 
         try {
-            EnviarResumenFechaSuscriptores::dispatch($envio->id);
+            EnviarAvisoSuscriptores::dispatch($envio->id);
         } catch (Throwable $error) {
             // Sin job en la cola nadie lo mandaría: queda fallido para poder pedirlo de nuevo.
             $envio->forceFill(['estado' => EnvioSuscriptores::ESTADO_FALLIDO])->save();
@@ -72,41 +102,77 @@ class EnvioSuscriptoresService
         return $envio;
     }
 
+    /** El envío registrado con esa clave, si existe. */
+    public function envio(string $clave): ?EnvioSuscriptores
+    {
+        return EnvioSuscriptores::query()->where('clave', $clave)->first();
+    }
+
     /** El envío registrado del resumen de esa fecha y categoría, si existe. */
     public function envioResumenFecha(int $idFecha, ?int $idCategoria): ?EnvioSuscriptores
     {
-        return EnvioSuscriptores::query()->where('clave', EnvioSuscriptores::claveResumenFecha($idFecha, $idCategoria))->first();
+        return $this->envio(EnvioSuscriptores::claveResumenFecha($idFecha, $idCategoria));
     }
 
     /** Suscriptores que reciben el resumen de cada fecha. */
     public function destinatariosResumenFecha(): int
     {
-        return Suscriptor::query()->recibenResumenFecha()->count();
+        return $this->destinatarios('resumen_fecha');
+    }
+
+    /** Activos que eligieron ese aviso (clave de config('suscripciones.avisos')); null = todos los activos. */
+    public function destinatarios(?string $aviso): int
+    {
+        return Suscriptor::query()->recibenAviso($aviso)->count();
     }
 
     /**
-     * Lo corre el job: arma el resumen con los resultados del momento y lo entrega por el canal.
+     * Lo corre el job: arma el contenido del aviso en el momento y lo entrega por el canal. Para sumar
+     * un tipo de aviso alcanza con su TIPO_* y su rama acá; los canales no cambian.
      */
-    public function procesarResumenFecha(EnvioSuscriptores $envio): void
+    public function procesar(EnvioSuscriptores $envio): void
     {
         if ($envio->estado !== EnvioSuscriptores::ESTADO_PENDIENTE) {
             return;
         }
 
-        $resumen = $this->resumenes->armar($envio->idEdicion, (int) $envio->idFecha, $envio->idCategoria);
+        $destinatarios = match ($envio->tipo) {
+            EnvioSuscriptores::TIPO_RESUMEN_FECHA => $this->enviarResumenFecha($envio),
+            EnvioSuscriptores::TIPO_AVISO_MIGRACION => $this->canal->enviar(
+                $envio,
+                null,
+                fn (string $urlPreferencias): AvisoMigracionSuscriptoresMail => new AvisoMigracionSuscriptoresMail($urlPreferencias),
+                'emails.suscripcion.aviso-migracion-text',
+            ),
+        };
 
-        if ($resumen === null) {
+        if ($destinatarios === null) {
             $envio->forceFill(['estado' => EnvioSuscriptores::ESTADO_FALLIDO])->save();
 
             return;
         }
-
-        $destinatarios = $this->canal->enviarResumenFecha($envio, $resumen);
 
         $envio->forceFill([
             'estado' => EnvioSuscriptores::ESTADO_ENVIADO,
             'destinatarios' => $destinatarios,
             'enviado_at' => now(),
         ])->save();
+    }
+
+    /** Arma el resumen con los resultados del momento; null si la fecha ya no tiene resultados. */
+    private function enviarResumenFecha(EnvioSuscriptores $envio): ?int
+    {
+        $resumen = $this->resumenes->armar($envio->idEdicion, (int) $envio->idFecha, $envio->idCategoria);
+
+        if ($resumen === null) {
+            return null;
+        }
+
+        return $this->canal->enviar(
+            $envio,
+            'resumen_fecha',
+            fn (string $urlPreferencias): ResumenResultadosFechaMail => new ResumenResultadosFechaMail($resumen, $urlPreferencias),
+            'emails.resumen-resultados-fecha-text',
+        );
     }
 }

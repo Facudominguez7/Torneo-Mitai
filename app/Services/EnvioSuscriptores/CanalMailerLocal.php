@@ -2,10 +2,10 @@
 
 namespace App\Services\EnvioSuscriptores;
 
-use App\Mail\ResumenResultadosFechaMail;
 use App\Models\EnvioSuscriptores;
 use App\Models\Suscriptor;
 use App\Services\SuscripcionService;
+use Closure;
 use Illuminate\Support\Facades\Mail;
 
 /**
@@ -16,15 +16,15 @@ class CanalMailerLocal implements CanalEnvioSuscriptores
 {
     public function __construct(private readonly SuscripcionService $suscripciones) {}
 
-    public function enviarResumenFecha(EnvioSuscriptores $envio, array $resumen): int
+    public function enviar(EnvioSuscriptores $envio, ?string $aviso, Closure $correo, string $vistaTexto): int
     {
         $enviados = 0;
 
-        Suscriptor::query()->recibenResumenFecha()
-            ->chunkById(100, function ($suscriptores) use ($resumen, &$enviados): void {
+        Suscriptor::query()->recibenAviso($aviso)
+            ->chunkById(100, function ($suscriptores) use ($correo, &$enviados): void {
                 foreach ($suscriptores as $suscriptor) {
                     Mail::mailer(config('suscripciones.mailer'))->to($suscriptor->email)->send(
-                        new ResumenResultadosFechaMail($resumen, $this->suscripciones->urlPreferencias($suscriptor)),
+                        $correo($this->suscripciones->urlPreferencias($suscriptor)),
                     );
                     $enviados++;
                 }

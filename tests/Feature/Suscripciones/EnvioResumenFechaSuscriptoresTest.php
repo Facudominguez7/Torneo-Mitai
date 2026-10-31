@@ -3,7 +3,7 @@
 // Envío del resumen de la fecha a los suscriptores: se registra en la auditoría, se encola y el job
 // lo manda como broadcast de Resend o, sin sincronización, por el mailer local.
 
-use App\Jobs\EnviarResumenFechaSuscriptores;
+use App\Jobs\EnviarAvisoSuscriptores;
 use App\Mail\ResumenResultadosFechaMail;
 use App\Models\Categoria;
 use App\Models\Edicion;
@@ -85,9 +85,9 @@ function envioRegistrado(Fecha $fecha, array $atributos = []): EnvioSuscriptores
     ]);
 }
 
-function procesarEnvio(EnvioSuscriptores $envio): EnviarResumenFechaSuscriptores
+function procesarEnvio(EnvioSuscriptores $envio): EnviarAvisoSuscriptores
 {
-    $job = (new EnviarResumenFechaSuscriptores($envio->id))->withFakeQueueInteractions();
+    $job = (new EnviarAvisoSuscriptores($envio->id))->withFakeQueueInteractions();
     $job->handle(app(EnvioSuscriptoresService::class));
 
     return $job;
@@ -119,7 +119,7 @@ it('registra el envio en la auditoria y lo deja en cola sin llamar a resend', fu
         'estado' => 'pendiente',
         'destinatarios' => 2,
     ])->and($historial)->toHaveCount(0);
-    Queue::assertPushed(EnviarResumenFechaSuscriptores::class, fn (EnviarResumenFechaSuscriptores $job): bool => $job->envioId === $envio->id && $job->afterCommit === true);
+    Queue::assertPushed(EnviarAvisoSuscriptores::class, fn (EnviarAvisoSuscriptores $job): bool => $job->envioId === $envio->id && $job->afterCommit === true);
 });
 
 it('el job crea el broadcast como borrador, guarda su id y recien despues lo manda', function (): void {
@@ -228,7 +228,7 @@ it('si no se puede encolar queda fallido y se puede volver a pedir', function ()
 
     Queue::fake();
     enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id])->assertAccepted();
-    Queue::assertPushed(EnviarResumenFechaSuscriptores::class, 1);
+    Queue::assertPushed(EnviarAvisoSuscriptores::class, 1);
 });
 
 it('en local el mismo flujo de cola y auditoria entrega el resumen por el mailer solo a los activos que lo eligieron, cada uno con su enlace', function (): void {
@@ -283,7 +283,7 @@ it('bloquea el segundo envio del mismo resumen, en cola o ya enviado', function 
         ->assertConflict()
         ->assertJson(['success' => false, 'message' => 'Este resumen ya se envió a los suscriptores el '.$envio->fresh()->enviado_at->format('d/m/Y H:i').'.']);
 
-    Queue::assertPushed(EnviarResumenFechaSuscriptores::class, 1);
+    Queue::assertPushed(EnviarAvisoSuscriptores::class, 1);
     expect(EnvioSuscriptores::query()->count())->toBe(1);
 });
 
@@ -295,7 +295,7 @@ it('si resend falla vuelve a intentar y al agotar los intentos queda fallido sin
     Suscriptor::factory()->activo()->create(['recibe_resumen_fecha' => true]);
     enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id])->assertAccepted();
     $envio = EnvioSuscriptores::query()->sole();
-    $job = (new EnviarResumenFechaSuscriptores($envio->id))->withFakeQueueInteractions();
+    $job = (new EnviarAvisoSuscriptores($envio->id))->withFakeQueueInteractions();
 
     expect(fn () => $job->handle(app(EnvioSuscriptoresService::class)))->toThrow(Exception::class);
     expect($envio->fresh()->estado)->toBe('pendiente')
@@ -321,7 +321,7 @@ it('un envio fallido se puede volver a pedir y reutiliza su registro', function 
 
     $envio = EnvioSuscriptores::query()->sole();
     expect($envio->only(['estado', 'usuario_id', 'broadcast_id']))->toBe(['estado' => 'pendiente', 'usuario_id' => $admin->id, 'broadcast_id' => 'broadcast-viejo']);
-    Queue::assertPushed(EnviarResumenFechaSuscriptores::class, 2);
+    Queue::assertPushed(EnviarAvisoSuscriptores::class, 2);
 });
 
 it('si al procesarse la fecha ya no tiene resultados queda fallido sin llamar a resend', function (): void {

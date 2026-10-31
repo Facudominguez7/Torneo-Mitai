@@ -10,6 +10,11 @@ class EnvioSuscriptores extends Model
 {
     public const TIPO_RESUMEN_FECHA = 'resumen_fecha';
 
+    /** Aviso único a los usuarios que se pasaron a la lista de suscriptores: su clave es fija. */
+    public const TIPO_AVISO_MIGRACION = 'aviso_migracion';
+
+    public const CLAVE_AVISO_MIGRACION = self::TIPO_AVISO_MIGRACION;
+
     public const ESTADO_PENDIENTE = 'pendiente';
 
     public const ESTADO_ENVIADO = 'enviado';
