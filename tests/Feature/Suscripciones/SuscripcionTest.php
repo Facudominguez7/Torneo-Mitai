@@ -50,7 +50,7 @@ it('guarda la suscripcion pendiente y manda el correo de confirmacion', function
         ->and($suscriptor->recibe_proxima_fecha)->toBeTrue()
         ->and($suscriptor->equipos->pluck('id')->all())->toBe([$equipo->id]);
 
-    Mail::assertSent(ConfirmacionSuscripcionMail::class, function (ConfirmacionSuscripcionMail $mail) use ($suscriptor): bool {
+    Mail::assertQueued(ConfirmacionSuscripcionMail::class, function (ConfirmacionSuscripcionMail $mail) use ($suscriptor): bool {
         return $mail->hasTo('madre.huracan@correo.com')
             && $mail->mailer === 'resend'
             && str_contains($mail->urlConfirmacion, route('suscripcion.confirmar', $suscriptor, false))
@@ -120,7 +120,7 @@ it('no cambia las preferencias de un suscriptor activo desde el formulario publi
         ->and($suscriptor->recibe_avisos)->toBeTrue()
         ->and($suscriptor->equipos)->toBeEmpty()
         ->and(Suscriptor::query()->count())->toBe(1);
-    Mail::assertNothingSent();
+    Mail::assertNothingOutgoing();
 });
 
 it('vuelve a pedir confirmacion a quien se habia dado de baja y la baja sigue hasta que confirme', function (): void {
@@ -131,7 +131,7 @@ it('vuelve a pedir confirmacion a quien se habia dado de baja y la baja sigue ha
 
     expect($suscriptor->fresh()->baja_at)->not->toBeNull();
     $enlace = null;
-    Mail::assertSent(ConfirmacionSuscripcionMail::class, function (ConfirmacionSuscripcionMail $mail) use (&$enlace): bool {
+    Mail::assertQueued(ConfirmacionSuscripcionMail::class, function (ConfirmacionSuscripcionMail $mail) use (&$enlace): bool {
         $enlace = $mail->urlConfirmacion;
 
         return $mail->hasTo('tia@correo.com');
@@ -144,7 +144,7 @@ it('vuelve a pedir confirmacion a quien se habia dado de baja y la baja sigue ha
 it('no reactiva con un enlace de confirmacion anterior a la baja', function (): void {
     suscribirse(['email' => 'primo@correo.com']);
     $enlace = null;
-    Mail::assertSent(ConfirmacionSuscripcionMail::class, function (ConfirmacionSuscripcionMail $mail) use (&$enlace): bool {
+    Mail::assertQueued(ConfirmacionSuscripcionMail::class, function (ConfirmacionSuscripcionMail $mail) use (&$enlace): bool {
         $enlace = $mail->urlConfirmacion;
 
         return true;
@@ -164,11 +164,11 @@ it('no reactiva con un enlace de confirmacion anterior a la baja', function (): 
 it('no manda otro correo de confirmacion al mismo email hasta que pase la espera', function (): void {
     suscribirse(['email' => 'vecino@correo.com']);
     suscribirse(['email' => 'vecino@correo.com']);
-    Mail::assertSentCount(1);
+    Mail::assertQueuedCount(1);
 
     $this->travel(11)->minutes();
     suscribirse(['email' => 'vecino@correo.com']);
-    Mail::assertSentCount(2);
+    Mail::assertQueuedCount(2);
 });
 
 it('limita los pedidos de suscripcion por dia desde la misma ip', function (): void {
@@ -178,7 +178,7 @@ it('limita los pedidos de suscripcion por dia desde la misma ip', function (): v
     }
 
     suscribirse(['email' => 'persona21@correo.com'])->assertTooManyRequests();
-    Mail::assertSentCount(20);
+    Mail::assertQueuedCount(20);
 });
 
 it('suscribe sin confirmacion al usuario que ingreso con su email verificado', function (): void {
@@ -191,14 +191,14 @@ it('suscribe sin confirmacion al usuario que ingreso con su email verificado', f
     $suscriptor = Suscriptor::query()->sole();
     expect($suscriptor->estaActivo())->toBeTrue()
         ->and($suscriptor->usuario_id)->toBe($usuario->id);
-    Mail::assertNothingSent();
+    Mail::assertNothingOutgoing();
 });
 
 it('valida el correo y los equipos', function (array $datos, string $campo): void {
     suscribirse($datos)->assertSessionHasErrors($campo, null, 'suscripcion');
 
     expect(Suscriptor::query()->count())->toBe(0);
-    Mail::assertNothingSent();
+    Mail::assertNothingOutgoing();
 })->with([
     'sin email' => [['email' => ''], 'email'],
     'email invalido' => [['email' => 'no-es-un-correo'], 'email'],

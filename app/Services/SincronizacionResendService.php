@@ -11,8 +11,8 @@ use Throwable;
 
 /**
  * Lleva el estado de cada suscriptor a Resend: contacto, segmento de los masivos y tópicos de cada aviso.
- * Corre en la misma petición (producción no tiene worker); si falla, el suscriptor queda pendiente
- * y el comando suscripciones:sincronizar lo reintenta.
+ * Lo usa el job SincronizarSuscriptorResend, que reintenta si falla; el comando horario
+ * suscripciones:sincronizar toma a los que quedaron pendientes.
  */
 class SincronizacionResendService
 {

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SincronizarSuscriptorResend;
 use App\Mail\ConfirmacionSuscripcionMail;
 use App\Models\Suscriptor;
 use App\Models\User;
@@ -15,8 +16,6 @@ use Illuminate\Support\Facades\URL;
  */
 class SuscripcionService
 {
-    public function __construct(private readonly SincronizacionResendService $resend) {}
-
     /**
      * Registra el pedido de suscripción. Un suscriptor activo no se modifica desde acá:
      * cualquiera puede escribir un correo ajeno, así que sus preferencias solo cambian con su enlace firmado.
@@ -57,10 +56,11 @@ class SuscripcionService
 
         if (! $verificadoPorCuenta) {
             // El mailer se elige acá: Mail::to()->send() pisa el que defina la mailable con el mailer por defecto.
+            // La mailable es ShouldQueue, así que send() la encola con ese mailer.
             Mail::mailer(config('suscripciones.mailer'))->to($suscriptor->email)->send(new ConfirmacionSuscripcionMail($this->urlConfirmacion($suscriptor)));
             RateLimiter::hit($claveEspera, (int) config('suscripciones.minutos_entre_confirmaciones') * 60);
         } else {
-            $this->resend->sincronizar($suscriptor);
+            SincronizarSuscriptorResend::dispatch($suscriptor->id);
         }
 
         return $verificadoPorCuenta;
@@ -78,7 +78,7 @@ class SuscripcionService
 
         if (! $suscriptor->estaActivo()) {
             $suscriptor->forceFill(['confirmado_at' => now(), 'baja_at' => null, 'resend_sincronizado_at' => null])->save();
-            $this->resend->sincronizar($suscriptor);
+            SincronizarSuscriptorResend::dispatch($suscriptor->id);
         }
 
         return true;
@@ -105,14 +105,14 @@ class SuscripcionService
             $suscriptor->equipos()->sync($idsEquipos);
         });
 
-        $this->resend->sincronizar($suscriptor);
+        SincronizarSuscriptorResend::dispatch($suscriptor->id);
     }
 
     public function darDeBaja(Suscriptor $suscriptor): void
     {
         if ($suscriptor->baja_at === null) {
             $suscriptor->forceFill(['baja_at' => now(), 'resend_sincronizado_at' => null])->save();
-            $this->resend->sincronizar($suscriptor);
+            SincronizarSuscriptorResend::dispatch($suscriptor->id);
         }
     }
 

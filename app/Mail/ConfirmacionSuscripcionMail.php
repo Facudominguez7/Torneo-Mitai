@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Services\EmailDeliverabilityHeaders;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
@@ -10,7 +11,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Symfony\Component\Mime\Email;
 
 /** Pide confirmar la suscripción con un clic (doble opt-in). */
-class ConfirmacionSuscripcionMail extends Mailable
+class ConfirmacionSuscripcionMail extends Mailable implements ShouldQueue
 {
     public function __construct(public readonly string $urlConfirmacion) {}
 
