@@ -73,10 +73,10 @@
                                 Desde ahora, los avisos de Torneos Mita'í (el resumen de cada fecha, la próxima fecha y las novedades del torneo) llegan desde una lista de suscriptores nueva.
                             </p>
                             <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#cbd5e1;{{ $font }}">
-                                Te sumamos porque habías aceptado recibir correos con tu cuenta. No tenés que hacer nada para seguir recibiéndolos.
+                                Te sumamos porque habías aceptado recibir correos con tu cuenta. No tienes que hacer nada para seguir recibiéndolos.
                             </p>
                             <p style="margin:0;font-size:15px;line-height:1.6;color:#cbd5e1;{{ $font }}">
-                                Podés elegir qué avisos recibir o darte de baja cuando quieras.
+                                Puedes elegir qué avisos recibir o darte de baja cuando quieras.
                             </p>
 
                             {{-- Boton CTA --}}
@@ -100,7 +100,7 @@
                     <tr>
                         <td style="padding:16px 24px;background-color:#0f172a;border-top:1px solid #1e293b;">
                             <p style="margin:0;font-size:12px;line-height:1.5;color:#94a3b8;{{ $font }}">
-                                Si no quer&eacute;s seguir recibiendo estos correos, pod&eacute;s administrar tu baja desde este enlace:
+                                Si no quieres seguir recibiendo estos correos, puedes administrar tu baja desde este enlace:
                                 <a href="{{ $urlPreferencias }}" target="_blank" style="color:#facc15;text-decoration:none;font-weight:700;{{ $font }}">Gestionar suscripci&oacute;n</a>.
                             </p>
                         </td>

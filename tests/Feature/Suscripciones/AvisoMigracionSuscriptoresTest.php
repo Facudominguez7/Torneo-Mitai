@@ -181,3 +181,20 @@ it('los activos de un aviso salen de la configuracion de avisos y sin aviso son 
 it('rechaza un aviso que no esta en la configuracion', function (): void {
     expect(fn () => Suscriptor::query()->recibenAviso('inexistente')->count())->toThrow(InvalidArgumentException::class);
 });
+
+it('el aviso usa espanol neutro, sin voseo, en html y texto', function (): void {
+    $correo = new AvisoMigracionSuscriptoresMail('https://torneosmitai.test/preferencias');
+    $html = html_entity_decode($correo->render());
+    $texto = view('emails.suscripcion.aviso-migracion-text', ['urlPreferencias' => 'https://torneosmitai.test/preferencias'])->render();
+
+    foreach ([$html, $texto] as $contenido) {
+        expect($contenido)->not->toMatch('/\b(tenés|podés|querés|Podés|Tenés|Querés)\b/u')
+            ->and($contenido)->toContain('No tienes que hacer nada')
+            ->and($contenido)->toContain('Puedes elegir qué avisos recibir');
+    }
+});
+
+it('los envios usan un solo job y el nombre anterior ya no existe', function (): void {
+    expect(class_exists(EnviarAvisoSuscriptores::class))->toBeTrue()
+        ->and(class_exists('App\\Jobs\\EnviarResumenFechaSuscriptores'))->toBeFalse();
+});
