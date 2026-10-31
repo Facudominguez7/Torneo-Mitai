@@ -198,3 +198,10 @@ it('los envios usan un solo job y el nombre anterior ya no existe', function ():
     expect(class_exists(EnviarAvisoSuscriptores::class))->toBeTrue()
         ->and(class_exists('App\\Jobs\\EnviarResumenFechaSuscriptores'))->toBeFalse();
 });
+
+it('el texto plano del aviso muestra el asunto sin entidades html', function (): void {
+    $texto = view('emails.suscripcion.aviso-migracion-text', ['urlPreferencias' => 'https://torneosmitai.test/preferencias'])->render();
+
+    expect($texto)->toStartWith(AvisoMigracionSuscriptoresMail::ASUNTO)
+        ->and($texto)->not->toContain('&#039;');
+});

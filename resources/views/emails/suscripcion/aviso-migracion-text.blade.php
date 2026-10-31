@@ -1,4 +1,4 @@
-{{ \App\Mail\AvisoMigracionSuscriptoresMail::ASUNTO }}
+{!! \App\Mail\AvisoMigracionSuscriptoresMail::ASUNTO !!}
 
 Desde ahora, los avisos de Torneos Mita'í (el resumen de cada fecha, la próxima fecha y las novedades del torneo) llegan desde una lista de suscriptores nueva.
 
