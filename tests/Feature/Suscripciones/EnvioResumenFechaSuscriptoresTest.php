@@ -14,6 +14,9 @@ use App\Models\Grupo;
 use App\Models\Partido;
 use App\Models\Suscriptor;
 use App\Models\User;
+use App\Services\EnvioSuscriptores\CanalBroadcastResend;
+use App\Services\EnvioSuscriptores\CanalEnvioSuscriptores;
+use App\Services\EnvioSuscriptores\CanalMailerLocal;
 use App\Services\EnvioSuscriptoresService;
 use App\Services\SuscripcionService;
 use Illuminate\Support\Facades\Cache;
@@ -228,7 +231,7 @@ it('si no se puede encolar queda fallido y se puede volver a pedir', function ()
     Queue::assertPushed(EnviarResumenFechaSuscriptores::class, 1);
 });
 
-it('sin sincronizacion el job envia el resumen por el mailer solo a los activos que lo eligieron, cada uno con su enlace', function (): void {
+it('en local el mismo flujo de cola y auditoria entrega el resumen por el mailer solo a los activos que lo eligieron, cada uno con su enlace', function (): void {
     config(['suscripciones.resend.sincronizar' => false]);
     Queue::fake();
     Mail::fake();
@@ -388,3 +391,12 @@ it('ya no existe el envio del resumen por bcc a los usuarios', function (): void
         ->postJson('/Panel/notificaciones/resumen-fecha/enviar-lote', ['idFecha' => 1, 'offset' => 0, 'limit' => 10], ['X-CSRF-TOKEN' => 'token-resumen'])
         ->assertNotFound();
 });
+
+it('el canal del envio depende del entorno: resend en produccion y el mailer en local', function (bool $sincronizar, string $canal): void {
+    config(['suscripciones.resend.sincronizar' => $sincronizar]);
+
+    expect(app(CanalEnvioSuscriptores::class))->toBeInstanceOf($canal);
+})->with([
+    'produccion' => [true, CanalBroadcastResend::class],
+    'local con mailhog' => [false, CanalMailerLocal::class],
+]);

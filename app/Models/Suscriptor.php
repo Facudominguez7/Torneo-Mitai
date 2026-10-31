@@ -46,6 +46,12 @@ class Suscriptor extends Model
         return $query->whereNotNull('confirmado_at')->whereNull('baja_at');
     }
 
+    /** Activos que eligieron recibir el resumen de cada fecha. */
+    public function scopeRecibenResumenFecha(Builder $query): Builder
+    {
+        return $query->activos()->where('recibe_resumen_fecha', true);
+    }
+
     public function estaActivo(): bool
     {
         return $this->confirmado_at !== null && $this->baja_at === null;

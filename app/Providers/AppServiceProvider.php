@@ -5,6 +5,9 @@ namespace App\Providers;
 use App\Listeners\LogNotificacionEnviada;
 use App\Models\Edicion;
 use App\Services\EmailDeliverabilityHeaders;
+use App\Services\EnvioSuscriptores\CanalBroadcastResend;
+use App\Services\EnvioSuscriptores\CanalEnvioSuscriptores;
+use App\Services\EnvioSuscriptores\CanalMailerLocal;
 use App\View\Composers\NavigationComposer;
 use App\View\Composers\SeoComposer;
 use GuzzleHttp\Client as GuzzleClient;
@@ -34,12 +37,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Igual que Resend::client(), pero con timeout: la sincronización corre dentro de la petición del usuario.
+        // Igual que Resend::client(), pero con timeout: un pedido colgado no frena al worker de la cola.
         $this->app->singleton(Client::class, fn (): Client => new Client(new HttpTransporter(
             new GuzzleClient(['timeout' => 5, 'connect_timeout' => 3]),
             BaseUri::from(getenv('RESEND_BASE_URL') ?: 'api.resend.com'),
             Headers::withAuthorization(ApiKey::from((string) config('services.resend.key'))),
         )));
+
+        // Canal de los avisos masivos: Resend cuando se sincroniza con Resend; si no (local), MailHog.
+        $this->app->bind(CanalEnvioSuscriptores::class, fn ($app): CanalEnvioSuscriptores => config('suscripciones.resend.sincronizar')
+            ? $app->make(CanalBroadcastResend::class)
+            : $app->make(CanalMailerLocal::class));
     }
 
     /**
