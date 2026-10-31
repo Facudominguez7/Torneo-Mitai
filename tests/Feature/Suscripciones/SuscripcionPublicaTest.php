@@ -8,6 +8,8 @@ use App\Models\Equipo;
 use App\Models\Suscriptor;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 
 beforeEach(function (): void {
     config(['suscripciones.mailer' => 'resend', 'suscripciones.resend.sincronizar' => false]);
@@ -43,6 +45,24 @@ it('la home muestra el resultado de la suscripcion', function (): void {
         ->assertOk()
         ->assertSee('id="suscripcion-aviso"', false)
         ->assertSee('Te enviamos un correo a tia@correo.com. Abrilo y confirmá la suscripción.');
+});
+
+it('el aviso de error de la home lleva al bloque de avisos por correo', function (): void {
+    $this->withSession(['errors' => (new ViewErrorBag)->put('suscripcion', new MessageBag(['email' => 'Ese correo no parece válido. Revisalo.']))])
+        ->get(route('home'))
+        ->assertOk()
+        ->assertSee('href="#avisos-por-correo"', false)
+        ->assertSee('id="avisos-por-correo"', false);
+});
+
+it('la home muestra el bloque de avisos por correo aunque no haya ediciones', function (): void {
+    expect(Edicion::query()->count())->toBe(0);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('id="avisos-por-correo"', false)
+        ->assertSee('action="'.route('suscripcion.store').'"', false)
+        ->assertDontSee('id="seguir-equipo-bloque"', false);
 });
 
 it('la home muestra el error de la suscripcion y conserva el correo escrito', function (): void {
