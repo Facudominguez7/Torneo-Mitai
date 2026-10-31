@@ -81,7 +81,7 @@ Route::view('/terminos-y-condiciones', 'legales.terminos')->name('terminos');
 Route::view('/politica-de-privacidad', 'legales.privacidad')->name('privacidad');
 Route::get('forgot-password/{restablecer?}', [PasswordResetLinkController::class, 'create'])->name('password.request');
 
-Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAccesPanelMiddleware::class, PanelEdicionContextMiddleware::class]], function () {
+Route::group(['prefix' => 'Panel', 'middleware' => [UserAccesPanelMiddleware::class, 'auth', 'verified', PanelEdicionContextMiddleware::class]], function () {
     Route::get('cobros', [ControladorCobros::class, 'index'])->name('cobros.index');
     Route::get('cobros/imprimir', [ControladorCobros::class, 'imprimir'])->name('cobros.imprimir');
     Route::get('cobros/detalle', [ControladorCobros::class, 'detalle'])->name('cobros.detalle');
@@ -200,7 +200,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => ['auth', 'verified', UserAcce
 });
 
 // Gestión administrativa de notificaciones por email
-Route::prefix('Panel/notificaciones')->middleware(['auth', UserAccesPanelMiddleware::class])->group(function () {
+Route::prefix('Panel/notificaciones')->middleware([UserAccesPanelMiddleware::class, 'auth'])->group(function () {
     Route::get('/', [ControladorNotificacionesEmail::class, 'listarUsuariosNotificaciones'])
         ->name('notificaciones.index');
     Route::post('/suscriptores/{id}/reenviar-verificacion', [ControladorNotificacionesEmail::class, 'reenviarVerificacionManual'])

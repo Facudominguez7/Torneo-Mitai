@@ -33,6 +33,11 @@
                     'route' => route('impresiones.index', $parametrosEdicionActual),
                     'activo' => request()->routeIs('impresiones.*'),
                 ],
+                [
+                    'label' => 'Lista de buena fe',
+                    'route' => route('lista-buena-fe.index', $parametrosEdicionActual),
+                    'activo' => request()->routeIs('lista-buena-fe.index', 'lista-buena-fe.show', 'lista-buena-fe.pdf', 'lista-buena-fe.imprimir-planilla*'),
+                ],
             ],
         ],
         [
@@ -89,11 +94,6 @@
                     'label' => 'Equipos',
                     'route' => route('equipo.index', $parametrosEdicionActual),
                     'activo' => request()->routeIs('equipo.*'),
-                ],
-                [
-                    'label' => 'Lista de buena fe',
-                    'route' => route('lista-buena-fe.index', $parametrosEdicionActual),
-                    'activo' => request()->routeIs('lista-buena-fe.index', 'lista-buena-fe.show', 'lista-buena-fe.pdf', 'lista-buena-fe.imprimir-planilla*'),
                 ],
                 [
                     'label' => 'Revisión de jugadores',

@@ -213,3 +213,28 @@ it('muestra el logo y el nombre del torneo en la cabecera del menu', function ()
         ->toContain("Torneos Mita'í")
         ->not->toContain('Torneo Mitai');
 });
+
+it('incluye Lista de buena fe como acceso directo del grupo Hoy, una sola vez', function () {
+    $admin = crearAdminPanelShell();
+
+    $html = $this->actingAs($admin)->get(route('admin'))->getContent();
+    $inicioNav = strpos($html, '<nav');
+    $navegacion = substr($html, $inicioNav, strpos($html, '</nav>', $inicioNav) - $inicioNav);
+    $enlace = 'href="'.route('lista-buena-fe.index').'"';
+
+    $posicionImpresiones = strpos($navegacion, 'href="'.route('impresiones.index').'"');
+    $posicionLista = strpos($navegacion, $enlace);
+    $posicionTorneo = strpos($navegacion, 'data-grupo-nav="torneo"');
+
+    expect(substr_count($navegacion, $enlace))->toBe(1)
+        ->and($posicionLista)->toBeGreaterThan($posicionImpresiones)
+        ->and($posicionLista)->toBeLessThan($posicionTorneo);
+});
+
+it('marca Lista de buena fe como activa dentro del grupo Hoy', function () {
+    $admin = crearAdminPanelShell();
+
+    $html = $this->actingAs($admin)->get(route('lista-buena-fe.index'))->assertOk()->getContent();
+
+    expect($html)->toMatch('/data-grupo-nav="hoy".*?href="'.preg_quote(route('lista-buena-fe.index'), '/').'(\?[^"]*)?"[^>]*aria-current="page".*?data-grupo-nav="torneo"/s');
+});
