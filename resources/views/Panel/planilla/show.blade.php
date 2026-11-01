@@ -504,13 +504,13 @@
                 <div class="mb-6 hidden overflow-x-auto rounded-lg border border-gray-200 sm:block" data-tabla-planilla>
                     <table class="w-full min-w-[640px] bg-white">
                         <colgroup>
-                            <col style="width: 36%;">
-                            <col style="width: 16%;">
-                            <col style="width: 16%;">
-                            <col style="width: 8%;">
-                            <col style="width: 8%;">
-                            <col style="width: 8%;">
-                            <col style="width: 8%;">
+                            <col style="width: 26%;">
+                            <col style="width: 14%;">
+                            <col style="width: 14%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 13%;">
+                            <col style="width: 13%;">
                         </colgroup>
                         <thead>
                             <tr>
@@ -519,8 +519,8 @@
                                 <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">DNI</th>
                                 <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">N°</th>
                                 <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Goles</th>
-                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Asist.</th>
-                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Roja</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-center text-xs font-semibold text-gray-700">Asist.</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-center text-xs font-semibold text-gray-700">Roja</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -774,13 +774,13 @@
                 <div class="mb-6 hidden overflow-x-auto rounded-lg border border-gray-200 sm:block" data-tabla-planilla>
                     <table class="w-full min-w-[640px] bg-white">
                         <colgroup>
-                            <col style="width: 36%;">
-                            <col style="width: 16%;">
-                            <col style="width: 16%;">
-                            <col style="width: 8%;">
-                            <col style="width: 8%;">
-                            <col style="width: 8%;">
-                            <col style="width: 8%;">
+                            <col style="width: 26%;">
+                            <col style="width: 14%;">
+                            <col style="width: 14%;">
+                            <col style="width: 10%;">
+                            <col style="width: 10%;">
+                            <col style="width: 13%;">
+                            <col style="width: 13%;">
                         </colgroup>
                         <thead>
                             <tr>
@@ -789,8 +789,8 @@
                                 <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">DNI</th>
                                 <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">N°</th>
                                 <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Goles</th>
-                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Asist.</th>
-                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Roja</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-center text-xs font-semibold text-gray-700">Asist.</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-center text-xs font-semibold text-gray-700">Roja</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1290,8 +1290,9 @@
                     state.statusTimerId = null;
                 }
 
+                // Only problems need the operator's attention: saving and success stay silent.
                 statusNodes.forEach((node) => {
-                    node.hidden = false;
+                    node.hidden = mode === 'saving' || mode === 'ok';
                     node.dataset.playerSaveState = mode;
                 });
 
