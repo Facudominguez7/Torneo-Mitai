@@ -4,6 +4,13 @@ Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como par
 
 Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
 
+## Envíos a suscriptores con Resend (rama `feat/suscriptores-resend`, 2026-11-01)
+
+- Todos los avisos salen por un canal único (`CanalEnvioSuscriptores`: broadcast de Resend en producción, MailHog en local), la tabla de auditoría `envios_suscriptores` y un solo job (`EnviarAvisoSuscriptores`). Tipos: resumen de la fecha, próxima fecha, aviso del torneo (título y mensaje libres en `contenido`, bloqueado por un UUID por carga del formulario) y aviso único de migración.
+- Se retiraron el aviso rápido por BCC, el recordatorio masivo de verificación y los envíos de resultado sin uso. El reenvío de verificación por usuario y los enlaces de baja viejos se conservan.
+- `suscripciones:migrar-usuarios [--dry-run]` pasa solo a los usuarios verificados que aceptaban correos; `suscripciones:avisar-migracion` avisa una vez, después de sincronizar con Resend. Los correos nuevos usan español neutro.
+- Verificado con Pest, verificación independiente, revisión nativa y Playwright en base aislada. Pendiente: correr la migración `2026_10_31_210000_add_contenido_to_envios_suscriptores_table` en `mitai`, configurar cron, `QUEUE_CONNECTION=database`, webhook y propiedad `url_preferencias` en producción, y vaciar la cola antes del deploy (el job viejo del resumen se borró).
+
 ## Goleadores premiados del portal público (rama `feat/home-new`)
 
 - Implementado `design/goleadores-premiados/01-premiados-de-cancha.html` con jugadores, categorías y equipos reales; escudos con respaldo y selector estilizado con alternativa GET sin JavaScript. No se inventan cantidades de goles. Pest: 34 pruebas/267 aserciones incluyendo regresión de Campeones y Subcampeones; Pint en 545 archivos. Playwright comprobó 1920×1080, 1280×720 y 390×844, selector, temas, scroll, hover y movimiento reducido. La base temporal se eliminó al terminar. La evaluación nativa no pudo clasificar por archivos sin seguimiento ajenos; no se obtuvo aprobación nativa.
