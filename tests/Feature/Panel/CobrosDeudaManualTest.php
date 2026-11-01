@@ -120,6 +120,20 @@ it('rechaza la misma clave con otros datos sin crear otra deuda', function () {
         ->and(HistorialCobroPlanilla::query()->where('accion', 'cargar_deuda_manual')->count())->toBe(1);
 });
 
+it('después de rechazar una clave usada, el formulario trae una clave nueva', function () {
+    $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), $this->entrada)->assertSessionHasNoErrors();
+    $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), ['importe_ars' => '9000'] + $this->entrada)
+        ->assertSessionHasErrors('clave_idempotencia');
+
+    $html = $this->actingAs($this->admin)
+        ->get(route('cobros.deuda-manual', ['idEdicion' => $this->contexto['edicion']->id, 'idEquipo' => $this->equipo->id]))
+        ->assertOk()->getContent();
+
+    expect($html)->toContain('name="clave_idempotencia"')
+        ->and($html)->not->toContain($this->entrada['clave_idempotencia'])
+        ->and($html)->toContain('value="9000"');
+});
+
 it('dos claves distintas cargan dos deudas', function () {
     $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), $this->entrada)->assertSessionHasNoErrors();
     $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), ['clave_idempotencia' => '0b9f4e2d-6a71-4c3b-8d15-9e2f7a6c1b40'] + $this->entrada)

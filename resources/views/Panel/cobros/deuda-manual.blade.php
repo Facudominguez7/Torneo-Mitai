@@ -52,7 +52,7 @@
                 @if ($equipo)
                     <form method="POST" action="{{ route('cobros.deudas-manuales') }}" x-data="{ enviando: false }" @submit="if (enviando) { $event.preventDefault() } else { enviando = true }">
                         @csrf
-                        <input type="hidden" name="clave_idempotencia" value="{{ old('clave_idempotencia', (string) \Illuminate\Support\Str::uuid()) }}">
+                        <input type="hidden" name="clave_idempotencia" value="{{ \Illuminate\Support\Str::uuid() }}">
                         <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
                         <input type="hidden" name="idEquipo" value="{{ $equipo->id }}">
                         <div class="grid gap-3 px-4 pb-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:px-6">
