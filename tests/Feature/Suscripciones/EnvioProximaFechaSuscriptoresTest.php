@@ -204,3 +204,18 @@ it('el panel muestra la tarjeta de la proxima fecha junto al resumen', function 
         ->assertSee('Próxima fecha')
         ->assertSee('id="btn-enviar-proxima-fecha"', false);
 });
+
+it('si al enviarse la fecha ya no tiene partidos programados queda fallida y no manda nada', function (): void {
+    config(['suscripciones.resend.sincronizar' => false]);
+    Queue::fake();
+    Mail::fake();
+    ['fecha' => $fecha] = fechaProgramada();
+    Suscriptor::factory()->activo()->create(['recibe_proxima_fecha' => true]);
+    enviarProximaFecha($this, adminProximaFecha(), ['idFecha' => $fecha->id])->assertAccepted();
+
+    Partido::query()->update(['golesEquipoLocal' => 1, 'golesEquipoVisitante' => 1, 'jugado' => 1]);
+    procesarProximaFecha(EnvioSuscriptores::query()->sole());
+
+    Mail::assertNothingSent();
+    expect(EnvioSuscriptores::query()->sole()->estado)->toBe('fallido');
+});
