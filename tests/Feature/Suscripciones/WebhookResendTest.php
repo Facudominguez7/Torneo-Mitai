@@ -8,7 +8,8 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 
-const SECRETO_WEBHOOK_PRUEBA = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw';
+// Secreto de prueba armado en el test: no es una credencial real.
+define('SECRETO_WEBHOOK_PRUEBA', 'whsec_'.base64_encode('clave-de-prueba-del-webhook-mitai'));
 
 beforeEach(function (): void {
     config([
