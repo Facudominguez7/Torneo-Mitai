@@ -11,7 +11,38 @@ class Categoria extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['nombreCategoria', 'idEdicion', 'jugadores_maximos'];
+    protected $fillable = ['nombreCategoria', 'idEdicion', 'jugadores_maximos', 'anio_desde', 'anio_hasta'];
+
+    protected function casts(): array
+    {
+        return [
+            'anio_desde' => 'integer',
+            'anio_hasta' => 'integer',
+        ];
+    }
+
+    /**
+     * Año de nacimiento más viejo permitido en la categoría.
+     *
+     * Usa el rango cargado y, si falta, el año más viejo del nombre
+     * (ej. "2021/2020" → 2020). Null si la categoría no es por año.
+     */
+    public function anioMinimoNacimiento(): ?int
+    {
+        return self::anioMinimoNacimientoDe($this->anio_desde, $this->nombreCategoria);
+    }
+
+    public static function anioMinimoNacimientoDe(?int $anioDesde, ?string $nombreCategoria): ?int
+    {
+        if ($anioDesde !== null) {
+            return $anioDesde;
+        }
+
+        preg_match_all('/20\\d{2}/', (string) $nombreCategoria, $coincidencias);
+        $anios = array_map('intval', $coincidencias[0]);
+
+        return $anios === [] ? null : min($anios);
+    }
 
     public function edicion()
     {

@@ -10,13 +10,14 @@ use RuntimeException;
 
 /**
  * Cuota histórica de planilla de un equipo por partido (regular, interzonal
- * o instancia final). El precio y la identidad se congelan al crear el cargo;
- * el snapshot conserva los nombres de la época para sobrevivir a borrados.
+ * o instancia final) o deuda cargada a mano sin partido. El precio y la
+ * identidad se congelan al crear el cargo; el snapshot conserva los nombres
+ * de la época para sobrevivir a borrados.
  *
  * @property int $id
- * @property string $tipo planilla_partido|planilla_instancia_final
- * @property int $parent_id
- * @property string $parent_type
+ * @property string $tipo planilla_partido|planilla_instancia_final|deuda_manual
+ * @property int|null $parent_id
+ * @property string|null $parent_type
  * @property int $idEquipo
  * @property int $idEdicion
  * @property int $idCategoria
@@ -28,6 +29,9 @@ class CargoPlanilla extends Model
     public const TIPO_PARTIDO = 'planilla_partido';
 
     public const TIPO_INSTANCIA_FINAL = 'planilla_instancia_final';
+
+    /** Deuda cargada a mano sin partido; su fecha es snapshot.fecha_deuda (Y-m-d). */
+    public const TIPO_DEUDA_MANUAL = 'deuda_manual';
 
     /**
      * Whitelist financiera: tipo de cargo => clase del padre esperada.
@@ -102,8 +106,25 @@ class CargoPlanilla extends Model
         });
     }
 
+    public function esDeudaSinPartido(): bool
+    {
+        return $this->tipo === self::TIPO_DEUDA_MANUAL;
+    }
+
     private function exigirTipoFinancieroValido(): void
     {
+        if ($this->esDeudaSinPartido()) {
+            if ($this->parent_type !== null || $this->parent_id !== null) {
+                throw new RuntimeException('Una deuda manual sin partido no puede tener cobro padre.');
+            }
+
+            return;
+        }
+
+        if ($this->parent_type === null || $this->parent_id === null) {
+            throw new RuntimeException(sprintf('El cargo de tipo "%s" exige un cobro padre.', (string) $this->tipo));
+        }
+
         $claseEsperada = self::TIPOS_FINANCIEROS[$this->tipo] ?? null;
 
         if ($claseEsperada === null) {

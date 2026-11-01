@@ -18,11 +18,15 @@ class PartidoService
 {
     public function __construct(private readonly EstadisticasJugadorService $estadisticasJugadorService) {}
 
-    public function actualizarResultado(Partido $partido, $golesEquipoLocal, $golesEquipoVisitante)
+    /**
+     * Carga el resultado. Un resultado manual deja `ganador_por_no_vino` en null;
+     * el 3 a 0 automático por "no vino" guarda allí el equipo ganador.
+     */
+    public function actualizarResultado(Partido $partido, $golesEquipoLocal, $golesEquipoVisitante, ?int $ganadorPorNoVino = null)
     {
         $partido->loadMissing(['equipoLocal', 'equipoVisitante']);
 
-        DB::transaction(function () use ($partido, $golesEquipoLocal, $golesEquipoVisitante) {
+        DB::transaction(function () use ($partido, $golesEquipoLocal, $golesEquipoVisitante, $ganadorPorNoVino) {
             // Bloquear el partido para evitar condiciones de carrera
             $partido = Partido::where('id', $partido->id)->lockForUpdate()->first();
 
@@ -39,10 +43,29 @@ class PartidoService
                 'golesEquipoLocal' => $golesEquipoLocal,
                 'golesEquipoVisitante' => $golesEquipoVisitante,
                 'jugado' => 1,
+                'ganador_por_no_vino' => $ganadorPorNoVino,
             ]);
 
             $this->actualizarTablaPosiciones($partido, $golesEquipoLocal, $golesEquipoVisitante);
             $this->actualizarHistorialEquipos($partido, $golesEquipoLocal, $golesEquipoVisitante);
+        });
+    }
+
+    /**
+     * Deja el partido sin resultado y revierte su impacto en posiciones e historial.
+     */
+    public function quitarResultado(Partido $partido): void
+    {
+        DB::transaction(function () use ($partido): void {
+            $partido = Partido::query()->whereKey($partido->id)->lockForUpdate()->firstOrFail();
+            $this->asegurarResultadoEditable($partido);
+
+            if ($this->resultadoAplicado($partido)) {
+                $this->revertirTablaPosiciones($partido, $partido->golesEquipoLocal, $partido->golesEquipoVisitante);
+                $this->revertirHistorialEquipos($partido, $partido->golesEquipoLocal, $partido->golesEquipoVisitante);
+            }
+
+            $partido->update(['golesEquipoLocal' => null, 'golesEquipoVisitante' => null, 'jugado' => 0, 'ganador_por_no_vino' => null]);
         });
     }
 
