@@ -542,7 +542,7 @@
                                                 value="{{ $jugador->apellido }}" readonly
                                                 class="flex-1 min-w-0 w-full h-9 border-gray-200 bg-gray-100 rounded-md text-sm cursor-not-allowed">
                                         </div>
-                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-600"
+                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-600 [&[hidden]]:hidden"
                                             data-player-save-status="{{ $jugador->dni_jugador }}"
                                             hidden>
                                             <span data-player-save-message="{{ $jugador->dni_jugador }}"></span>
@@ -557,36 +557,37 @@
                                         </div>
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
-                                        <input type="date" name="jugadores[{{ $jugador->dni_jugador }}][fecha_nacimiento]"
-                                            value="{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('Y-m-d') }}" readonly
-                                            class="border-gray-200 bg-gray-100 rounded-md w-full min-w-0 h-9 text-xs md:text-sm cursor-not-allowed">
+                                        <input type="hidden" name="jugadores[{{ $jugador->dni_jugador }}][fecha_nacimiento]"
+                                            value="{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('Y-m-d') }}">
+                                        <input value="{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('d/m/Y') }}" readonly aria-label="Fecha de nacimiento"
+                                            class="block h-9 w-full min-w-0 cursor-not-allowed rounded-md border-gray-200 bg-gray-100 text-left text-sm tabular-nums">
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input name="jugadores[{{ $jugador->dni_jugador }}][dni]"
                                             value="{{ $jugador->dni_jugador }}" readonly
-                                            class="w-full min-w-0 h-9 border-gray-200 bg-gray-100 rounded-md text-xs md:text-sm cursor-not-allowed">
+                                            class="block w-full min-w-0 h-9 border-gray-200 bg-gray-100 rounded-md text-left text-sm tabular-nums cursor-not-allowed">
                                         <input type="hidden" name="jugadores[{{ $jugador->dni_jugador }}][dni_actual]"
                                             value="{{ $jugador->dni_jugador }}">
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][numero_camiseta]"
                                             value="{{ $jugador->numero_camiseta }}"
-                                            class="h-9 w-14 rounded-md border-gray-300 px-1 text-center text-xs tabular-nums md:text-sm">
+                                            class="block h-9 w-12 rounded-md border-gray-300 px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-xs tabular-nums md:text-sm">
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][goles]"
-                                            value="{{ $jugador->goles }}" min="0" class="h-9 w-14 rounded-md border-gray-300 px-1 text-center text-xs tabular-nums md:text-sm">
+                                            value="{{ $jugador->goles }}" min="0" class="block h-9 w-12 rounded-md border-gray-300 px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-xs tabular-nums md:text-sm">
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle">
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][asistencia]"
                                             {{ $jugador->asistio ? 'checked' : '' }}
-                                            class="h-[18px] w-[18px] text-blue-600 border-gray-300 rounded">
+                                            class="h-[18px] w-[18px] cursor-pointer align-middle appearance-auto accent-blue-600">
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle {{ $jugador->tarjeta_roja ? 'bg-red-50' : '' }}">
 
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][tarjeta_roja]"
                                             {{ $jugador->tarjeta_roja ? 'checked' : '' }}
-                                            class="h-[18px] w-[18px] text-red-600 border-gray-300 rounded">
+                                            class="h-[18px] w-[18px] cursor-pointer align-middle appearance-auto accent-red-600">
                                     </td>
                                 </tr>
                             @endforeach
@@ -815,7 +816,7 @@
                                                 value="{{ $jugador->apellido }}" readonly
                                                 class="flex-1 min-w-0 w-full h-9 border-gray-200 bg-gray-100 rounded-md text-sm cursor-not-allowed">
                                         </div>
-                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-600"
+                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-600 [&[hidden]]:hidden"
                                             data-player-save-status="{{ $jugador->dni_jugador }}"
                                             hidden>
                                             <span data-player-save-message="{{ $jugador->dni_jugador }}"></span>
@@ -830,35 +831,36 @@
                                         </div>
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
-                                        <input type="date" name="jugadores[{{ $jugador->dni_jugador }}][fecha_nacimiento]"
-                                            value="{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('Y-m-d') }}" readonly
-                                            class="border-gray-200 bg-gray-100 rounded-md w-full min-w-0 h-9 text-xs md:text-sm cursor-not-allowed">
+                                        <input type="hidden" name="jugadores[{{ $jugador->dni_jugador }}][fecha_nacimiento]"
+                                            value="{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('Y-m-d') }}">
+                                        <input value="{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('d/m/Y') }}" readonly aria-label="Fecha de nacimiento"
+                                            class="block h-9 w-full min-w-0 cursor-not-allowed rounded-md border-gray-200 bg-gray-100 text-left text-sm tabular-nums">
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input name="jugadores[{{ $jugador->dni_jugador }}][dni]"
                                             value="{{ $jugador->dni_jugador }}" readonly
-                                            class="w-full min-w-0 h-9 border-gray-200 bg-gray-100 rounded-md text-xs md:text-sm cursor-not-allowed">
+                                            class="block w-full min-w-0 h-9 border-gray-200 bg-gray-100 rounded-md text-left text-sm tabular-nums cursor-not-allowed">
                                         <input type="hidden" name="jugadores[{{ $jugador->dni_jugador }}][dni_actual]"
                                             value="{{ $jugador->dni_jugador }}">
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][numero_camiseta]"
                                             value="{{ $jugador->numero_camiseta }}"
-                                            class="h-9 w-14 rounded-md border-gray-300 px-1 text-center text-xs tabular-nums md:text-sm">
+                                            class="block h-9 w-12 rounded-md border-gray-300 px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-xs tabular-nums md:text-sm">
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][goles]"
-                                            value="{{ $jugador->goles }}" min="0" class="h-9 w-14 rounded-md border-gray-300 px-1 text-center text-xs tabular-nums md:text-sm">
+                                            value="{{ $jugador->goles }}" min="0" class="block h-9 w-12 rounded-md border-gray-300 px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-xs tabular-nums md:text-sm">
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle">
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][asistencia]"
                                             {{ $jugador->asistio ? 'checked' : '' }}
-                                            class="h-[18px] w-[18px] text-blue-600 border-gray-300 rounded">
+                                            class="h-[18px] w-[18px] cursor-pointer align-middle appearance-auto accent-blue-600">
                                     </td>
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle {{ $jugador->tarjeta_roja ? 'bg-red-50' : '' }}">
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][tarjeta_roja]"
                                             {{ $jugador->tarjeta_roja ? 'checked' : '' }}
-                                            class="h-[18px] w-[18px] text-red-600 border-gray-300 rounded">
+                                            class="h-[18px] w-[18px] cursor-pointer align-middle appearance-auto accent-red-600">
                                     </td>
                                 </tr>
                             @endforeach
