@@ -1,10 +1,8 @@
 {{--
-    Suscriptores (T9a, panel-admin-redesign): tarjetas de envío (resumen de la
-    fecha, aviso rápido, recordatorio de verificación), filtros y tabla de
-    usuarios sobre los componentes x-ui.*. El <script> del final es el del
-    envío por lotes y no cambió: los ids, data-* y nombres de funciones de acá
-    son su contrato (ver ENDPOINTS, mostrarProgreso, localStorage
-    `mitai_sending_state`).
+    Suscriptores (T9a, panel-admin-redesign): tarjetas del resumen, la próxima fecha
+    y el aviso del torneo, filtros y tabla de usuarios sobre los componentes x-ui.*. El aviso rápido
+    por BCC y el recordatorio de verificación por tandas se retiraron (T10,
+    resumen-fecha-suscriptores): los avisos salen por el canal de suscriptores.
 --}}
 @extends('Panel.admin')
 
@@ -16,10 +14,7 @@
         $resumenIdFecha = $resumenIdFecha ?? null;
         $categoriasResumen = $categoriasResumen ?? collect();
         $fechasResumen = $fechasResumen ?? collect();
-        $totalSinVerificar = $totalSinVerificar ?? 0;
-        $idEdicionNotificacion = $EdicionSeleccionada->id ?? $resumenIdEdicion;
-        $urlNotificacionFixture = route('fixture', ['idEdicion' => $idEdicionNotificacion]);
-        $urlNotificacionGoleadores = route('tabla-goleadores', ['idEdicion' => $idEdicionNotificacion]);
+        $fechasEdicion = $fechasEdicion ?? collect();
         $iniciales = static fn (string $nombre): string => collect(preg_split('/\s+/', trim($nombre)))
             ->filter()
             ->take(2)
@@ -38,7 +33,7 @@
         <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
             <div>
                 <h2 class="text-base font-bold text-gray-800">Resumen de la fecha</h2>
-                <p class="mt-1 text-sm text-gray-500">Resultados de una fecha para los suscriptos de la categoría.</p>
+                <p class="mt-1 text-sm text-gray-500">Resultados de una fecha para los suscriptores que eligieron el resumen.</p>
                 <p class="mt-1 text-xs text-gray-400">Edición activa: {{ $resumenNombreEdicion }}</p>
             </div>
 
@@ -67,83 +62,60 @@
             </div>
         </article>
 
-        {{-- Aviso rápido --}}
+        {{-- Próxima fecha --}}
         <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
             <div>
-                <h2 class="text-base font-bold text-gray-800">Aviso rápido</h2>
-                <p class="mt-1 text-sm text-gray-500">Un mensaje prearmado o uno a medida para todos los suscriptos.</p>
+                <h2 class="text-base font-bold text-gray-800">Próxima fecha</h2>
+                <p class="mt-1 text-sm text-gray-500">Días, horarios y canchas de una fecha para los suscriptores que eligieron la próxima fecha.</p>
+                <p class="mt-1 text-xs text-gray-400">Edición activa: {{ $resumenNombreEdicion }}</p>
             </div>
 
-            <div id="notif-dropdown-container">
-                <x-ui.button id="btn-manual" onclick="toggleNotifDropdown()" class="w-full">
-                    Elegir aviso ▼
-                </x-ui.button>
+            <div class="flex flex-col gap-2" id="proxima-fecha-controls">
+                <x-ui.select id="proxima-idCategoria" label="Categoría">
+                    <option value="">Todas las categorías</option>
+                    @foreach($categoriasResumen as $categoriaProxima)
+                        <option value="{{ $categoriaProxima->id }}">{{ $categoriaProxima->nombreCategoria }}</option>
+                    @endforeach
+                </x-ui.select>
 
-                <div id="notif-dropdown" class="mt-2 hidden overflow-hidden rounded-lg border border-gray-200 bg-white">
-                    <button type="button"
-                        data-notif-titulo="Fixture Actualizado"
-                        data-notif-mensaje="Se cargo el fixture. Consulta los proximos partidos."
-                        data-notif-url="{{ $urlNotificacionFixture }}"
-                        data-notif-icono="📅"
-                        onclick="prepararNotificacionDesdeBoton(this); cerrarNotifDropdown()"
-                        class="flex w-full items-center gap-2 border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-navy/50">
-                        <span aria-hidden="true">📅</span> Fixture cargado
-                    </button>
-                    <button type="button"
-                        data-notif-titulo="Goleadores Actualizados"
-                        data-notif-mensaje="Se actualizo la tabla de goleadores. Mira quienes lideran."
-                        data-notif-url="{{ $urlNotificacionGoleadores }}"
-                        data-notif-icono="⚽"
-                        onclick="prepararNotificacionDesdeBoton(this); cerrarNotifDropdown()"
-                        class="flex w-full items-center gap-2 border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-navy/50">
-                        <span aria-hidden="true">⚽</span> Goleadores actualizados
-                    </button>
-                    <button type="button" onclick="abrirModalNotificacion(); cerrarNotifDropdown()"
-                        class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-bold text-brand-navy transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-navy/50">
-                        <span aria-hidden="true">✏️</span> Personalizado…
-                    </button>
-                </div>
+                <x-ui.select id="proxima-idFecha" label="Fecha">
+                    <option value="">Seleccionar fecha</option>
+                    @foreach($fechasEdicion as $fechaProxima)
+                        <option value="{{ $fechaProxima->id }}" data-categoria="{{ $fechaProxima->idCategoria }}">{{ $fechaProxima->nombre }}</option>
+                    @endforeach
+                </x-ui.select>
+
+                <x-ui.button id="btn-enviar-proxima-fecha" onclick="iniciarEnvioProximaFecha()" class="mt-1 w-full">
+                    Enviar próxima fecha
+                </x-ui.button>
             </div>
         </article>
 
-        {{-- Recordatorio de verificación --}}
-        <article class="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        {{-- Aviso del torneo --}}
+        <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
             <div>
-                <h2 class="text-base font-bold text-amber-800">Recordatorio de verificación</h2>
-                <p class="mt-1 text-sm text-amber-800">
-                    @if ($totalSinVerificar > 0)
-                        {{ $totalSinVerificar }} {{ $totalSinVerificar === 1 ? 'cuenta sin verificar el email' : 'cuentas sin verificar el email' }}. Se envía por tandas para no superar el límite del servidor.
-                    @else
-                        No hay cuentas sin verificar el email.
-                    @endif
-                </p>
+                <h2 class="text-base font-bold text-gray-800">Aviso del torneo</h2>
+                <p class="mt-1 text-sm text-gray-500">Un mensaje propio (suspensiones, cambios de cancha, novedades) para los suscriptores que eligieron los avisos.</p>
             </div>
 
-            <div id="recordatorios-container" class="w-full">
-                <div class="flex flex-wrap items-center gap-2">
-                    <x-ui.button id="btn-enviar-recordatorios" onclick="iniciarEnvioRecordatorios()" class="grow">
-                        <span id="btn-text">Enviar recordatorios</span>
-                    </x-ui.button>
+            <div class="flex flex-col gap-2" id="aviso-torneo-controls">
+                <input type="hidden" id="aviso-idEnvio" value="{{ \Illuminate\Support\Str::uuid() }}">
 
-                    <x-ui.button id="btn-detener" variant="danger" onclick="detenerEnvio()" class="hidden">
-                        Detener
-                    </x-ui.button>
-
-                    <x-ui.button id="btn-continuar" variant="success" onclick="continuarEnvioPausado()" class="hidden">
-                        Continuar
-                    </x-ui.button>
+                <div>
+                    <label for="aviso-titulo" class="mb-1 block text-sm font-medium text-gray-700">Título</label>
+                    <input type="text" id="aviso-titulo" maxlength="{{ \App\Http\Requests\Suscripcion\AvisoTorneoRequest::TITULO_MAXIMO }}"
+                        class="block w-full rounded-md border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30">
                 </div>
 
-                <div id="progreso-recordatorios" class="mt-3 hidden text-sm text-amber-800">
-                    <div class="flex items-center gap-2">
-                        <svg id="progreso-spinner" class="h-4 w-4 animate-spin text-amber-600" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                        </svg>
-                        <span id="progreso-texto" aria-live="polite">Iniciando...</span>
-                    </div>
-                    <div id="error-debug-msg" class="mt-2 hidden rounded border border-red-200 bg-red-50 p-2 text-center font-mono text-xs text-red-600"></div>
+                <div>
+                    <label for="aviso-mensaje" class="mb-1 block text-sm font-medium text-gray-700">Mensaje</label>
+                    <textarea id="aviso-mensaje" rows="4" maxlength="{{ \App\Http\Requests\Suscripcion\AvisoTorneoRequest::MENSAJE_MAXIMO }}"
+                        class="block w-full rounded-md border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30"></textarea>
                 </div>
+
+                <x-ui.button id="btn-enviar-aviso-torneo" onclick="iniciarEnvioAvisoTorneo()" class="mt-1 w-full">
+                    Enviar aviso
+                </x-ui.button>
             </div>
         </article>
     </div>
@@ -300,86 +272,26 @@
     </style>
 
     <script>
-        let enviando = false;
-        let totalEnviados = 0;
-        let totalErrores = 0;
-        let currentOffset = 0;
-        let abortController = null;
-        let currentTask = 'recordatorios'; // 'recordatorios' | 'manual' | 'resumen_fecha'
-        let currentPayload = {};
-        let rateLimitRetries = 0;
-        let totalSesionEnviados = 0;
-        let pausadoPorProveedor = false;
-
-        /**
-         * Delay base entre lotes (ms). Se usa 8s para mantener un ritmo
-         * seguro en Hostinger (~7-8 envíos SMTP/minuto como máximo).
-         */
-        const DELAY_BASE_MS = 8000;
-
-        /**
-         * Delays escalonados cuando se detecta rate limiting (ms).
-         * 1er intento: 60s, 2do: 120s, 3ro: 180s.
-         */
-        const RATE_LIMIT_DELAYS = [60000, 120000, 180000];
-
-        /** Tras este número de rate limits consecutivos se entra en cooldown largo. */
-        const MAX_RATE_LIMIT_RETRIES = 3;
-
-        /** Cooldown largo en ms (15 minutos) tras agotar reintentos cortos. */
-        const COOLDOWN_LARGO_MS = 900000;
-
+        // Los avisos no van por lotes: quedan en cola y salen como un único envío a los suscriptores.
         const ENDPOINTS = {
-            recordatorios: {
-                start_msg: 'Enviando recordatorios...',
-                count_route: '{{ route("notificaciones.contar-pendientes") }}',
-                send_route: '{{ route("notificaciones.enviar-lote") }}',
-                log_route: '{{ route("notificaciones.log-completo") }}',
-                batch_size: 10,
-            },
-            manual: {
-                start_msg: 'Enviando notificación masiva...',
-                count_route: '{{ route("notificaciones.manual.contar") }}',
-                send_route: '{{ route("notificaciones.manual.enviar-lote") }}',
-                log_route: '{{ route("notificaciones.log-completo") }}',
-                batch_size: 20,
-            },
             resumen_fecha: {
-                start_msg: 'Enviando resumen de fecha...',
                 count_route: '{{ route("notificaciones.resumen-fecha.contar") }}',
-                send_route: '{{ route("notificaciones.resumen-fecha.enviar-lote") }}',
-                log_route: '{{ route("notificaciones.log-completo") }}',
-                batch_size: 20,
-            }
+                send_route: '{{ route("notificaciones.resumen-fecha.suscriptores") }}',
+            },
+            proxima_fecha: {
+                count_route: '{{ route("notificaciones.proxima-fecha.contar") }}',
+                send_route: '{{ route("notificaciones.proxima-fecha.suscriptores") }}',
+            },
+            avisos: {
+                count_route: '{{ route("notificaciones.avisos.contar") }}',
+                send_route: '{{ route("notificaciones.avisos.suscriptores") }}',
+            },
         };
 
         const resumenIdCategoriaInput = document.getElementById('resumen-idCategoria');
         const resumenIdFechaInput = document.getElementById('resumen-idFecha');
 
-        // Recuperar estado al cargar
         document.addEventListener('DOMContentLoaded', () => {
-            const estado = JSON.parse(localStorage.getItem('mitai_sending_state'));
-            if (estado) {
-                currentTask = estado.task || currentTask;
-                currentPayload = estado.payload || {};
-                totalEnviados = Number(estado.enviados || 0);
-                totalErrores = Number(estado.errores || 0);
-                currentOffset = estado.offset || 0;
-                pausadoPorProveedor = Boolean(estado.paused_by_provider);
-
-                if (estado.active) {
-                    mostrarProgreso(true);
-                    actualizarTextoProgreso(`Recuperando sesión... Enviados: ${totalEnviados}`);
-
-                    // Retomar envío
-                    reanudarEnvio();
-                } else if (pausadoPorProveedor) {
-                    mostrarProgreso(true);
-                    actualizarTextoProgreso('Envío pausado por bloqueo SMTP en Hostinger. Rehabilitá el correo en hPanel y presioná "Continuar".');
-                    actualizarEstadoLocal(false);
-                }
-            }
-
             filtrarFechasResumen();
 
             if (resumenIdCategoriaInput) {
@@ -453,73 +365,103 @@
             }
         }
 
-        // --- FUNCIONES UI DROPDOWN ---
-        function toggleNotifDropdown() {
-            document.getElementById('notif-dropdown').classList.toggle('hidden');
-        }
-        function cerrarNotifDropdown() {
-            document.getElementById('notif-dropdown').classList.add('hidden');
-        }
-        document.addEventListener('click', function(e) {
-            const container = document.getElementById('notif-dropdown-container');
-            if (container && !container.contains(e.target)) cerrarNotifDropdown();
-        });
+        /**
+         * Textos de cada envío por fecha: el resumen (resultados) y la próxima fecha (programación).
+         * Cada fecha y categoría sale una sola vez; solo se puede reintentar un envío fallido.
+         */
+        const ENVIOS_POR_FECHA = {
+            resumen_fecha: {
+                boton: 'btn-enviar-resumen-fecha',
+                categoria: () => resumenIdCategoriaInput,
+                fecha: () => resumenIdFechaInput,
+                faltaFecha: 'Seleccioná una fecha para enviar el resumen.',
+                sinContenido: 'No hay resultados para enviar en la fecha seleccionada.',
+                yaEnviado: 'Este resumen ya se envió',
+                enCola: 'Este resumen ya está en cola: sale en el próximo minuto.',
+                sinDestinatarios: 'Todavía nadie eligió recibir el resumen de la fecha.',
+                fallido: 'El envío anterior de este resumen falló.',
+                unaVez: 'Cada resumen se envía una sola vez.',
+                encolado: 'Resumen en cola',
+                errorEnvio: 'No se pudo enviar el resumen.',
+            },
+            proxima_fecha: {
+                boton: 'btn-enviar-proxima-fecha',
+                categoria: () => document.getElementById('proxima-idCategoria'),
+                fecha: () => document.getElementById('proxima-idFecha'),
+                faltaFecha: 'Seleccioná una fecha para enviar la programación.',
+                sinContenido: 'No hay partidos programados para la fecha seleccionada.',
+                yaEnviado: 'Esta próxima fecha ya se envió',
+                enCola: 'Esta próxima fecha ya está en cola: sale en el próximo minuto.',
+                sinDestinatarios: 'Todavía nadie eligió recibir la próxima fecha.',
+                fallido: 'El envío anterior de esta próxima fecha falló.',
+                unaVez: 'Cada próxima fecha se envía una sola vez.',
+                encolado: 'Próxima fecha en cola',
+                errorEnvio: 'No se pudo enviar la próxima fecha.',
+            },
+        };
 
-        // --- INICIO DE PROCESOS ---
+        function iniciarEnvioResumenFecha() {
+            return iniciarEnvioPorFecha('resumen_fecha');
+        }
 
-        // 1. Recordatorios (Legacy wrapper)
-        async function iniciarEnvioRecordatorios() {
-            if (enviando) {
+        function iniciarEnvioProximaFecha() {
+            return iniciarEnvioPorFecha('proxima_fecha');
+        }
+
+        /**
+         * Cuenta los destinatarios, pide confirmación y deja el envío en cola (un único envío a los
+         * suscriptores que eligieron ese aviso).
+         */
+        async function iniciarEnvioPorFecha(tipo) {
+            const textos = ENVIOS_POR_FECHA[tipo];
+            const boton = document.getElementById(textos.boton);
+            if (boton?.disabled) {
                 return;
             }
 
-            try {
-                const response = await fetch(ENDPOINTS.recordatorios.count_route, {
-                    headers: {
-                        Accept: 'application/json',
-                    },
-                });
+            const idCategoria = textos.categoria()?.value || '';
+            const idFecha = textos.fecha()?.value || '';
 
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.message || 'No se pudo consultar los pendientes.');
+            if (!idFecha) {
+                await Swal.fire('Faltan datos', textos.faltaFecha, 'warning');
+                return;
+            }
+
+            const datos = { idFecha, ...(idCategoria ? { idCategoria } : {}) };
+
+            try {
+                const conteo = await fetch(`${ENDPOINTS[tipo].count_route}?${new URLSearchParams(datos).toString()}`, {
+                    headers: { Accept: 'application/json' },
+                });
+                const resumen = await conteo.json();
+                if (!conteo.ok || !resumen.success) {
+                    throw new Error(resumen.message || textos.sinContenido);
                 }
 
-                const pendientes = Number(data.count || 0);
-                const elegibles = Number(data.eligible_total || 0);
-                if (pendientes === 0) {
-                    if (elegibles === 0) {
-                        await Swal.fire('Sin pendientes', data.message || 'No hay usuarios para recordar.', 'info');
-                        return;
-                    }
-
-                    const reenvio = await Swal.fire({
-                        title: 'Sin pendientes por cooldown',
-                        html: `<div style="text-align:left">` +
-                            `<p>${data.message || 'Todos recibieron recordatorio recientemente.'}</p>` +
-                            `<p><strong>Usuarios elegibles para reenvío manual:</strong> ${elegibles}</p>` +
-                            `<p>Si continuás, se reenviará aunque hayan recibido recordatorio en los últimos 7 días.</p>` +
-                            `</div>`,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Reenviar igual',
-                        cancelButtonText: 'Cancelar',
-                        confirmButtonColor: '#d97706',
-                        cancelButtonColor: '#6b7280',
-                    });
-
-                    if (reenvio.isConfirmed) {
-                        iniciarProceso('recordatorios', { force: true });
-                    }
-
+                if (resumen.envio?.estado === 'enviado') {
+                    await Swal.fire('Ya enviado', `${textos.yaEnviado} el ${resumen.envio.enviado_at} a ${resumen.envio.destinatarios} destinatario(s).`, 'info');
                     return;
                 }
 
+                if (resumen.envio?.estado === 'pendiente') {
+                    await Swal.fire('En cola', textos.enCola, 'info');
+                    return;
+                }
+
+                if (resumen.destinatarios === 0) {
+                    await Swal.fire('Sin destinatarios', textos.sinDestinatarios, 'info');
+                    return;
+                }
+
+                const reintento = resumen.envio?.estado === 'fallido';
                 const confirmacion = await Swal.fire({
-                    title: 'Enviar recordatorios',
+                    title: reintento ? 'Reintentar el envío' : 'Enviar a suscriptores',
                     html: `<div style="text-align:left">` +
-                        `<p><strong>Usuarios pendientes:</strong> ${pendientes}</p>` +
-                        `<p><strong>Tipo de correo:</strong> verificación de cuenta</p>` +
+                        (reintento ? `<p>${textos.fallido}</p>` : '') +
+                        `<p><strong>Fecha:</strong> ${resumen.fecha_nombre}</p>` +
+                        `<p><strong>Partidos:</strong> ${resumen.partidos_count}</p>` +
+                        `<p><strong>Destinatarios:</strong> ${resumen.destinatarios}</p>` +
+                        `<p>${textos.unaVez}</p>` +
                         `</div>`,
                     icon: 'question',
                     showCancelButton: true,
@@ -533,166 +475,101 @@
                     return;
                 }
 
-                iniciarProceso('recordatorios', { force: false });
-            } catch (error) {
-                await Swal.fire('No se pudo iniciar', error.message || 'Error al preparar el envío.', 'error');
-            }
-        }
+                boton.disabled = true;
+                boton.classList.add('opacity-50', 'cursor-not-allowed');
 
-        // 2. Manual (Predefinida)
-        async function prepararNotificacion(titulo, mensaje, url, icono = '📢') {
-            await iniciarEnvioNotificacionManual({ titulo, mensaje, url, icono });
-        }
-
-        /**
-         * Unifica el flujo de envío manual con conteo y confirmación previa.
-         */
-        async function iniciarEnvioNotificacionManual(payload) {
-            if (enviando) {
-                return;
-            }
-
-            const titulo = String(payload?.titulo || '').trim();
-            const mensaje = String(payload?.mensaje || '').trim();
-            const url = String(payload?.url || '/').trim() || '/';
-            const icono = String(payload?.icono || '📢').trim() || '📢';
-            const tituloConIcono = combinarIconoYTitulo(icono, titulo);
-
-            if (!titulo || !mensaje) {
-                await Swal.fire('Faltan datos', 'Completá título y mensaje antes de enviar.', 'warning');
-                return;
-            }
-
-            let data;
-
-            try {
-                const response = await fetch(ENDPOINTS.manual.count_route, {
+                const respuesta = await fetch(ENDPOINTS[tipo].send_route, {
+                    method: 'POST',
                     headers: {
                         Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     },
+                    body: JSON.stringify(datos),
                 });
-
-                data = await response.json();
-                if (!response.ok || data.success === false) {
-                    throw new Error(data.message || 'No se pudo consultar la cantidad de destinatarios.');
+                const envio = await respuesta.json();
+                if (!respuesta.ok || !envio.success) {
+                    throw new Error(envio.message || textos.errorEnvio);
                 }
+
+                await Swal.fire(textos.encolado, envio.message, 'success');
             } catch (error) {
-                await Swal.fire('No se pudo iniciar', error.message || 'Error al preparar el envío.', 'error');
+                await Swal.fire('No se pudo enviar', error.message || textos.errorEnvio, 'error');
+            } finally {
+                if (boton) {
+                    boton.disabled = false;
+                    boton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+
+        /**
+         * La lista de fechas de la próxima fecha se filtra en el navegador por la categoría elegida.
+         */
+        function filtrarFechasProxima() {
+            const categoria = document.getElementById('proxima-idCategoria');
+            const fecha = document.getElementById('proxima-idFecha');
+            if (!categoria || !fecha) {
                 return;
             }
 
-            const totalUsuarios = Number(data.count || 0);
-            if (totalUsuarios === 0) {
-                await Swal.fire('Sin destinatarios', data.message || 'No hay usuarios activos para notificar.', 'info');
-                return;
-            }
-
-            const result = await Swal.fire({
-                title: '¿Enviar notificación masiva?',
-                html: `<div style="text-align:left">` +
-                    `<p style="margin-bottom:8px"><strong>${tituloConIcono}</strong></p>` +
-                    `<p style="margin:0 0 10px;color:#475569">${mensaje}</p>` +
-                    `<p><strong>Usuarios:</strong> ${totalUsuarios}</p>` +
-                    `<p><strong>Correos estimados:</strong> ${data.correos_estimados || 0} (BCC de ${data.lote_bcc || 100})</p>` +
-                    `</div>`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, enviar a todos',
-                cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#2563eb',
-                cancelButtonColor: '#6b7280',
+            Array.from(fecha.options).forEach((option) => {
+                const visible = !option.dataset.categoria || !categoria.value || option.dataset.categoria === categoria.value;
+                option.hidden = !visible;
+                if (!visible && option.selected) {
+                    fecha.selectedIndex = 0;
+                }
             });
+        }
 
-            if (result.isConfirmed) {
-                iniciarProceso('manual', { titulo, mensaje, url, icono });
-            }
+        document.getElementById('proxima-idCategoria')?.addEventListener('change', filtrarFechasProxima);
+
+        function escaparHtml(texto) {
+            const nodo = document.createElement('div');
+            nodo.textContent = texto;
+            return nodo.innerHTML;
         }
 
         /**
-         * Carga datos de notificación desde un botón del dropdown.
+         * Deja en cola el aviso libre del torneo. El identificador de la carga del formulario evita
+         * mandarlo dos veces; después de encolarlo, el formulario se prepara para un aviso nuevo.
          */
-        function prepararNotificacionDesdeBoton(button) {
-            if (!button) {
+        async function iniciarEnvioAvisoTorneo() {
+            const boton = document.getElementById('btn-enviar-aviso-torneo');
+            const idEnvio = document.getElementById('aviso-idEnvio');
+            const titulo = document.getElementById('aviso-titulo');
+            const mensaje = document.getElementById('aviso-mensaje');
+            if (boton?.disabled) {
                 return;
             }
 
-            prepararNotificacion(
-                button.dataset.notifTitulo || '',
-                button.dataset.notifMensaje || '',
-                button.dataset.notifUrl || '/',
-                button.dataset.notifIcono || '📢'
-            );
-        }
-
-        /**
-         * Une icono+título evitando duplicar emoji al inicio.
-         */
-        function combinarIconoYTitulo(icono, titulo) {
-            const iconoNormalizado = String(icono || '').trim();
-            const tituloNormalizado = String(titulo || '').trim();
-
-            if (!iconoNormalizado) {
-                return tituloNormalizado;
-            }
-
-            if (!tituloNormalizado) {
-                return iconoNormalizado;
-            }
-
-            if (tituloNormalizado.startsWith(iconoNormalizado)) {
-                return tituloNormalizado;
-            }
-
-            return `${iconoNormalizado} ${tituloNormalizado}`;
-        }
-
-        /**
-         * Dispara envío centralizado del resumen de resultados por fecha.
-         */
-        async function iniciarEnvioResumenFecha() {
-            if (enviando) {
+            if (!titulo.value.trim() || !mensaje.value.trim()) {
+                await Swal.fire('Faltan datos', 'Escribí el título y el mensaje del aviso.', 'warning');
                 return;
-            }
-
-            const idCategoria = resumenIdCategoriaInput?.value || '';
-            const idFecha = resumenIdFechaInput?.value || '';
-
-            if (!idFecha) {
-                await Swal.fire('Faltan datos', 'Seleccioná una fecha para enviar el resumen.', 'warning');
-                return;
-            }
-
-            const params = new URLSearchParams({
-                idFecha,
-            });
-
-            if (idCategoria) {
-                params.set('idCategoria', idCategoria);
             }
 
             try {
-                const response = await fetch(`${ENDPOINTS.resumen_fecha.count_route}?${params.toString()}`, {
-                    headers: {
-                        Accept: 'application/json',
-                    },
-                });
+                const conteo = await fetch(ENDPOINTS.avisos.count_route, { headers: { Accept: 'application/json' } });
+                const resumen = await conteo.json();
+                if (!conteo.ok || !resumen.success) {
+                    throw new Error(resumen.message || 'No se pudo contar a los destinatarios.');
+                }
 
-                const data = await response.json();
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'No hay resultados para enviar en la fecha seleccionada.');
+                if (resumen.destinatarios === 0) {
+                    await Swal.fire('Sin destinatarios', 'Todavía nadie eligió recibir los avisos del torneo.', 'info');
+                    return;
                 }
 
                 const confirmacion = await Swal.fire({
-                    title: 'Enviar resumen de fecha',
+                    title: 'Enviar a suscriptores',
                     html: `<div style="text-align:left">` +
-                        `<p><strong>Fecha:</strong> ${data.fecha_nombre}</p>` +
-                        `<p><strong>Partidos:</strong> ${data.partidos_count}</p>` +
-                        `<p><strong>Usuarios:</strong> ${data.count}</p>` +
-                        `<p><strong>Correos estimados:</strong> ${data.correos_estimados} (BCC de ${data.lote_bcc})</p>` +
+                        `<p><strong>Título:</strong> ${escaparHtml(titulo.value.trim())}</p>` +
+                        `<p><strong>Destinatarios:</strong> ${resumen.destinatarios}</p>` +
+                        `<p>El aviso se envía una sola vez.</p>` +
                         `</div>`,
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: 'Sí, enviar resumen',
+                    confirmButtonText: 'Sí, enviar',
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: '#2563eb',
                     cancelButtonColor: '#6b7280',
@@ -702,441 +579,41 @@
                     return;
                 }
 
-                iniciarProceso('resumen_fecha', {
-                    idFecha,
-                    ...(idCategoria ? { idCategoria } : {}),
-                });
-            } catch (error) {
-                await Swal.fire('No se pudo iniciar', error.message || 'Error al preparar el envío.', 'error');
-            }
-        }
+                boton.disabled = true;
+                boton.classList.add('opacity-50', 'cursor-not-allowed');
 
-        // 3. Manual (Personalizada - Modal)
-        function abrirModalNotificacion() {
-            Swal.fire({
-                title: 'Notificación Masiva Personalizada',
-                html: `
-                    <div class="text-left">
-                        <label class="block text-sm font-medium mb-1">Título</label>
-                        <input id="sw-titulo" class="swal2-input w-full m-0 mb-3" placeholder="Título">
-                        
-                        <label class="block text-sm font-medium mb-1">Mensaje</label>
-                        <textarea id="sw-mensaje" class="swal2-textarea w-full m-0 mb-3" placeholder="Mensaje"></textarea>
-                        
-                        <label class="block text-sm font-medium mb-1">URL (Opcional)</label>
-                        <input id="sw-url" class="swal2-input w-full m-0 mb-3" value="/">
-                        
-                        <label class="block text-sm font-medium mb-1">Icono</label>
-                        <input id="sw-icono" class="swal2-input w-full m-0" value="📢">
-                    </div>
-                `,
-                showCancelButton: true,
-                confirmButtonText: 'Enviar',
-                cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#2563eb',
-                cancelButtonColor: '#6b7280',
-                preConfirm: () => {
-                    return {
-                        titulo: document.getElementById('sw-titulo').value,
-                        mensaje: document.getElementById('sw-mensaje').value,
-                        url: document.getElementById('sw-url').value,
-                        icono: document.getElementById('sw-icono').value,
-                    }
-                }
-            }).then((res) => {
-                if (res.isConfirmed && res.value) {
-                    iniciarEnvioNotificacionManual(res.value);
-                }
-            });
-        }
-
-        // --- LÓGICA CORE ---
-
-        function iniciarProceso(taskType, payload = {}) {
-            currentTask = taskType;
-            currentPayload = payload;
-            totalEnviados = 0;
-            totalErrores = 0;
-            currentOffset = 0;
-            rateLimitRetries = 0;
-            pausadoPorProveedor = false;
-            
-            enviando = true;
-            abortController = new AbortController();
-            
-            mostrarProgreso(true);
-            actualizarIndicadorCarga(true);
-            actualizarEstadoLocal(true);
-            procesarLotes();
-        }
-
-        function reanudarEnvio() {
-            enviando = true;
-            pausadoPorProveedor = false;
-            abortController = new AbortController();
-            mostrarProgreso(true);
-            actualizarIndicadorCarga(true);
-            actualizarEstadoLocal(true);
-            procesarLotes();
-        }
-
-        /**
-         * Pausa el envío cuando Hostinger deshabilita SMTP (error 554).
-         *
-         * Mantiene estado y offset para que el administrador reactive el
-         * servicio en hPanel y reanude manualmente desde el botón Continuar.
-         */
-        function pausarPorProveedor(mensaje, detalleTecnico = '') {
-            enviando = false;
-            pausadoPorProveedor = true;
-
-            mostrarProgreso(true);
-            actualizarIndicadorCarga(false);
-            actualizarTextoProgreso(mensaje || 'Envío pausado por bloqueo SMTP del proveedor.');
-
-            const errDiv = document.getElementById('error-debug-msg');
-            if (errDiv) {
-                if (detalleTecnico) {
-                    errDiv.textContent = 'Último error: ' + detalleTecnico;
-                    errDiv.classList.remove('hidden');
-                } else {
-                    errDiv.classList.add('hidden');
-                }
-            }
-
-            actualizarEstadoLocal(false);
-        }
-
-        /**
-         * Reanuda manualmente un envío pausado por bloqueo de proveedor.
-         */
-        function continuarEnvioPausado() {
-            if (enviando || !pausadoPorProveedor) {
-                return;
-            }
-
-            // Ocultar inmediatamente el botón para evitar doble click visual.
-            pausadoPorProveedor = false;
-            mostrarProgreso(true);
-
-            const btnContinuar = document.getElementById('btn-continuar');
-            if (btnContinuar) {
-                btnContinuar.classList.add('hidden');
-            }
-
-            const errDiv = document.getElementById('error-debug-msg');
-            if (errDiv) {
-                errDiv.classList.add('hidden');
-            }
-
-            actualizarTextoProgreso('Reanudando envío...');
-            reanudarEnvio();
-        }
-
-        async function procesarLotes() {
-            let done = false;
-            const config = ENDPOINTS[currentTask];
-            const batchSize = config.batch_size || 10;
-            
-            while (!done && enviando) {
-                try {
-                    const body = {
-                        ...currentPayload,
-                        offset: currentOffset,
-                        limit: batchSize
-                    };
-
-                    const response = await fetch(config.send_route, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify(body),
-                        signal: abortController.signal
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.message || 'No se pudo procesar el lote.');
-                    }
-
-                    // --- Bloqueo 554 en Hostinger: pausar y esperar reanudación manual ---
-                    if (data.provider_blocked) {
-                        pausarPorProveedor(
-                            data.message || 'Hostinger bloqueó temporalmente el envío SMTP. Rehabilitá el correo en hPanel y presioná "Continuar".',
-                            data.last_error || ''
-                        );
-                        break;
-                    }
-
-                    // --- Rate limit detectado por el backend ---
-                    if (data.rate_limited) {
-                        rateLimitRetries++;
-
-                        // Mostrar error técnico
-                        const errDiv = document.getElementById('error-debug-msg');
-                        if (errDiv) {
-                            errDiv.textContent = 'Rate limit: ' + (data.last_error || 'Hostinger limitó envíos temporalmente');
-                            errDiv.classList.remove('hidden');
-                        }
-
-                        // Cooldown largo: esperar 15 min y reintentar automáticamente
-                        if (rateLimitRetries > MAX_RATE_LIMIT_RETRIES) {
-                            const horaReintento = new Date(Date.now() + COOLDOWN_LARGO_MS);
-                            const horaStr = horaReintento.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-                            const cooldownSec = Math.round(COOLDOWN_LARGO_MS / 1000);
-
-                            // Mostrar error técnico
-                            const errDivCooldown = document.getElementById('error-debug-msg');
-                            if (errDivCooldown) {
-                                errDivCooldown.textContent = 'Cooldown: rate limit persistente de Hostinger. Reintento automático programado.';
-                                errDivCooldown.classList.remove('hidden');
-                            }
-
-                            for (let restante = cooldownSec; restante > 0 && enviando; restante--) {
-                                const minutos = Math.floor(restante / 60);
-                                const segundos = restante % 60;
-                                actualizarTextoProgreso(
-                                    `Cooldown de Hostinger. Reintentando automaticamente a las ${horaStr} ` +
-                                    `(faltan ${minutos}:${String(segundos).padStart(2, '0')}). ` +
-                                    `Enviados: ${totalEnviados} de ${totalEnviados + (data.remaining ?? 0)}. No cierres esta pestaña.`
-                                );
-                                await new Promise(r => setTimeout(r, 1000));
-                            }
-
-                            // Resetear contador para un nuevo ciclo de reintentos cortos
-                            rateLimitRetries = 0;
-                            continue;
-                        }
-
-                        // Countdown visible con delay escalonado
-                        const waitMs = RATE_LIMIT_DELAYS[Math.min(rateLimitRetries - 1, RATE_LIMIT_DELAYS.length - 1)];
-                        const waitSec = Math.round(waitMs / 1000);
-
-                        for (let restante = waitSec; restante > 0 && enviando; restante--) {
-                            actualizarTextoProgreso(
-                                `Rate limit detectado (intento ${rateLimitRetries}/${MAX_RATE_LIMIT_RETRIES}). ` +
-                                `Esperando ${restante}s antes de reintentar... ` +
-                                `Enviados: ${totalEnviados}`
-                            );
-                            await new Promise(r => setTimeout(r, 1000));
-                        }
-
-                        // NO avanzar offset — reintentar el mismo lote
-                        continue;
-                    }
-
-                    // --- Éxito: resetear contador de rate limit ---
-                    rateLimitRetries = 0;
-
-                    if (data.metrics) {
-                        totalEnviados = Number(data.metrics.accepted || 0);
-                        totalErrores = Number(data.metrics.failed || 0);
-                    }
-
-                    // Actualizar métricas
-                    totalSesionEnviados += Number(data.sent || 0);
-                    
-                    // Actualizar Offset para siguiente lote
-                    currentOffset += batchSize; 
-
-                    // Actualizar UI
-                    let msg = '';
-                    if (currentTask === 'manual') {
-                        msg = `Enviando notificación... Emails: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.metrics?.remaining ?? data.remaining ?? 0}`;
-                    } else if (currentTask === 'resumen_fecha') {
-                        msg = `Enviando resumen... Emails: ${totalEnviados} | Errores: ${totalErrores} | Restantes: ${data.metrics?.remaining ?? data.remaining ?? 0}`;
-                    } else {
-                        msg = `Enviando... Enviados: ${totalEnviados} | Errores: ${totalErrores} | Restantes aprox: ${data.metrics?.remaining ?? data.remaining}`;
-                    }
-
-                    // Advertencia de cuota de sesión
-                    if (totalSesionEnviados >= 400) {
-                        msg += ` | Sesion: ${totalSesionEnviados} enviados (limite sugerido: 500)`;
-                    }
-                    
-                    actualizarTextoProgreso(msg);
-                    
-                    // Mostrar error si hubo (parcial, no rate limit)
-                    if (data.last_error) {
-                        const errDiv = document.getElementById('error-debug-msg');
-                        if (errDiv) {
-                            errDiv.textContent = "Último error: " + data.last_error;
-                            errDiv.classList.remove('hidden');
-                        }
-                    }
-
-                    actualizarEstadoLocal(true);
-
-                    done = data.done;
-                    
-                    // Delay conservador entre lotes para respetar límites Hostinger
-                    if (!done) await new Promise(r => setTimeout(r, DELAY_BASE_MS));
-
-                } catch (e) {
-                    if (e.name === 'AbortError') {
-                        console.log('Cancelado por usuario');
-                    } else {
-                        console.error(e);
-                        actualizarTextoProgreso('Error de conexión. Reintentando en 10s...');
-                        await new Promise(r => setTimeout(r, 10000));
-                    }
-                }
-            }
-
-            if (done) finalizarEnvio(false);
-        }
-
-        function detenerEnvio() {
-            Swal.fire({
-                title: 'Detener proceso',
-                text: '¿Deseas detener el envío actual?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, detener',
-                cancelButtonText: 'Continuar',
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-            }).then((resultado) => {
-                if (!resultado.isConfirmed) {
-                    return;
-                }
-
-                enviando = false;
-                pausadoPorProveedor = false;
-                if (abortController) abortController.abort();
-                actualizarEstadoLocal(false);
-                finalizarEnvio(true);
-            });
-        }
-
-        function finalizarEnvio(detenido) {
-            enviando = false;
-            actualizarIndicadorCarga(false);
-            actualizarEstadoLocal(false);
-            
-            // Log final al servidor
-            if (!detenido) {
-                fetch(ENDPOINTS[currentTask].log_route, {
+                const respuesta = await fetch(ENDPOINTS.avisos.send_route, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    body: JSON.stringify({ enviados: totalEnviados, errores: totalErrores, tipo: currentTask })
-                }).catch(console.error);
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    },
+                    body: JSON.stringify({ id_envio: idEnvio.value, titulo: titulo.value, mensaje: mensaje.value }),
+                });
+                const envio = await respuesta.json();
+                if (!respuesta.ok || !envio.success) {
+                    const errores = envio.errors ? Object.values(envio.errors).flat().join(' ') : '';
+                    throw new Error(errores || envio.message || 'No se pudo enviar el aviso.');
+                }
 
-                 // Mostrar alerta de éxito
-                if (typeof Swal !== 'undefined') {
-                    const unidadEnvio = currentTask === 'recordatorios' ? 'recordatorios' : 'correos';
-                    Swal.fire('¡Proceso Completado!', `Se enviaron ${totalEnviados} ${unidadEnvio} con ${totalErrores} errores.`, 'success');
+                titulo.value = '';
+                mensaje.value = '';
+                if (window.crypto?.randomUUID) {
+                    idEnvio.value = window.crypto.randomUUID();
+                    await Swal.fire('Aviso en cola', envio.message, 'success');
                 } else {
-                    alert('Proceso completado.');
+                    await Swal.fire('Aviso en cola', envio.message, 'success');
+                    window.location.reload();
                 }
-                
-                localStorage.removeItem('mitai_sending_state');
-                actualizarTextoProgreso('Completado.');
-            } else {
-                 localStorage.removeItem('mitai_sending_state');
-                 actualizarTextoProgreso('Detenido por el usuario.');
-            }
-
-            mostrarProgreso(false, detenido);
-        }
-
-        // --- UTILIDADES ---
-
-        function mostrarProgreso(mostrar, detenido = false) {
-            const container = document.getElementById('progreso-recordatorios');
-            const btnRec = document.getElementById('btn-enviar-recordatorios');
-            const btnMan = document.getElementById('btn-manual');
-            const btnResumen = document.getElementById('btn-enviar-resumen-fecha');
-            const btnStop = document.getElementById('btn-detener');
-            const btnContinuar = document.getElementById('btn-continuar');
-
-            if (mostrar) {
-                container.classList.remove('hidden');
-                
-                // Deshabilitar botón recordatorios
-                btnRec.disabled = true;
-                btnRec.classList.add('opacity-50', 'cursor-not-allowed');
-                
-                // Deshabilitar botón manual si existe (es SPA, puede perder referencia si no se busca de nuevo)
-                if(btnMan) {
-                    btnMan.disabled = true;
-                    btnMan.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-
-                if(btnResumen) {
-                    btnResumen.disabled = true;
-                    btnResumen.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-                
-                btnStop.classList.remove('hidden');
-
-                if (btnContinuar) {
-                    if (pausadoPorProveedor) {
-                        btnContinuar.classList.remove('hidden');
-                    } else {
-                        btnContinuar.classList.add('hidden');
-                    }
-                }
-            } else {
-                if (!detenido) container.classList.add('hidden');
-                
-                btnRec.disabled = false;
-                btnRec.classList.remove('opacity-50', 'cursor-not-allowed');
-                
-                if(btnMan) {
-                    btnMan.disabled = false;
-                    btnMan.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-
-                if(btnResumen) {
-                    btnResumen.disabled = false;
-                    btnResumen.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-                
-                btnStop.classList.add('hidden');
-
-                if (btnContinuar) {
-                    btnContinuar.classList.add('hidden');
+            } catch (error) {
+                await Swal.fire('No se pudo enviar', error.message || 'Error al enviar el aviso.', 'error');
+            } finally {
+                if (boton) {
+                    boton.disabled = false;
+                    boton.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
             }
-
-            actualizarIndicadorCarga(mostrar && enviando && !pausadoPorProveedor);
-        }
-
-        function actualizarIndicadorCarga(activo) {
-            const spinner = document.getElementById('progreso-spinner');
-            if (!spinner) {
-                return;
-            }
-
-            if (activo) {
-                spinner.classList.remove('hidden');
-                return;
-            }
-
-            spinner.classList.add('hidden');
-        }
-
-        function actualizarTextoProgreso(txt) {
-            const el = document.getElementById('progreso-texto');
-            if (el) el.textContent = txt;
-        }
-
-        function actualizarEstadoLocal(activo) {
-            const estado = {
-                active: activo,
-                task: currentTask,
-                payload: currentPayload,
-                enviados: totalEnviados,
-                errores: totalErrores,
-                offset: currentOffset,
-                paused_by_provider: pausadoPorProveedor,
-                timestamp: Date.now()
-            };
-            localStorage.setItem('mitai_sending_state', JSON.stringify(estado));
         }
     </script>
 @endsection

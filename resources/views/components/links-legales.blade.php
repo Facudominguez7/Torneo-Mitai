@@ -12,4 +12,9 @@
         class="underline-offset-4 transition hover:text-tema-tinta hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light/60">
         Política de privacidad
     </a>
+    <span aria-hidden="true" class="text-tema-dim/40">·</span>
+    <a href="{{ route('suscripcion.create') }}"
+        class="underline-offset-4 transition hover:text-tema-tinta hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-light/60">
+        Avisos por correo
+    </a>
 </nav>

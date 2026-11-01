@@ -17,7 +17,10 @@ use Illuminate\Support\Facades\Process;
 it('no deja hex de marca #0e4b5e/#2a6d81/#f7f280 fuera de Panel/imprimir', function () {
     $vistas = collect(File::allFiles(resource_path('views')))
         ->filter(fn ($archivo) => $archivo->getExtension() === 'php')
-        ->filter(fn ($archivo) => ! str_contains($archivo->getRealPath(), '/Panel/imprimir/'));
+        ->filter(fn ($archivo) => ! str_contains($archivo->getRealPath(), '/Panel/imprimir/'))
+        // Los correos usan estilos en línea: los clientes de correo no soportan variables CSS.
+        ->filter(fn ($archivo) => ! str_contains($archivo->getRealPath(), '/emails/')
+            && ! str_contains($archivo->getRealPath(), '/components/correo/'));
 
     $ofensores = [];
 

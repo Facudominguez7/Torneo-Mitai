@@ -36,6 +36,7 @@ return [
     'sin_indexar' => [
         'login', 'register', 'password.*', 'verification.*', 'profile.*', 'dashboard',
         'planillas-publicas.*', 'equipo-seguido', 'email.*',
+        'suscripcion.confirmar', 'suscripcion.preferencias*', 'suscripcion.baja*',
     ],
 
     /*
@@ -107,6 +108,10 @@ return [
         'terminos' => [
             'titulo' => "Términos y condiciones · Torneos Mita'í",
             'descripcion' => "Condiciones de uso del sitio de Torneos Mita'í: cuentas, información del torneo y panel de administración.",
+        ],
+        'suscripcion.create' => [
+            'titulo' => "Avisos por correo · Torneos Mita'í",
+            'descripcion' => "Recibí por correo el resumen de cada fecha, la próxima fecha y los avisos de Torneos Mita'í.",
         ],
         'privacidad' => [
             'titulo' => "Política de privacidad · Torneos Mita'í",

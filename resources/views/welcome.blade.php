@@ -89,6 +89,18 @@
             </div>
         @endif
 
+        @if (session('suscripcion') || $errors->suscripcion->any())
+            <div id="suscripcion-aviso" class="mx-auto max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
+                @if (session('suscripcion'))
+                    <x-acceso.aviso tipo="exito">{{ session('suscripcion') }}</x-acceso.aviso>
+                @else
+                    <x-acceso.aviso tipo="error">
+                        <a href="#avisos-por-correo" class="underline underline-offset-4">Revisá los datos de la suscripción.</a>
+                    </x-acceso.aviso>
+                @endif
+            </div>
+        @endif
+
         @php
             $edicionActual = $EdicionSeleccionada ?? $ultimaEdicion;
         @endphp
@@ -167,7 +179,7 @@
 
         {{-- Accesos al torneo --}}
         @if ($edicionActual)
-            <section aria-label="Accesos al torneo" class="relative mx-auto max-w-2xl px-4 pb-24 sm:px-6">
+            <section aria-label="Accesos al torneo" class="relative mx-auto max-w-2xl px-4 pb-14 sm:px-6">
                 <h2 class="tm-anim-in tm-d4 mb-4 text-xs font-bold uppercase tracking-[0.18em] text-tema-acento">
                     O explorá todo el torneo
                 </h2>
@@ -220,6 +232,17 @@
                 </section>
             </section>
         @endif
+
+        {{-- Avisos por correo: los mismos para todos, sin depender del equipo seguido --}}
+        <section id="avisos-por-correo" aria-labelledby="avisos-por-correo-titulo" class="relative mx-auto max-w-2xl scroll-mt-24 px-4 pb-24 sm:px-6">
+            <h2 id="avisos-por-correo-titulo" class="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-tema-acento">
+                Avisos por correo
+            </h2>
+            <p class="mb-5 text-sm text-tema-dim/80">El resumen de cada fecha y la próxima fecha, en tu correo.</p>
+            <div class="rounded-2xl border border-tema-linea/15 bg-[var(--tm-fila-bg)] px-5 py-6 sm:px-7">
+                <x-suscripcion.formulario />
+            </div>
+        </section>
     </main>
 
     <x-links-legales />
