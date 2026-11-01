@@ -502,11 +502,11 @@
                     @endforeach
                 </div>
                 <div class="mb-6 hidden overflow-x-auto rounded-lg border border-gray-200 sm:block" data-tabla-planilla>
-                    <table class="w-full min-w-[760px] bg-white">
+                    <table class="w-full min-w-[640px] bg-white">
                         <colgroup>
-                            <col style="width: 40%;">
-                            <col style="width: 14%;">
-                            <col style="width: 14%;">
+                            <col style="width: 36%;">
+                            <col style="width: 16%;">
+                            <col style="width: 16%;">
                             <col style="width: 8%;">
                             <col style="width: 8%;">
                             <col style="width: 8%;">
@@ -534,14 +534,10 @@
                                     data-player-dni="{{ $jugador->dni_jugador }}"
                                     data-player-number="{{ $jugador->numero_camiseta }}">
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-left align-top md:align-middle text-[11px] md:text-sm break-words">
-                                        <div class="flex w-full gap-1 md:gap-2 flex-col md:flex-row">
-                                            <input name="jugadores[{{ $jugador->dni_jugador }}][nombre]"
-                                                value="{{ $jugador->nombre }}" readonly
-                                                class="flex-1 min-w-0 w-full h-9 border-gray-200 bg-gray-100 rounded-md text-sm cursor-not-allowed">
-                                            <input name="jugadores[{{ $jugador->dni_jugador }}][apellido]"
-                                                value="{{ $jugador->apellido }}" readonly
-                                                class="flex-1 min-w-0 w-full h-9 border-gray-200 bg-gray-100 rounded-md text-sm cursor-not-allowed">
-                                        </div>
+                                        <input type="hidden" name="jugadores[{{ $jugador->dni_jugador }}][nombre]" value="{{ $jugador->nombre }}">
+                                        <input type="hidden" name="jugadores[{{ $jugador->dni_jugador }}][apellido]" value="{{ $jugador->apellido }}">
+                                        <input value="{{ trim($jugador->nombre.' '.$jugador->apellido) }}" readonly aria-label="Nombre y apellido"
+                                            class="block h-9 w-full min-w-0 cursor-not-allowed rounded-md border-gray-200 bg-gray-100 text-sm">
                                         <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-600 [&[hidden]]:hidden"
                                             data-player-save-status="{{ $jugador->dni_jugador }}"
                                             hidden>
@@ -776,11 +772,11 @@
                     @endforeach
                 </div>
                 <div class="mb-6 hidden overflow-x-auto rounded-lg border border-gray-200 sm:block" data-tabla-planilla>
-                    <table class="w-full min-w-[760px] bg-white">
+                    <table class="w-full min-w-[640px] bg-white">
                         <colgroup>
-                            <col style="width: 40%;">
-                            <col style="width: 14%;">
-                            <col style="width: 14%;">
+                            <col style="width: 36%;">
+                            <col style="width: 16%;">
+                            <col style="width: 16%;">
                             <col style="width: 8%;">
                             <col style="width: 8%;">
                             <col style="width: 8%;">
@@ -808,14 +804,10 @@
                                     data-player-dni="{{ $jugador->dni_jugador }}"
                                     data-player-number="{{ $jugador->numero_camiseta }}">
                                     <td class="border-b border-gray-200 px-2 py-1.5 text-left align-top md:align-middle text-[11px] md:text-sm break-words">
-                                        <div class="flex w-full gap-1 md:gap-2 flex-col md:flex-row">
-                                            <input name="jugadores[{{ $jugador->dni_jugador }}][nombre]"
-                                                value="{{ $jugador->nombre }}" readonly
-                                                class="flex-1 min-w-0 w-full h-9 border-gray-200 bg-gray-100 rounded-md text-sm cursor-not-allowed">
-                                            <input name="jugadores[{{ $jugador->dni_jugador }}][apellido]"
-                                                value="{{ $jugador->apellido }}" readonly
-                                                class="flex-1 min-w-0 w-full h-9 border-gray-200 bg-gray-100 rounded-md text-sm cursor-not-allowed">
-                                        </div>
+                                        <input type="hidden" name="jugadores[{{ $jugador->dni_jugador }}][nombre]" value="{{ $jugador->nombre }}">
+                                        <input type="hidden" name="jugadores[{{ $jugador->dni_jugador }}][apellido]" value="{{ $jugador->apellido }}">
+                                        <input value="{{ trim($jugador->nombre.' '.$jugador->apellido) }}" readonly aria-label="Nombre y apellido"
+                                            class="block h-9 w-full min-w-0 cursor-not-allowed rounded-md border-gray-200 bg-gray-100 text-sm">
                                         <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-600 [&[hidden]]:hidden"
                                             data-player-save-status="{{ $jugador->dni_jugador }}"
                                             hidden>
