@@ -271,24 +271,50 @@ it('renderiza la barra compacta fija de deudas y deja la franja en el flujo norm
         ->and($html)->not->toContain('min-h-screen w-full flex-col overflow-x-hidden');
 });
 
-it('ordena la tabla de jugadores con número, asistencia, goles y roja y muestra la identidad como texto', function (): void {
+it('muestra una sola tabla por equipo en el orden de la lista con asistencia y número primero', function (): void {
     jugadorFranja($this->partido, $this->local, '87654321', 'Jugadora Secreta');
     $html = $this->actingAs($this->admin)->get(urlPlanillaFranja($this->partido))->assertOk()->getContent();
 
-    preg_match('/<table class="w-full min-w-\[640px\][^"]*">.*?<\/thead>/s', $html, $encabezado);
+    preg_match('/<table class="w-full text-sm">.*?<\/thead>/s', $html, $encabezado);
     expect($encabezado)->not->toBeEmpty();
     $columnas = array_map(fn (string $th): string => trim(strip_tags($th)), preg_split('/<\/th>/', $encabezado[0], -1, PREG_SPLIT_NO_EMPTY));
-    expect(array_values(array_filter($columnas)))->toBe(['Nombre y Apellido', 'F. Nac.', 'DNI', 'N°', 'Asist.', 'Goles', 'Roja']);
+    expect(array_values(array_filter($columnas)))->toBe(['Asistencia', 'Número', 'Jugador', 'Goles', 'Roja']);
+
+    expect(substr_count($html, 'data-player-key="87654321"'))->toBe(1)
+        ->and($html)->not->toContain('sm:hidden space-y-4');
 
     preg_match('/<tr data-player-item="local"\s+data-player-key="87654321".*?<\/tr>/s', $html, $fila);
     expect($fila)->not->toBeEmpty()
-        ->and($fila[0])->toContain('Jugadora Secreta Privado')->and($fila[0])->toContain('17/03/2012')
+        ->and($fila[0])->toContain('Jugadora Secreta Privado')
+        ->and($fila[0])->toContain('DNI 87.654.321 · Nac.&nbsp;17/03/2012')
         ->and($fila[0])->toContain('<input type="hidden" name="jugadores[87654321][dni]" value="87654321">')
         ->and($fila[0])->toContain('<input type="hidden" name="jugadores[87654321][fecha_nacimiento]"')
         ->and($fila[0])->not->toContain('readonly');
-    expect(strpos($fila[0], '[numero_camiseta]'))->toBeLessThan(strpos($fila[0], '[asistencia]'))
-        ->and(strpos($fila[0], '[asistencia]'))->toBeLessThan(strpos($fila[0], '[goles]'))
+    expect(strpos($fila[0], '[asistencia]'))->toBeLessThan(strpos($fila[0], '[numero_camiseta]'))
+        ->and(strpos($fila[0], '[numero_camiseta]'))->toBeLessThan(strpos($fila[0], '[goles]'))
         ->and(strpos($fila[0], '[goles]'))->toBeLessThan(strpos($fila[0], '[tarjeta_roja]'));
+});
+
+it('ofrece un buscador por DNI o nombre para cada equipo que marca la asistencia y pasa al número', function (): void {
+    jugadorFranja($this->partido, $this->local, '87654321', 'Jugadora Secreta');
+    $html = $this->actingAs($this->admin)->get(urlPlanillaFranja($this->partido))->assertOk()->getContent();
+
+    foreach (['local', 'visitante'] as $equipo) {
+        expect($html)->toContain('data-player-search-input="'.$equipo.'" placeholder="DNI sin puntos o nombre"')
+            ->and($html)->toContain('<label for="buscar-jugador-'.$equipo.'"')
+            ->and($html)->toContain('data-player-search-eco="'.$equipo.'" aria-live="polite"')
+            ->and($html)->toContain('data-player-attendance-count="'.$equipo.'"');
+    }
+
+    expect($html)->not->toContain('data-player-filter-toggle')
+        ->and($html)->not->toContain('Elegí por cuál buscar')
+        ->and($html)->toContain("asistencia.dispatchEvent(new Event('change', { bubbles: true }))")
+        ->and($html)->toContain("sufijo === '[numero_camiseta]' && buscador")
+        ->and($html)->toContain('data-player-repeated-note')
+        ->and(substr_count($html, 'data-equipo-titulo'))->toBe(2)
+        ->and($html)->toContain("onerror=\"this.onerror=null;this.src='".asset('fotos/Logo_Mitai_SinFondo.png')."';\"")
+        ->and($html)->toContain('[&[data-search-oculto]]:!hidden')
+        ->and($html)->toContain("item.toggleAttribute('data-search-oculto', activa && !coincide)");
 });
 
 it('informa al operario los jugadores que no se pudieron guardar', function (): void {
