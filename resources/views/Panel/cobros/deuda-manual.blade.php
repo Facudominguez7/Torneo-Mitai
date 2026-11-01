@@ -50,8 +50,9 @@
                     </form>
                 @endif
                 @if ($equipo)
-                    <form method="POST" action="{{ route('cobros.deudas-manuales') }}">
+                    <form method="POST" action="{{ route('cobros.deudas-manuales') }}" x-data="{ enviando: false }" @submit="if (enviando) { $event.preventDefault() } else { enviando = true }">
                         @csrf
+                        <input type="hidden" name="clave_idempotencia" value="{{ old('clave_idempotencia', (string) \Illuminate\Support\Str::uuid()) }}">
                         <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
                         <input type="hidden" name="idEquipo" value="{{ $equipo->id }}">
                         <div class="grid gap-3 px-4 pb-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:px-6">
@@ -61,7 +62,7 @@
                         </div>
                         <div class="flex flex-wrap justify-end gap-2 border-t border-gray-200 bg-gray-50 p-4 sm:px-6">
                             <a href="{{ route('cobros.index', ['idEdicion' => $EdicionSeleccionada->id]) }}" class="inline-flex min-h-11 items-center rounded-md border border-gray-300 bg-white px-4 font-semibold text-gray-700">Cancelar</a>
-                            <button class="min-h-11 rounded-md bg-brand-navy px-4 font-semibold text-white">Cargar deuda</button>
+                            <button data-deuda-manual-enviar :disabled="enviando" :aria-busy="enviando" class="min-h-11 rounded-md bg-brand-navy px-4 font-semibold text-white disabled:cursor-wait disabled:opacity-60"><span x-show="! enviando">Cargar deuda</span><span x-show="enviando" x-cloak>Cargando…</span></button>
                         </div>
                     </form>
                 @else

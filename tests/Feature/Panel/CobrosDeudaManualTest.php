@@ -24,6 +24,7 @@ beforeEach(function (): void {
     $this->entrada = [
         'idEdicion' => $this->contexto['edicion']->id, 'idEquipo' => $this->equipo->id,
         'importe_ars' => '25000', 'fecha' => now()->subDays(5)->toDateString(), 'motivo' => 'Planilla anterior',
+        'clave_idempotencia' => '7d2c1a52-3f0b-4c8e-9a61-2b7e5d4c9f10',
     ];
 });
 
@@ -100,6 +101,43 @@ it('carga la deuda sin partido y vuelve al formulario con el aviso', function ()
     expect(HistorialCobroPlanilla::query()->where('accion', 'cargar_deuda_manual')->count())->toBe(1);
 });
 
+it('un doble envío con la misma clave carga una sola deuda', function () {
+    $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), $this->entrada)->assertSessionHasNoErrors();
+    $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), $this->entrada)
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', 'Deuda cargada: Equipo Deudor Http debe $ 25.000.');
+
+    expect(CargoPlanilla::query()->count())->toBe(1)
+        ->and(HistorialCobroPlanilla::query()->where('accion', 'cargar_deuda_manual')->count())->toBe(1);
+});
+
+it('rechaza la misma clave con otros datos sin crear otra deuda', function () {
+    $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), $this->entrada)->assertSessionHasNoErrors();
+    $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), ['importe_ars' => '9000'] + $this->entrada)
+        ->assertSessionHasErrors(['clave_idempotencia' => 'Esta carga ya se usó con otros datos. Recargá la página y volvé a cargar la deuda.']);
+
+    expect(CargoPlanilla::query()->sole()->precio_original)->toBe(25000)
+        ->and(HistorialCobroPlanilla::query()->where('accion', 'cargar_deuda_manual')->count())->toBe(1);
+});
+
+it('dos claves distintas cargan dos deudas', function () {
+    $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), $this->entrada)->assertSessionHasNoErrors();
+    $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), ['clave_idempotencia' => '0b9f4e2d-6a71-4c3b-8d15-9e2f7a6c1b40'] + $this->entrada)
+        ->assertSessionHasNoErrors();
+
+    expect(CargoPlanilla::query()->count())->toBe(2);
+});
+
+it('el formulario lleva una clave de reintento y bloquea el botón al enviar', function () {
+    $html = $this->actingAs($this->admin)
+        ->get(route('cobros.deuda-manual', ['idEdicion' => $this->contexto['edicion']->id, 'idEquipo' => $this->equipo->id]))
+        ->assertOk()->getContent();
+
+    expect($html)->toMatch('/name="clave_idempotencia" value="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"/')
+        ->and($html)->toContain('data-deuda-manual-enviar')
+        ->and($html)->toContain('Cargando…');
+});
+
 it('acepta el importe con separador de miles y el motivo vacío', function () {
     $this->actingAs($this->admin)->post(route('cobros.deudas-manuales'), ['importe_ars' => '$ 30.000', 'motivo' => ''] + $this->entrada)
         ->assertSessionHasNoErrors();
@@ -134,6 +172,8 @@ it('valida los campos del formulario', function (array $cambios, string $campo, 
     'fecha inválida' => [['fecha' => '31/10/2026'], 'fecha', 'La fecha no es válida.'],
     'fecha futura' => [['fecha' => '2999-01-01'], 'fecha', 'La fecha no puede ser posterior a hoy.'],
     'motivo largo' => [['motivo' => str_repeat('a', 256)], 'motivo', 'El motivo puede tener hasta 255 caracteres.'],
+    'sin clave de reintento' => [['clave_idempotencia' => ''], 'clave_idempotencia', 'Recargá la página y volvé a cargar la deuda.'],
+    'clave de reintento inválida' => [['clave_idempotencia' => 'abc'], 'clave_idempotencia', 'La clave de reintento no es válida.'],
 ]);
 
 it('solo el administrador accede a la carga manual', function (string $rol) {

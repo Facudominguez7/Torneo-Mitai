@@ -41,6 +41,7 @@ class DeudaManualRequest extends FormRequest
             'importe_ars' => ['required', 'integer', 'min:1', 'max:2147483647'],
             'fecha' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'motivo' => ['nullable', 'string', 'max:255'],
+            'clave_idempotencia' => ['required', 'uuid'],
         ];
     }
 
@@ -59,6 +60,8 @@ class DeudaManualRequest extends FormRequest
             'fecha.date_format' => 'La fecha no es válida.',
             'fecha.before_or_equal' => 'La fecha no puede ser posterior a hoy.',
             'motivo.max' => 'El motivo puede tener hasta 255 caracteres.',
+            'clave_idempotencia.required' => 'Recargá la página y volvé a cargar la deuda.',
+            'clave_idempotencia.uuid' => 'La clave de reintento no es válida.',
         ];
     }
 }

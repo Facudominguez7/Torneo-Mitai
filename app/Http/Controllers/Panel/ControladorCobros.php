@@ -203,6 +203,7 @@ class ControladorCobros extends Controller
         $cargo = $deudas->cargarDeuda(
             $request->user(), (int) $datos['idEdicion'], (int) $datos['idEquipo'],
             (int) $datos['importe_ars'], $datos['fecha'], $datos['motivo'] ?? null,
+            $datos['clave_idempotencia'],
         );
 
         return redirect()->route('cobros.deuda-manual', ['idEdicion' => $datos['idEdicion'], 'idEquipo' => $datos['idEquipo']])
