@@ -98,13 +98,14 @@ it('permite registrar el pago de cada equipo desde la planilla del partido', fun
         ->and(html_entity_decode($boton))->toContain('"idEquipo":'.$this->local->id);
 });
 
-it('oculta el cobro de la planilla cuando el partido no tiene cargos', function (): void {
+it('muestra la franja aunque el partido no tenga cargos propios', function (): void {
     $otro = Partido::create(crearDatosPartidoCargos($this->contexto, $this->visitante, $this->local));
 
     $this->actingAs($this->admin)->get(rutaPlanillaAccesos($otro))
         ->assertOk()
-        ->assertDontSee('Cobro de planilla')
-        ->assertDontSee('id="cobros-modal"', false);
+        ->assertSee('Cobro de planilla y deudas')
+        ->assertSee($this->local->nombre)->assertSee($this->visitante->nombre)
+        ->assertSee('data-cobros-seccion', false);
 });
 
 it('imprime los cobros en la misma página sin abrir otra pestaña', function (): void {
@@ -139,7 +140,9 @@ it('pide importes de efectivo y mercado pago sin ofrecer transferencia', functio
 it('entrega el estado de cobro del partido para refrescar la planilla sin recargarla', function (): void {
     $parametros = ['idEdicion' => $this->contexto['edicion']->id, 'tipo' => CargoPlanilla::TIPO_PARTIDO, 'partido' => $this->partido->id];
     $planilla = $this->actingAs($this->admin)->get(rutaPlanillaAccesos($this->partido))->assertOk();
-    $planilla->assertSee('data-cobros-seccion', false)->assertSee(e(route('cobros.partido', $parametros)), false);
+    $planilla->assertSee('data-cobros-seccion', false)->assertSee(e(route('planilla.deudas', [
+        'idEdicion' => $this->contexto['edicion']->id, 'tipoPartido' => 'partido', 'partidoId' => $this->partido->id,
+    ])), false);
 
     $this->get(route('cobros.partido', $parametros))->assertOk()
         ->assertSee('data-cobros-grilla', false)

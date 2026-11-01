@@ -93,7 +93,7 @@
         </div>
         <div id="buscador-jugador-contenido" aria-live="polite" class="px-5 pb-5 pt-4"></div>
     </dialog>
-    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-6 pt-4 sm:pt-6 lg:pl-64">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-clip pb-6 pt-4 sm:pt-6 lg:pl-64">
         @php
             $idEdicionContexto = $idEdicionActual;
 

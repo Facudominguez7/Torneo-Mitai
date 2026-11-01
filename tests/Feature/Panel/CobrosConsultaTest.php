@@ -45,6 +45,32 @@ it('busca por nombre vigente o histórico y cuenta exenciones sin convertirlas e
     expect(app(ConsultaCobrosService::class)->consultar(['idEdicion' => $this->contexto['edicion']->id, 'estado' => 'todos', 'buscar' => 'inexistente'])['cargos'])->toHaveCount(0);
 });
 
+it('incluye la fecha ISO del snapshot en los reportes y filtros de cobros', function (): void {
+    $partido = Partido::create(crearDatosPartidoCargos($this->contexto, $this->equipo, crearEquipoCargos($this->contexto, 'Rival snapshot'), [
+        'horario_datetime' => null,
+    ]));
+    $cargo = CargoPlanilla::create([
+        'tipo' => CargoPlanilla::TIPO_PARTIDO, 'parent_type' => Partido::class, 'parent_id' => $partido->id,
+        'idEquipo' => $this->equipo->id, 'idEdicion' => $this->contexto['edicion']->id,
+        'idCategoria' => $this->contexto['categoria']->id, 'precio_original' => 12345,
+        'snapshot' => ['equipo' => ['nombre' => 'Equipo snapshot ISO'], 'fecha_partido' => '2026-06-14T10:00:00'],
+    ]);
+    $this->actingAs($this->admin);
+    $filtros = ['idEdicion' => $this->contexto['edicion']->id, 'estado' => 'deudores',
+        'periodo' => 'hasta_hoy', 'fecha' => '2026-06-14'];
+    foreach (['cobros.index', 'cobros.imprimir'] as $ruta) {
+        $this->get(route($ruta, $filtros))->assertOk()->assertSee('Equipo snapshot ISO')
+            ->assertViewHas('cargos', fn ($cargos): bool => count($cargos) === 1
+                && $cargos->first()['id'] === $cargo->id && $cargos->first()['fecha'] === '2026-06-14 10:00');
+        $this->get(route($ruta, array_replace($filtros, ['fecha' => '2026-06-15'])))
+            ->assertOk()->assertDontSee('Equipo snapshot ISO');
+    }
+    $this->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id]))
+        ->assertOk()->assertViewHas('deudores', fn ($equipos): bool => $equipos->contains(
+            fn (array $equipo): bool => $equipo['idEquipo'] === $this->equipo->id && $equipo['deuda_ars'] === 37345
+        ));
+});
+
 it('consulta deuda histórica sin crear estado financiero', function (): void {
     $resultado = app(ConsultaCobrosService::class)->consultar(['idEdicion' => $this->contexto['edicion']->id]);
     expect($resultado['resumen']['deuda_ars'])->toBe(25000)

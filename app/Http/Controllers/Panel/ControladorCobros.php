@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cobros\ConsultaRequest;
+use App\Http\Requests\Cobros\DeudaManualRequest;
 use App\Http\Requests\Cobros\OperacionRequest;
 use App\Models\AplicacionPagoPlanilla;
 use App\Models\CargoPlanilla;
@@ -12,6 +13,7 @@ use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\ExencionCobroPlanilla;
 use App\Models\Fecha;
 use App\Models\HistorialCobroPlanilla;
@@ -21,14 +23,17 @@ use App\Services\Cobros\AusenciasCobroService;
 use App\Services\Cobros\ConfiguracionCobroService;
 use App\Services\Cobros\ConsultaCobrosService;
 use App\Services\Cobros\CreditosCobroService;
+use App\Services\Cobros\DeudasManualesCobroService;
 use App\Services\Cobros\ExencionesCobroService;
 use App\Services\Cobros\PagosCobroService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -134,7 +139,7 @@ class ControladorCobros extends Controller
         })->orderByDesc('id')->get();
 
         return view('Panel.cobros.detalle', $datos + [
-            'pagos' => $pagos, 'eventos' => $eventos,
+            'pagos' => $pagos, 'eventos' => $eventos, 'idEquipo' => $equipo, 'idEdicion' => $edicion,
             'aplicaciones' => AplicacionPagoPlanilla::query()->whereIn('pago_id', $pagos->modelKeys())->get()->groupBy('pago_id'),
             'exenciones' => ExencionCobroPlanilla::query()->whereIn('cargo_id', $cargos)->get(),
             'politica' => PoliticaExencionCobroPlanilla::query()->where('idEquipo', $equipo)->where('idEdicion', $edicion)->first(),
@@ -153,6 +158,59 @@ class ControladorCobros extends Controller
             'cobrosPlanilla' => $consulta->cargosDePartidos($tipo, [(int) $partido->id])->keyBy('idEquipo'),
             'configuracionCobros' => ConfiguracionCobroPlanilla::query()->find(1),
         ]);
+    }
+
+    /**
+     * Formulario para cargar a mano una deuda de planilla sin partido.
+     * La categoría de cada equipo sale de su inscripción en la edición, porque
+     * el equipo conserva la categoría de la edición en que se creó.
+     */
+    public function deudaManual(ConsultaRequest $request): View
+    {
+        $idEdicion = $request->validated('idEdicion');
+        $buscar = trim((string) $request->query('buscar', ''));
+        $normalizar = fn (string $texto): string => Str::lower(Str::ascii($texto));
+        $opciones = EquipoEdicion::query()->where('idEdicion', $idEdicion)
+            ->with(['equipo:id,nombre', 'categoria:id,nombreCategoria'])->get()
+            ->filter(fn (EquipoEdicion $inscripcion): bool => $inscripcion->equipo !== null)
+            ->map(fn (EquipoEdicion $inscripcion): array => [
+                'id' => (int) $inscripcion->idEquipo,
+                'nombre' => $inscripcion->equipo->nombre,
+                'categoria' => $inscripcion->categoria?->nombreCategoria ?? 'Sin categoría',
+                'busqueda' => $normalizar($inscripcion->equipo->nombre),
+            ])
+            ->sortBy(fn (array $opcion): string => $opcion['busqueda'].' '.$normalizar($opcion['categoria']), SORT_NATURAL)
+            ->values()
+            ->map(fn (array $opcion): array => $opcion + [
+                'coincide' => $buscar !== '' && str_contains($opcion['busqueda'], $normalizar($buscar)),
+            ]);
+        $elegido = $opciones->firstWhere('id', (int) $request->validated('idEquipo'));
+        $equipo = $elegido ? Equipo::query()->find($elegido['id']) : null;
+
+        return view('Panel.cobros.deuda-manual', [
+            'EdicionSeleccionada' => Edicion::query()->find($idEdicion),
+            'opcionesEquipo' => $opciones,
+            'buscar' => $buscar,
+            'equipo' => $equipo,
+            'categoriaEquipo' => $elegido['categoria'] ?? null,
+            'tarifa' => ConfiguracionCobroPlanilla::query()->find(1)?->tarifa_ars,
+        ]);
+    }
+
+    public function cargarDeudaManual(DeudaManualRequest $request, DeudasManualesCobroService $deudas): RedirectResponse
+    {
+        $datos = $request->validated();
+        $cargo = $deudas->cargarDeuda(
+            $request->user(), (int) $datos['idEdicion'], (int) $datos['idEquipo'],
+            (int) $datos['importe_ars'], $datos['fecha'], $datos['motivo'] ?? null,
+            $datos['clave_idempotencia'],
+        );
+
+        return redirect()->route('cobros.deuda-manual', ['idEdicion' => $datos['idEdicion'], 'idEquipo' => $datos['idEquipo']])
+            ->with('success', sprintf(
+                'Deuda cargada: %s debe $ %s.',
+                $cargo->snapshot['equipo']['nombre'] ?? 'El equipo', number_format($cargo->precio_original, 0, ',', '.'),
+            ));
     }
 
     private function datos(ConsultaRequest $request, ConsultaCobrosService $consulta): array

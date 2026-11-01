@@ -8,6 +8,7 @@ use App\Models\CargoPlanilla;
 use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
 use App\Models\ExencionCobroPlanilla;
+use App\Models\Fecha;
 use App\Models\PagoPlanilla;
 use App\Models\PoliticaExencionCobroPlanilla;
 use Illuminate\Support\Carbon;
@@ -118,6 +119,41 @@ class ConsultaCobrosService
             ->values();
     }
 
+    /** @param array<int, int> $equipos */
+    public function deudasParaPlanilla(int $edicionId, array $equipos, ?string $fecha): array
+    {
+        $cargos = CargoPlanilla::query()->where('idEdicion', $edicionId)->whereIn('idEquipo', $equipos)
+            ->with(['parent', 'equipo', 'categoria'])->orderBy('id')->get();
+        $porId = $cargos->keyBy('id');
+        $filas = $this->filas($cargos)->where('deuda_ars', '>', 0);
+        $nombresFecha = Fecha::query()->whereIn('id', $filas->pluck('idFecha')->filter()->unique())->pluck('nombre', 'id');
+        // Datos de la franja: nombre de la fecha, cancha y si la deuda se cargó a mano.
+        $filas = $filas->map(fn (array $fila): array => $fila + [
+            'fecha_nombre' => $nombresFecha[$fila['idFecha']] ?? null,
+            'cancha' => $porId[$fila['id']]->parent?->cancha,
+            'manual' => data_get($porId[$fila['id']]->snapshot, 'origen') === 'manual',
+        ]);
+        $dia = $this->diaConocido($fecha);
+        $limite = $dia === null ? null : min($dia, today()->toDateString());
+        $inciertos = $limite === null ? $equipos : $filas->whereNull('fecha')->pluck('idEquipo')->unique()->all();
+        $deudas = $limite === null ? collect() : $filas->filter(fn (array $fila): bool => $fila['fecha'] !== null
+            && substr($fila['fecha'], 0, 10) <= $limite)->sortBy('fecha')->values();
+
+        return ['deudas' => $deudas, 'inciertos' => $inciertos];
+    }
+
+    private function diaConocido(?string $fecha): ?string
+    {
+        if ($fecha === null || ! preg_match('/^\d{4}-\d{2}-\d{2}(?:[T\s]|$)/', $fecha)) {
+            return null;
+        }
+        try {
+            return Carbon::parse($fecha)->toDateString();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function deudaCargo(int $cargoId): int
     {
         $cargos = CargoPlanilla::query()->whereKey($cargoId)->with(['parent', 'equipo', 'categoria'])->get();
@@ -145,17 +181,21 @@ class ConsultaCobrosService
                 'precio_original' => $cargo->precio_original, 'aplicado_ars' => $aplicado, 'eximido_ars' => $eximido, 'ausente' => $ausente,
             ], $cargo->id);
             $padre = $cargo->parent;
-            $fecha = $padre?->horario_datetime ?? $padre?->horario ?? data_get($cargo->snapshot, 'fecha_partido');
+            $sinPartido = $cargo->esDeudaSinPartido();
+            $fecha = $sinPartido
+                ? data_get($cargo->snapshot, 'fecha_deuda')
+                : $padre?->horario_datetime ?? $padre?->horario ?? data_get($cargo->snapshot, 'fecha_partido');
 
             return [
                 'id' => $cargo->id, 'idEquipo' => $cargo->idEquipo, 'idCategoria' => $cargo->idCategoria,
-                'tipo' => $cargo->tipo, 'partido' => $cargo->parent_id,
+                'tipo' => $cargo->tipo, 'partido' => $cargo->parent_id, 'sin_partido' => $sinPartido,
+                'motivo' => data_get($cargo->snapshot, 'motivo'),
                 'idFecha' => $padre?->idFechas ?? data_get($cargo->snapshot, 'partido.id_fecha'),
                 'nombre_vigente' => $cargo->equipo?->nombre,
                 'equipo' => data_get($cargo->snapshot, 'equipo.nombre') ?? $cargo->equipo?->nombre ?? 'Equipo eliminado',
-                'oponente' => data_get($cargo->snapshot, 'oponente.nombre', 'Sin rival histórico'),
+                'oponente' => $sinPartido ? null : data_get($cargo->snapshot, 'oponente.nombre', 'Sin rival histórico'),
                 'categoria' => data_get($cargo->snapshot, 'categoria.nombre') ?? $cargo->categoria?->nombreCategoria ?? 'Categoría eliminada',
-                'fecha' => $fecha ? Carbon::parse($fecha)->format('Y-m-d H:i') : null,
+                'fecha' => $this->diaConocido($fecha ? (string) $fecha : null) ? Carbon::parse($fecha)->format('Y-m-d H:i') : null,
                 'precio_ars' => $cargo->precio_original, 'aplicado_ars' => $aplicado,
                 'eximido_ars' => $eximido, 'deuda_ars' => $deuda,
                 'estado' => $ausente ? 'no_vino' : ($deuda > 0 ? ($aplicado > 0 ? 'parcial' : 'pendiente') : ($eximido > 0 ? 'exento' : 'pagado')),

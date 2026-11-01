@@ -1,6 +1,38 @@
 (() => {
     const modal = document.querySelector('#cobros-modal');
-    if (!modal) return;
+    if (!modal) {
+        const seccion = document.querySelector('[data-cobros-seccion]');
+        if (!seccion) return;
+        let consultando = false;
+        const refrescar = async () => {
+            if (consultando || document.visibilityState !== 'visible') return;
+            consultando = true;
+            try {
+                const respuesta = await fetch(seccion.dataset.url, { headers: { Accept: 'text/html' }, cache: 'no-store' });
+                if (!respuesta.ok || respuesta.redirected) return;
+                const plantilla = document.createElement('template');
+                plantilla.innerHTML = (await respuesta.text()).trim();
+                const grilla = plantilla.content.querySelector('[data-cobros-grilla]');
+                if (!grilla || grilla.dataset.firma === seccion.querySelector('[data-cobros-grilla]')?.dataset.firma) return;
+                const selecciones = [...seccion.querySelectorAll('[data-equipo-franja]')].map((fila) => [fila.dataset.equipoFranja, fila.querySelector('[data-deuda-selector]')?.value]);
+                seccion.replaceChildren(plantilla.content);
+                requestAnimationFrame(() => selecciones.forEach(([equipo, valor]) => {
+                    const selector = seccion.querySelector(`[data-equipo-franja="${equipo}"] [data-deuda-selector]`);
+                    if (selector && [...selector.options].some((opcion) => opcion.value === valor)) {
+                        selector.value = valor;
+                        selector.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }));
+            } catch {
+                // Se reintenta en el próximo intervalo.
+            } finally {
+                consultando = false;
+            }
+        };
+        setInterval(refrescar, 1000);
+        document.addEventListener('visibilitychange', refrescar);
+        return;
+    }
     const form = document.querySelector('#cobros-form');
     const titulo = document.querySelector('#cobros-titulo');
     const contexto = document.querySelector('#cobros-contexto');
@@ -58,7 +90,7 @@
     form.addEventListener('input', (evento) => {
         if (importes.includes(evento.target.name)) actualizarTotal();
     });
-    const firma = (raiz) => [...raiz.querySelectorAll('[data-planilla-cobro]')]
+    const firma = (raiz) => raiz.querySelector('[data-cobros-grilla]')?.dataset.firma ?? [...raiz.querySelectorAll('[data-planilla-cobro]')]
         .map((fila) => `${fila.dataset.planillaCobro}:${fila.dataset.deuda}:${fila.dataset.estado}`).join('|');
     // Reemplaza solo la grilla de cobros: el resto de la planilla y el modal abierto no se tocan.
     const refrescarSeccion = async (forzar = false) => {
@@ -74,11 +106,20 @@
             if (consulta !== ultimaConsulta || !plantilla.content.querySelector('[data-cobros-grilla]')) return;
             if (firma(plantilla.content) === firma(seccion)) return;
             const filaEnfocada = seccion.contains(document.activeElement) ? document.activeElement.closest('[data-planilla-cobro]')?.dataset.planillaCobro : null;
+            const selecciones = [...seccion.querySelectorAll('[data-equipo-franja]')].map((fila) => [fila.dataset.equipoFranja, fila.querySelector('[data-deuda-selector]')?.value]);
             seccion.replaceChildren(plantilla.content);
+            requestAnimationFrame(() => selecciones.forEach(([equipo, valor]) => {
+                const selector = seccion.querySelector(`[data-equipo-franja="${equipo}"] [data-deuda-selector]`);
+                if (selector && [...selector.options].some((opcion) => opcion.value === valor)) {
+                    selector.value = valor;
+                    selector.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }));
             if (filaEnfocada) seccion.querySelector(`[data-planilla-cobro="${filaEnfocada}"] button`)?.focus({ preventScroll: true });
             const fila = cargo ? seccion.querySelector(`[data-planilla-cobro="${cargo.id}"]`) : null;
-            if (modal.open && operacion === 'pago' && fila && !pendiente && !sinConfirmar && Number(fila.dataset.deuda) !== cargo.deuda_ars) {
-                cargo = { ...cargo, deuda_ars: Number(fila.dataset.deuda) };
+            const deudaActual = fila ? Number(fila.dataset.deuda) : 0;
+            if (modal.open && operacion === 'pago' && cargo && !pendiente && !sinConfirmar && deudaActual !== cargo.deuda_ars) {
+                cargo = { ...cargo, deuda_ars: deudaActual };
                 contexto.textContent = `Otro usuario actualizó este cobro mientras lo cargabas. Deuda actual: ${ars(cargo.deuda_ars)}.${cargo.deuda_ars === 0 ? ' Ya no queda deuda: cerrá sin registrar.' : ''}`;
             }
         } catch {
@@ -163,8 +204,8 @@
         contexto.textContent += ({
             exencion: 'Exime solo el saldo pendiente de este cargo. No devuelve pagos ni genera crédito.',
             politica: 'Solo alcanza cargos futuros de este equipo en esta edición. No elimina deuda actual.',
-            no_vino: 'El equipo no se presentó: no paga la planilla de este partido y no queda debiendo. No es una exención y se puede deshacer.',
-            deshacer_no_vino: 'Vuelve a cobrarse la planilla de este partido: el equipo queda debiendo el precio original.',
+            no_vino: 'El equipo no se presentó: no paga la planilla de este partido y no queda debiendo. En fase regular el rival gana 3 a 0 automáticamente (salvo que tampoco haya venido). No es una exención y se puede deshacer.',
+            deshacer_no_vino: 'Vuelve a cobrarse la planilla de este partido: el equipo queda debiendo el precio original. Si el partido tenía el 3 a 0 automático, se quita.',
             exencion_edicion: `${cargo?.exento ? 'El equipo ya es exento para los partidos futuros.' : 'No pagará planilla en los partidos futuros de esta edición.'} Además se exime todo lo que debe hoy. Los pagos ya registrados se conservan y no se devuelven.`,
             tarifa: 'Afecta futuras altas de todas las ediciones. No cambia cargos históricos ni activa cobros.',
             activar: 'Acción global explícita. Revisá la tarifa antes de confirmar.',
@@ -256,7 +297,8 @@
                 sinConfirmar = null;
                 sessionStorage.removeItem('cobros-pago-sin-confirmar');
             }
-            if (seccion) {
+            // "No vino" also changes the match result, so the whole planilla must reload.
+            if (seccion && !['no_vino', 'deshacer_no_vino'].includes(operacion)) {
                 document.querySelector('[data-cobros-recuperar]')?.remove();
                 pendiente = false;
                 cerrar();

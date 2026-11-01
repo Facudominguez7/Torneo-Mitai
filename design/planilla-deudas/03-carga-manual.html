@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carga manual de deuda · Cobros</title>
+<style>
+:root{--navy:#0E4B5E;--teal:#2A6D81;--teal-light:#9BD3E2;--gris-50:#f9fafb;--gris-100:#f3f4f6;--gris-200:#e5e7eb;--gris-500:#6b7280;--gris-700:#374151;--gris-900:#111827;--rojo-700:#b91c1c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--gris-100);color:var(--gris-900);font:15px/1.5 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif}
+.panel{max-width:760px;margin:0 auto;padding:24px 16px}
+h1{font-size:1.5rem;margin:0 0 16px}
+.card{background:#fff;border:1px solid var(--gris-200);border-radius:10px}
+.cuerpo{padding:20px 24px;display:grid;gap:18px}
+label,.leyenda{display:block;font-size:.9rem;font-weight:600;color:var(--gris-700);margin-bottom:4px}
+select,input{width:100%;min-height:44px;border:1px solid var(--gris-200);border-radius:8px;background:#fff;padding:8px 12px;font:inherit;color:var(--gris-900)}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--teal-light);outline-offset:2px}
+.ayuda{margin:4px 0 0;font-size:.85rem;color:var(--gris-500)}
+.partidos{display:grid;gap:8px}
+.partido{font-weight:400;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;border:1px solid var(--gris-200);border-radius:8px;padding:10px 12px;cursor:pointer}
+.partido input{width:auto;min-height:auto}
+.partido:has(input:checked){border-color:var(--navy);background:#eef6f8}
+.partido .cuando{font-weight:700}
+.partido .rival{color:var(--gris-700);font-size:.9rem}
+.partido .ya{font-size:.8rem;color:var(--gris-500)}
+.partido.bloqueado{opacity:.55;cursor:not-allowed}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pie{display:flex;justify-content:flex-end;gap:8px;padding:14px 24px;border-top:1px solid var(--gris-200);background:var(--gris-50);border-radius:0 0 10px 10px}
+.btn{min-height:44px;border-radius:8px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--gris-200);background:#fff;color:var(--gris-700)}
+.btn.primario{background:var(--navy);border-color:var(--navy);color:#fff}
+.nota{color:var(--gris-500);font-size:.85rem;margin-top:16px}
+@media (max-width:600px){.dos{grid-template-columns:1fr}.cuerpo,.pie{padding-left:16px;padding-right:16px}}
+</style>
+</head>
+<body>
+<main class="panel">
+  <h1>Cargar deuda de planilla</h1>
+  <form class="card">
+    <div class="cuerpo">
+      <div>
+        <label for="equipo">Equipo</label>
+        <select id="equipo"><option>Huracán · Categoría 2014</option></select>
+      </div>
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend class="leyenda">Partido adeudado</legend>
+        <div class="partidos">
+          <label class="partido"><input type="radio" name="partido" checked><span><span class="cuando">Fecha 2 · domingo 22/09 · 11:00</span><br><span class="rival">vs Racing · Cancha 1</span></span><span class="ya">Sin cargo</span></label>
+          <label class="partido"><input type="radio" name="partido"><span><span class="cuando">Fecha 1 · sábado 14/09 · 09:30</span><br><span class="rival">vs Independiente · Cancha 3</span></span><span class="ya">Sin cargo</span></label>
+          <label class="partido bloqueado"><input type="radio" name="partido" disabled><span><span class="cuando">Fecha 5 · sábado 12/10 · 10:30</span><br><span class="rival">vs Boca Juniors · Cancha 2</span></span><span class="ya">Ya tiene cargo</span></label>
+        </div>
+        <p class="ayuda">Se listan los partidos ya jugados del equipo en esta edición. Los que ya tienen cargo no se pueden volver a cargar.</p>
+      </fieldset>
+      <div class="dos">
+        <div>
+          <label for="importe">Importe (ARS)</label>
+          <input id="importe" inputmode="numeric" value="8000">
+          <p class="ayuda">Por defecto, la tarifa vigente.</p>
+        </div>
+        <div>
+          <label for="motivo">Motivo (opcional)</label>
+          <input id="motivo" placeholder="Ej. Planilla anterior a activar los cobros">
+        </div>
+      </div>
+    </div>
+    <div class="pie">
+      <button class="btn" type="button">Cancelar</button>
+      <button class="btn primario" type="submit">Cargar deuda</button>
+    </div>
+  </form>
+  <p class="nota">Acceso desde Cobros de planilla y desde el detalle del equipo. La deuda queda como cualquier cargo: aparece en la planilla de cada partido, se paga, se exime o se marca "no vino" igual que las demás, y queda en el historial con el administrador que la cargó.</p>
+</main>
+</body>
+</html>

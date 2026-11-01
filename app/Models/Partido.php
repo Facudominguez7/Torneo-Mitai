@@ -25,6 +25,7 @@ class Partido extends Model
         'horario_datetime',
         'cancha',
         'jugado',
+        'ganador_por_no_vino',
         'idCategoria',
         'es_interzonal',
         'goles_confirmados_at',
@@ -33,6 +34,7 @@ class Partido extends Model
 
     protected $casts = [
         'goles_confirmados_at' => 'datetime',
+        'ganador_por_no_vino' => 'integer',
     ];
 
     protected $appends = ['public_token'];

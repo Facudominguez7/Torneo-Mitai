@@ -322,11 +322,27 @@
       "prompts": 0
     },
     {
-      "id": "33853988",
+      "id": "54bc88ae",
       "created_by": "facundo",
-      "created_at": "2026-10-31T23:15:58.331564486Z",
-      "sessions": 4,
-      "memories": 40,
+      "created_at": "2026-11-01T14:43:05.45747075Z",
+      "sessions": 26,
+      "memories": 79,
+      "prompts": 0
+    },
+    {
+      "id": "e59dbc9b",
+      "created_by": "facundo",
+      "created_at": "2026-11-01T15:32:33.016049228Z",
+      "sessions": 2,
+      "memories": 9,
+      "prompts": 0
+    },
+    {
+      "id": "c99d1458",
+      "created_by": "facundo",
+      "created_at": "2026-11-01T15:48:01.986674153Z",
+      "sessions": 1,
+      "memories": 3,
       "prompts": 0
     }
   ]

@@ -72,8 +72,8 @@ it('ofrece eximir desde la planilla solo a los equipos que deben', function (): 
 
     expect($botones->all())->toBe([
         $this->cargos[5][$this->equipo->id]->id => 1,
-        $this->cargos[5][$this->rival->id]->id => 0,
-    ])->and($html)->toContain('Marcar exento');
+    ])->and($html)->toContain('Marcar exento')->toContain('Planilla actual: Pagada')
+        ->not->toContain('data-planilla-cobro="'.$this->cargos[5][$this->rival->id]->id.'"');
 });
 
 it('refresca la planilla como exenta despues de eximir el cargo', function (): void {

@@ -490,8 +490,7 @@ it('explica la aplicacion de goles arbitrales al guardar y sus restricciones', f
             'horario' => '09:00',
         ]))
         ->assertOk()
-        ->assertSeeText('Aplicación al guardar')
-        ->assertSeeText('Solo goles válidos')
+        ->assertSeeText('Aplicación al guardar · Solo goles válidos.')
         ->assertSeeText('Los goles arbitrales vinculados a jugadores presentes se aplican al guardar y actualizan sus estadísticas')
         ->assertSeeText('siempre que el equipo no tenga goles oficiales cargados')
         ->assertSeeText('Los registros sin vinculación válida quedan como inconsistencias')
@@ -574,8 +573,8 @@ it('guarda goles arbitrales, aplica los vinculados sobre la planilla oficial y m
         ]))
         ->assertOk()
         ->assertSee('Planilla arbitral', false)
-        ->assertSee('Dato oficial: 0 gol(es)', false)
-        ->assertSee('Reportado por arbitros: 3 gol(es)', false)
+        ->assertSeeText('Oficial 2 · Árbitros 3')
+        ->assertSeeText('1 inconsistencia')
         ->assertSee('Camiseta 77', false)
         ->assertSee('El número de camiseta N° 77 reportado por los árbitros no figura en la planilla oficial de este equipo. El gol no se vinculó a ningún jugador.', false);
 });
