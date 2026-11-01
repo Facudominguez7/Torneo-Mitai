@@ -162,18 +162,29 @@ class CreditosCobroService
             'aplicado_ars' => $aplicadoPorCargo[(int) $cargo->id] ?? 0,
             'eximido_ars' => $eximidoPorCargo[(int) $cargo->id] ?? 0,
             'ausente' => isset($ausentes[(int) $cargo->id]),
-            'padre_valido' => $cargo->parent !== null,
+            'padre_valido' => $cargo->esDeudaSinPartido() || $cargo->parent !== null,
             'fecha_vigente' => $this->fechaVigente($cargo, $aplicadoPorCargo[(int) $cargo->id] ?? 0, $eximidoPorCargo[(int) $cargo->id] ?? 0, isset($ausentes[(int) $cargo->id])),
         ])->all();
     }
 
-    /** Fecha vigente del deudor tomada del padre actual (horario por clase), sin snapshot ni created_at. */
+    /**
+     * Fecha vigente del deudor tomada del padre actual (horario por clase), sin
+     * snapshot ni created_at. La deuda manual sin partido usa su fecha cargada.
+     */
     private function fechaVigente(CargoPlanilla $cargo, int $aplicado, int $eximido, bool $ausente): ?string
     {
         $pendiente = (new DistribucionCreditoService)->calcularDeuda([
             'precio_original' => (int) $cargo->precio_original, 'aplicado_ars' => $aplicado, 'eximido_ars' => $eximido, 'ausente' => $ausente,
         ], (int) $cargo->id);
-        if ($cargo->parent === null || $pendiente === 0) {
+        if ($pendiente === 0) {
+            return null;
+        }
+        if ($cargo->esDeudaSinPartido()) {
+            $fecha = data_get($cargo->snapshot, 'fecha_deuda');
+
+            return is_string($fecha) && $fecha !== '' ? $fecha : null;
+        }
+        if ($cargo->parent === null) {
             return null;
         }
 
@@ -186,6 +197,9 @@ class CreditosCobroService
     private function exigirWhitelistFinanciera(Collection $cargos): void
     {
         foreach ($cargos as $cargo) {
+            if ($cargo->esDeudaSinPartido() && $cargo->parent_type === null) {
+                continue;
+            }
             $esperada = CargoPlanilla::TIPOS_FINANCIEROS[(string) $cargo->tipo] ?? null;
             if ($esperada === null || $cargo->parent_type !== $esperada) {
                 throw new RuntimeException('La cuenta registra un cargo con cobro padre fuera de la whitelist financiera.');

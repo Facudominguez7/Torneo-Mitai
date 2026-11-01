@@ -2,10 +2,8 @@
 
 namespace App\Http\Requests\Cobros;
 
-use App\Models\CargoPlanilla;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class DeudaManualRequest extends FormRequest
 {
@@ -15,12 +13,10 @@ class DeudaManualRequest extends FormRequest
     }
 
     /**
-     * El partido llega como "tipo-id" desde la lista de partidos jugados.
+     * El importe acepta "$ 25.000" con puntos de miles bien ubicados.
      */
     protected function prepareForValidation(): void
     {
-        $partido = (string) $this->input('partido', '');
-        $separador = strrpos($partido, '-');
         $importe = $this->input('importe_ars');
 
         if (is_string($importe) && preg_match('/^\s*\$?\s*(?:[0-9]+|[0-9]{1,3}(?:\.[0-9]{3})+)\s*$/D', $importe)) {
@@ -31,11 +27,7 @@ class DeudaManualRequest extends FormRequest
             $this->merge(['idEdicion' => $this->attributes->get('panel.idEdicion')]);
         }
 
-        $this->merge([
-            'tipo' => $separador === false ? null : substr($partido, 0, $separador),
-            'partido_id' => $separador === false ? null : substr($partido, $separador + 1),
-            'importe_ars' => $importe,
-        ]);
+        $this->merge(['importe_ars' => $importe]);
     }
 
     /**
@@ -46,10 +38,8 @@ class DeudaManualRequest extends FormRequest
         return [
             'idEdicion' => ['required', 'integer', 'min:1', 'exists:ediciones,id'],
             'idEquipo' => ['required', 'integer', 'min:1', 'exists:equipos,id'],
-            'partido' => ['required', 'string'],
-            'tipo' => ['required', Rule::in(array_keys(CargoPlanilla::TIPOS_FINANCIEROS))],
-            'partido_id' => ['required', 'integer', 'min:1'],
             'importe_ars' => ['required', 'integer', 'min:1', 'max:2147483647'],
+            'fecha' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'motivo' => ['nullable', 'string', 'max:255'],
         ];
     }
@@ -61,15 +51,13 @@ class DeudaManualRequest extends FormRequest
     {
         return [
             'idEquipo.required' => 'Elegí el equipo.',
-            'partido.required' => 'Elegí el partido adeudado.',
-            'tipo.required' => 'Elegí el partido adeudado.',
-            'tipo.in' => 'Elegí un partido de la lista.',
-            'partido_id.required' => 'Elegí el partido adeudado.',
-            'partido_id.integer' => 'Elegí un partido de la lista.',
             'importe_ars.required' => 'Ingresá el importe.',
             'importe_ars.integer' => 'El importe debe ser un número entero de pesos.',
             'importe_ars.min' => 'El importe debe ser mayor a 0.',
             'importe_ars.max' => 'El importe es demasiado alto.',
+            'fecha.required' => 'Ingresá la fecha de la deuda.',
+            'fecha.date_format' => 'La fecha no es válida.',
+            'fecha.before_or_equal' => 'La fecha no puede ser posterior a hoy.',
             'motivo.max' => 'El motivo puede tener hasta 255 caracteres.',
         ];
     }

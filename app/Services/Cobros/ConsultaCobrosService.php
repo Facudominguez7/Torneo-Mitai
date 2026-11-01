@@ -181,15 +181,19 @@ class ConsultaCobrosService
                 'precio_original' => $cargo->precio_original, 'aplicado_ars' => $aplicado, 'eximido_ars' => $eximido, 'ausente' => $ausente,
             ], $cargo->id);
             $padre = $cargo->parent;
-            $fecha = $padre?->horario_datetime ?? $padre?->horario ?? data_get($cargo->snapshot, 'fecha_partido');
+            $sinPartido = $cargo->esDeudaSinPartido();
+            $fecha = $sinPartido
+                ? data_get($cargo->snapshot, 'fecha_deuda')
+                : $padre?->horario_datetime ?? $padre?->horario ?? data_get($cargo->snapshot, 'fecha_partido');
 
             return [
                 'id' => $cargo->id, 'idEquipo' => $cargo->idEquipo, 'idCategoria' => $cargo->idCategoria,
-                'tipo' => $cargo->tipo, 'partido' => $cargo->parent_id,
+                'tipo' => $cargo->tipo, 'partido' => $cargo->parent_id, 'sin_partido' => $sinPartido,
+                'motivo' => data_get($cargo->snapshot, 'motivo'),
                 'idFecha' => $padre?->idFechas ?? data_get($cargo->snapshot, 'partido.id_fecha'),
                 'nombre_vigente' => $cargo->equipo?->nombre,
                 'equipo' => data_get($cargo->snapshot, 'equipo.nombre') ?? $cargo->equipo?->nombre ?? 'Equipo eliminado',
-                'oponente' => data_get($cargo->snapshot, 'oponente.nombre', 'Sin rival histórico'),
+                'oponente' => $sinPartido ? null : data_get($cargo->snapshot, 'oponente.nombre', 'Sin rival histórico'),
                 'categoria' => data_get($cargo->snapshot, 'categoria.nombre') ?? $cargo->categoria?->nombreCategoria ?? 'Categoría eliminada',
                 'fecha' => $this->diaConocido($fecha ? (string) $fecha : null) ? Carbon::parse($fecha)->format('Y-m-d H:i') : null,
                 'precio_ars' => $cargo->precio_original, 'aplicado_ars' => $aplicado,

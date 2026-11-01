@@ -38,6 +38,9 @@ class AusenciasCobroService
             return DB::transaction(function () use ($actor, $equipoId, $cargoId, $motivo): AusenciaCobroPlanilla {
                 [$actorVigente, $cargo] = $this->bloquearCargo($actor, $equipoId, $cargoId);
 
+                if ($cargo->esDeudaSinPartido()) {
+                    throw ValidationException::withMessages(['cargo' => ['Una deuda cargada a mano no tiene partido: no se puede marcar que el equipo no vino.']]);
+                }
                 if (AplicacionPagoPlanilla::query()->where('cargo_id', $cargoId)->lockForUpdate()->exists()) {
                     throw ValidationException::withMessages(['cargo' => ['El cargo ya tiene pagos: si pagó, el equipo vino.']]);
                 }

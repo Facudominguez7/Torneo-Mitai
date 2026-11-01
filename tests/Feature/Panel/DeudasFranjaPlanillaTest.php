@@ -8,6 +8,7 @@ use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
+use App\Services\Cobros\DeudasManualesCobroService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -85,6 +86,20 @@ it('muestra a admin y editor solo las deudas de los dos equipos hasta el día de
         ->toContain($this->rival->nombre)->toContain((string) $this->cargoAnterior->id)
         ->toContain('data-deuda-selector')->toContain('x-model="seleccion"')->toContain('x-show="seleccion ===');
 })->with(['admin', 'editor']);
+
+it('muestra en la franja la deuda manual sin partido con su fecha y motivo, solo desde esa fecha', function (): void {
+    $servicio = app(DeudasManualesCobroService::class);
+    $previa = $servicio->cargarDeuda($this->admin, $this->contexto['edicion']->id, $this->visitante->id, 7000, '2026-06-10', 'Planilla del torneo de verano');
+    $servicio->cargarDeuda($this->admin, $this->contexto['edicion']->id, $this->visitante->id, 6000, '2026-06-20', null);
+
+    $html = $this->actingAs($this->admin)->get(urlPlanillaFranja($this->partido))->assertOk()
+        ->assertSee('7.000')->assertDontSee('6.000')->getContent();
+
+    expect($html)->toContain('mié 10/06 · Deuda manual · $ 7.000')
+        ->toContain('Miércoles 10/06. Deuda cargada a mano: Planilla del torneo de verano.')
+        ->toContain('data-planilla-cobro="'.$previa->id.'"')
+        ->not->toContain('vs Sin rival histórico');
+});
 
 it('permite consultar la franja de una final sin mezclar ediciones', function (): void {
     $final = InstanciaFinal::create(crearDatosFinalCargos($this->contexto, $this->local, $this->visitante, ['horario' => '2026-06-15 10:00:00']));

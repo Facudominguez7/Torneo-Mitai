@@ -3,7 +3,7 @@
     @if ($cargo['deuda_ars'] > 0 && $configuracion?->activado_at)
         <button type="button" class="min-h-11 rounded bg-blue-900 px-3 py-2 text-sm text-white" data-cobro="pago" data-cargo="{{ json_encode($cargo) }}">Registrar pago</button>
         <button type="button" class="min-h-11 rounded border border-gray-300 px-3 py-2 text-sm" data-cobro="exencion" data-cargo="{{ json_encode($cargo) }}">Eximir residual</button>
-        @if ($cargo['aplicado_ars'] === 0)
+        @if ($cargo['aplicado_ars'] === 0 && ! ($cargo['sin_partido'] ?? false))
             <button type="button" class="min-h-11 rounded border border-gray-300 px-3 py-2 text-sm" data-cobro="no_vino" data-cargo="{{ json_encode($cargo) }}">No vino</button>
         @endif
     @elseif ($cargo['estado'] === 'no_vino' && $configuracion?->activado_at)

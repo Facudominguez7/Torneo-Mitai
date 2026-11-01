@@ -13,6 +13,7 @@ use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\ExencionCobroPlanilla;
 use App\Models\Fecha;
 use App\Models\HistorialCobroPlanilla;
@@ -32,6 +33,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -158,19 +160,39 @@ class ControladorCobros extends Controller
         ]);
     }
 
-    /** Formulario para cargar a mano la deuda de un partido jugado sin cargo. */
-    public function deudaManual(ConsultaRequest $request, DeudasManualesCobroService $deudas): View
+    /**
+     * Formulario para cargar a mano una deuda de planilla sin partido.
+     * La categoría de cada equipo sale de su inscripción en la edición, porque
+     * el equipo conserva la categoría de la edición en que se creó.
+     */
+    public function deudaManual(ConsultaRequest $request): View
     {
         $idEdicion = $request->validated('idEdicion');
-        $idEquipo = $request->validated('idEquipo');
-        $equipos = Equipo::query()->whereHas('ediciones', fn ($query) => $query->where('ediciones.id', $idEdicion))->orderBy('nombre')->get();
-        $equipo = $equipos->firstWhere('id', $idEquipo);
+        $buscar = trim((string) $request->query('buscar', ''));
+        $normalizar = fn (string $texto): string => Str::lower(Str::ascii($texto));
+        $opciones = EquipoEdicion::query()->where('idEdicion', $idEdicion)
+            ->with(['equipo:id,nombre', 'categoria:id,nombreCategoria'])->get()
+            ->filter(fn (EquipoEdicion $inscripcion): bool => $inscripcion->equipo !== null)
+            ->map(fn (EquipoEdicion $inscripcion): array => [
+                'id' => (int) $inscripcion->idEquipo,
+                'nombre' => $inscripcion->equipo->nombre,
+                'categoria' => $inscripcion->categoria?->nombreCategoria ?? 'Sin categoría',
+                'busqueda' => $normalizar($inscripcion->equipo->nombre),
+            ])
+            ->sortBy(fn (array $opcion): string => $opcion['busqueda'].' '.$normalizar($opcion['categoria']), SORT_NATURAL)
+            ->values()
+            ->map(fn (array $opcion): array => $opcion + [
+                'coincide' => $buscar !== '' && str_contains($opcion['busqueda'], $normalizar($buscar)),
+            ]);
+        $elegido = $opciones->firstWhere('id', (int) $request->validated('idEquipo'));
+        $equipo = $elegido ? Equipo::query()->find($elegido['id']) : null;
 
         return view('Panel.cobros.deuda-manual', [
             'EdicionSeleccionada' => Edicion::query()->find($idEdicion),
-            'equipos' => $equipos,
+            'opcionesEquipo' => $opciones,
+            'buscar' => $buscar,
             'equipo' => $equipo,
-            'partidos' => $equipo ? $deudas->partidosJugados((int) $idEdicion, (int) $equipo->id) : collect(),
+            'categoriaEquipo' => $elegido['categoria'] ?? null,
             'tarifa' => ConfiguracionCobroPlanilla::query()->find(1)?->tarifa_ars,
         ]);
     }
@@ -179,13 +201,13 @@ class ControladorCobros extends Controller
     {
         $datos = $request->validated();
         $cargo = $deudas->cargarDeuda(
-            $request->user(), $datos['tipo'], (int) $datos['partido_id'], (int) $datos['idEquipo'],
-            (int) $datos['importe_ars'], $datos['motivo'] ?? null, (int) $datos['idEdicion'],
+            $request->user(), (int) $datos['idEdicion'], (int) $datos['idEquipo'],
+            (int) $datos['importe_ars'], $datos['fecha'], $datos['motivo'] ?? null,
         );
 
         return redirect()->route('cobros.deuda-manual', ['idEdicion' => $datos['idEdicion'], 'idEquipo' => $datos['idEquipo']])
             ->with('success', sprintf(
-                'Deuda cargada: %s debe $ %s de la planilla del partido.',
+                'Deuda cargada: %s debe $ %s.',
                 $cargo->snapshot['equipo']['nombre'] ?? 'El equipo', number_format($cargo->precio_original, 0, ',', '.'),
             ));
     }

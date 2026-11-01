@@ -13,44 +13,51 @@
                 </div>
             @endif
             <div class="rounded-lg border border-gray-200 bg-white">
-                <form method="GET" action="{{ route('cobros.deuda-manual') }}" class="space-y-2 p-4 sm:px-6">
-                    <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
-                    <label for="idEquipo" class="block text-sm font-semibold text-gray-700">Equipo</label>
-                    <div class="flex flex-wrap gap-2">
-                        <select id="idEquipo" name="idEquipo" class="min-h-11 min-w-0 flex-1 rounded-md border-gray-300" required>
-                            <option value="">Elegí un equipo</option>
-                            @foreach ($equipos as $opcion)
-                                <option value="{{ $opcion->id }}" @selected((string) $equipo?->id === (string) $opcion->id)>{{ $opcion->nombre }}</option>
-                            @endforeach
-                        </select>
-                        <button class="min-h-11 rounded-md border border-gray-300 px-4 font-semibold text-gray-700">Ver partidos</button>
+                @if ($equipo)
+                    <div class="flex flex-wrap items-center justify-between gap-2 p-4 sm:px-6">
+                        <p class="text-sm text-gray-700">Equipo: <span class="font-semibold text-gray-900">{{ $equipo->nombre }} · {{ $categoriaEquipo }}</span></p>
+                        <a href="{{ route('cobros.deuda-manual', ['idEdicion' => $EdicionSeleccionada->id]) }}" class="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 font-semibold text-gray-700">Cambiar equipo</a>
                     </div>
-                </form>
+                @else
+                    <form method="GET" action="{{ route('cobros.deuda-manual') }}" class="space-y-2 p-4 sm:px-6"
+                        x-data="{
+                            q: @js($buscar),
+                            normalizar(texto) { return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); },
+                            coincide(opcion) { return this.normalizar(this.q) !== '' && opcion.dataset.nombre.includes(this.normalizar(this.q)); },
+                            visibles() { return [...this.$refs.lista.children].filter((opcion) => this.coincide(opcion)); },
+                            elegirUnico(evento) { const visibles = this.visibles(); if (visibles.length === 1) { evento.preventDefault(); visibles[0].querySelector('a').click(); } },
+                        }">
+                        <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
+                        <label for="buscar-equipo" class="block text-sm font-semibold text-gray-700">Buscar equipo</label>
+                        <div class="flex flex-wrap gap-2">
+                            <input type="search" id="buscar-equipo" name="buscar" value="{{ $buscar }}" x-model="q" @keydown.enter="elegirUnico($event)"
+                                placeholder="Nombre del equipo" autocomplete="off" autofocus
+                                class="min-h-11 min-w-0 flex-1 rounded-md border-gray-300 focus:border-brand-teal focus:ring-brand-teal">
+                            <button class="min-h-11 rounded-md border border-gray-300 px-4 font-semibold text-gray-700">Buscar</button>
+                        </div>
+                        <ul x-ref="lista" class="max-h-80 divide-y divide-gray-100 overflow-y-auto rounded-md empty:hidden">
+                            @foreach ($opcionesEquipo as $opcion)
+                                <li data-equipo-opcion="{{ $opcion['id'] }}" data-nombre="{{ $opcion['busqueda'] }}" x-show="coincide($el)"@unless ($opcion['coincide']) style="display: none"@endunless>
+                                    <a href="{{ route('cobros.deuda-manual', ['idEdicion' => $EdicionSeleccionada->id, 'idEquipo' => $opcion['id']]) }}"
+                                        class="flex min-h-11 items-center justify-between gap-3 px-3 py-2 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+                                        <span class="font-semibold text-gray-900">{{ $opcion['nombre'] }}</span>
+                                        <span class="shrink-0 text-sm text-gray-600">{{ $opcion['categoria'] }}</span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                        <p class="text-sm text-gray-600" x-show="normalizar(q) !== '' && visibles().length === 0"@unless ($buscar !== '' && $opcionesEquipo->where('coincide', true)->isEmpty()) style="display: none"@endunless>No hay equipos con ese nombre en esta edición.</p>
+                    </form>
+                @endif
                 @if ($equipo)
                     <form method="POST" action="{{ route('cobros.deudas-manuales') }}">
                         @csrf
                         <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">
                         <input type="hidden" name="idEquipo" value="{{ $equipo->id }}">
-                        <div class="grid gap-5 px-4 pb-5 sm:px-6">
-                            <fieldset>
-                                <legend class="mb-2 text-sm font-semibold text-gray-700">Partido adeudado</legend>
-                                <div class="grid gap-2">
-                                    @forelse ($partidos as $partido)
-                                        <label class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 {{ $partido['tiene_cargo'] ? 'cursor-not-allowed opacity-60' : 'cursor-pointer' }}">
-                                            <input type="radio" name="partido" value="{{ $partido['valor'] }}" @checked(old('partido') === $partido['valor']) @disabled($partido['tiene_cargo']) class="text-brand-navy focus:ring-brand-teal">
-                                            <span class="min-w-0 flex-1"><span class="font-semibold">{{ $partido['etapa'] }} · {{ $partido['fecha']->locale('es')->isoFormat('dddd DD/MM · HH:mm') }}</span><br><span class="text-sm text-gray-700">vs {{ $partido['rival'] }} · Cancha {{ $partido['cancha'] ?? 'sin asignar' }}</span></span>
-                                            <span class="text-sm text-gray-500">{{ $partido['tiene_cargo'] ? 'Ya tiene cargo' : 'Sin cargo' }}</span>
-                                        </label>
-                                    @empty
-                                        <p class="text-sm text-gray-600">No hay partidos jugados para este equipo.</p>
-                                    @endforelse
-                                </div>
-                                <p class="mt-2 text-sm text-gray-500">Se listan los partidos ya jugados del equipo en esta edición. Los que ya tienen cargo no se pueden volver a cargar.</p>
-                            </fieldset>
-                            <div class="grid gap-3 sm:grid-cols-2">
-                                <div><label for="importe_ars" class="block text-sm font-semibold text-gray-700">Importe (ARS)</label><input id="importe_ars" name="importe_ars" inputmode="numeric" value="{{ old('importe_ars', $tarifa) }}" required class="mt-1 min-h-11 w-full rounded-md border-gray-300"><p class="mt-1 text-sm text-gray-500">Por defecto, la tarifa vigente.</p></div>
-                                <div><label for="motivo" class="block text-sm font-semibold text-gray-700">Motivo (opcional)</label><input id="motivo" name="motivo" maxlength="255" value="{{ old('motivo') }}" placeholder="Ej. Planilla anterior a activar los cobros" class="mt-1 min-h-11 w-full rounded-md border-gray-300"></div>
-                            </div>
+                        <div class="grid gap-3 px-4 pb-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:px-6">
+                            <div><label for="importe_ars" class="block text-sm font-semibold text-gray-700">Importe (ARS)</label><input id="importe_ars" name="importe_ars" inputmode="numeric" value="{{ old('importe_ars', $tarifa) }}" required class="mt-1 min-h-11 w-full rounded-md border-gray-300 tabular-nums"><p class="mt-1 text-sm text-gray-500">Por defecto, la tarifa vigente.</p></div>
+                            <div><label for="fecha" class="block text-sm font-semibold text-gray-700">Fecha de la deuda</label><input id="fecha" type="date" name="fecha" value="{{ old('fecha', today()->toDateString()) }}" max="{{ today()->toDateString() }}" required class="mt-1 min-h-11 w-full rounded-md border-gray-300 tabular-nums"><p class="mt-1 text-sm text-gray-500">Por defecto, hoy. Aparece en las planillas desde esa fecha.</p></div>
+                            <div class="sm:col-span-2"><label for="motivo" class="block text-sm font-semibold text-gray-700">Motivo (opcional)</label><input id="motivo" name="motivo" maxlength="255" value="{{ old('motivo') }}" placeholder="Ej. Planilla anterior a activar los cobros" class="mt-1 min-h-11 w-full rounded-md border-gray-300"></div>
                         </div>
                         <div class="flex flex-wrap justify-end gap-2 border-t border-gray-200 bg-gray-50 p-4 sm:px-6">
                             <a href="{{ route('cobros.index', ['idEdicion' => $EdicionSeleccionada->id]) }}" class="inline-flex min-h-11 items-center rounded-md border border-gray-300 bg-white px-4 font-semibold text-gray-700">Cancelar</a>
@@ -58,10 +65,10 @@
                         </div>
                     </form>
                 @else
-                    <p class="px-4 pb-5 text-sm text-gray-600 sm:px-6">Elegí un equipo para ver sus partidos jugados.</p>
+                    <p class="px-4 pb-5 text-sm text-gray-600 sm:px-6">Buscá el equipo para cargarle una deuda.</p>
                 @endif
             </div>
-            <p class="text-sm text-gray-500">La deuda queda como cualquier cargo: se paga, se exime o se marca «no vino» y queda en el historial.</p>
+            <p class="text-sm text-gray-500">La deuda queda como cualquier planilla adeudada: se paga o se exime y queda en el historial.</p>
         @endif
     </div>
 @endsection

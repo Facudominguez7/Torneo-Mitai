@@ -35,15 +35,17 @@
                 <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                     <select id="deuda-equipo-{{ $equipoId }}" data-deuda-selector x-model="seleccion" class="min-h-10 w-full min-w-0 rounded-md border-gray-300 text-sm">
                         @foreach ($deudasEquipo as $deuda)
-                            <option value="{{ $deuda['id'] }}">{{ collect([$deuda['fecha_nombre'], $diaCorto($deuda['fecha']), 'vs '.$deuda['oponente'], $formatoArs($deuda['deuda_ars'])])->filter()->implode(' · ') }}</option>
+                            <option value="{{ $deuda['id'] }}">{{ collect([$deuda['fecha_nombre'], $diaCorto($deuda['fecha']), $deuda['sin_partido'] ? 'Deuda manual' : 'vs '.$deuda['oponente'], $formatoArs($deuda['deuda_ars'])])->filter()->implode(' · ') }}</option>
                         @endforeach
                     </select>
                     @foreach ($deudasEquipo as $deuda)
                         @php
                             $momento = \Carbon\Carbon::parse($deuda['fecha'])->locale('es');
                             $detalle = collect([
-                                ucfirst($momento->isoFormat('dddd DD/MM, HH:mm')).' hs'.(filled($deuda['cancha']) ? ', cancha '.$deuda['cancha'] : '').'.',
-                                $deuda['manual'] ? 'Cargada a mano.' : null,
+                                $deuda['sin_partido']
+                                    ? ucfirst($momento->isoFormat('dddd DD/MM')).'. Deuda cargada a mano'.(filled($deuda['motivo']) ? ': '.$deuda['motivo'] : '').'.'
+                                    : ucfirst($momento->isoFormat('dddd DD/MM, HH:mm')).' hs'.(filled($deuda['cancha']) ? ', cancha '.$deuda['cancha'] : '').'.',
+                                $deuda['manual'] && ! $deuda['sin_partido'] ? 'Cargada a mano.' : null,
                                 $deuda['aplicado_ars'] > 0 ? 'Pagó '.$formatoArs($deuda['aplicado_ars']).' de '.$formatoArs($deuda['precio_ars']).'.' : 'Sin pagos aplicados.',
                             ])->filter()->implode(' ');
                         @endphp
