@@ -56,13 +56,12 @@ class ControladorPlanillaJugador extends Controller
      * Mantener estos parámetros evita que el usuario pierda filtros al volver
      * al listado de partidos o instancias finales.
      */
-    public function mostrarPlanilla(Request $request, $partidoId, $idEdicion, $tipoPartido, $horario)
+    public function mostrarPlanilla(Request $request, $partidoId, $idEdicion, $tipoPartido, $horario = 0)
     {
-        $ediciones = Edicion::all();
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-        $horarioSeleccionado = $horario;
-        $contextoNavegacion = $this->obtenerContextoNavegacion($request);
-
+        if ($respuesta = $this->autorizarLecturaPlanilla($request)) {
+            return $respuesta;
+        }
+        abort_unless(in_array($tipoPartido, ['partido', 'instanciaFinal', 'instancia_final'], true), 404);
         // Obtener el partido o instancia final
         if (PartidoConstants::isInstanciaFinal($tipoPartido)) {
             $partido = InstanciaFinal::findOrFail($partidoId);
@@ -70,18 +69,36 @@ class ControladorPlanillaJugador extends Controller
             $partido = Partido::findOrFail($partidoId);
         }
 
+        abort_unless((int) $partido->idEdicion === (int) $idEdicion, 404);
+        if (! $request->user()->isAdmin()) {
+            ['deudas' => $deudasPlanilla, 'inciertos' => $equiposInciertos] = $this->obtenerDeudasPlanilla($partido);
+            $cobrosPlanilla = collect();
+            $configuracionCobros = null;
+
+            return response()->view('Panel.cobros.planilla-editor', compact('partido', 'tipoPartido', 'deudasPlanilla', 'equiposInciertos', 'cobrosPlanilla', 'configuracionCobros'))
+                ->header('Cache-Control', 'no-store, private');
+        }
+        $ediciones = Edicion::all();
+        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+        $horarioSeleccionado = $horario;
+        $contextoNavegacion = $this->obtenerContextoNavegacion($request);
+
         // Verificar si ya existen jugadores en la planilla (local o visitante)
         $planillaYaExiste = PlanillaJugador::where('partido_id', $partidoId)
             ->where('idEdicion', $idEdicion)
+            ->where('planilla_jugadores.partido_type', PartidoConstants::getModelClass($tipoPartido))
             ->exists();
 
         // Sincronizar planilla con Lista de Buena Fe (Altas y Bajas)
-        $this->sincronizarPlanilla($partidoId, $partido->idEquipoLocal, $idEdicion, $tipoPartido);
-        $this->sincronizarPlanilla($partidoId, $partido->idEquipoVisitante, $idEdicion, $tipoPartido);
+        if ($request->user()->isAdmin()) {
+            $this->sincronizarPlanilla($partidoId, $partido->idEquipoLocal, $idEdicion, $tipoPartido);
+            $this->sincronizarPlanilla($partidoId, $partido->idEquipoVisitante, $idEdicion, $tipoPartido);
+        }
 
         // Obtener la planilla para mostrar los jugadores locales
         $jugadoresLocalPlanilla = PlanillaJugador::where('partido_id', $partidoId)
             ->where('idEquipo', $partido->idEquipoLocal)
+            ->where('planilla_jugadores.partido_type', PartidoConstants::getModelClass($tipoPartido))
             ->where('idEdicion', $idEdicion)
             ->join('jugadores', 'planilla_jugadores.dni_jugador', '=', 'jugadores.dni')
             ->select('planilla_jugadores.*', 'jugadores.nombre', 'jugadores.apellido')
@@ -90,12 +107,15 @@ class ControladorPlanillaJugador extends Controller
         // Obtener la planilla para mostrar los jugadores visitantes
         $jugadoresVisitantePlanilla = PlanillaJugador::where('partido_id', $partidoId)
             ->where('idEquipo', $partido->idEquipoVisitante)
+            ->where('planilla_jugadores.partido_type', PartidoConstants::getModelClass($tipoPartido))
             ->where('idEdicion', $idEdicion)
             ->join('jugadores', 'planilla_jugadores.dni_jugador', '=', 'jugadores.dni')
             ->select('planilla_jugadores.*', 'jugadores.nombre', 'jugadores.apellido')
             ->get();
 
-        $this->golesArbitrosService->sincronizarVinculaciones($tipoPartido, (int) $partidoId, (int) $idEdicion);
+        if ($request->user()->isAdmin()) {
+            $this->golesArbitrosService->sincronizarVinculaciones($tipoPartido, (int) $partidoId, (int) $idEdicion);
+        }
 
         $golesArbitrosResumen = $this->golesArbitrosService->obtenerResumenPorEquipos(
             $tipoPartido,
@@ -138,9 +158,50 @@ class ControladorPlanillaJugador extends Controller
         $cobrosPlanilla = $request->user()?->isAdmin()
             ? $this->consultaCobrosService->cargosDePartidos($tipoCargo, [(int) $partido->id])->keyBy('idEquipo')
             : collect();
-        $configuracionCobros = $cobrosPlanilla->isNotEmpty() ? ConfiguracionCobroPlanilla::query()->find(1) : null;
+        $configuracionCobros = $request->user()->isAdmin() ? ConfiguracionCobroPlanilla::query()->find(1) : null;
 
-        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado', 'contextoNavegacion', 'golesArbitrosResumen', 'candidatosArbitrales', 'equipoBloqueado', 'mostrarBotonCopiarLocal', 'mostrarBotonCopiarVisitante', 'cobrosPlanilla', 'configuracionCobros', 'tipoCargo'));
+        ['deudas' => $deudasPlanilla, 'inciertos' => $equiposInciertos] = $this->obtenerDeudasPlanilla($partido);
+
+        return view('Panel.planilla.show', compact('partido', 'jugadoresLocalPlanilla', 'jugadoresVisitantePlanilla', 'ediciones', 'EdicionSeleccionada', 'tipoPartido', 'horarioSeleccionado', 'contextoNavegacion', 'golesArbitrosResumen', 'candidatosArbitrales', 'equipoBloqueado', 'mostrarBotonCopiarLocal', 'mostrarBotonCopiarVisitante', 'cobrosPlanilla', 'configuracionCobros', 'tipoCargo', 'deudasPlanilla', 'equiposInciertos'));
+    }
+
+    private function autorizarLecturaPlanilla(Request $request): ?RedirectResponse
+    {
+        abort_unless($request->user(), 404);
+        if (! $request->user()->isAdmin() && $request->user()->rol !== 'editor') {
+            return redirect('/');
+        }
+        if (! $request->user()->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
+        }
+
+        return null;
+    }
+
+    private function obtenerDeudasPlanilla(Partido|InstanciaFinal $partido): array
+    {
+        $fecha = $partido->horario_datetime ?? $partido->horario;
+
+        return $this->consultaCobrosService->deudasParaPlanilla((int) $partido->idEdicion,
+            [(int) $partido->idEquipoLocal, (int) $partido->idEquipoVisitante], $fecha ? (string) $fecha : null);
+    }
+
+    public function deudasPlanilla(Request $request, int $partidoId, int $idEdicion, string $tipoPartido)
+    {
+        if ($respuesta = $this->autorizarLecturaPlanilla($request)) {
+            return $respuesta;
+        }
+        abort_unless(in_array($tipoPartido, ['partido', 'instanciaFinal', 'instancia_final'], true), 404);
+        $modelo = PartidoConstants::isInstanciaFinal($tipoPartido) ? InstanciaFinal::class : Partido::class;
+        $partido = $modelo::query()->where('idEdicion', $idEdicion)->findOrFail($partidoId);
+        ['deudas' => $deudasPlanilla, 'inciertos' => $equiposInciertos] = $this->obtenerDeudasPlanilla($partido);
+        $tipoCargo = PartidoConstants::isInstanciaFinal($tipoPartido) ? CargoPlanilla::TIPO_INSTANCIA_FINAL : CargoPlanilla::TIPO_PARTIDO;
+        $cobrosPlanilla = $request->user()->isAdmin()
+            ? $this->consultaCobrosService->cargosDePartidos($tipoCargo, [$partidoId])->keyBy('idEquipo') : collect();
+        $configuracionCobros = $request->user()->isAdmin() ? ConfiguracionCobroPlanilla::query()->find(1) : null;
+
+        return response()->view('Panel.cobros.franja', compact('partido', 'deudasPlanilla', 'equiposInciertos', 'cobrosPlanilla', 'configuracionCobros'))
+            ->header('Cache-Control', 'no-store, private');
     }
 
     /**

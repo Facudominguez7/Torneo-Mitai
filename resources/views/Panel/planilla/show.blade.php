@@ -172,16 +172,22 @@
             </form>
         </div>
 
-        @if ($cobrosPlanilla->isNotEmpty())
-            <section class="mb-6 rounded-lg border border-gray-200 bg-white p-4" aria-labelledby="cobro-planilla-titulo">
-                <h2 id="cobro-planilla-titulo" class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Cobro de planilla</h2>
-                <div class="mt-3" data-cobros-seccion aria-live="polite"
-                    data-url="{{ route('cobros.partido', ['idEdicion' => $partido->idEdicion, 'tipo' => $tipoCargo, 'partido' => $partido->id]) }}">
-                    @include('Panel.cobros.partido')
-                </div>
+        {{-- Compact debt bar: zero-height sticky wrapper, shown on desktop once the strip scrolls out of view. --}}
+        <div class="sticky top-0 z-30 -mx-6 hidden h-0 lg:block" data-franja-resumen-ancla>
+            <div data-franja-resumen aria-hidden="true"
+                class="pointer-events-none flex flex-wrap items-center gap-x-6 gap-y-1 border-b border-gray-200 bg-white px-6 py-2 text-sm text-brand-navy opacity-0 shadow-sm transition-opacity duration-150 motion-reduce:transition-none">
+            </div>
+        </div>
+        <section class="-mx-6 mb-6 border-y border-gray-200 bg-white" aria-labelledby="cobro-planilla-titulo" data-franja-deudas>
+            <h2 id="cobro-planilla-titulo" class="sr-only">Cobro de planilla y deudas</h2>
+            <div data-cobros-seccion aria-live="polite"
+                data-url="{{ route('planilla.deudas', ['idEdicion' => $partido->idEdicion, 'tipoPartido' => $tipoPartido, 'partidoId' => $partido->id]) }}">
+                @include('Panel.cobros.franja')
+            </div>
+            @if (auth()->user()->isAdmin())
                 @include('Panel.cobros.modal', ['configuracion' => $configuracionCobros])
-            </section>
-        @endif
+            @endif
+        </section>
 
         @if (is_null($partido->golesEquipoLocal) && is_null($partido->golesEquipoVisitante))
             <div class="mb-4">
@@ -192,20 +198,16 @@
             </div>
         @endif
 
-        <div class="mb-8 rounded-lg border border-amber-200 bg-amber-50 p-4">
-            <div class="mb-4 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+        <div class="mb-8 rounded-lg border border-gray-200 bg-gray-50 p-4" data-planilla-arbitral>
+            <div class="mb-3">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Planilla arbitral</p>
-                    <h2 class="text-lg font-semibold text-gray-900">Dato oficial vs. dato reportado por arbitros</h2>
-                    <div class="mt-2 flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Aplicación al guardar</span>
-                        <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Solo goles válidos</span>
-                    </div>
-                    <p class="mt-2 text-sm text-gray-600">Los goles arbitrales vinculados a jugadores presentes <span class="font-semibold text-gray-800">se aplican al guardar y actualizan sus estadísticas</span>, siempre que el equipo no tenga goles oficiales cargados. Los registros sin vinculación válida quedan como inconsistencias.</p>
+                    <h2 class="text-base font-bold text-gray-900">Planilla arbitral</h2>
+                    <p class="text-sm text-gray-500">Dato oficial contra lo reportado por los árbitros.</p>
+                    <p class="mt-2 text-sm text-gray-600"><span class="font-semibold text-gray-700">Aplicación al guardar · Solo goles válidos.</span> Los goles arbitrales vinculados a jugadores presentes <span class="font-semibold text-gray-800">se aplican al guardar y actualizan sus estadísticas</span>, siempre que el equipo no tenga goles oficiales cargados. Los registros sin vinculación válida quedan como inconsistencias.</p>
                 </div>
             </div>
 
-            <div class="grid gap-4 xl:grid-cols-2">
+            <div class="grid gap-3 xl:grid-cols-2">
                 @foreach ([
                     ['clave' => 'local', 'titulo' => $partido->equipoLocal->nombre, 'equipo' => $partido->idEquipoLocal, 'resumen' => $golesArbitrosResumen['local'], 'filas' => $filasArbitrosLocal, 'oficial' => $jugadoresLocalPlanilla->sum('goles'), 'candidatos' => $candidatosArbitrales['local'] ?? ['aplicables' => [], 'ignorados' => [], 'ambiguos' => []], 'bloqueo' => $equipoBloqueado['local'] ?? ['bloqueado' => false, 'detalle' => '']],
                     ['clave' => 'visitante', 'titulo' => $partido->equipoVisitante->nombre, 'equipo' => $partido->idEquipoVisitante, 'resumen' => $golesArbitrosResumen['visitante'], 'filas' => $filasArbitrosVisitante, 'oficial' => $jugadoresVisitantePlanilla->sum('goles'), 'candidatos' => $candidatosArbitrales['visitante'] ?? ['aplicables' => [], 'ignorados' => [], 'ambiguos' => []], 'bloqueo' => $equipoBloqueado['visitante'] ?? ['bloqueado' => false, 'detalle' => '']],
@@ -213,24 +215,28 @@
                     @php
                         $estadoPorReporte = [];
                         foreach ($panelArbitral['candidatos']['aplicables'] as $reporteAplicable) {
-                            $estadoPorReporte[(int) $reporteAplicable['idReporte']] = ['label' => 'Aplicable', 'clase' => 'bg-emerald-100 text-emerald-700'];
+                            $estadoPorReporte[(int) $reporteAplicable['idReporte']] = ['label' => 'Aplicable', 'clase' => 'text-gray-700'];
                         }
                         foreach ($panelArbitral['candidatos']['ignorados'] as $reporteIgnorado) {
-                            $estadoPorReporte[(int) $reporteIgnorado['idReporte']] = ['label' => 'Ignorado', 'clase' => 'bg-slate-100 text-slate-700'];
+                            $estadoPorReporte[(int) $reporteIgnorado['idReporte']] = ['label' => 'Ignorado', 'clase' => 'text-gray-500'];
                         }
                         foreach ($panelArbitral['candidatos']['ambiguos'] as $reporteAmbiguo) {
-                            $estadoPorReporte[(int) $reporteAmbiguo['idReporte']] = ['label' => 'Ambiguo', 'clase' => 'bg-amber-100 text-amber-700'];
+                            $estadoPorReporte[(int) $reporteAmbiguo['idReporte']] = ['label' => 'Ambiguo', 'clase' => 'text-gray-700'];
                         }
                     @endphp
-                    <details class="group rounded-lg border border-white bg-white shadow-sm" {{ $panelArbitral['resumen']['total_inconsistencias'] > 0 ? 'open' : '' }}>
-                        <summary class="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4 marker:hidden">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h3 class="text-base font-semibold text-gray-900">{{ $panelArbitral['titulo'] }}</h3>
-                                <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Dato oficial: {{ $panelArbitral['oficial'] }} gol(es)</span>
-                                <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Reportado por arbitros: {{ $panelArbitral['resumen']['total_reportado'] }} gol(es)</span>
-                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $panelArbitral['resumen']['total_inconsistencias'] > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">Inconsistencias: {{ $panelArbitral['resumen']['total_inconsistencias'] }}</span>
+                    <details class="group rounded-md border border-gray-200 bg-white" {{ $panelArbitral['resumen']['total_inconsistencias'] > 0 ? 'open' : '' }}>
+                        <summary class="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 p-3 marker:hidden">
+                            <div class="grid min-w-0 gap-1 text-sm text-gray-700">
+                                <h3 class="font-bold text-gray-900">{{ $panelArbitral['titulo'] }}</h3>
+                                <span>Oficial {{ $panelArbitral['oficial'] }} · Árbitros {{ $panelArbitral['resumen']['total_reportado'] }} ·
+                                    @if ($panelArbitral['resumen']['total_inconsistencias'] > 0)
+                                        <span class="font-semibold text-red-700">{{ $panelArbitral['resumen']['total_inconsistencias'] }} {{ $panelArbitral['resumen']['total_inconsistencias'] === 1 ? 'inconsistencia' : 'inconsistencias' }}</span>
+                                    @else
+                                        Sin inconsistencias
+                                    @endif
+                                </span>
                             </div>
-                            <span class="inline-flex items-center gap-2 text-sm font-semibold text-amber-700">
+                            <span class="inline-flex items-center gap-2 text-sm font-semibold text-brand-teal">
                                 <span>Ver detalle arbitral</span>
                                 <svg class="h-4 w-4 transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -242,17 +248,17 @@
                             <div class="mt-4 space-y-3">
                                 @forelse ($panelArbitral['resumen']['reportes'] as $reporteArbitral)
                                     @php
-                                        $estadoReporte = $estadoPorReporte[(int) ($reporteArbitral['id'] ?? 0)] ?? ['label' => 'Ignorado', 'clase' => 'bg-slate-100 text-slate-700'];
+                                        $estadoReporte = $estadoPorReporte[(int) ($reporteArbitral['id'] ?? 0)] ?? ['label' => 'Ignorado', 'clase' => 'text-gray-500'];
                                         if ($reporteArbitral['es_inconsistencia']) {
-                                            $estadoReporte = ['label' => 'Inconsistencia', 'clase' => 'bg-red-100 text-red-700'];
+                                            $estadoReporte = ['label' => 'Inconsistencia', 'clase' => 'text-red-700'];
                                         }
                                     @endphp
-                                    <div class="rounded-md border px-3 py-2 {{ $reporteArbitral['es_inconsistencia'] ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50' }}">
+                                    <div class="rounded-md border px-3 py-2 {{ $reporteArbitral['es_inconsistencia'] ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white' }}">
                                         <div class="flex flex-wrap items-center justify-between gap-2">
                                             <div class="text-sm font-semibold text-gray-900">
                                                 Camiseta {{ $reporteArbitral['numero_camiseta'] ?? '-' }} · {{ $reporteArbitral['goles_reportados'] }} gol(es)
                                             </div>
-                                            <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold {{ $estadoReporte['clase'] }}">
+                                            <span class="text-xs font-semibold {{ $estadoReporte['clase'] }}">
                                                 {{ $estadoReporte['label'] }}
                                             </span>
                                         </div>
@@ -289,7 +295,7 @@
                                 <input type="hidden" name="horario_filtro" value="{{ $contextoNavegacion['horario_filtro'] ?? request('horario_filtro') }}">
 
                                 <div class="grid gap-2">
-                                    <div class="grid grid-cols-2 gap-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                    <div class="grid grid-cols-2 gap-2 px-2 text-xs font-semibold text-gray-700">
                                         <span>Camiseta reportada</span>
                                         <span>Goles reportados</span>
                                     </div>
@@ -303,12 +309,12 @@
                                 </div>
 
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <button type="button" @click="filas.push({ numero_camiseta: '', goles_reportados: '' })" class="inline-flex items-center justify-center rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">
+                                    <button type="button" @click="filas.push({ numero_camiseta: '', goles_reportados: '' })" class="inline-flex min-h-10 items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
                                         Agregar línea
                                     </button>
 
                                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                        <button type="submit" class="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">
+                                        <button type="submit" class="min-h-10 rounded-md bg-brand-navy px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-navy-deep">
                                             Guardar y aplicar goles válidos
                                         </button>
                                     </div>
@@ -495,8 +501,8 @@
                         </div>
                     @endforeach
                 </div>
-                <div class="hidden sm:block overflow-x-auto">
-                    <table class="w-full min-w-[900px] bg-white border border-gray-200 mb-6">
+                <div class="mb-6 hidden overflow-x-auto rounded-lg border border-gray-200 sm:block" data-tabla-planilla>
+                    <table class="w-full min-w-[900px] bg-white">
                         <colgroup>
                             <col style="width: 35%;">
                             <col style="width: 15%;">
@@ -508,13 +514,13 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th class="px-2 py-2 border-b text-left text-xs font-semibold">Nombre y Apellido</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">F. Nac.</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">DNI</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">N°</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">Goles</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">Asist.</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">Roja</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Nombre y Apellido</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">F. Nac.</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">DNI</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">N°</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Goles</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Asist.</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Roja</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -527,7 +533,7 @@
                                     data-player-lastname="{{ $jugador->apellido }}"
                                     data-player-dni="{{ $jugador->dni_jugador }}"
                                     data-player-number="{{ $jugador->numero_camiseta }}">
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-left align-top md:align-middle text-[11px] md:text-sm break-words">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-left align-top md:align-middle text-[11px] md:text-sm break-words">
                                         <div class="flex w-full gap-1 md:gap-2 flex-col md:flex-row">
                                             <input name="jugadores[{{ $jugador->dni_jugador }}][nombre]"
                                                 value="{{ $jugador->nombre }}" readonly
@@ -550,33 +556,33 @@
                                             </button>
                                         </div>
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="date" name="jugadores[{{ $jugador->dni_jugador }}][fecha_nacimiento]"
                                             value="{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('Y-m-d') }}" readonly
                                             class="border-gray-300 bg-gray-100 rounded-md shadow-sm w-full min-w-0 h-9 text-xs md:text-sm cursor-not-allowed">
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input name="jugadores[{{ $jugador->dni_jugador }}][dni]"
                                             value="{{ $jugador->dni_jugador }}" readonly
                                             class="w-full min-w-0 h-9 border-gray-300 bg-gray-100 rounded-md shadow-sm text-xs md:text-sm cursor-not-allowed">
                                         <input type="hidden" name="jugadores[{{ $jugador->dni_jugador }}][dni_actual]"
                                             value="{{ $jugador->dni_jugador }}">
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][numero_camiseta]"
                                             value="{{ $jugador->numero_camiseta }}"
-                                            class="w-full min-w-0 h-9 border-gray-300 rounded-md shadow-sm text-center text-xs md:text-sm">
+                                            class="w-full min-w-0 h-9 border-gray-300 rounded-md text-center text-xs tabular-nums md:text-sm">
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][goles]"
-                                            value="{{ $jugador->goles }}" min="0" class="w-full min-w-0 h-9 border-gray-300 rounded-md shadow-sm text-center text-xs md:text-sm">
+                                            value="{{ $jugador->goles }}" min="0" class="w-full min-w-0 h-9 border-gray-300 rounded-md text-center text-xs tabular-nums md:text-sm">
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle">
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][asistencia]"
                                             {{ $jugador->asistio ? 'checked' : '' }}
                                             class="h-4 w-4 text-blue-600 border-gray-300 rounded">
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle {{ $jugador->tarjeta_roja ? 'bg-red-50' : '' }}">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle {{ $jugador->tarjeta_roja ? 'bg-red-50' : '' }}">
 
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][tarjeta_roja]"
                                             {{ $jugador->tarjeta_roja ? 'checked' : '' }}
@@ -768,8 +774,8 @@
                         </div>
                     @endforeach
                 </div>
-                <div class="hidden sm:block overflow-x-auto">
-                    <table class="w-full min-w-[900px] bg-white border border-gray-200 mb-6">
+                <div class="mb-6 hidden overflow-x-auto rounded-lg border border-gray-200 sm:block" data-tabla-planilla>
+                    <table class="w-full min-w-[900px] bg-white">
                         <colgroup>
                             <col style="width: 35%;">
                             <col style="width: 15%;">
@@ -781,13 +787,13 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th class="px-2 py-2 border-b text-left text-xs font-semibold">Nombre y Apellido</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">F. Nac.</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">DNI</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">N°</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">Goles</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">Asist.</th>
-                                <th class="px-2 py-2 border-b text-xs font-semibold">Roja</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Nombre y Apellido</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">F. Nac.</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">DNI</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">N°</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Goles</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Asist.</th>
+                                <th class="border-b border-gray-200 px-2 py-2.5 text-left text-xs font-semibold text-gray-700">Roja</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -800,7 +806,7 @@
                                     data-player-lastname="{{ $jugador->apellido }}"
                                     data-player-dni="{{ $jugador->dni_jugador }}"
                                     data-player-number="{{ $jugador->numero_camiseta }}">
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-left align-top md:align-middle text-[11px] md:text-sm break-words">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-left align-top md:align-middle text-[11px] md:text-sm break-words">
                                         <div class="flex w-full gap-1 md:gap-2 flex-col md:flex-row">
                                             <input name="jugadores[{{ $jugador->dni_jugador }}][nombre]"
                                                 value="{{ $jugador->nombre }}" readonly
@@ -823,33 +829,33 @@
                                             </button>
                                         </div>
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="date" name="jugadores[{{ $jugador->dni_jugador }}][fecha_nacimiento]"
                                             value="{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('Y-m-d') }}" readonly
                                             class="border-gray-300 bg-gray-100 rounded-md shadow-sm w-full min-w-0 h-9 text-xs md:text-sm cursor-not-allowed">
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input name="jugadores[{{ $jugador->dni_jugador }}][dni]"
                                             value="{{ $jugador->dni_jugador }}" readonly
                                             class="w-full min-w-0 h-9 border-gray-300 bg-gray-100 rounded-md shadow-sm text-xs md:text-sm cursor-not-allowed">
                                         <input type="hidden" name="jugadores[{{ $jugador->dni_jugador }}][dni_actual]"
                                             value="{{ $jugador->dni_jugador }}">
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][numero_camiseta]"
                                             value="{{ $jugador->numero_camiseta }}"
-                                            class="w-full min-w-0 h-9 border-gray-300 rounded-md shadow-sm text-center text-xs md:text-sm">
+                                            class="w-full min-w-0 h-9 border-gray-300 rounded-md text-center text-xs tabular-nums md:text-sm">
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle text-[11px] md:text-sm">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle text-[11px] md:text-sm">
                                         <input type="number" name="jugadores[{{ $jugador->dni_jugador }}][goles]"
-                                            value="{{ $jugador->goles }}" min="0" class="w-full min-w-0 h-9 border-gray-300 rounded-md shadow-sm text-center text-xs md:text-sm">
+                                            value="{{ $jugador->goles }}" min="0" class="w-full min-w-0 h-9 border-gray-300 rounded-md text-center text-xs tabular-nums md:text-sm">
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle">
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][asistencia]"
                                             {{ $jugador->asistio ? 'checked' : '' }}
                                             class="h-4 w-4 text-blue-600 border-gray-300 rounded">
                                     </td>
-                                    <td class="px-2 py-1 md:px-3 md:py-2 border-b text-center align-top md:align-middle {{ $jugador->tarjeta_roja ? 'bg-red-50' : '' }}">
+                                    <td class="border-b border-gray-200 px-2 py-1.5 text-center align-top md:align-middle {{ $jugador->tarjeta_roja ? 'bg-red-50' : '' }}">
                                         <input type="checkbox" name="jugadores[{{ $jugador->dni_jugador }}][tarjeta_roja]"
                                             {{ $jugador->tarjeta_roja ? 'checked' : '' }}
                                             class="h-4 w-4 text-red-600 border-gray-300 rounded">
@@ -1713,7 +1719,37 @@
         printFrame.src = url;
     }
 </script>
-@if ($cobrosPlanilla->isNotEmpty())
-    <script>{!! file_get_contents(resource_path('js/cobros.js')) !!}</script>
-@endif
+<script>{!! file_get_contents(resource_path('js/cobros.js')) !!}</script>
+<script>
+    (() => {
+        const franja = document.querySelector('[data-franja-deudas]');
+        const resumen = document.querySelector('[data-franja-resumen]');
+        if (!franja || !resumen) return;
+
+        // Mirrors each team's name and balance from the strip, so polling keeps the bar current.
+        const actualizar = () => {
+            const filas = [...franja.querySelectorAll('[data-equipo-franja]')].map((equipo) => {
+                const fila = document.createElement('p');
+                fila.className = 'min-w-0';
+                const nombre = document.createElement('span');
+                nombre.className = 'font-semibold';
+                nombre.textContent = equipo.querySelector('h3')?.firstChild?.textContent.trim() ?? '';
+                const estado = document.createElement('span');
+                estado.className = 'text-gray-700';
+                estado.textContent = ` · ${equipo.querySelector('strong')?.textContent.trim() ?? ''}`;
+                fila.append(nombre, estado);
+                return fila;
+            });
+            resumen.replaceChildren(...filas);
+        };
+        actualizar();
+        new MutationObserver(actualizar).observe(franja, { childList: true, subtree: true, characterData: true });
+
+        new IntersectionObserver(([entrada]) => {
+            const visible = !entrada.isIntersecting && entrada.boundingClientRect.top < 0;
+            resumen.classList.toggle('opacity-0', !visible);
+            resumen.dataset.visible = visible ? 'true' : 'false';
+        }).observe(franja);
+    })();
+</script>
 @endsection

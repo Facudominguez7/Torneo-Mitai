@@ -138,7 +138,10 @@ Route::group(['prefix' => 'Panel', 'middleware' => [UserAccesPanelMiddleware::cl
     Route::get('/admin/fechas-por-categoria/{idCategoria}', [ControladorHome::class, 'fechasPorCategoria'])
         ->name('admin.fechas-por-categoria');
     Route::prefix('planilla')->group(function () {
-        Route::get('/{partidoId}/{idEdicion}/{tipoPartido}/{horario?}', [ControladorPlanillaJugador::class, 'mostrarPlanilla'])->name('planilla.show');
+        Route::get('/deudas/{partidoId}/{idEdicion}/{tipoPartido}', [ControladorPlanillaJugador::class, 'deudasPlanilla'])
+            ->withoutMiddleware([UserAccesPanelMiddleware::class, 'auth', 'verified'])->name('planilla.deudas');
+        Route::get('/{partidoId}/{idEdicion}/{tipoPartido}/{horario?}', [ControladorPlanillaJugador::class, 'mostrarPlanilla'])
+            ->withoutMiddleware([UserAccesPanelMiddleware::class, 'auth', 'verified'])->name('planilla.show');
         Route::post('/agregar-jugador', [ControladorPlanillaJugador::class, 'agregarJugador'])->name('planilla.agregarJugador');
         Route::post('/actualizar-jugador', [ControladorPlanillaJugador::class, 'actualizarJugadores'])->name('planilla.actualizarJugadores');
         Route::post('/copiar-partido-anterior', [ControladorPlanillaJugador::class, 'copiarPlanillaPartidoAnterior'])->name('planilla.copiarPartidoAnterior');

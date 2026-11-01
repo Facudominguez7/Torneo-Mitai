@@ -1,0 +1,27 @@
+{
+  "title": "Deudas de planilla en el partido",
+  "brief": "Mostrar arriba de la planilla de cada partido si los equipos deben planillas, con un select que lista cada planilla adeudada (fecha, día, rival e importe), y cargar deudas manuales atadas a un partido ya jugado.",
+  "artboards": [
+    {
+      "file": "01-franja-por-equipo.html",
+      "title": "Franja por equipo",
+      "tradeoff": "Cada equipo tiene su estado y su select, lado a lado; muy claro, pero ocupa más alto, sobre todo en el celular.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-selector-unico.html",
+      "title": "Selector único en la cabecera",
+      "tradeoff": "El estado va en la cabecera navy del partido y un solo select agrupa las deudas de los dos equipos; más compacto, pero hay que abrir el select para ver el detalle.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "03-carga-manual.html",
+      "title": "Carga manual de deuda",
+      "tradeoff": "Formulario único: equipo, partido jugado sin cargo, importe y motivo.",
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}

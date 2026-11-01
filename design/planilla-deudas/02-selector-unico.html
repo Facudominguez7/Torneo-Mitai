@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Selector único · Deudas en la planilla</title>
+<style>
+:root{--navy:#0E4B5E;--navy-deep:#082F3B;--teal:#2A6D81;--teal-light:#9BD3E2;--gold:#F7F280;--gris-100:#f3f4f6;--gris-200:#e5e7eb;--gris-500:#6b7280;--gris-700:#374151;--gris-900:#111827;--rojo-100:#fee2e2;--rojo-700:#b91c1c;--verde-100:#dcfce7;--verde-700:#15803d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--gris-100);color:var(--gris-900);font:15px/1.5 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif}
+.panel{max-width:1200px;margin:0 auto;padding:24px 16px}
+.hoja{background:#fff;border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+
+/* Cabecera navy con el marcador de deuda integrado */
+.marcador{background:var(--navy-deep);color:#fff;border-radius:10px 10px 0 0;padding:18px 24px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;position:sticky;top:0;z-index:5}
+.lado{display:grid;gap:4px}
+.lado.der{text-align:right;justify-items:end}
+.nombre{font-weight:700;font-size:1.15rem}
+.estado{display:inline-flex;gap:6px;align-items:center;font-size:.8rem;font-weight:700;border-radius:999px;padding:2px 10px;width:max-content}
+.estado.debe{background:#fff;color:var(--rojo-700)}
+.estado.ok{background:rgba(155,211,226,.18);color:var(--teal-light)}
+.centro{text-align:center;font-size:.85rem;color:rgba(255,255,255,.75)}
+.centro strong{display:block;color:var(--gold);font-size:.75rem;letter-spacing:.16em;text-transform:uppercase}
+
+.consulta{padding:14px 24px;border-bottom:1px solid var(--gris-200);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gris-500);margin-bottom:4px}
+select{width:100%;min-height:44px;border:1px solid var(--gris-200);border-radius:8px;background:#fff;padding:8px 12px;font:inherit;color:var(--gris-900)}
+select:focus-visible,button:focus-visible{outline:3px solid var(--teal-light);outline-offset:2px}
+.btn{min-height:44px;border-radius:8px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer;background:var(--navy);border:1px solid var(--navy);color:#fff}
+.resumen{grid-column:1/-1;margin:0;font-size:.88rem;color:var(--gris-700)}
+
+.cuerpo{padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.bloque{border:1px dashed var(--gris-200);border-radius:8px;padding:16px;color:var(--gris-500);min-height:320px}
+.nota{max-width:1200px;margin:16px auto 0;padding:0 16px;color:var(--gris-500);font-size:.85rem}
+
+@media (max-width:720px){
+  .marcador{grid-template-columns:1fr 1fr;padding:14px 16px}
+  .centro{grid-column:1/-1;order:-1}
+  .consulta{grid-template-columns:1fr;padding:14px 16px}
+  .btn{width:100%}
+  .cuerpo{grid-template-columns:1fr;padding:16px}
+}
+</style>
+</head>
+<body>
+<main class="panel">
+  <div class="hoja">
+    <header class="marcador" aria-label="Equipos y estado de cobro">
+      <div class="lado">
+        <span class="nombre">Huracán</span>
+        <span class="estado debe">Debe $ 24.000</span>
+      </div>
+      <div class="centro"><strong>Fecha 8</strong>Sábado 02/11 · 10:30 · Cancha 2</div>
+      <div class="lado der">
+        <span class="nombre">San Lorenzo</span>
+        <span class="estado ok">Al día</span>
+      </div>
+    </header>
+
+    <section class="consulta" aria-label="Planillas adeudadas">
+      <div>
+        <label for="deudas">Planillas adeudadas de los dos equipos</label>
+        <select id="deudas">
+          <optgroup label="Huracán (local) · 3 planillas · $ 24.000">
+            <option>Fecha 7 · sábado 26/10 · vs River Plate · $ 8.000</option>
+            <option>Fecha 5 · sábado 12/10 · vs Boca Juniors · $ 8.000</option>
+            <option>Fecha 2 · domingo 22/09 · vs Racing · $ 8.000 · carga manual</option>
+          </optgroup>
+          <optgroup label="San Lorenzo (visitante) · al día">
+            <option disabled>No debe planillas</option>
+          </optgroup>
+        </select>
+      </div>
+      <button class="btn" type="button">Registrar pago</button>
+      <p class="resumen">Huracán: Fecha 7 del sábado 26/10, sin pagos aplicados.</p>
+    </section>
+
+    <div class="cuerpo">
+      <div class="bloque">Jugadores locales (sin cambios)</div>
+      <div class="bloque">Jugadores visitantes (sin cambios)</div>
+    </div>
+  </div>
+  <p class="nota">El estado de cada equipo va dentro de la cabecera del partido, fija al hacer scroll. Un único select, agrupado por equipo, lista cada planilla adeudada con fecha, día, rival e importe.</p>
+</main>
+</body>
+</html>
