@@ -30,5 +30,5 @@
 
 Mas informacion: {{ $urlDestino }}
 
-Si no queres seguir recibiendo estos correos, podes administrar tu baja aqui:
+Si no quieres seguir recibiendo estos correos, puedes administrar tu baja aquí:
 {{ $urlBajaGeneral }}

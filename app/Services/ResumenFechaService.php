@@ -41,7 +41,7 @@ class ResumenFechaService
         $idCategoriaFinal = $idCategoria ?: (int) $fecha->idCategoria;
 
         $consulta = Partido::query()
-            ->with(['equipoLocal:id,nombre', 'equipoVisitante:id,nombre', 'grupo:id,nombre', 'categoria:id,nombreCategoria'])
+            ->with(['equipoLocal:id,nombre,foto', 'equipoVisitante:id,nombre,foto', 'grupo:id,nombre', 'categoria:id,nombreCategoria'])
             ->where('idEdicion', $idEdicion)
             ->where('idFechas', $idFecha)
             ->whereNotNull('golesEquipoLocal')
@@ -85,6 +85,8 @@ class ResumenFechaService
                 'id' => $partido->id,
                 'equipo_local' => $partido->equipoLocal->nombre ?? 'Local',
                 'equipo_visitante' => $partido->equipoVisitante->nombre ?? 'Visitante',
+                'escudo_local' => $this->urlEscudo($partido->equipoLocal->foto ?? null),
+                'escudo_visitante' => $this->urlEscudo($partido->equipoVisitante->foto ?? null),
                 'goles_local' => (int) $partido->golesEquipoLocal,
                 'goles_visitante' => (int) $partido->golesEquipoVisitante,
                 'grupo' => $this->etiquetaGrupo($partido->grupo->nombre ?? null),
@@ -116,7 +118,7 @@ class ResumenFechaService
         $idCategoriaFinal = $idCategoria ?: (int) $fecha->idCategoria;
 
         $consulta = Partido::query()
-            ->with(['equipoLocal:id,nombre', 'equipoVisitante:id,nombre', 'grupo:id,nombre'])
+            ->with(['equipoLocal:id,nombre,foto', 'equipoVisitante:id,nombre,foto', 'grupo:id,nombre'])
             ->where('idEdicion', $idEdicion)
             ->where('idFechas', $idFecha)
             ->where(fn ($partidos) => $partidos->whereNull('golesEquipoLocal')->orWhereNull('golesEquipoVisitante'));
@@ -150,11 +152,23 @@ class ResumenFechaService
                 'id' => $partido->id,
                 'equipo_local' => $partido->equipoLocal->nombre ?? 'Local',
                 'equipo_visitante' => $partido->equipoVisitante->nombre ?? 'Visitante',
+                'escudo_local' => $this->urlEscudo($partido->equipoLocal->foto ?? null),
+                'escudo_visitante' => $this->urlEscudo($partido->equipoVisitante->foto ?? null),
                 'grupo' => $this->etiquetaGrupo($partido->grupo->nombre ?? null),
                 'cancha' => $partido->cancha ? ('Cancha '.$partido->cancha) : null,
                 'horario' => $partido->horario_datetime ? $this->diaYHora(Carbon::parse($partido->horario_datetime)) : null,
             ])->values()->all(),
         ];
+    }
+
+    /** URL absoluta del escudo para los correos; sin foto se usa el logo del torneo. */
+    private function urlEscudo(?string $foto): string
+    {
+        $foto = trim((string) $foto);
+
+        return $foto === ''
+            ? url('fotos/Logo_Mitai_SinFondo.png')
+            : url('fotos/equipos/'.rawurlencode($foto));
     }
 
     /** "Sáb 07/11 10:30": el día de la semana ayuda a las familias a ubicar el partido. */

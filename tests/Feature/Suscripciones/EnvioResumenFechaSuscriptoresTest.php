@@ -143,6 +143,7 @@ it('el job crea el broadcast como borrador, guarda su id y recien despues lo man
         ])
         ->and($borrador['cuerpo'])->not->toHaveKey('send')
         ->and($borrador['cuerpo']['html'])->toContain('Halcones')->toContain('Pumitas')
+        ->toContain('src="'.url('fotos/equipos/h.png').'"')->toContain('src="'.url('fotos/equipos/p.png').'"')
         ->toContain('href="{{{contact.url_preferencias}}}"')
         ->and($borrador['cuerpo']['text'])->toContain('{{{contact.url_preferencias}}}')
         ->and(pedidoResend($historial, 1))->toMatchArray(['metodo' => 'POST', 'ruta' => '/broadcasts/broadcast-1/send']);

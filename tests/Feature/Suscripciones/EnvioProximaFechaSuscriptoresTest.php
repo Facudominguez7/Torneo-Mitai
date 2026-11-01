@@ -15,6 +15,7 @@ use App\Models\Partido;
 use App\Models\Suscriptor;
 use App\Models\User;
 use App\Services\EnvioSuscriptoresService;
+use App\Services\ResumenFechaService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
@@ -168,7 +169,8 @@ it('en produccion la manda como broadcast al topico de la proxima fecha con los 
         ->and($borrador['cuerpo']['segment_id'])->toBe('segmento-sitio')
         ->and($borrador['cuerpo']['topic_id'])->toBe('topico-proxima')
         ->and($borrador['cuerpo']['subject'])->toBe("Próxima fecha: Fecha 5 (Sub 10) - Torneos Mita'i")
-        ->and($borrador['cuerpo']['html'])->toContain('Los Teros')->toContain('Yaguaretés')->toContain('Cancha 2')->toContain('Sáb 07/11 10:30')
+        ->and($borrador['cuerpo']['html'])->toContain('Los Teros')->toContain('Yaguaretés')->toContain('Cancha 2')->toContain('>Sáb 07/11<')->toContain('>10:30<')
+        ->and($borrador['cuerpo']['html'])->toContain('src="'.url('fotos/equipos/t.png').'"')->toContain('src="'.url('fotos/equipos/y.png').'"')
         ->and($borrador['cuerpo']['html'])->toContain('href="{{{contact.url_preferencias}}}"')
         ->and($borrador['cuerpo']['text'])->toContain('Los Teros vs Yaguaretés')->toContain('{{{contact.url_preferencias}}}')
         ->and(pedidoResend($historial, 1)['ruta'])->toBe('/broadcasts/b-proxima/send')
@@ -218,4 +220,16 @@ it('si al enviarse la fecha ya no tiene partidos programados queda fallida y no 
 
     Mail::assertNothingSent();
     expect(EnvioSuscriptores::query()->sole()->estado)->toBe('fallido');
+});
+
+it('muestra el escudo de cada equipo y, si no tiene, el logo del torneo', function (): void {
+    ['fecha' => $fecha] = fechaProgramada();
+    Equipo::query()->where('nombre', 'Los Teros')->update(['foto' => 'escudo teros.png']);
+    Equipo::query()->where('nombre', 'Yaguaretés')->update(['foto' => null]);
+
+    $proxima = app(ResumenFechaService::class)->armarProximaFecha($fecha->idEdicion, $fecha->id);
+    $html = (new ProximaFechaMail($proxima, 'https://torneosmitai.test/preferencias'))->render();
+
+    expect($html)->toContain('src="'.url('fotos/equipos/escudo%20teros.png').'"')
+        ->and($html)->toContain('src="'.url('fotos/Logo_Mitai_SinFondo.png').'" alt="Yaguaretés"');
 });
