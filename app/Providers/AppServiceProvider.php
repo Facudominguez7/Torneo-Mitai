@@ -5,18 +5,30 @@ namespace App\Providers;
 use App\Listeners\LogNotificacionEnviada;
 use App\Models\Edicion;
 use App\Services\EmailDeliverabilityHeaders;
+use App\Services\EnvioSuscriptores\CanalBroadcastResend;
+use App\Services\EnvioSuscriptores\CanalEnvioSuscriptores;
+use App\Services\EnvioSuscriptores\CanalMailerLocal;
 use App\View\Composers\NavigationComposer;
 use App\View\Composers\SeoComposer;
+use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event as FacadesEvent;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View as ViewContract;
+use Resend\Client;
+use Resend\Transporters\HttpTransporter;
+use Resend\ValueObjects\ApiKey;
+use Resend\ValueObjects\Transporter\BaseUri;
+use Resend\ValueObjects\Transporter\Headers;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,7 +37,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Igual que Resend::client(), pero con timeout: un pedido colgado no frena al worker de la cola.
+        $this->app->singleton(Client::class, fn (): Client => new Client(new HttpTransporter(
+            new GuzzleClient(['timeout' => 5, 'connect_timeout' => 3]),
+            BaseUri::from(getenv('RESEND_BASE_URL') ?: 'api.resend.com'),
+            Headers::withAuthorization(ApiKey::from((string) config('services.resend.key'))),
+        )));
+
+        // Canal de los avisos masivos: Resend cuando se sincroniza con Resend; si no (local), MailHog.
+        $this->app->bind(CanalEnvioSuscriptores::class, fn ($app): CanalEnvioSuscriptores => config('suscripciones.resend.sincronizar')
+            ? $app->make(CanalBroadcastResend::class)
+            : $app->make(CanalMailerLocal::class));
     }
 
     /**
@@ -33,6 +55,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Pedidos de suscripción por IP: cada uno puede mandar un correo y el cupo diario de Resend es chico.
+        RateLimiter::for('suscripcion', fn (Request $request): array => [
+            Limit::perMinute(5)->by('suscripcion-minuto:'.$request->ip()),
+            Limit::perDay((int) config('suscripciones.pedidos_por_dia'))->by('suscripcion-dia:'.$request->ip()),
+        ]);
+
         // Registrar listener para logear emails enviados
         FacadesEvent::listen(
             NotificationSent::class,

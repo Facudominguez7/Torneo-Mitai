@@ -2,9 +2,10 @@
 
 // Feature tests de la migración de Suscriptores a los componentes x-ui.*
 // (T9a, panel-admin-redesign). Se asegura la paridad funcional con la vista
-// vieja: ids, data-* y funciones JS del envío por lotes, el formulario de
-// filtros, el reenvío de verificación por fila y el estado vacío; y las
-// piezas nuevas: tarjetas, badges y el total de cuentas sin verificar.
+// vieja: ids y funciones JS del resumen de la fecha, el formulario de filtros,
+// el reenvío de verificación por fila y el estado vacío; y las piezas nuevas:
+// tarjeta y badges. El aviso rápido y el recordatorio de verificación se
+// retiraron (ver RetiroEnviosLegadoTest).
 
 use App\Models\Categoria;
 use App\Models\Edicion;
@@ -21,7 +22,7 @@ function crearAdminSuscriptores(): User
     ]);
 }
 
-it('renderiza el encabezado y las tres tarjetas', function () {
+it('renderiza el encabezado y la tarjeta del resumen de la fecha', function () {
     $response = $this->actingAs(crearAdminSuscriptores())->get(route('notificaciones.index'));
 
     // El nombre del admin también contiene "Suscriptores": se valida el <h1>.
@@ -29,36 +30,14 @@ it('renderiza el encabezado y las tres tarjetas', function () {
         ->assertSee('>Suscriptores</h1>', false)
         ->assertSee('Familias que reciben novedades del torneo por email.')
         ->assertSee('Resumen de la fecha')
-        ->assertSee('Aviso rápido')
-        ->assertSee('Recordatorio de verificación');
+        ->assertDontSee('Aviso rápido')
+        ->assertDontSee('Recordatorio de verificación');
 });
 
-it('conserva todos los ids y funciones del envio por lotes', function () {
+it('conserva los ids y funciones del envio del resumen de la fecha', function () {
     $html = $this->actingAs(crearAdminSuscriptores())->get(route('notificaciones.index'))->getContent();
 
     foreach ([
-        'id="recordatorios-container"',
-        'id="btn-enviar-recordatorios"',
-        'iniciarEnvioRecordatorios()',
-        'id="btn-text"',
-        'id="notif-dropdown-container"',
-        'id="btn-manual"',
-        'toggleNotifDropdown()',
-        'id="notif-dropdown"',
-        'prepararNotificacionDesdeBoton(this)',
-        'abrirModalNotificacion()',
-        'id="sw-titulo"',
-        'id="sw-mensaje"',
-        'id="sw-url"',
-        'id="sw-icono"',
-        'id="btn-detener"',
-        'detenerEnvio()',
-        'id="btn-continuar"',
-        'continuarEnvioPausado()',
-        'id="progreso-recordatorios"',
-        'id="progreso-spinner"',
-        'id="progreso-texto"',
-        'id="error-debug-msg"',
         'id="resumen-fecha-controls"',
         'id="resumen-idCategoria"',
         'id="resumen-idFecha"',
@@ -67,29 +46,11 @@ it('conserva todos los ids y funciones del envio por lotes', function () {
         'actualizarContextoResumen',
         'filtrarFechasResumen',
         'ENDPOINTS',
-        'procesarLotes',
-        'pausarPorProveedor',
-        'reanudarEnvio',
-        'finalizarEnvio',
-        'mostrarProgreso',
-        'mitai_sending_state',
+        route('notificaciones.resumen-fecha.contar'),
+        route('notificaciones.resumen-fecha.suscriptores'),
     ] as $esperado) {
         expect($html)->toContain($esperado);
     }
-});
-
-it('los botones de aviso rapido conservan sus data-notif', function () {
-    $edicion = Edicion::create(['nombre' => 'Edicion Suscriptores']);
-
-    $html = $this->actingAs(crearAdminSuscriptores())->get(route('notificaciones.index'))->getContent();
-
-    preg_match_all('/<button\b[^>]*data-notif-titulo="([^"]*)"[^>]*>/s', $html, $botones);
-    expect($botones[1])->toHaveCount(2);
-
-    foreach (['data-notif-mensaje=', 'data-notif-url=', 'data-notif-icono='] as $atributo) {
-        expect(substr_count($html, $atributo))->toBe(2);
-    }
-    expect($html)->toContain('data-notif-url="'.route('fixture', ['idEdicion' => $edicion->id]).'"');
 });
 
 it('las selects del resumen de fecha vienen de la edicion vigente', function () {
@@ -165,29 +126,6 @@ it('muestra los badges de verificacion y suscripcion', function () {
 
     expect($fila('Suscripta Badge'))->toContain('Verificado')->toContain('Suscripto')->not->toContain('De baja')
         ->and($fila('De Baja Badge'))->toContain('Pendiente')->toContain('De baja')->not->toContain('Verificado');
-});
-
-it('la tarjeta de recordatorio muestra el total real de cuentas sin verificar', function () {
-    User::factory()->unverified()->count(3)->create();
-
-    $response = $this->actingAs(crearAdminSuscriptores())->get(route('notificaciones.index'));
-
-    $response->assertOk()
-        ->assertSee('3 cuentas sin verificar el email. Se envía por tandas para no superar el límite del servidor.');
-});
-
-it('la tarjeta de recordatorio usa singular con una cuenta y avisa cuando no hay ninguna', function () {
-    $admin = crearAdminSuscriptores();
-
-    $this->actingAs($admin)->get(route('notificaciones.index'))
-        ->assertOk()
-        ->assertSee('No hay cuentas sin verificar el email.');
-
-    User::factory()->unverified()->create();
-
-    $this->actingAs($admin)->get(route('notificaciones.index'))
-        ->assertOk()
-        ->assertSee('1 cuenta sin verificar el email.');
 });
 
 it('muestra el estado vacio con direccion cuando los filtros no devuelven usuarios', function () {

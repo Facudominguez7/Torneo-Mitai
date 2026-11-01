@@ -6,6 +6,8 @@ use App\Http\Controllers\ControladorHome;
 use App\Http\Controllers\ControladorNotificacionesEmail;
 use App\Http\Controllers\ControladorPlanillaPublica;
 use App\Http\Controllers\ControladorSeo;
+use App\Http\Controllers\ControladorSuscripcion;
+use App\Http\Controllers\ControladorWebhookResend;
 use App\Http\Controllers\Google\LoginController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\Panel\ControladorCampeon;
@@ -14,6 +16,7 @@ use App\Http\Controllers\Panel\ControladorCobros;
 use App\Http\Controllers\Panel\ControladorConsultaJugador;
 use App\Http\Controllers\Panel\ControladorCopa;
 use App\Http\Controllers\Panel\ControladorEdicion;
+use App\Http\Controllers\Panel\ControladorEnvioSuscriptores;
 use App\Http\Controllers\Panel\ControladorEquipo;
 use App\Http\Controllers\Panel\ControladorEquiposEdiciones;
 use App\Http\Controllers\Panel\ControladorEquiposGrupos;
@@ -69,6 +72,16 @@ Route::get('/tabla-de-vallas', [ControladorHome::class, 'tablaVallas'])->name('t
 Route::get('/instancias-finales', [ControladorHome::class, 'instanciasFinales'])->name('instancias-finales');
 Route::get('/robots.txt', [ControladorSeo::class, 'robots'])->name('robots');
 Route::get('/sitemap.xml', [ControladorSeo::class, 'sitemap'])->name('sitemap');
+// Bajas y cambios de tópicos hechos desde Resend; sin CSRF (ver bootstrap/app.php), validado con la firma.
+Route::post('/webhooks/resend', ControladorWebhookResend::class)->middleware('throttle:120,1')->name('webhooks.resend');
+
+Route::get('/suscripcion', [ControladorSuscripcion::class, 'create'])->name('suscripcion.create');
+Route::post('/suscripcion', [ControladorSuscripcion::class, 'store'])->middleware('throttle:suscripcion')->name('suscripcion.store');
+Route::get('/suscripcion/{suscriptor}/confirmar', [ControladorSuscripcion::class, 'confirmar'])->middleware(['signed', 'throttle:10,1'])->name('suscripcion.confirmar');
+Route::get('/suscripcion/{suscriptor}/preferencias', [ControladorSuscripcion::class, 'preferencias'])->middleware(['signed', 'throttle:10,1'])->name('suscripcion.preferencias');
+Route::put('/suscripcion/{suscriptor}/preferencias', [ControladorSuscripcion::class, 'actualizarPreferencias'])->middleware(['signed', 'throttle:10,1'])->name('suscripcion.preferencias.update');
+Route::get('/suscripcion/{suscriptor}/baja', [ControladorSuscripcion::class, 'confirmarBaja'])->middleware(['signed', 'throttle:10,1'])->name('suscripcion.baja.show');
+Route::post('/suscripcion/{suscriptor}/baja', [ControladorSuscripcion::class, 'baja'])->middleware(['signed', 'throttle:10,1'])->name('suscripcion.baja');
 Route::view('/terminos-y-condiciones', 'legales.terminos')->name('terminos');
 Route::view('/politica-de-privacidad', 'legales.privacidad')->name('privacidad');
 Route::get('forgot-password/{restablecer?}', [PasswordResetLinkController::class, 'create'])->name('password.request');
@@ -202,24 +215,18 @@ Route::prefix('Panel/notificaciones')->middleware([UserAccesPanelMiddleware::cla
         ->name('notificaciones.index');
     Route::post('/suscriptores/{id}/reenviar-verificacion', [ControladorNotificacionesEmail::class, 'reenviarVerificacionManual'])
         ->name('notificaciones.reenviar-verificacion');
-    Route::get('/recordatorios/contar', [ControladorNotificacionesEmail::class, 'contarUsuariosPendientes'])
-        ->name('notificaciones.contar-pendientes');
-    Route::post('/recordatorios/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteRecordatorios'])
-        ->name('notificaciones.enviar-lote');
-    Route::post('/recordatorios/log-completo', [ControladorNotificacionesEmail::class, 'logEnvioCompleto'])
-        ->name('notificaciones.log-completo');
-    Route::get('/manual/contar', [ControladorNotificacionesEmail::class, 'contarSuscriptores'])
-        ->name('notificaciones.manual.contar');
-    Route::post('/manual/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteNotificacionManual'])
-        ->name('notificaciones.manual.enviar-lote');
-    Route::get('/resumen-fecha/contar', [ControladorNotificacionesEmail::class, 'contarDestinatariosResumenFecha'])
+    Route::get('/resumen-fecha/contar', [ControladorEnvioSuscriptores::class, 'contarResumenFecha'])
         ->name('notificaciones.resumen-fecha.contar');
-    Route::post('/resumen-fecha/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResumenFecha'])
-        ->name('notificaciones.resumen-fecha.enviar-lote');
-    Route::post('/resultado/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResultado'])
-        ->name('notificaciones.resultado.enviar-lote');
-    Route::post('/resultado-instancia/enviar-lote', [ControladorNotificacionesEmail::class, 'enviarLoteResultadoInstancia'])
-        ->name('notificaciones.resultado-instancia.enviar-lote');
+    Route::post('/resumen-fecha/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarResumenFecha'])
+        ->name('notificaciones.resumen-fecha.suscriptores');
+    Route::get('/proxima-fecha/contar', [ControladorEnvioSuscriptores::class, 'contarProximaFecha'])
+        ->name('notificaciones.proxima-fecha.contar');
+    Route::post('/proxima-fecha/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarProximaFecha'])
+        ->name('notificaciones.proxima-fecha.suscriptores');
+    Route::get('/avisos/contar', [ControladorEnvioSuscriptores::class, 'contarAvisoTorneo'])
+        ->name('notificaciones.avisos.contar');
+    Route::post('/avisos/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarAvisoTorneo'])
+        ->name('notificaciones.avisos.suscriptores');
 });
 
 // Rutas para gestión de suscripción a emails de notificación

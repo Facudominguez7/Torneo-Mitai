@@ -65,6 +65,16 @@ return [
             'transport' => 'resend',
         ],
 
+        // MailHog del docker-compose local: captura los correos sin enviarlos (http://localhost:8025).
+        'mailhog' => [
+            'transport' => 'smtp',
+            'host' => env('MAILHOG_HOST', 'mailhog'),
+            'port' => env('MAILHOG_PORT', 1025),
+            'encryption' => null,
+            'username' => null,
+            'password' => null,
+        ],
+
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),

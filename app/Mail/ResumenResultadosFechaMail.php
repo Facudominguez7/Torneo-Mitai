@@ -39,26 +39,34 @@ class ResumenResultadosFechaMail extends Mailable
     }
 
     /**
-     * Construye el correo HTML con el resumen de resultados.
+     * Asunto del resumen; también lo usa el broadcast a los suscriptores.
      */
-    public function build(): self
+    public function asunto(): string
     {
         $fechaNombre = (string) ($this->resumen['fecha_nombre'] ?? 'Fecha');
         $categoriaNombre = $this->resumen['categoria_nombre'] ?? null;
         $tituloPersonalizado = trim((string) ($this->resumen['titulo_personalizado'] ?? ''));
 
         if ($tituloPersonalizado !== '') {
-            $subject = "{$tituloPersonalizado} - Torneos Mita'i";
+            $asunto = "{$tituloPersonalizado} - Torneos Mita'i";
         } else {
-            $subject = "Resultados {$fechaNombre} - Torneos Mita'i";
+            $asunto = "Resultados {$fechaNombre} - Torneos Mita'i";
             if (! empty($categoriaNombre)) {
-                $subject .= " ({$categoriaNombre})";
+                $asunto .= " ({$categoriaNombre})";
             }
         }
 
+        return $asunto;
+    }
+
+    /**
+     * Construye el correo HTML con el resumen de resultados.
+     */
+    public function build(): self
+    {
         return $this
             ->from(EmailDeliverabilityHeaders::fromAddress(), EmailDeliverabilityHeaders::fromName())
-            ->subject($subject)
+            ->subject($this->asunto())
             ->replyTo(EmailDeliverabilityHeaders::replyToAddress(), EmailDeliverabilityHeaders::replyToName())
             ->view('emails.resumen-resultados-fecha')
             ->text('emails.resumen-resultados-fecha-text')

@@ -1842,6 +1842,16 @@
 .acceso--compacto .acceso-titulo { font-size: 1.875rem; }
 
 .acceso-formulario { display: flex; flex-direction: column; padding: 1.625rem 1.25rem 1.375rem; background: linear-gradient(rgb(var(--brand-navy) / .03), rgb(var(--brand-navy) / .03)), white; }
+/* El panel de acceso siempre es claro: fija la paleta clara de los tokens de tema para los componentes tema-* que viven adentro (suscripción). */
+.acceso-formulario { --tm-tinta: var(--brand-navy-deep); --tm-dim: var(--brand-navy-deep); --tm-linea: var(--brand-navy-deep); --tm-acento: var(--brand-teal); --tm-superficie-bg: rgb(var(--brand-navy) / .055); }
+/* Avisos de la suscripción: el error tiñe las opciones como el campo tiñe su línea. El rojo sigue al tema; el panel de acceso usa siempre el claro. */
+.suscripcion-avisos { --suscripcion-error-claro: 180 35 24; --suscripcion-error: 252 165 165; }
+@media (prefers-color-scheme: light) {
+    :root:not([data-tema="oscuro"]) .suscripcion-avisos { --suscripcion-error: var(--suscripcion-error-claro); }
+}
+:root[data-tema="claro"] .suscripcion-avisos, .acceso-formulario .suscripcion-avisos { --suscripcion-error: var(--suscripcion-error-claro); }
+.suscripcion-avisos[data-invalido] label { border-color: rgb(var(--suscripcion-error) / .75); }
+.suscripcion-avisos .acceso-error { color: rgb(var(--suscripcion-error)); }
 .acceso-formulario-in { display: flex; flex: 1; flex-direction: column; gap: 1.25rem; width: 100%; max-width: 25rem; margin: 0 auto; }
 .acceso-legales { display: flex; flex-wrap: wrap; justify-content: center; gap: .25rem .875rem; margin-top: auto; padding-top: .5rem; font-size: .8125rem; color: rgb(var(--brand-navy-deep) / .6); }
 .acceso-legales a { color: rgb(var(--brand-navy-deep) / .75); }

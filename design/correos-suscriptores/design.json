@@ -1,0 +1,21 @@
+{
+  "title": "Correos a suscriptores",
+  "brief": "Rediseñar los correos a suscriptores (resumen de la fecha, próxima fecha, aviso del torneo y aviso de migración) con la identidad de la home actual en lugar de la paleta pizarra y amarillo.",
+  "artboards": [
+    {
+      "file": "01-cartelera-clara.html",
+      "title": "Cartelera clara",
+      "tradeoff": "La más fiel a la home y la más legible en cualquier cliente; es la menos llamativa en la bandeja."
+    },
+    {
+      "file": "02-noche-de-cancha.html",
+      "title": "Noche de cancha",
+      "tradeoff": "La más reconocible y con el dorado mejor usado; algunos clientes (Outlook, Gmail en modo oscuro) pueden reinterpretar fondos oscuros."
+    },
+    {
+      "file": "03-franja-de-marca.html",
+      "title": "Franja de marca",
+      "tradeoff": "Combina presencia de marca arriba con lectura clara abajo; la franja con degradé cae a navy liso en clientes sin soporte de gradientes."
+    }
+  ]
+}
