@@ -290,3 +290,15 @@ it('ordena la tabla de jugadores con número, asistencia, goles y roja y muestra
         ->and(strpos($fila[0], '[asistencia]'))->toBeLessThan(strpos($fila[0], '[goles]'))
         ->and(strpos($fila[0], '[goles]'))->toBeLessThan(strpos($fila[0], '[tarjeta_roja]'));
 });
+
+it('informa al operario los jugadores que no se pudieron guardar', function (): void {
+    jugadorFranja($this->partido, $this->local, '87654321', 'Jugadora Secreta');
+    $html = $this->actingAs($this->admin)->get(urlPlanillaFranja($this->partido))->assertOk()->getContent();
+
+    expect($html)->toContain('data-autosave-alerta role="alert" aria-live="assertive" hidden')
+        ->and($html)->toContain('data-autosave-reintentar-todos')
+        ->and($html)->toContain('window.addEventListener(\'beforeunload\'')
+        ->and($html)->toContain("form.addEventListener('keydown', moverEntreJugadores)")
+        ->and($html)->toMatch('/data-player-retry-save="87654321"\s+hidden class="rounded-md/')
+        ->and($html)->not->toContain('class="hidden rounded-md');
+});

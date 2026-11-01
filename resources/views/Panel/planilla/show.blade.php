@@ -427,7 +427,7 @@
             @else
                 <div class="sm:hidden space-y-4 mb-6">
                     @foreach ($jugadoresLocalPlanilla as $jugador)
-                        <div class="p-3 border border-gray-200 rounded-lg shadow-sm bg-white"
+                        <div class="p-3 border border-gray-200 rounded-lg shadow-sm bg-white [&[data-save-error]]:border-red-300 [&[data-save-error]]:bg-red-50"
                             data-player-item="local"
                             data-player-key="{{ $jugador->dni_jugador }}"
                             data-player-row="{{ $jugador->dni_jugador }}"
@@ -485,16 +485,16 @@
                                         class="h-5 w-5 text-red-600 border-gray-300 rounded">
                                 </div>
                             </div>
-                            <div class="mt-3 flex flex-wrap items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 [&[hidden]]:hidden"
+                            <div class="mt-3 flex flex-wrap items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 data-[player-save-state=conflict]:text-red-700 data-[player-save-state=error]:text-red-700 [&[hidden]]:hidden"
                                 data-player-save-status="{{ $jugador->dni_jugador }}"
                                 hidden>
                                 <span data-player-save-message="{{ $jugador->dni_jugador }}"></span>
                                 <button type="button" data-player-retry-save="{{ $jugador->dni_jugador }}"
-                                    class="hidden rounded-md bg-amber-600 px-3 py-1 text-white transition hover:bg-amber-700">
+                                    hidden class="rounded-md bg-red-700 px-3 py-1 text-white transition hover:bg-red-800 [&[hidden]]:hidden">
                                     Reintentar
                                 </button>
                                 <button type="button" data-player-reload-row="{{ $jugador->dni_jugador }}"
-                                    class="hidden rounded-md bg-slate-700 px-3 py-1 text-white transition hover:bg-slate-800">
+                                    hidden class="rounded-md bg-brand-navy px-3 py-1 text-white transition hover:bg-brand-navy-deep [&[hidden]]:hidden">
                                     Recargar
                                 </button>
                             </div>
@@ -609,7 +609,7 @@
             @else
                 <div class="sm:hidden space-y-4 mb-6">
                     @foreach ($jugadoresVisitantePlanilla as $jugador)
-                        <div class="p-3 border border-gray-200 rounded-lg shadow-sm bg-white"
+                        <div class="p-3 border border-gray-200 rounded-lg shadow-sm bg-white [&[data-save-error]]:border-red-300 [&[data-save-error]]:bg-red-50"
                             data-player-item="visitante"
                             data-player-key="{{ $jugador->dni_jugador }}"
                             data-player-row="{{ $jugador->dni_jugador }}"
@@ -667,16 +667,16 @@
                                         class="h-5 w-5 text-red-600 border-gray-300 rounded">
                                 </div>
                             </div>
-                            <div class="mt-3 flex flex-wrap items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 [&[hidden]]:hidden"
+                            <div class="mt-3 flex flex-wrap items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 data-[player-save-state=conflict]:text-red-700 data-[player-save-state=error]:text-red-700 [&[hidden]]:hidden"
                                 data-player-save-status="{{ $jugador->dni_jugador }}"
                                 hidden>
                                 <span data-player-save-message="{{ $jugador->dni_jugador }}"></span>
                                 <button type="button" data-player-retry-save="{{ $jugador->dni_jugador }}"
-                                    class="hidden rounded-md bg-amber-600 px-3 py-1 text-white transition hover:bg-amber-700">
+                                    hidden class="rounded-md bg-red-700 px-3 py-1 text-white transition hover:bg-red-800 [&[hidden]]:hidden">
                                     Reintentar
                                 </button>
                                 <button type="button" data-player-reload-row="{{ $jugador->dni_jugador }}"
-                                    class="hidden rounded-md bg-slate-700 px-3 py-1 text-white transition hover:bg-slate-800">
+                                    hidden class="rounded-md bg-brand-navy px-3 py-1 text-white transition hover:bg-brand-navy-deep [&[hidden]]:hidden">
                                     Recargar
                                 </button>
                             </div>
@@ -696,6 +696,15 @@
                 <span data-copy-previous-match-feedback="visitante" class="text-sm font-semibold text-gray-600"></span>
             </div>
         </form>
+    </div>
+    <div data-autosave-alerta role="alert" aria-live="assertive" hidden
+        class="fixed bottom-4 right-4 z-40 w-[min(24rem,calc(100vw-2rem))] rounded-lg border border-red-200 border-l-4 border-l-red-700 bg-white p-4 text-sm text-gray-800 shadow-lg [&[hidden]]:hidden">
+        <p class="font-bold text-red-700" data-autosave-alerta-titulo></p>
+        <ul class="mt-2 grid max-h-48 gap-1 overflow-y-auto" data-autosave-alerta-lista></ul>
+        <div class="mt-3 flex flex-wrap gap-2">
+            <button type="button" data-autosave-reintentar-todos class="min-h-10 rounded-md bg-red-700 px-3 text-sm font-semibold text-white hover:bg-red-800 [&[hidden]]:hidden">Reintentar</button>
+            <button type="button" data-autosave-recargar class="min-h-10 rounded-md border border-gray-300 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 [&[hidden]]:hidden">Recargar la planilla</button>
+        </div>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -1103,6 +1112,86 @@
             const getAutosaveRetryButtons = (playerKey) => document.querySelectorAll(`[data-player-retry-save="${playerKey}"]`);
             const getAutosaveReloadButtons = (playerKey) => document.querySelectorAll(`[data-player-reload-row="${playerKey}"]`);
 
+            // Rows whose last save failed, so the operator is told even when the row is off screen.
+            const problemasGuardado = new Map();
+            const alertaGuardado = document.querySelector('[data-autosave-alerta]');
+
+            const nombreJugador = (scope, playerKey) => {
+                const item = getAutosaveRowItems(scope, playerKey)[0];
+                const nombre = [item?.dataset.playerName, item?.dataset.playerLastname].filter(Boolean).join(' ');
+
+                return nombre || `DNI ${playerKey}`;
+            };
+
+            const enfocarJugador = (scope, playerKey) => {
+                const item = getPrimaryAutosaveRowItem(scope, playerKey);
+                const campo = item?.querySelector('input[name$="[numero_camiseta]"]');
+
+                item?.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+                campo?.focus({ preventScroll: true });
+            };
+
+            const renderProblemasGuardado = () => {
+                if (!alertaGuardado) {
+                    return;
+                }
+
+                const problemas = [...problemasGuardado.values()];
+                alertaGuardado.hidden = problemas.length === 0;
+
+                if (problemas.length === 0) {
+                    return;
+                }
+
+                alertaGuardado.querySelector('[data-autosave-alerta-titulo]').textContent = problemas.length === 1
+                    ? 'No se guardó 1 jugador'
+                    : `No se guardaron ${problemas.length} jugadores`;
+
+                const lista = alertaGuardado.querySelector('[data-autosave-alerta-lista]');
+                lista.replaceChildren(...problemas.map(({ scope, playerKey, message }) => {
+                    const fila = document.createElement('li');
+                    const boton = document.createElement('button');
+                    boton.type = 'button';
+                    boton.className = 'w-full rounded px-1 py-1 text-left hover:bg-red-50';
+                    boton.innerHTML = '<span class="font-semibold"></span> <span class="text-gray-600"></span>';
+                    boton.children[0].textContent = nombreJugador(scope, playerKey);
+                    boton.children[1].textContent = message;
+                    boton.addEventListener('click', () => enfocarJugador(scope, playerKey));
+                    fila.append(boton);
+
+                    return fila;
+                }));
+
+                alertaGuardado.querySelector('[data-autosave-reintentar-todos]').hidden = !problemas.some(({ mode }) => mode === 'error');
+                alertaGuardado.querySelector('[data-autosave-recargar]').hidden = !problemas.some(({ mode }) => mode === 'conflict');
+            };
+
+            const reintentarProblemas = () => {
+                problemasGuardado.forEach(({ scope, playerKey, mode }) => {
+                    const form = getPrimaryAutosaveRowItem(scope, playerKey)?.closest('form[data-player-scope][data-player-autosave-endpoint]');
+
+                    if (mode !== 'error' || !form) {
+                        return;
+                    }
+
+                    getAutosaveState(scope, playerKey).paused = false;
+                    flushAutosaveRow(form, scope, playerKey);
+                });
+            };
+
+            alertaGuardado?.querySelector('[data-autosave-reintentar-todos]').addEventListener('click', reintentarProblemas);
+            alertaGuardado?.querySelector('[data-autosave-recargar]').addEventListener('click', () => window.location.reload());
+            window.addEventListener('online', reintentarProblemas);
+
+            window.addEventListener('beforeunload', (event) => {
+                const pendiente = [...autosaveStateByRow.values()].some((state) => state.inFlight || state.timerId);
+
+                if (pendiente || problemasGuardado.size > 0) {
+                    event.preventDefault();
+                    event.returnValue = '';
+                }
+            });
+
             const setAutosaveStatus = (scope, playerKey, mode, message) => {
                 const statusNodes = getAutosaveStatusNodes(playerKey);
                 const messageNodes = getAutosaveMessageNodes(playerKey);
@@ -1132,6 +1221,19 @@
                 reloadButtons.forEach((button) => {
                     button.hidden = mode !== 'conflict';
                 });
+
+                if (mode !== 'saving') {
+                    const tieneProblema = mode === 'error' || mode === 'conflict';
+                    getAutosaveRowItems(scope, playerKey).forEach((item) => item.toggleAttribute('data-save-error', tieneProblema));
+
+                    if (tieneProblema) {
+                        problemasGuardado.set(`${scope}:${playerKey}`, { scope, playerKey, mode, message });
+                    } else {
+                        problemasGuardado.delete(`${scope}:${playerKey}`);
+                    }
+
+                    renderProblemasGuardado();
+                }
 
                 if (mode === 'ok') {
                     state.statusTimerId = window.setTimeout(() => {
@@ -1456,9 +1558,35 @@
 
             const autosaveForms = document.querySelectorAll('form[data-player-scope][data-player-autosave-endpoint]');
 
+            // Column-wise entry: Enter or arrows move to the same field of the next or previous player.
+            const moverEntreJugadores = (event) => {
+                const campo = event.target;
+                const sufijo = campo instanceof HTMLInputElement ? (campo.name ?? '').match(autosaveFieldPattern)?.[0] : null;
+                const avanza = event.key === 'Enter' ? !event.shiftKey : event.key === 'ArrowDown';
+
+                if (!sufijo || !['Enter', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
+                    return;
+                }
+
+                const item = campo.closest('[data-player-item][data-player-key]');
+                const items = Array.from(document.querySelectorAll(`[data-player-item="${item?.dataset.playerItem}"]`))
+                    .filter((candidato) => candidato.offsetParent !== null);
+                const destino = items[items.indexOf(item) + (avanza ? 1 : -1)]?.querySelector(`input[name$="${sufijo}"]`);
+
+                event.preventDefault();
+
+                if (destino) {
+                    destino.focus();
+                    destino.select?.();
+                } else if (event.key === 'Enter') {
+                    campo.blur();
+                }
+            };
+
             autosaveForms.forEach((form) => {
                 form.addEventListener('input', handleAutosaveTrigger);
                 form.addEventListener('change', handleAutosaveTrigger);
+                form.addEventListener('keydown', moverEntreJugadores);
             });
 
             document.addEventListener('click', (event) => {
