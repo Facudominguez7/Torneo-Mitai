@@ -204,8 +204,8 @@
         contexto.textContent += ({
             exencion: 'Exime solo el saldo pendiente de este cargo. No devuelve pagos ni genera crédito.',
             politica: 'Solo alcanza cargos futuros de este equipo en esta edición. No elimina deuda actual.',
-            no_vino: 'El equipo no se presentó: no paga la planilla de este partido y no queda debiendo. No es una exención y se puede deshacer.',
-            deshacer_no_vino: 'Vuelve a cobrarse la planilla de este partido: el equipo queda debiendo el precio original.',
+            no_vino: 'El equipo no se presentó: no paga la planilla de este partido y no queda debiendo. En fase regular el rival gana 3 a 0 automáticamente (salvo que tampoco haya venido). No es una exención y se puede deshacer.',
+            deshacer_no_vino: 'Vuelve a cobrarse la planilla de este partido: el equipo queda debiendo el precio original. Si el partido tenía el 3 a 0 automático, se quita.',
             exencion_edicion: `${cargo?.exento ? 'El equipo ya es exento para los partidos futuros.' : 'No pagará planilla en los partidos futuros de esta edición.'} Además se exime todo lo que debe hoy. Los pagos ya registrados se conservan y no se devuelven.`,
             tarifa: 'Afecta futuras altas de todas las ediciones. No cambia cargos históricos ni activa cobros.',
             activar: 'Acción global explícita. Revisá la tarifa antes de confirmar.',
@@ -297,7 +297,8 @@
                 sinConfirmar = null;
                 sessionStorage.removeItem('cobros-pago-sin-confirmar');
             }
-            if (seccion) {
+            // "No vino" also changes the match result, so the whole planilla must reload.
+            if (seccion && !['no_vino', 'deshacer_no_vino'].includes(operacion)) {
                 document.querySelector('[data-cobros-recuperar]')?.remove();
                 pendiente = false;
                 cerrar();

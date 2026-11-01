@@ -9,7 +9,10 @@ use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\CuentaCobroPlanilla;
 use App\Models\ExencionCobroPlanilla;
 use App\Models\HistorialCobroPlanilla;
+use App\Models\Partido;
 use App\Models\User;
+use App\Services\PartidoService;
+use DomainException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,6 +27,11 @@ use Throwable;
  */
 class AusenciasCobroService
 {
+    /** Goles con los que gana el equipo que se presentó cuando el rival no vino. */
+    public const GOLES_NO_VINO = 3;
+
+    public function __construct(private readonly PartidoService $partidoService) {}
+
     public function marcarNoVino(User $actor, int $equipoId, int $cargoId, ?string $motivo = null): AusenciaCobroPlanilla
     {
         try {
@@ -39,6 +47,11 @@ class AusenciasCobroService
                 if (AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', $cargoId)->lockForUpdate()->exists()) {
                     throw ValidationException::withMessages(['cargo' => ['El equipo ya figura como que no vino en este partido.']]);
                 }
+                $partido = $this->partidoRegular($cargo);
+                if ($partido !== null && $this->partidoService->resultadoAplicado($partido)
+                    && $this->resultadoAutomatico($partido) === null) {
+                    throw ValidationException::withMessages(['cargo' => ['El partido ya tiene un resultado cargado: corregilo antes de marcar que el equipo no vino.']]);
+                }
 
                 $ausencia = new AusenciaCobroPlanilla([
                     'cargo_id' => $cargoId, 'usuario_id' => (int) $actorVigente->id, 'motivo' => $motivo,
@@ -51,6 +64,7 @@ class AusenciasCobroService
                     'idEquipo' => $equipoId, 'idEdicion' => (int) $cargo->idEdicion,
                     'cargo_id' => $cargoId, 'pendiente_ars' => (int) $cargo->precio_original,
                 ], ['ausencia_id' => (int) $ausencia->id, 'motivo' => $motivo, 'pendiente_ars' => 0]);
+                $this->sincronizarResultado($partido);
 
                 return $ausencia;
             });
@@ -84,6 +98,7 @@ class AusenciasCobroService
                     'idEquipo' => $equipoId, 'idEdicion' => (int) $cargo->idEdicion,
                     'cargo_id' => $cargoId, 'ausencia_id' => (int) $ausencia->id, 'pendiente_ars' => 0,
                 ], ['pendiente_ars' => (int) $cargo->precio_original]);
+                $this->sincronizarResultado($this->partidoRegular($cargo));
 
                 return $ausencia;
             });
@@ -91,6 +106,87 @@ class AusenciasCobroService
             $this->registrarFallo('No se pudo deshacer que el equipo no vino.', $actor, $equipoId, $cargoId, $excepcion);
 
             throw $excepcion;
+        }
+    }
+
+    /** Solo los partidos regulares e interzonales reciben resultado automático; las finales siguen con su carga manual. */
+    private function partidoRegular(CargoPlanilla $cargo): ?Partido
+    {
+        if ($cargo->parent_type !== Partido::class) {
+            return null;
+        }
+
+        return Partido::query()->whereKey($cargo->parent_id)->lockForUpdate()->first();
+    }
+
+    /**
+     * Equipo ganador si el resultado vigente es el 3 a 0 automático por "no vino"; si no, null.
+     */
+    private function resultadoAutomatico(Partido $partido): ?int
+    {
+        return $this->partidoService->resultadoAplicado($partido) ? $partido->ganador_por_no_vino : null;
+    }
+
+    /**
+     * Deriva el resultado de las ausencias vigentes: con un solo ausente, el rival gana 3 a 0;
+     * en otro caso se quita el resultado automático. Nunca pisa un resultado corregido a mano.
+     */
+    private function sincronizarResultado(?Partido $partido): void
+    {
+        if ($partido === null) {
+            return;
+        }
+
+        try {
+            $this->aplicarResultadoPorAusencias($partido);
+        } catch (DomainException $excepcion) {
+            throw ValidationException::withMessages(['cargo' => [$excepcion->getMessage()]]);
+        }
+    }
+
+    private function aplicarResultadoPorAusencias(Partido $partido): void
+    {
+
+        $equiposPorCargo = CargoPlanilla::query()->where('parent_type', Partido::class)->where('parent_id', $partido->id)
+            ->pluck('idEquipo', 'id');
+        // Lectura con bloqueo: ve las ausencias confirmadas por otra marca concurrente del mismo partido.
+        $ausentes = AusenciaCobroPlanilla::query()->vigentes()->whereIn('cargo_id', $equiposPorCargo->keys())
+            ->lockForUpdate()->pluck('cargo_id')
+            ->map(fn ($cargoId): int => (int) $equiposPorCargo[$cargoId])->unique()->values();
+        $aplicado = $this->partidoService->resultadoAplicado($partido);
+        if ($aplicado && $this->resultadoAutomatico($partido) === null) {
+            return;
+        }
+
+        $ganador = match (true) {
+            $ausentes->count() !== 1 => null,
+            $ausentes->first() === (int) $partido->idEquipoLocal => (int) $partido->idEquipoVisitante,
+            default => (int) $partido->idEquipoLocal,
+        };
+
+        if ($ganador === null) {
+            if ($aplicado) {
+                $this->partidoService->quitarResultado($partido);
+                $this->recalcularGolesContra($partido);
+            }
+
+            return;
+        }
+
+        if ($aplicado && $this->resultadoAutomatico($partido) === $ganador) {
+            return;
+        }
+
+        $ganaLocal = $ganador === (int) $partido->idEquipoLocal;
+        $this->partidoService->actualizarResultado($partido,
+            $ganaLocal ? self::GOLES_NO_VINO : 0, $ganaLocal ? 0 : self::GOLES_NO_VINO, $ganador);
+        $this->recalcularGolesContra($partido);
+    }
+
+    private function recalcularGolesContra(Partido $partido): void
+    {
+        foreach ([$partido->idEquipoLocal, $partido->idEquipoVisitante] as $equipoId) {
+            $this->partidoService->actualizarGolesContraEquipoEdicion($equipoId, $partido->idEdicion, $partido->idGrupo);
         }
     }
 
