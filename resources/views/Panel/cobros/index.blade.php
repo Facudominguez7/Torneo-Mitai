@@ -5,6 +5,7 @@
     @if (! $EdicionSeleccionada)
         <x-ui.empty-state class="mt-6" message="Seleccioná una edición" description="Elegí una edición en la barra superior para consultar sus cobros." />
     @else
+        <a href="{{ route('cobros.deuda-manual', ['idEdicion' => $EdicionSeleccionada->id]) }}" class="mt-4 inline-flex min-h-11 items-center rounded-md bg-brand-navy px-4 font-semibold text-white">Cargar deuda de planilla</a>
         @include('Panel.cobros.deudores')
         <form method="GET" action="{{ route('cobros.index') }}" class="mt-6 rounded-lg border border-gray-200 bg-white p-4">
             <input type="hidden" name="idEdicion" value="{{ $EdicionSeleccionada->id }}">

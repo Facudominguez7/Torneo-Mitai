@@ -1,4 +1,5 @@
 <div class="space-y-4">
+    <a href="{{ route('cobros.deuda-manual', ['idEdicion' => $idEdicion, 'idEquipo' => $idEquipo]) }}" class="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 font-semibold text-gray-700">Cargar deuda de planilla</a>
     <section aria-label="Cargos del equipo">
         <h3 class="font-semibold">Cargos de esta edición · todos los estados y fechas</h3>
         @forelse ($cargos as $cargo)

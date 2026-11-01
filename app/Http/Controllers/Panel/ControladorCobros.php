@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cobros\ConsultaRequest;
+use App\Http\Requests\Cobros\DeudaManualRequest;
 use App\Http\Requests\Cobros\OperacionRequest;
 use App\Models\AplicacionPagoPlanilla;
 use App\Models\CargoPlanilla;
@@ -21,11 +22,13 @@ use App\Services\Cobros\AusenciasCobroService;
 use App\Services\Cobros\ConfiguracionCobroService;
 use App\Services\Cobros\ConsultaCobrosService;
 use App\Services\Cobros\CreditosCobroService;
+use App\Services\Cobros\DeudasManualesCobroService;
 use App\Services\Cobros\ExencionesCobroService;
 use App\Services\Cobros\PagosCobroService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -134,7 +137,7 @@ class ControladorCobros extends Controller
         })->orderByDesc('id')->get();
 
         return view('Panel.cobros.detalle', $datos + [
-            'pagos' => $pagos, 'eventos' => $eventos,
+            'pagos' => $pagos, 'eventos' => $eventos, 'idEquipo' => $equipo, 'idEdicion' => $edicion,
             'aplicaciones' => AplicacionPagoPlanilla::query()->whereIn('pago_id', $pagos->modelKeys())->get()->groupBy('pago_id'),
             'exenciones' => ExencionCobroPlanilla::query()->whereIn('cargo_id', $cargos)->get(),
             'politica' => PoliticaExencionCobroPlanilla::query()->where('idEquipo', $equipo)->where('idEdicion', $edicion)->first(),
@@ -153,6 +156,38 @@ class ControladorCobros extends Controller
             'cobrosPlanilla' => $consulta->cargosDePartidos($tipo, [(int) $partido->id])->keyBy('idEquipo'),
             'configuracionCobros' => ConfiguracionCobroPlanilla::query()->find(1),
         ]);
+    }
+
+    /** Formulario para cargar a mano la deuda de un partido jugado sin cargo. */
+    public function deudaManual(ConsultaRequest $request, DeudasManualesCobroService $deudas): View
+    {
+        $idEdicion = $request->validated('idEdicion');
+        $idEquipo = $request->validated('idEquipo');
+        $equipos = Equipo::query()->whereHas('ediciones', fn ($query) => $query->where('ediciones.id', $idEdicion))->orderBy('nombre')->get();
+        $equipo = $equipos->firstWhere('id', $idEquipo);
+
+        return view('Panel.cobros.deuda-manual', [
+            'EdicionSeleccionada' => Edicion::query()->find($idEdicion),
+            'equipos' => $equipos,
+            'equipo' => $equipo,
+            'partidos' => $equipo ? $deudas->partidosJugados((int) $idEdicion, (int) $equipo->id) : collect(),
+            'tarifa' => ConfiguracionCobroPlanilla::query()->find(1)?->tarifa_ars,
+        ]);
+    }
+
+    public function cargarDeudaManual(DeudaManualRequest $request, DeudasManualesCobroService $deudas): RedirectResponse
+    {
+        $datos = $request->validated();
+        $cargo = $deudas->cargarDeuda(
+            $request->user(), $datos['tipo'], (int) $datos['partido_id'], (int) $datos['idEquipo'],
+            (int) $datos['importe_ars'], $datos['motivo'] ?? null, (int) $datos['idEdicion'],
+        );
+
+        return redirect()->route('cobros.deuda-manual', ['idEdicion' => $datos['idEdicion'], 'idEquipo' => $datos['idEquipo']])
+            ->with('success', sprintf(
+                'Deuda cargada: %s debe $ %s de la planilla del partido.',
+                $cargo->snapshot['equipo']['nombre'] ?? 'El equipo', number_format($cargo->precio_original, 0, ',', '.'),
+            ));
     }
 
     private function datos(ConsultaRequest $request, ConsultaCobrosService $consulta): array
