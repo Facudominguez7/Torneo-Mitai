@@ -172,6 +172,8 @@ class ControladorEquiposEdiciones extends Controller
             $categoriaDestino = Categoria::create([
                 'nombreCategoria' => $nombreCategoriaOrigen,
                 'idEdicion' => $edicionDestinoId,
+                'anio_desde' => $equipo->categoria->anio_desde,
+                'anio_hasta' => $equipo->categoria->anio_hasta,
             ]);
         }
 

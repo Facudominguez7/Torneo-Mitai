@@ -221,15 +221,6 @@ class ValidadorReglasJugador
      */
     private function validarCategoriasYEdad($dni_jugador, $idEquipo, $idEdicion, $idCategoria, $fecha_nacimiento)
     {
-        // Helper para extraer año de categoría
-        $extraerAnioCategoria = function (string $nombre) {
-            if (preg_match('/(20\d{2})/', $nombre, $m)) {
-                return (int) $m[1];
-            }
-
-            return null;
-        };
-
         // Calcular edad del jugador
         $anioActual = (int) date('Y');
         $anioNacimiento = (int) Carbon::parse($fecha_nacimiento)->year;
@@ -251,7 +242,7 @@ class ValidadorReglasJugador
             : 'DNI: '.$dni_jugador;
         $infoEquipo = $equipo ? $equipo->nombre : 'Equipo ID: '.$idEquipo;
 
-        $anioEquipoActual = $extraerAnioCategoria($categoriaEquipoActual->nombreCategoria);
+        $anioEquipoActual = $categoriaEquipoActual->anioMinimoNacimiento();
 
         // Categorías por año (ej: 2015, 2016)
         if (! is_null($anioEquipoActual)) {
@@ -285,7 +276,7 @@ class ValidadorReglasJugador
             ->join('equipos', 'equipo_ediciones.idEquipo', '=', 'equipos.id')
             ->where('planilla_jugadores.dni_jugador', $dni_jugador)
             ->where('planilla_jugadores.idEdicion', $idEdicion)
-            ->select('categorias.nombreCategoria', 'equipos.nombre as nombreEquipo', 'equipo_ediciones.idEquipo as idEquipoCategoria', 'equipos.idInstitucion')
+            ->select('categorias.nombreCategoria', 'categorias.anio_desde', 'equipos.nombre as nombreEquipo', 'equipo_ediciones.idEquipo as idEquipoCategoria', 'equipos.idInstitucion')
             ->distinct()
             ->get();
 
@@ -293,7 +284,10 @@ class ValidadorReglasJugador
         $institucionDestinoId = $equipoDestino?->idInstitucion;
 
         foreach ($categoriasJugador as $categoriaJugador) {
-            $anioCategoriaJugador = $extraerAnioCategoria($categoriaJugador->nombreCategoria);
+            $anioCategoriaJugador = Categoria::anioMinimoNacimientoDe(
+                $categoriaJugador->anio_desde !== null ? (int) $categoriaJugador->anio_desde : null,
+                $categoriaJugador->nombreCategoria
+            );
             $institucionOrigenId = $categoriaJugador->idInstitucion;
 
             if (is_null($anioCategoriaJugador) || is_null($anioEquipoActual)) {
