@@ -273,7 +273,7 @@ function cargoDeudorConsulta(array $contexto, Equipo $equipo, Equipo $rival, int
         'tipo' => CargoPlanilla::TIPO_PARTIDO, 'parent_type' => Partido::class, 'parent_id' => $partido->id,
         'idEquipo' => $equipo->id, 'idEdicion' => $contexto['edicion']->id,
         'idCategoria' => $contexto['categoria']->id, 'precio_original' => $precio,
-        'snapshot' => ['equipo' => ['nombre' => $equipo->nombre]],
+        'snapshot' => ['equipo' => ['nombre' => $equipo->nombre], 'oponente' => ['nombre' => $rival->nombre]],
     ]);
 }
 
@@ -297,7 +297,21 @@ it('muestra una tarjeta por equipo deudor con lo que debe hoy, de mayor a menor 
         ->assertSee('Configuración global · Cobros sin activar')
         ->getContent();
 
-    expect($html)->toContain('href="'.e(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id, 'idEquipo' => $grande->id, 'estado' => 'deudores'])).'"');
+    expect($html)->not->toContain('href="'.e(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id, 'idEquipo' => $grande->id, 'estado' => 'deudores'])).'"')
+        ->and($html)->not->toMatch('/<a[^>]*data-cobros-deudor/');
+});
+
+it('detalla en cada tarjeta de deudor la fecha, el rival y lo que se debe de cada planilla', function (): void {
+    $equipo = crearEquipoCargos($this->contexto, 'Equipo detalle');
+    $rival = crearEquipoCargos($this->contexto, 'Rival detalle');
+    cargoDeudorConsulta($this->contexto, $equipo, $rival, 20000, '2026-04-12 10:00:00');
+    cargoDeudorConsulta($this->contexto, $equipo, $rival, 15000, '2026-04-19 10:00:00');
+
+    $this->actingAs($this->admin)->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSeeInOrder(['data-cobros-deudor="'.$equipo->id.'"', '2 planillas pendientes',
+            'Fecha 1 vs '.$rival->nombre, '12/04', '$ 20.000',
+            'Fecha 1 vs '.$rival->nombre, '19/04', '$ 15.000'], false);
 });
 
 it('avisa cuando ningun equipo debe planillas', function (): void {

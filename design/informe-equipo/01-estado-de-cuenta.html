@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estado de cuenta · Informe por equipo</title>
+<style>
+:root{--navy:#0E4B5E;--navy-deep:#082F3B;--teal:#2A6D81;--teal-light:#9BD3E2;--gold:#F7F280;--gris-50:#f9fafb;--gris-100:#f3f4f6;--gris-200:#e5e7eb;--gris-500:#6b7280;--gris-700:#374151;--gris-900:#111827;--rojo-50:#fef2f2;--rojo-100:#fee2e2;--rojo-700:#b91c1c;--verde-100:#dcfce7;--verde-700:#15803d;--ambar-100:#fef9c3;--ambar-700:#a16207}
+*{box-sizing:border-box}
+body{margin:0;background:var(--gris-100);color:var(--gris-900);font:14px/1.45 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif}
+.acciones{max-width:210mm;margin:16px auto 0;padding:0 16px;display:flex;flex-wrap:wrap;gap:10px}
+.btn{min-height:44px;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;border:1px solid var(--gris-200);background:#fff;color:var(--gris-700);cursor:pointer}
+.btn.primario{background:var(--navy);border-color:var(--navy);color:#fff}
+.hoja{max-width:210mm;margin:12px auto 24px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.banda{background:var(--navy-deep);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:4px solid var(--gold)}
+.marca{font-size:.72rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.banda h1{margin:4px 0 2px;font-size:1.6rem;line-height:1.1}
+.banda .sub{color:var(--teal-light);font-weight:600}
+.emision{text-align:right;font-size:.8rem;color:rgba(255,255,255,.75)}
+.emision strong{display:block;color:#fff;font-size:.95rem}
+.cuerpo{padding:20px 24px}
+.resumen{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;border:1px solid var(--gris-200)}
+.resumen div{padding:12px 14px;border-left:1px solid var(--gris-200)}
+.resumen div:first-child{border-left:0;background:var(--rojo-50)}
+.etq{font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gris-500)}
+.cifra{display:block;font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+.resumen div:first-child .cifra{font-size:1.9rem;color:var(--rojo-700)}
+h2{margin:22px 0 8px;font-size:1rem}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{text-align:left;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gris-500);border-bottom:2px solid var(--navy);padding:6px 8px}
+td{border-bottom:1px solid var(--gris-200);padding:7px 8px;vertical-align:top}
+td.num,th.num{text-align:right}
+tr.debe td{background:var(--rojo-50)}
+.partido strong{display:block}
+.partido span{color:var(--gris-500);font-size:.82rem}
+.estado{display:inline-block;border-radius:999px;padding:1px 9px;font-size:.75rem;font-weight:700;white-space:nowrap}
+.estado.pend{background:var(--rojo-100);color:var(--rojo-700)}
+.estado.parc{background:var(--ambar-100);color:var(--ambar-700)}
+.estado.pago{background:var(--verde-100);color:var(--verde-700)}
+.estado.exen{background:var(--gris-100);color:var(--gris-700)}
+tfoot td{border-bottom:0;border-top:2px solid var(--navy);font-weight:700}
+.pie{margin-top:18px;font-size:.78rem;color:var(--gris-500)}
+.nota{max-width:210mm;margin:0 auto 24px;padding:0 16px;color:var(--gris-500);font-size:.85rem}
+@media (max-width:720px){
+  .resumen{grid-template-columns:1fr 1fr}
+  .resumen div:first-child{grid-column:1/-1}
+  .resumen div:nth-child(3){border-left:0}
+  .resumen div{border-top:1px solid var(--gris-200)}
+  .cuerpo,.banda{padding-left:16px;padding-right:16px}
+  .emision{text-align:left}
+  .col-cancha,.col-precio{display:none}
+}
+@page{size:A4 portrait;margin:12mm}
+@media print{body{background:#fff}.acciones,.nota{display:none}.hoja{margin:0;box-shadow:none;max-width:none}.banda,tr.debe td,.resumen div:first-child,.estado{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="acciones">
+  <button class="btn primario" type="button">Imprimir / guardar PDF</button>
+  <button class="btn" type="button">‹ Volver a cobros</button>
+</div>
+<article class="hoja">
+  <header class="banda">
+    <div>
+      <div class="marca">Torneo Mitai · Estado de planillas</div>
+      <h1>Huracán</h1>
+      <div class="sub">Categoría 2018 · Edición Apertura 2026</div>
+    </div>
+    <div class="emision">Emitido<strong>01/11/2026 21:10</strong>Partidos jugados hasta hoy</div>
+  </header>
+  <div class="cuerpo">
+    <section class="resumen" aria-label="Resumen">
+      <div><span class="etq">Saldo a pagar</span><span class="cifra">$ 13.000</span><span class="etq">2 planillas</span></div>
+      <div><span class="etq">Planillas</span><span class="cifra">6</span></div>
+      <div><span class="etq">Pagado</span><span class="cifra">$ 26.000</span></div>
+      <div><span class="etq">Eximido</span><span class="cifra">$ 6.500</span></div>
+    </section>
+
+    <h2>Detalle por partido</h2>
+    <table>
+      <thead><tr><th>Partido</th><th class="col-cancha">Cancha</th><th class="num col-precio">Planilla</th><th class="num">Pagado</th><th class="num">Saldo</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td class="partido"><strong>Fecha 1 vs River Plate</strong><span>sáb 07/09 · 10:30</span></td><td class="col-cancha">2</td><td class="num col-precio">$ 6.500</td><td class="num">$ 6.500</td><td class="num">$ 0</td><td><span class="estado pago">Pagada</span></td></tr>
+        <tr><td class="partido"><strong>Fecha 2 vs Boca Juniors</strong><span>sáb 14/09 · 11:15</span></td><td class="col-cancha">1</td><td class="num col-precio">$ 6.500</td><td class="num">$ 6.500</td><td class="num">$ 0</td><td><span class="estado pago">Pagada</span></td></tr>
+        <tr><td class="partido"><strong>Fecha 3 vs Racing</strong><span>sáb 21/09 · 09:45</span></td><td class="col-cancha">3</td><td class="num col-precio">$ 6.500</td><td class="num">$ 0</td><td class="num">$ 0</td><td><span class="estado exen">Eximida</span></td></tr>
+        <tr><td class="partido"><strong>Fecha 4 vs Independiente</strong><span>sáb 28/09 · 10:30</span></td><td class="col-cancha">2</td><td class="num col-precio">$ 6.500</td><td class="num">$ 6.500</td><td class="num">$ 0</td><td><span class="estado pago">Pagada</span></td></tr>
+        <tr class="debe"><td class="partido"><strong>Fecha 5 vs San Lorenzo</strong><span>sáb 05/10 · 10:30</span></td><td class="col-cancha">1</td><td class="num col-precio">$ 6.500</td><td class="num">$ 0</td><td class="num"><strong>$ 6.500</strong></td><td><span class="estado pend">Pendiente</span></td></tr>
+        <tr class="debe"><td class="partido"><strong>Fecha 6 vs Yaguaretés B. Belén</strong><span>sáb 12/10 · 11:15</span></td><td class="col-cancha">2</td><td class="num col-precio">$ 13.000</td><td class="num">$ 6.500</td><td class="num"><strong>$ 6.500</strong></td><td><span class="estado parc">Parcial</span></td></tr>
+      </tbody>
+      <tfoot><tr><td>Total</td><td class="col-cancha"></td><td class="num col-precio">$ 45.500</td><td class="num">$ 26.000</td><td class="num">$ 13.000</td><td></td></tr></tfoot>
+    </table>
+    <p class="pie">Importes en pesos. Las planillas eximidas no se cobran. Este informe es una consulta: no registra pagos.</p>
+  </div>
+</article>
+<p class="nota">Propuesta 1 · Estado de cuenta completo. Muestra todas las planillas del equipo en la edición, pagadas o no; las adeudadas se resaltan en rojo. En el celular se ocultan las columnas Cancha y Planilla.</p>
+</body>
+</html>

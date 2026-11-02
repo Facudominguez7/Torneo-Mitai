@@ -146,6 +146,22 @@ class ControladorCobros extends Controller
         ]);
     }
 
+    /** Informe imprimible de un equipo: planillas que debe y al día. */
+    public function informeEquipo(ConsultaRequest $request, ConsultaCobrosService $consulta): View
+    {
+        abort_unless($request->filled('idEquipo') && $request->filled('idEdicion'), 422);
+        $equipo = Equipo::query()->findOrFail($request->integer('idEquipo'));
+        $edicion = Edicion::query()->findOrFail($request->integer('idEdicion'));
+        $informe = $consulta->informeEquipo($edicion->id, $equipo->id);
+        $categoria = EquipoEdicion::query()->where('idEquipo', $equipo->id)->where('idEdicion', $edicion->id)->with('categoria')->first()?->categoria;
+
+        return view('Panel.cobros.informe-equipo', $informe + [
+            'Equipo' => $equipo, 'EdicionSeleccionada' => $edicion,
+            'nombreEquipo' => $informe['equipo'] ?? $equipo->nombre,
+            'nombreCategoria' => $informe['categoria'] ?? $categoria?->nombreCategoria,
+        ]);
+    }
+
     /** Estado de cobro de un partido para refrescar la planilla sin recargarla. */
     public function partido(ConsultaRequest $request, ConsultaCobrosService $consulta): View
     {
