@@ -1,0 +1,27 @@
+{
+  "title": "Informe de planillas por equipo",
+  "brief": "Un único documento imprimible por equipo con el estado de sus planillas en la edición: todas las deudas, indicando a qué partido corresponde cada una (fecha, rival, día) y su importe. Se abre desde Cobros (tarjeta del deudor o filtro de equipo).",
+  "artboards": [
+    {
+      "file": "01-estado-de-cuenta.html",
+      "title": "Estado de cuenta completo",
+      "tradeoff": "A4 con resumen y tabla de todas las planillas (pagadas, eximidas y adeudadas resaltadas); es la vista más completa para administración, pero ocupa más que lo que necesita el delegado.",
+      "width": 1440,
+      "height": 1100
+    },
+    {
+      "file": "02-solo-deudas.html",
+      "title": "Solo lo que se debe",
+      "tradeoff": "A5 corto con el total y una línea por planilla adeudada; ideal para mandar por WhatsApp, pero no muestra el historial de lo pagado.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "03-cuenta-con-firma.html",
+      "title": "Cuenta con firma",
+      "tradeoff": "Dos columnas, debe y al día, con líneas de firma para que el delegado reconozca la deuda; útil en la cancha, pero las firmas sobran si se envía digital.",
+      "width": 1440,
+      "height": 1000
+    }
+  ]
+}

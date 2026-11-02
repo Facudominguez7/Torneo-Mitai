@@ -408,6 +408,22 @@
       "sessions": 3,
       "memories": 1,
       "prompts": 0
+    },
+    {
+      "id": "97f281af",
+      "created_by": "facu",
+      "created_at": "2026-11-02T00:21:33.794540203Z",
+      "sessions": 2,
+      "memories": 9,
+      "prompts": 0
+    },
+    {
+      "id": "dae4c9d6",
+      "created_by": "facundo",
+      "created_at": "2026-11-02T01:37:54.47828624Z",
+      "sessions": 2,
+      "memories": 5,
+      "prompts": 0
     }
   ]
 }
