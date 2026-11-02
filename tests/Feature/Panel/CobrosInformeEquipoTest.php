@@ -67,6 +67,28 @@ it('exige el equipo y solo lo muestra a administradores', function (): void {
         ->assertRedirect('/');
 });
 
+it('rechaza el informe de un equipo que no pertenece a la edicion en lugar de mostrarlo al dia', function (): void {
+    $otra = crearContextoCargos('Otra edicion informe');
+    $ajeno = crearEquipoCargos($otra, 'Equipo de otra edicion');
+
+    $this->actingAs($this->admin)->getJson(rutaInformeEquipo($this->contexto, $ajeno))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['idEquipo' => 'El equipo no pertenece a la edición seleccionada.']);
+    $this->actingAs($this->admin)->get(rutaInformeEquipo($this->contexto, $ajeno))
+        ->assertRedirect()->assertSessionHasErrors('idEquipo');
+});
+
+it('rechaza el informe con un equipo o una edicion inexistentes', function (array $parametros, string $campo): void {
+    $ruta = route('cobros.informe-equipo', array_merge([
+        'idEdicion' => $this->contexto['edicion']->id, 'idEquipo' => $this->equipo->id,
+    ], $parametros));
+
+    $this->actingAs($this->admin)->getJson($ruta)->assertUnprocessable()->assertJsonValidationErrors($campo);
+})->with([
+    'equipo inexistente' => [['idEquipo' => 999999], 'idEquipo'],
+    'edicion inexistente' => [['idEdicion' => 999999], 'idEdicion'],
+]);
+
 it('ofrece el informe desde la tarjeta del deudor sin volverla un enlace', function (): void {
     cargoInformeEquipo($this->contexto, $this->equipo, $this->rival, 20000, '2026-06-06 10:30:00');
 
