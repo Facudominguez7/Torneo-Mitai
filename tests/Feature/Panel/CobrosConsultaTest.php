@@ -38,7 +38,7 @@ afterEach(function (): void {
 it('busca por nombre vigente o histórico y cuenta exenciones sin convertirlas en ingresos', function (): void {
     ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 25000]);
     foreach (['Equipo consulta', 'nombre HISTÓRICO'] as $nombre) {
-        $this->actingAs($this->admin)->get(route('cobros.index', [
+        $this->actingAs($this->admin)->get(route('cobros.imprimir', [
             'idEdicion' => $this->contexto['edicion']->id, 'estado' => 'todos', 'buscar' => $nombre,
         ]))->assertOk()->assertViewHas('resumen', fn (array $resumen): bool => $resumen['exenciones'] === 1 && $resumen['ingresos_ars'] === 0);
     }
@@ -58,7 +58,7 @@ it('incluye la fecha ISO del snapshot en los reportes y filtros de cobros', func
     $this->actingAs($this->admin);
     $filtros = ['idEdicion' => $this->contexto['edicion']->id, 'estado' => 'deudores',
         'periodo' => 'hasta_hoy', 'fecha' => '2026-06-14'];
-    foreach (['cobros.index', 'cobros.imprimir'] as $ruta) {
+    foreach (['cobros.imprimir'] as $ruta) {
         $this->get(route($ruta, $filtros))->assertOk()->assertSee('Equipo snapshot ISO')
             ->assertViewHas('cargos', fn ($cargos): bool => count($cargos) === 1
                 && $cargos->first()['id'] === $cargo->id && $cargos->first()['fecha'] === '2026-06-14 10:00');
@@ -132,7 +132,7 @@ it('permite futuros y recupera filtros en lista e impresión sin escrituras', fu
             $escrituras[] = $query->sql;
         }
     });
-    foreach (['cobros.index', 'cobros.imprimir'] as $ruta) {
+    foreach (['cobros.imprimir'] as $ruta) {
         $this->get(route($ruta, $filtros))->assertOk()->assertSee('Nombre histórico')
             ->assertViewHas('filtros', fn (array $valor): bool => $valor['periodo'] === 'futuros')
             ->assertViewHas('cargos', fn ($filas): bool => count($filas) === 1);
@@ -145,7 +145,7 @@ it('acepta contexto de partido sin cargos y rechaza partido ajeno o tipo inváli
     $ajeno = crearContextoCargos('Partido ajeno');
     $partidoAjeno = Partido::create(crearDatosPartidoCargos($ajeno, crearEquipoCargos($ajeno, 'Local ajeno'), crearEquipoCargos($ajeno, 'Rival ajeno')));
     $this->actingAs($this->admin);
-    foreach (['cobros.index', 'cobros.imprimir'] as $ruta) {
+    foreach (['cobros.imprimir'] as $ruta) {
         $base = ['idEdicion' => $this->contexto['edicion']->id, 'tipo' => CargoPlanilla::TIPO_PARTIDO, 'partido' => $sinCargos->id];
         $this->getJson(route($ruta, $base))->assertOk()->assertViewHas('cargos', fn ($cargos): bool => count($cargos) === 0);
         foreach ([['partido' => $partidoAjeno->id], ['partido' => 999999], ['tipo' => 'inventado'], ['tipo' => null]] as $invalido) {
@@ -215,16 +215,9 @@ it('carga la consulta con el estado Todos por defecto e incluye los cargos exent
     ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 25000]);
     $filtros = ['idEdicion' => $this->contexto['edicion']->id];
 
-    $this->actingAs($this->admin)->get(route('cobros.index', $filtros))
-        ->assertOk()
-        ->assertViewHas('cargos', fn ($cargos): bool => $cargos->count() === 1 && $cargos->first()['estado'] === 'exento')
-        ->assertSee('<option value="todos" selected', false)
-        ->assertDontSee('<option value="deudores" selected', false)
-        ->assertSee('Al entrar: todos los cargos, incluidos partidos futuros, sin fecha, pagados y exentos.')
-        ->assertDontSee('Al entrar: solo deudores');
-
     $this->actingAs($this->admin)->get(route('cobros.imprimir', $filtros))
         ->assertOk()
+        ->assertViewHas('cargos', fn ($cargos): bool => $cargos->count() === 1 && $cargos->first()['estado'] === 'exento')
         ->assertSee('Estado: todos')
         ->assertSee('Exento');
 });
@@ -232,10 +225,9 @@ it('carga la consulta con el estado Todos por defecto e incluye los cargos exent
 it('el filtro Deudores elegido a mano sigue ocultando los cargos exentos', function (): void {
     ExencionCobroPlanilla::create(['cargo_id' => $this->cargo->id, 'usuario_id' => $this->admin->id, 'importe_ars' => 25000]);
 
-    $this->actingAs($this->admin)->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id, 'estado' => 'deudores']))
+    $this->actingAs($this->admin)->get(route('cobros.imprimir', ['idEdicion' => $this->contexto['edicion']->id, 'estado' => 'deudores']))
         ->assertOk()
-        ->assertViewHas('cargos', fn ($cargos): bool => $cargos->count() === 0)
-        ->assertSee('<option value="deudores" selected', false);
+        ->assertViewHas('cargos', fn ($cargos): bool => $cargos->count() === 0);
 });
 
 it('carga la consulta con el período Todos por defecto e incluye los partidos futuros', function (): void {
@@ -243,15 +235,9 @@ it('carga la consulta con el período Todos por defecto e incluye los partidos f
     $futuro = cargoDeudorConsulta($this->contexto, $this->equipo, $rival, 25000, '2026-06-20 10:00:00');
     $filtros = ['idEdicion' => $this->contexto['edicion']->id];
 
-    $this->actingAs($this->admin)->get(route('cobros.index', $filtros))
-        ->assertOk()
-        ->assertViewHas('cargos', fn ($cargos): bool => $cargos->pluck('id')->sort()->values()->all() === [$this->cargo->id, $futuro->id])
-        ->assertSee('<option value="todos" selected>Todos (incluye sin fecha)</option>', false)
-        ->assertDontSee('<option value="hasta_hoy" selected', false)
-        ->assertSee('Al entrar: todos los cargos, incluidos partidos futuros, sin fecha, pagados y exentos.');
-
     $this->actingAs($this->admin)->get(route('cobros.imprimir', $filtros))
         ->assertOk()
+        ->assertViewHas('cargos', fn ($cargos): bool => $cargos->pluck('id')->sort()->values()->all() === [$this->cargo->id, $futuro->id])
         ->assertSee('Período: todos');
 });
 
@@ -259,10 +245,9 @@ it('el período Hoy y anteriores elegido a mano sigue ocultando los partidos fut
     $rival = crearEquipoCargos($this->contexto, 'Rival futuro');
     cargoDeudorConsulta($this->contexto, $this->equipo, $rival, 25000, '2026-06-20 10:00:00');
 
-    $this->actingAs($this->admin)->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id, 'periodo' => 'hasta_hoy']))
+    $this->actingAs($this->admin)->get(route('cobros.imprimir', ['idEdicion' => $this->contexto['edicion']->id, 'periodo' => 'hasta_hoy']))
         ->assertOk()
-        ->assertViewHas('cargos', fn ($cargos): bool => $cargos->pluck('id')->all() === [$this->cargo->id])
-        ->assertSee('<option value="hasta_hoy" selected', false);
+        ->assertViewHas('cargos', fn ($cargos): bool => $cargos->pluck('id')->all() === [$this->cargo->id]);
 });
 
 function cargoDeudorConsulta(array $contexto, Equipo $equipo, Equipo $rival, int $precio, string $horario = '2026-04-05 10:00:00'): CargoPlanilla

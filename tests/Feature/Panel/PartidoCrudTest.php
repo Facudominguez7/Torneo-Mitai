@@ -671,9 +671,8 @@ it('la vista index muestra el formulario de eliminacion con confirmacion y filtr
     $accionesLegacy = $xpath->query('//div[contains(concat(" ", normalize-space(@class), " "), " md:grid-cols-4 ")]')->item(0);
     expect($accionesLegacy)->not->toBeNull();
     expect($xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " min-h-11 ")]', $accionesLegacy)->length)->toBe(0);
-    $enlaceCobros = $xpath->query('//a[normalize-space(.)="Cobros de este partido"]');
-    expect($enlaceCobros->length)->toBe(1);
-    expect(explode(' ', $enlaceCobros->item(0)->getAttribute('class')))->toContain('min-h-11');
+    // Los cobros del partido se gestionan desde la planilla; la tarjeta ya no enlaza a la consulta de cargos.
+    expect($xpath->query('//a[normalize-space(.)="Cobros de este partido"]')->length)->toBe(0);
 });
 
 it('la vista edit deshabilita los equipos solo cuando el partido tiene actividad', function () {

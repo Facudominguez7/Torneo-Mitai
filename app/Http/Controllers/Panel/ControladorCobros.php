@@ -30,7 +30,6 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -41,15 +40,24 @@ class ControladorCobros extends Controller
 {
     public function index(ConsultaRequest $request, ConsultaCobrosService $consulta): View
     {
-        $datos = $this->datos($request, $consulta);
-        $filas = $datos['cargos'];
-        $pagina = $request->integer('page', 1);
-        $datos['cargos'] = new LengthAwarePaginator($filas->forPage($pagina, 25), $filas->count(), 25, $pagina, [
-            'path' => $request->url(), 'query' => $request->query(),
-        ]);
-        $datos['deudores'] = $datos['EdicionSeleccionada'] ? $consulta->deudoresPorEquipo((int) $datos['EdicionSeleccionada']->id) : collect();
+        $idEdicion = $request->validated('idEdicion');
+        $edicion = $idEdicion ? Edicion::query()->find($idEdicion) : null;
 
-        return view('Panel.cobros.index', $datos);
+        return view('Panel.cobros.index', [
+            'configuracion' => ConfiguracionCobroPlanilla::query()->find(1), 'EdicionSeleccionada' => $edicion,
+            'deudores' => $edicion ? $consulta->deudoresPorEquipo((int) $edicion->id) : collect(),
+        ]);
+    }
+
+    /** Informe imprimible con todos los equipos que deben planillas de partidos jugados hasta hoy. */
+    public function informeDeudores(ConsultaRequest $request, ConsultaCobrosService $consulta): View
+    {
+        abort_unless($request->filled('idEdicion'), 422);
+        $edicion = Edicion::query()->findOrFail($request->integer('idEdicion'));
+
+        return view('Panel.cobros.informe-deudores', [
+            'EdicionSeleccionada' => $edicion, 'deudores' => $consulta->deudoresPorEquipo((int) $edicion->id),
+        ]);
     }
 
     public function imprimir(ConsultaRequest $request, ConsultaCobrosService $consulta): View

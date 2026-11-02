@@ -108,17 +108,6 @@ it('muestra la franja aunque el partido no tenga cargos propios', function (): v
         ->assertSee('data-cobros-seccion', false);
 });
 
-it('imprime los cobros en la misma página sin abrir otra pestaña', function (): void {
-    $html = $this->actingAs($this->admin)->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id]))
-        ->assertOk()->getContent();
-    preg_match('/<a[^>]*data-cobros-imprimir[^>]*>/', $html, $coincidencia);
-    $control = $coincidencia[0] ?? '';
-
-    expect($control)->toContain('imprimirEnIframe(this.href)')
-        ->and($control)->not->toContain('target="_blank"')
-        ->and($control)->toContain(e(route('cobros.imprimir', ['idEdicion' => $this->contexto['edicion']->id])));
-});
-
 it('imprime los cobros en hoja A4 vertical', function (): void {
     $this->actingAs($this->admin)->get(route('cobros.imprimir', ['idEdicion' => $this->contexto['edicion']->id]))
         ->assertOk()

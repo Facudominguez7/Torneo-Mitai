@@ -99,9 +99,9 @@ class ConsultaCobrosService
     }
 
     /**
-     * Deuda de cada equipo por los partidos jugados hasta hoy, de mayor a menor.
+     * Deuda de cada equipo por los partidos jugados hasta hoy, de mayor a menor; `pago` es la planilla adeudada más antigua, que se cobra desde la tarjeta.
      *
-     * @return Collection<int, array{idEquipo: int, equipo: string, categoria: string, deuda_ars: int, cargos: int, planillas: array<int, array{detalle: string, dia: ?string, deuda_ars: int}>}>
+     * @return Collection<int, array{idEquipo: int, equipo: string, categoria: string, deuda_ars: int, cargos: int, pago: array<string, mixed>, planillas: array<int, array{detalle: string, dia: ?string, deuda_ars: int}>}>
      */
     public function deudoresPorEquipo(int $edicionId): Collection
     {
@@ -112,11 +112,13 @@ class ConsultaCobrosService
             ->groupBy('idEquipo')
             ->map(function (Collection $filas) use ($nombresFecha): array {
                 $fila = $filas->first();
+                $ordenadas = $filas->sortBy('fecha');
 
                 return [
                     'idEquipo' => (int) $fila['idEquipo'], 'equipo' => $fila['nombre_vigente'] ?? $fila['equipo'],
                     'categoria' => $fila['categoria'], 'deuda_ars' => (int) $filas->sum('deuda_ars'), 'cargos' => $filas->count(),
-                    'planillas' => $filas->sortBy('fecha')->map(fn (array $cargo): array => [
+                    'pago' => $ordenadas->first(),
+                    'planillas' => $ordenadas->map(fn (array $cargo): array => [
                         'detalle' => $this->detallePlanilla($cargo, $nombresFecha[$cargo['idFecha']] ?? null),
                         'dia' => $cargo['fecha'] ? Carbon::parse($cargo['fecha'])->format('d/m') : null,
                         'deuda_ars' => (int) $cargo['deuda_ars'],

@@ -47,7 +47,7 @@ it('ofrece registrar el pago de la planilla adeudada mas antigua desde la tarjet
 
     expect($boton)->not->toBeEmpty()
         ->and($boton[0])->toContain('data-cobro="pago"')
-        ->and(json_decode(html_entity_decode(Str::between($boton[0], 'data-cargo="', '"')), true))
+        ->and(json_decode(html_entity_decode(Str::betweenFirst($boton[0], 'data-cargo="', '"')), true))
         ->toMatchArray(['id' => $antigua->id, 'deuda_ars' => 15000])
         ->and($html)->toContain('Registrar pago');
 });

@@ -20,7 +20,7 @@
 <body class="bg-gray-100 font-sans text-sm text-gray-900 print:bg-white">
     <div class="no-imprimir mx-auto mt-4 flex max-w-[210mm] flex-wrap gap-3 px-4">
         <button type="button" onclick="window.print()" class="min-h-11 rounded-lg bg-brand-navy px-4 py-2 font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal">Imprimir / guardar PDF</button>
-        <a href="{{ route('cobros.index', ['idEdicion' => $EdicionSeleccionada->id, 'idEquipo' => $Equipo->id]) }}" class="inline-flex min-h-11 items-center rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700">‹ Volver a cobros</a>
+        <a href="{{ route('cobros.index', ['idEdicion' => $EdicionSeleccionada->id]) }}" class="inline-flex min-h-11 items-center rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700">‹ Volver a cobros</a>
     </div>
 
     <article class="informe-hoja mx-auto mb-6 mt-3 max-w-[210mm] bg-white px-4 py-5 shadow-sm sm:px-6">
