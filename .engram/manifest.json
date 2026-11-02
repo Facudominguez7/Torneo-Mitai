@@ -392,6 +392,46 @@
       "sessions": 1,
       "memories": 1,
       "prompts": 0
+    },
+    {
+      "id": "4361107d",
+      "created_by": "facundo",
+      "created_at": "2026-11-01T20:40:01.60355507Z",
+      "sessions": 4,
+      "memories": 3,
+      "prompts": 0
+    },
+    {
+      "id": "ee5429a0",
+      "created_by": "facu",
+      "created_at": "2026-11-01T23:03:33.438562081Z",
+      "sessions": 3,
+      "memories": 1,
+      "prompts": 0
+    },
+    {
+      "id": "97f281af",
+      "created_by": "facu",
+      "created_at": "2026-11-02T00:21:33.794540203Z",
+      "sessions": 2,
+      "memories": 9,
+      "prompts": 0
+    },
+    {
+      "id": "dae4c9d6",
+      "created_by": "facundo",
+      "created_at": "2026-11-02T01:37:54.47828624Z",
+      "sessions": 2,
+      "memories": 5,
+      "prompts": 0
+    },
+    {
+      "id": "610f6cd4",
+      "created_by": "facundo",
+      "created_at": "2026-11-02T01:41:43.708010775Z",
+      "sessions": 1,
+      "memories": 3,
+      "prompts": 0
     }
   ]
 }

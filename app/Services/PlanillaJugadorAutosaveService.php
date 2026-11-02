@@ -17,6 +17,7 @@ final class PlanillaJugadorAutosaveService
     public function __construct(
         private readonly PlanillaConfirmacionService $planillaConfirmacionService,
         private readonly EstadisticasJugadorService $estadisticasJugadorService,
+        private readonly ValidadorNumeroCamiseta $validadorNumeroCamiseta,
     ) {}
 
     /**
@@ -48,7 +49,9 @@ final class PlanillaJugadorAutosaveService
 
             if (($resultado['status'] ?? 'ok') === 'error') {
                 $estadoAgregado = 'error';
-            } elseif (($resultado['status'] ?? 'ok') === 'conflict' && $estadoAgregado !== 'error') {
+            } elseif (($resultado['status'] ?? 'ok') === 'validation' && $estadoAgregado !== 'error') {
+                $estadoAgregado = 'validation';
+            } elseif (($resultado['status'] ?? 'ok') === 'conflict' && $estadoAgregado === 'ok') {
                 $estadoAgregado = 'conflict';
             }
         }
@@ -63,6 +66,8 @@ final class PlanillaJugadorAutosaveService
 
         if ($estadoAgregado === 'error') {
             $resultadoPrincipal['status'] = 'error';
+        } elseif ($estadoAgregado === 'validation') {
+            $resultadoPrincipal['status'] = 'validation';
         } elseif ($estadoAgregado === 'conflict') {
             $resultadoPrincipal['status'] = 'conflict';
         }
@@ -130,6 +135,35 @@ final class PlanillaJugadorAutosaveService
                     ? (int) $datos['numero_camiseta']
                     : (int) $planilla->numero_camiseta;
                 $tarjetaRojaNueva = $this->normalizarCheckbox($datos['tarjeta_roja'] ?? null);
+
+                // El número solo se controla entre jugadores con asistencia
+                // marcada. Se valida al cambiar el número o al marcar la
+                // asistencia; editar goles o tarjeta de una fila que ya venía
+                // duplicada no se bloquea.
+                $numeroCamisetaCambio = $numeroCamisetaNuevo !== (int) $planilla->numero_camiseta;
+                $asistenciaCambio = $asistenciaNueva !== (bool) $planilla->asistio;
+
+                if ($asistenciaNueva
+                    && ($numeroCamisetaCambio || $asistenciaCambio)
+                    && $this->validadorNumeroCamiseta->numeroOcupado(
+                        $partidoType,
+                        $partidoId,
+                        (int) $planilla->idEquipo,
+                        $numeroCamisetaNuevo,
+                        (int) $planilla->id,
+                    )
+                ) {
+                    return [
+                        'status' => 'validation',
+                        'message' => 'El número de camiseta '.$numeroCamisetaNuevo.' ya está en uso por otro jugador con asistencia marcada en este equipo para este partido.',
+                        'data' => [
+                            'dni' => $dniJugador,
+                            'current' => $this->formatearPlanillaActual($planilla),
+                        ],
+                        'huboCambiosReales' => false,
+                        'confirmacionInvalidada' => false,
+                    ];
+                }
 
                 if (! $this->planillaTieneCambiosReales($planilla, [
                     'goles' => $golesNuevos,

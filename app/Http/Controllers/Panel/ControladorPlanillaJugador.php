@@ -25,6 +25,7 @@ use App\Services\CopiarPlanillaPartidoAnteriorService;
 use App\Services\GolesArbitrosService;
 use App\Services\PlanillaConfirmacionService;
 use App\Services\PlanillaJugadorAutosaveService;
+use App\Services\ValidadorNumeroCamiseta;
 use App\Services\ValidadorReglasJugador;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -46,6 +47,7 @@ class ControladorPlanillaJugador extends Controller
         private readonly PlanillaJugadorAutosaveService $planillaJugadorAutosaveService,
         private readonly CopiarPlanillaPartidoAnteriorService $copiarPlanillaPartidoAnteriorService,
         private readonly ConsultaCobrosService $consultaCobrosService,
+        private readonly ValidadorNumeroCamiseta $validadorNumeroCamiseta,
     ) {
         $this->validadorReglas = $validadorReglas;
     }
@@ -415,16 +417,18 @@ class ControladorPlanillaJugador extends Controller
         $fecha_nacimiento = $request->fecha_nacimiento;
         $partidoId = $request->partido_id;
 
-        // Validar número de camiseta único en el equipo para este partido
-        if ($request->numero_camiseta) {
-            $numeroDuplicado = PlanillaJugador::where('partido_id', $partidoId)
-                ->where('idEquipo', $request->equipo_id)
-                ->where('numero_camiseta', $request->numero_camiseta)
-                ->exists();
+        // Validar número de camiseta único en el equipo para este partido.
+        // Se filtra por tipo de partido porque un Partido y una InstanciaFinal
+        // pueden compartir el mismo id sin ser el mismo encuentro.
+        $numeroCamisetaSolicitado = (int) ($request->numero_camiseta ?? 0);
 
-            if ($numeroDuplicado) {
-                return redirect()->back()->with('status', 'El número de camiseta '.$request->numero_camiseta.' ya está en uso en este equipo para este partido.');
-            }
+        if ($this->validadorNumeroCamiseta->numeroOcupado(
+            PartidoConstants::getModelClass((string) $tipoPartido),
+            (int) $partidoId,
+            (int) $request->equipo_id,
+            $numeroCamisetaSolicitado,
+        )) {
+            return redirect()->back()->with('status', 'El número de camiseta '.$numeroCamisetaSolicitado.' ya está en uso por otro jugador con asistencia marcada en este equipo para este partido.');
         }
 
         // 2. Obtener Equipo y Categoría (Necesarios para validación)
@@ -612,6 +616,8 @@ class ControladorPlanillaJugador extends Controller
 
             if ($resultado['status'] === 'conflict') {
                 $statusCode = 409;
+            } elseif ($resultado['status'] === 'validation') {
+                $statusCode = 422;
             } elseif ($resultado['status'] === 'error') {
                 $statusCode = 500;
             }
@@ -622,6 +628,11 @@ class ControladorPlanillaJugador extends Controller
         $mensaje = 'Jugadores actualizados correctamente.';
 
         if ($resultado['status'] === 'error') {
+            return $this->redirigirAPlanilla($request)
+                ->with('error', $resultado['message']);
+        }
+
+        if ($resultado['status'] === 'validation') {
             return $this->redirigirAPlanilla($request)
                 ->with('error', $resultado['message']);
         }

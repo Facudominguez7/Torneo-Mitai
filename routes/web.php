@@ -90,6 +90,8 @@ Route::group(['prefix' => 'Panel', 'middleware' => [UserAccesPanelMiddleware::cl
     Route::get('cobros', [ControladorCobros::class, 'index'])->name('cobros.index');
     Route::get('cobros/imprimir', [ControladorCobros::class, 'imprimir'])->name('cobros.imprimir');
     Route::get('cobros/detalle', [ControladorCobros::class, 'detalle'])->name('cobros.detalle');
+    Route::get('cobros/informe-deudores', [ControladorCobros::class, 'informeDeudores'])->name('cobros.informe-deudores');
+    Route::get('cobros/informe-equipo', [ControladorCobros::class, 'informeEquipo'])->name('cobros.informe-equipo');
     Route::get('cobros/partido', [ControladorCobros::class, 'partido'])->name('cobros.partido');
     Route::get('cobros/deuda-manual', [ControladorCobros::class, 'deudaManual'])->name('cobros.deuda-manual');
     Route::post('cobros/deudas-manuales', [ControladorCobros::class, 'cargarDeudaManual'])->name('cobros.deudas-manuales');

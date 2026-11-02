@@ -99,24 +99,89 @@ class ConsultaCobrosService
     }
 
     /**
-     * Deuda de cada equipo por los partidos jugados hasta hoy, de mayor a menor.
+     * Deuda de cada equipo por los partidos jugados hasta hoy, de mayor a menor; `pago` es la planilla adeudada más antigua, que se cobra desde la tarjeta.
      *
-     * @return Collection<int, array{idEquipo: int, equipo: string, categoria: string, deuda_ars: int, cargos: int}>
+     * @return Collection<int, array{idEquipo: int, equipo: string, categoria: string, deuda_ars: int, cargos: int, pago: array<string, mixed>, planillas: array<int, array{detalle: string, dia: ?string, deuda_ars: int}>}>
      */
     public function deudoresPorEquipo(int $edicionId): Collection
     {
-        return $this->consultar(['idEdicion' => $edicionId, 'estado' => 'deudores', 'periodo' => 'hasta_hoy'])['cargos']
+        $cargos = $this->consultar(['idEdicion' => $edicionId, 'estado' => 'deudores', 'periodo' => 'hasta_hoy'])['cargos'];
+        $nombresFecha = Fecha::query()->whereIn('id', $cargos->pluck('idFecha')->filter()->unique())->pluck('nombre', 'id');
+
+        return $cargos
             ->groupBy('idEquipo')
-            ->map(function (Collection $filas): array {
+            ->map(function (Collection $filas) use ($nombresFecha): array {
                 $fila = $filas->first();
+                $ordenadas = $filas->sortBy('fecha');
 
                 return [
                     'idEquipo' => (int) $fila['idEquipo'], 'equipo' => $fila['nombre_vigente'] ?? $fila['equipo'],
                     'categoria' => $fila['categoria'], 'deuda_ars' => (int) $filas->sum('deuda_ars'), 'cargos' => $filas->count(),
+                    'pago' => $ordenadas->first(),
+                    'planillas' => $ordenadas->map(fn (array $cargo): array => [
+                        'detalle' => $this->detallePlanilla($cargo, $nombresFecha[$cargo['idFecha']] ?? null),
+                        'dia' => $cargo['fecha'] ? Carbon::parse($cargo['fecha'])->format('d/m') : null,
+                        'deuda_ars' => (int) $cargo['deuda_ars'],
+                    ])->values()->all(),
                 ];
             })
             ->sortByDesc('deuda_ars')
             ->values();
+    }
+
+    /**
+     * Cuenta de planillas de un equipo por los partidos jugados hasta hoy: lo que debe y lo que tiene al día.
+     *
+     * @return array{debe: Collection<int, array<string, mixed>>, al_dia: Collection<int, array<string, mixed>>, saldo_ars: int, equipo: ?string, categoria: ?string}
+     */
+    public function informeEquipo(int $edicionId, int $equipoId): array
+    {
+        $filas = $this->consultar(['idEdicion' => $edicionId, 'idEquipo' => $equipoId, 'estado' => 'todos', 'periodo' => 'hasta_hoy'])['cargos'];
+        $nombresFecha = Fecha::query()->whereIn('id', $filas->pluck('idFecha')->filter()->unique())->pluck('nombre', 'id');
+        $canchas = CargoPlanilla::query()->whereKey($filas->pluck('id'))->with('parent')->get()
+            ->mapWithKeys(fn (CargoPlanilla $cargo): array => [$cargo->id => $cargo->parent?->cancha]);
+        $planillas = $filas->sortBy('fecha')->map(fn (array $fila): array => $fila + [
+            'detalle' => $this->detallePlanilla($fila, $nombresFecha[$fila['idFecha']] ?? null),
+            'dia' => $this->diaPlanilla($fila, $canchas[$fila['id']] ?? null),
+        ])->values();
+        $primera = $filas->first();
+
+        return [
+            'debe' => $planillas->where('deuda_ars', '>', 0)->values(),
+            'al_dia' => $planillas->where('deuda_ars', 0)->values(),
+            'saldo_ars' => (int) $planillas->sum('deuda_ars'),
+            'equipo' => $primera ? ($primera['nombre_vigente'] ?? $primera['equipo']) : null,
+            'categoria' => $primera['categoria'] ?? null,
+        ];
+    }
+
+    /** Día del partido abreviado ("sáb 05/10 · 10:30 · Cancha 1"); la deuda manual solo lleva su día. */
+    private function diaPlanilla(array $fila, mixed $cancha): ?string
+    {
+        if ($fila['fecha'] === null) {
+            return null;
+        }
+        $dia = Carbon::parse($fila['fecha']);
+        $partes = [['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][$dia->dayOfWeek].' '.$dia->format('d/m')];
+        if (! $fila['sin_partido']) {
+            $partes[] = $dia->format('H:i');
+            if ($cancha !== null && $cancha !== '') {
+                $partes[] = 'Cancha '.$cancha;
+            }
+        }
+
+        return implode(' · ', $partes);
+    }
+
+    /** Describe la planilla adeudada: deuda manual por su motivo, partido por su fecha y su rival. */
+    private function detallePlanilla(array $cargo, ?string $nombreFecha): string
+    {
+        if ($cargo['sin_partido']) {
+            return $cargo['motivo'] ?: 'Deuda cargada a mano';
+        }
+        $instancia = $nombreFecha ?? ($cargo['tipo'] === CargoPlanilla::TIPO_INSTANCIA_FINAL ? 'Instancia final' : 'Partido');
+
+        return $instancia.' vs '.$cargo['oponente'];
     }
 
     /** @param array<int, int> $equipos */

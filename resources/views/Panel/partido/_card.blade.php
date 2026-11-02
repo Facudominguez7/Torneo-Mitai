@@ -79,9 +79,6 @@
         </div>
     @endif
 
-    @if (auth()->user()?->isAdmin())
-        <div class="mt-3 text-center"><a class="inline-flex min-h-11 items-center rounded border border-gray-300 px-4 py-2 text-sm text-blue-900" href="{{ route('cobros.index', ['idEdicion' => $p->idEdicion, 'tipo' => \App\Models\CargoPlanilla::TIPO_PARTIDO, 'partido' => $p->id, 'periodo' => 'todos', 'estado' => 'todos']) }}">Cobros de este partido</a></div>
-    @endif
     <div class="grid grid-cols-1 gap-2 px-3 py-3 sm:grid-cols-2 md:mx-auto md:max-w-2xl md:grid-cols-4 md:px-4">
         <x-ui.button size="sm" variant="primary"
             href="{{ route('cargar-resultado', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')]) }}">

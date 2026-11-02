@@ -203,7 +203,7 @@ it('la consulta muestra la deuda manual sin partido ni "No vino"', function () {
     app(DeudasManualesCobroService::class)->cargarDeuda($this->admin, $this->contexto['edicion']->id, $this->equipo->id, 25000, '2026-10-20', 'Planilla vieja');
 
     $html = $this->actingAs($this->admin)->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id]))
-        ->assertOk()->assertSee('Deuda cargada a mano')->assertSee('2026-10-20')->getContent();
+        ->assertOk()->assertSee('Planilla vieja')->assertSee('20/10')->getContent();
 
     expect($html)->not->toContain('vs. Sin rival histórico')
         ->and($html)->not->toContain('data-cobro="no_vino"')

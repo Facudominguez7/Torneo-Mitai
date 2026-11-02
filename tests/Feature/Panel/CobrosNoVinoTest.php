@@ -128,21 +128,18 @@ it('no deja marcar no vino a quien no es administrador', function (string $opera
     expect(AusenciaCobroPlanilla::query()->count())->toBe(0);
 })->with(['no-vino', 'no-vino-deshacer']);
 
-it('lista en cobros a quien no vino con su estado, filtro y boton para deshacer', function (): void {
+it('lista a quien no vino en la impresion filtrada y lo saca de los deudores', function (): void {
     $this->actingAs($this->admin)->postJson('/Panel/cobros/no-vino', $this->entrada)->assertSuccessful();
 
-    $todos = $this->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id, 'periodo' => 'todos']))->assertOk()->getContent();
-    $filtrado = $this->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id, 'periodo' => 'todos', 'estado' => 'no_vino']))
+    $deudores = $this->get(route('cobros.index', ['idEdicion' => $this->contexto['edicion']->id]))->assertOk()->getContent();
+    $todos = $this->get(route('cobros.imprimir', ['idEdicion' => $this->contexto['edicion']->id, 'periodo' => 'todos']))->assertOk()->getContent();
+    $filtrado = $this->get(route('cobros.imprimir', ['idEdicion' => $this->contexto['edicion']->id, 'periodo' => 'todos', 'estado' => 'no_vino']))
         ->assertOk()->getContent();
 
-    expect($todos)->toContain('<option value="no_vino"')
-        ->and($todos)->toContain('>No vino</td>')
+    expect($todos)->toContain('No vino')
         ->and($todos)->not->toContain('No_vino')
-        ->and(substr_count($todos, 'data-cobro="deshacer_no_vino"'))->toBe(2)
-        ->and(substr_count($todos, 'data-cobro="no_vino"'))->toBe(2)
-        ->and($todos)->toContain('data-cobros-deudor="'.$this->rival->id.'"')
-        ->and($todos)->not->toContain('data-cobros-deudor="'.$this->equipo->id.'"')
-        ->and($filtrado)->toContain('<option value="no_vino" selected')
+        ->and($deudores)->toContain('data-cobros-deudor="'.$this->rival->id.'"')
+        ->and($deudores)->not->toContain('data-cobros-deudor="'.$this->equipo->id.'"')
         ->and($filtrado)->toContain('Equipo Faltante')
         ->and($filtrado)->not->toContain('<strong>Rival Presente</strong>');
 });
