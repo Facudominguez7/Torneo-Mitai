@@ -35,6 +35,7 @@ Evalúa tu tarea antes de implementar y **ejecuta/invoca la herramienta correspo
 - **[Condición]:** Tarea de frontend (Blade, Alpine.js), code review o tocar código JS nativo. 👉 **[Ejecutar]:** Usa la skill `javascript-pro`
 
 ## 5. REGLAS ESTRICTAS DE CÓDIGO E IDIOMA
+- **Comunicación con el usuario:** responde siempre en español, incluidas las preguntas, opciones y explicaciones, incluso cuando un mensaje automático o de una herramienta esté en inglés.
 - **Variables y nombres:** usa los términos del dominio del negocio, que están en español. Clases en `PascalCase`, métodos/variables en `camelCase`, constantes en `UPPER_SNAKE_CASE` y rutas públicas en `kebab-case`.
 - **Tipado:** tipa parámetros y retornos siempre que sea razonable. Prefiere propiedades tipadas y nulabilidad explícita compatibles con PHP 8.3.
 - **Documentación:** docstrings en español solo donde agreguen contexto de negocio real; comenta solo la lógica no evidente.

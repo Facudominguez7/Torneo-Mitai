@@ -4,6 +4,7 @@
     @php
         $parametrosRegreso = $parametrosRegreso ?? ['idEdicion' => $partido->idEdicion];
         $puedeEditarEquipos = $puedeEditarEquipos ?? true;
+        $razonBloqueoEquipos = $razonBloqueoEquipos ?? \App\Http\Requests\Partido\UpdateRequest::ERROR_ACTIVIDAD;
     @endphp
 
     <x-ui.page-header title="Editar partido" />
@@ -12,17 +13,24 @@
 
     @if (!$puedeEditarEquipos)
         <p class="mb-4 rounded-md bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-800">
-            Los equipos no pueden modificarse porque el partido ya tiene resultado, planillas o goles confirmados.
+            {{ $razonBloqueoEquipos }}
         </p>
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                ['idEquipoLocal', 'idEquipoVisitante'].forEach(function (idCampo) {
-                    var selector = document.getElementById(idCampo);
-                    if (selector) {
-                        selector.disabled = true;
-                    }
-                });
-            });
+            // Los selects deshabilitados no se envían con el formulario; el
+            // servidor también rechaza cualquier cambio de equipos bloqueado.
+            (function () {
+                const deshabilitarEquipos = function () {
+                    ['idEquipoLocal', 'idEquipoVisitante'].forEach(function (idCampo) {
+                        const selector = document.getElementById(idCampo);
+                        if (selector) {
+                            selector.disabled = true;
+                        }
+                    });
+                };
+
+                document.addEventListener('DOMContentLoaded', deshabilitarEquipos);
+                document.addEventListener('submit', deshabilitarEquipos, true);
+            })();
         </script>
     @endif
 

@@ -51,6 +51,9 @@ class AusenciasCobroService
                     throw ValidationException::withMessages(['cargo' => ['El equipo ya figura como que no vino en este partido.']]);
                 }
                 $partido = $this->partidoRegular($cargo);
+                if ($partido !== null && ! in_array($equipoId, [(int) $partido->idEquipoLocal, (int) $partido->idEquipoVisitante], true)) {
+                    throw ValidationException::withMessages(['cargo' => ['El equipo ya no participa en este partido.']]);
+                }
                 if ($partido !== null && $this->partidoService->resultadoAplicado($partido)
                     && $this->resultadoAutomatico($partido) === null) {
                     throw ValidationException::withMessages(['cargo' => ['El partido ya tiene un resultado cargado: corregilo antes de marcar que el equipo no vino.']]);
@@ -123,6 +126,41 @@ class AusenciasCobroService
     }
 
     /**
+     * Reactiva expresamente el resultado automático suprimido de un partido (S5).
+     * Limpia la supresión, deja trazabilidad en el historial de cobros y corre
+     * la sincronización de ausencias, que nunca pisa un resultado cargado a mano.
+     */
+    public function reactivarResultadoAutomatico(User $actor, int $partidoId): void
+    {
+        try {
+            DB::transaction(function () use ($actor, $partidoId): void {
+                $actorVigente = $this->resolverActorAdmin($actor, 'Solo un administrador puede reactivar el resultado automático.');
+                $partido = Partido::query()->whereKey($partidoId)->lockForUpdate()->firstOrFail();
+
+                if (! $partido->resultado_no_vino_suprimido) {
+                    return;
+                }
+
+                $partido->update(['resultado_no_vino_suprimido' => false]);
+
+                $this->registrarEvento($actorVigente, 'reactivar_resultado_no_vino', [
+                    'partido_id' => (int) $partido->id, 'idEdicion' => (int) $partido->idEdicion, 'suprimido' => true,
+                ], ['partido_id' => (int) $partido->id, 'idEdicion' => (int) $partido->idEdicion, 'suprimido' => false]);
+
+                $this->sincronizarResultado($partido);
+            });
+        } catch (Throwable $excepcion) {
+            Log::error('No se pudo reactivar el resultado automático.', [
+                'partido_id' => $partidoId,
+                'actor_id' => $actor->exists ? $actor->getKey() : null,
+                'excepcion' => $excepcion::class,
+            ]);
+
+            throw $excepcion;
+        }
+    }
+
+    /**
      * Equipo ganador si el resultado vigente es el 3 a 0 automático por "no vino"; si no, null.
      */
     private function resultadoAutomatico(Partido $partido): ?int
@@ -134,6 +172,11 @@ class AusenciasCobroService
      * Deriva el resultado de las ausencias vigentes: con un solo ausente, el rival gana 3 a 0;
      * en otro caso se quita el resultado automático. Nunca pisa un resultado corregido a mano.
      */
+    public function sincronizarResultadoDeCargo(CargoPlanilla $cargo): void
+    {
+        $this->sincronizarResultado($this->partidoRegular($cargo));
+    }
+
     private function sincronizarResultado(?Partido $partido): void
     {
         if ($partido === null) {
@@ -157,15 +200,34 @@ class AusenciasCobroService
             ->lockForUpdate()->pluck('cargo_id')
             ->map(fn ($cargoId): int => (int) $equiposPorCargo[$cargoId])->unique()->values();
         $aplicado = $this->partidoService->resultadoAplicado($partido);
-        if ($aplicado && $this->resultadoAutomatico($partido) === null) {
+        if (($aplicado && $this->resultadoAutomatico($partido) === null) || $partido->resultado_no_vino_suprimido) {
             return;
         }
 
         $ganador = match (true) {
             $ausentes->count() !== 1 => null,
             $ausentes->first() === (int) $partido->idEquipoLocal => (int) $partido->idEquipoVisitante,
-            default => (int) $partido->idEquipoLocal,
+            $ausentes->first() === (int) $partido->idEquipoVisitante => (int) $partido->idEquipoLocal,
+            default => null,
         };
+
+        if ($ganador !== null) {
+            $cargoGanador = CargoPlanilla::query()->where('parent_type', Partido::class)->where('parent_id', $partido->id)
+                ->where('idEquipo', $ganador)->first();
+            if ($cargoGanador === null) {
+                $ganador = null;
+            } else {
+                $aplicadoGanador = (int) AplicacionPagoPlanilla::query()->where('cargo_id', $cargoGanador->id)->sum('importe_ars');
+                $eximido = (int) ExencionCobroPlanilla::query()->where('cargo_id', $cargoGanador->id)->value('importe_ars');
+                $pendiente = (new DistribucionCreditoService)->calcularDeuda([
+                    'precio_original' => (int) $cargoGanador->precio_original,
+                    'aplicado_ars' => $aplicadoGanador, 'eximido_ars' => $eximido, 'ausente' => false,
+                ], (int) $cargoGanador->id);
+                if ($pendiente !== 0) {
+                    $ganador = null;
+                }
+            }
+        }
 
         if ($ganador === null) {
             if ($aplicado) {
@@ -239,9 +301,8 @@ class AusenciasCobroService
         ]);
     }
 
-    private function resolverActorAdmin(User $actor): User
+    private function resolverActorAdmin(User $actor, string $mensaje = 'Solo un administrador puede marcar que un equipo no vino.'): User
     {
-        $mensaje = 'Solo un administrador puede marcar que un equipo no vino.';
         if (! $actor->exists || $actor->isDirty($actor->getKeyName())) {
             throw new AuthorizationException($mensaje);
         }

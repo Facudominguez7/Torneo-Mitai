@@ -28,6 +28,9 @@
         'horario' => request('horario'),
         'busqueda' => request('busqueda'),
     ], static fn ($valor) => $valor !== null && $valor !== '');
+
+    // El restablecimiento integral reutiliza el mismo contexto de filtros que el borrado.
+    $camposRestablecer = $camposEliminar;
 @endphp
 
 <div class="partido-card rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
@@ -96,5 +99,25 @@
             action="{{ route('partido.destroy', $camposEliminar) }}"
             message="¿Eliminar este partido? Se revertirán posiciones, historial y estadísticas asociadas."
         />
+        @if ($resultadoCargado)
+            {{-- Restablecimiento integral (S3-S4): real POST con confirmación; conserva planillas y cobros. --}}
+            <form method="POST"
+                action="{!! e(route('partido.restablecer-resultado', $camposRestablecer), false) !!}"
+                data-confirm-delete
+                data-confirm-message="¿Eliminar el resultado de este partido? Se restablece el marcador y se borran los goles de jugadores y los reportes arbitrales; las planillas y los cobros se conservan."
+                class="inline-flex">
+                @csrf
+                <x-ui.button type="submit" variant="danger" size="sm">Eliminar resultado</x-ui.button>
+            </form>
+        @endif
+        @if ($p->resultado_no_vino_suprimido)
+            {{-- Reactivación expresa del 3 a 0 automático (S5): nunca pisa un resultado cargado a mano. --}}
+            <form method="POST"
+                action="{!! e(route('partido.reactivar-resultado-no-vino', $camposRestablecer), false) !!}"
+                class="inline-flex">
+                @csrf
+                <x-ui.button type="submit" variant="secondary" size="sm">Reactivar resultado automático</x-ui.button>
+            </form>
+        @endif
     </div>
 </div>

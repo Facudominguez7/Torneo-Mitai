@@ -85,6 +85,10 @@ class CreditosCobroService
                     throw new RuntimeException('No se pudo registrar el historial del crédito.');
                 }
 
+                foreach ($plan['aplicaciones'] as $planificada) {
+                    app(AusenciasCobroService::class)->sincronizarResultadoDeCargo($cargos->firstWhere('id', $planificada['cargo_id']));
+                }
+
                 return $evento;
             });
         } catch (Throwable $excepcion) {
