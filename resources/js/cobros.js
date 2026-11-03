@@ -40,6 +40,10 @@
     const error = document.querySelector('#cobros-error');
     const enviar = document.querySelector('#cobros-enviar');
     const aviso = document.querySelector('#cobros-aviso');
+    const ponerAviso = (texto, tono = 'ok') => {
+        aviso.textContent = texto;
+        aviso.dataset.tono = tono;
+    };
     const total = document.querySelector('#cobros-total');
     const seccion = document.querySelector('[data-cobros-seccion]');
     const importes = ['importe_efectivo_ars', 'importe_mercado_pago_ars'];
@@ -139,11 +143,11 @@
     const restaurar = leer('cobros-actualizado');
     if (restaurar?.url === location.href) {
         sessionStorage.removeItem('cobros-actualizado');
-        aviso.textContent = restaurar.mensaje;
+        ponerAviso(restaurar.mensaje);
         requestAnimationFrame(() => window.scrollTo(0, restaurar.scroll));
     }
     if (sinConfirmar) {
-        aviso.textContent = 'Hay un pago sin confirmar. Recuperalo antes de registrar otra operación.';
+        ponerAviso('Hay un pago sin confirmar. Recuperalo antes de registrar otra operación.', 'error');
         const recuperar = document.createElement('button');
         recuperar.type = 'button';
         recuperar.className = 'min-h-11 rounded border border-gray-300 px-3 py-2 text-sm';
@@ -179,11 +183,11 @@
         origen = boton;
         operacion = boton.dataset.cobro;
         if (sinConfirmar && operacion !== 'detalle' && operacion !== 'pago') {
-            aviso.textContent = 'Primero recuperá el pago sin confirmar desde Registrar pago.';
+            ponerAviso('Primero recuperá el pago sin confirmar desde Registrar pago.', 'error');
             return;
         }
         if (sinConfirmar && operacion === 'pago' && sinConfirmar.datos.idEdicion !== modal.dataset.edicion) {
-            aviso.textContent = `Volvé a la edición #${sinConfirmar.datos.idEdicion} para recuperar el pago sin confirmar.`;
+            ponerAviso(`Volvé a la edición #${sinConfirmar.datos.idEdicion} para recuperar el pago sin confirmar.`, 'error');
             return;
         }
         cargo = sinConfirmar && operacion === 'pago' ? sinConfirmar.cargo : (boton.dataset.cargo ? JSON.parse(boton.dataset.cargo) : null);
@@ -191,6 +195,8 @@
         const [nombre, , campos] = configuraciones[operacion];
         form.reset();
         desbloquearPago();
+        aviso.textContent = '';
+        delete aviso.dataset.tono;
         error.textContent = '';
         form.querySelectorAll('[data-error]').forEach((elemento) => { elemento.textContent = ''; });
         form.querySelectorAll('[aria-invalid]').forEach((elemento) => elemento.removeAttribute('aria-invalid'));
@@ -303,7 +309,7 @@
                 pendiente = false;
                 cerrar();
                 await refrescarSeccion(true);
-                aviso.textContent = mensaje;
+                ponerAviso(mensaje);
                 aviso.focus({ preventScroll: true });
                 return;
             }

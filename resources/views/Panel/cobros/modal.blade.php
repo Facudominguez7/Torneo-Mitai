@@ -1,4 +1,4 @@
-<p id="cobros-aviso" role="status" tabindex="-1" class="mt-4 text-sm font-medium text-green-800"></p>
+<p id="cobros-aviso" role="status" tabindex="-1" data-tono="ok" class="mt-4 empty:hidden rounded-lg border px-4 py-3 text-sm font-medium data-[tono=ok]:border-emerald-200 data-[tono=ok]:bg-emerald-50 data-[tono=ok]:text-emerald-800 data-[tono=error]:border-red-200 data-[tono=error]:bg-red-50 data-[tono=error]:text-red-700"></p>
 <style>#cobros-modal::backdrop { background: rgb(0 0 0 / .5); }</style>
 <dialog id="cobros-modal" aria-labelledby="cobros-titulo" style="width:calc(100% - 2rem);max-height:90vh" class="m-auto max-w-2xl overflow-y-auto rounded-lg border border-gray-300 bg-white p-5 text-gray-900"
     data-edicion="{{ $EdicionSeleccionada->id }}" data-base="{{ url('/Panel/cobros') }}">

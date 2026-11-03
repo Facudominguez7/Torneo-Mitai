@@ -126,6 +126,16 @@ it('pide importes de efectivo y mercado pago sin ofrecer transferencia', functio
         ->and(mb_strtolower($modal))->not->toContain('transferencia');
 });
 
+it('muestra el aviso de cobros dentro de una caja con tonos y colapsada cuando esta vacio', function (): void {
+    $html = $this->actingAs($this->admin)->get(rutaPlanillaAccesos($this->partido))->assertOk()->getContent();
+    $aviso = Str::between($html, '<p id="cobros-aviso"', '</p>');
+
+    expect($aviso)->toContain('empty:hidden')
+        ->and($aviso)->toContain('data-[tono=ok]:bg-emerald-50')
+        ->and($aviso)->toContain('data-[tono=error]:bg-red-50')
+        ->and($aviso)->toContain('rounded-lg');
+});
+
 it('entrega el estado de cobro del partido para refrescar la planilla sin recargarla', function (): void {
     $parametros = ['idEdicion' => $this->contexto['edicion']->id, 'tipo' => CargoPlanilla::TIPO_PARTIDO, 'partido' => $this->partido->id];
     $planilla = $this->actingAs($this->admin)->get(rutaPlanillaAccesos($this->partido))->assertOk();
