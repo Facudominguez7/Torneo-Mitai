@@ -194,6 +194,7 @@ class AusenciasCobroService
     {
 
         $equiposPorCargo = CargoPlanilla::query()->where('parent_type', Partido::class)->where('parent_id', $partido->id)
+            ->whereIn('idEquipo', [$partido->idEquipoLocal, $partido->idEquipoVisitante])
             ->pluck('idEquipo', 'id');
         // Lectura con bloqueo: ve las ausencias confirmadas por otra marca concurrente del mismo partido.
         $ausentes = AusenciaCobroPlanilla::query()->vigentes()->whereIn('cargo_id', $equiposPorCargo->keys())

@@ -9,6 +9,7 @@
 use App\Models\AplicacionPagoPlanilla;
 use App\Models\AusenciaCobroPlanilla;
 use App\Models\CargoPlanilla;
+use App\Models\EquipoGrupo;
 use App\Models\ExencionCobroPlanilla;
 use App\Models\HistorialCobroPlanilla;
 use App\Models\InstanciaFinal;
@@ -24,6 +25,7 @@ use App\Services\Cobros\CreditosCobroService;
 use App\Services\Cobros\ExencionesCobroService;
 use App\Services\Cobros\PagosCobroService;
 use App\Services\PartidoService;
+use App\Services\ReemplazadorEquipo;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Validation\ValidationException;
 
@@ -62,6 +64,62 @@ beforeEach(function (): void {
     $this->admin = crearAdminCargos('Admin No Vino');
     activarCobrosCargos();
     $this->servicio = app(AusenciasCobroService::class);
+});
+
+it('conserva la ausencia y los cargos sin cobrar al reemplazante de un partido pendiente', function (): void {
+    $nuevo = crearEquipoCargos($this->contexto, 'Reemplazante sin cargo');
+    EquipoGrupo::create(['idGrupo' => $this->contexto['grupo']->id, 'idEquipo' => $this->local->id]);
+    $this->servicio->marcarNoVino($this->admin, $this->local->id, $this->cargoLocal->id);
+
+    app(ReemplazadorEquipo::class)->reemplazar(
+        $this->contexto['edicion']->id, $this->contexto['categoria']->id, $this->local->id, $nuevo->id, null,
+    );
+    $this->servicio->marcarNoVino($this->admin, $this->visitante->id, $this->cargoVisitante->id);
+    $partido = $this->partido->fresh();
+    $cargos = app(ConsultaCobrosService::class)->cargosDePartidos(CargoPlanilla::TIPO_PARTIDO, [$partido->id]);
+    expect([(int) $partido->idEquipoLocal, $partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado])->toBe([$nuevo->id, null, null, 0])
+        ->and($cargos->count())->toBe(2)
+        ->and($cargos->has($partido->id.'-'.$nuevo->id))->toBeFalse()
+        ->and($cargos->get($partido->id.'-'.$this->local->id)['estado'])->toBe('no_vino')
+        ->and(AusenciaCobroPlanilla::query()->vigentes()->count())->toBe(2);
+
+    $this->servicio->deshacerNoVino($this->admin, $this->visitante->id, $this->cargoVisitante->id);
+    expect((int) $this->partido->fresh()->jugado)->toBe(0)
+        ->and(AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', $this->cargoLocal->id)->exists())->toBeTrue();
+});
+
+it('ignora la ausencia historica del reemplazado al cambiar la ausencia del rival', function (): void {
+    $nuevo = crearEquipoCargos($this->contexto, 'Reemplazante');
+    EquipoGrupo::create(['idGrupo' => $this->contexto['grupo']->id, 'idEquipo' => $this->local->id]);
+
+    // El reemplazante participó anteriormente y ya tenía un cargo cubierto para este partido.
+    $editarLocal = fn (int $equipoId) => $this->actingAs($this->admin)->patch(route('partido.update', $this->partido->id), [
+        'idFechas' => $this->contexto['fecha']->id, 'idEquipoLocal' => $equipoId,
+        'idEquipoVisitante' => $this->visitante->id, 'horario_datetime' => '2026-04-05 10:00:00', 'cancha' => '1',
+    ])->assertSessionHasNoErrors();
+    $editarLocal($nuevo->id);
+    $cargoNuevo = cargoNoVino($this->partido, $nuevo, $this->contexto);
+    app(PagosCobroService::class)->registrarPago($this->admin, $cargoNuevo->id, 25000, 'efectivo', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+    $editarLocal($this->local->id);
+    $this->servicio->marcarNoVino($this->admin, $this->local->id, $this->cargoLocal->id);
+    app(ReemplazadorEquipo::class)->reemplazar(
+        $this->contexto['edicion']->id, $this->contexto['categoria']->id, $this->local->id, $nuevo->id, null,
+    );
+    expect((int) $this->partido->fresh()->idEquipoLocal)->toBe($nuevo->id)
+        ->and(CargoPlanilla::query()->where('parent_type', Partido::class)->where('parent_id', $this->partido->id)->count())->toBe(3)
+        ->and(AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', $this->cargoLocal->id)->exists())->toBeTrue();
+
+    $this->servicio->marcarNoVino($this->admin, $this->visitante->id, $this->cargoVisitante->id);
+    $partido = $this->partido->fresh();
+    expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado, $partido->ganador_por_no_vino])->toBe([3, 0, 1, $nuevo->id])
+        ->and(posicionNoVino($partido, $nuevo->id))->toMatchArray(['jugado' => 1, 'ganado' => 1, 'puntos' => 3])
+        ->and(AusenciaCobroPlanilla::query()->vigentes()->count())->toBe(2);
+
+    $this->servicio->deshacerNoVino($this->admin, $this->visitante->id, $this->cargoVisitante->id);
+    $partido = $this->partido->fresh();
+    expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado])->toBe([null, null, 0])
+        ->and(posicionNoVino($partido, $nuevo->id))->toMatchArray(sinPartidosJugados())
+        ->and(AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', $this->cargoLocal->id)->exists())->toBeTrue();
 });
 
 it('espera el pago completo posterior para aplicar el resultado y las posiciones', function (): void {
