@@ -79,6 +79,8 @@ class ExencionesCobroService
                     throw new RuntimeException('No se pudo registrar el historial de la exención.');
                 }
 
+                app(AusenciasCobroService::class)->sincronizarResultadoDeCargo($cargo);
+
                 return $exencion;
             });
         } catch (Throwable $excepcion) {

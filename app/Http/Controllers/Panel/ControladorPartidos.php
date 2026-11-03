@@ -7,11 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Partido\StoreRequest;
 use App\Http\Requests\Partido\UpdateRequest;
 use App\Models\Categoria;
+use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Partido;
+use App\Services\Cobros\AusenciasCobroService;
 use App\Services\Cobros\ProgramacionCobroService;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
@@ -19,18 +21,23 @@ use Carbon\Carbon;
 use DomainException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class ControladorPartidos extends Controller
 {
     protected $partidoService;
 
+    private readonly AusenciasCobroService $ausenciasCobroService;
+
     use SeleccionarCategoriaTrait;
 
-    public function __construct(PartidoService $partidoService)
+    public function __construct(PartidoService $partidoService, AusenciasCobroService $ausenciasCobroService)
     {
         $this->partidoService = $partidoService;
+        $this->ausenciasCobroService = $ausenciasCobroService;
     }
 
     /**
@@ -405,7 +412,11 @@ class ControladorPartidos extends Controller
             'idFecha' => $partido->idFechas,
         ]);
 
-        $puedeEditarEquipos = $this->partidoService->razonesBloqueoCambioEquipos($partido) === [];
+        $tieneAusenciaVigente = $this->partidoService->tieneAusenciaVigente($partido);
+        $puedeEditarEquipos = $this->partidoService->razonesBloqueoCambioEquipos($partido) === [] && ! $tieneAusenciaVigente;
+        $razonBloqueoEquipos = $puedeEditarEquipos ? null : ($tieneAusenciaVigente
+            ? UpdateRequest::ERROR_AUSENCIA
+            : UpdateRequest::ERROR_ACTIVIDAD);
 
         return view('Panel.partido.edit', compact(
             'partido',
@@ -419,6 +430,7 @@ class ControladorPartidos extends Controller
             'idGrupo',
             'idCategoria',
             'puedeEditarEquipos',
+            'razonBloqueoEquipos',
             'parametrosRegreso'
         ));
     }
@@ -428,7 +440,25 @@ class ControladorPartidos extends Controller
      */
     public function update(UpdateRequest $request, Partido $partido)
     {
-        $partido->update($request->validated());
+        $datos = $request->validated();
+        DB::transaction(function () use ($partido, $datos): void {
+            ConfiguracionCobroPlanilla::query()->whereKey(1)->lockForUpdate()->first();
+            $vigente = Partido::query()->whereKey($partido->id)->lockForUpdate()->firstOrFail();
+            $reenvioIdentico = (! array_key_exists('idEquipoLocal', $datos) || (int) $datos['idEquipoLocal'] === (int) $vigente->idEquipoLocal)
+                && (! array_key_exists('idEquipoVisitante', $datos) || (int) $datos['idEquipoVisitante'] === (int) $vigente->idEquipoVisitante);
+            $cambiaEquipos = ! $reenvioIdentico
+                && (array_key_exists('idEquipoLocal', $datos) || array_key_exists('idEquipoVisitante', $datos));
+            if ($cambiaEquipos && $this->partidoService->tieneAusenciaVigente($vigente, true)) {
+                throw ValidationException::withMessages([
+                    'idEquipoLocal' => [UpdateRequest::ERROR_AUSENCIA],
+                    'idEquipoVisitante' => [UpdateRequest::ERROR_AUSENCIA],
+                ]);
+            }
+            if (! $cambiaEquipos) {
+                unset($datos['idEquipoLocal'], $datos['idEquipoVisitante']);
+            }
+            $vigente->update($datos);
+        });
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $partido->idEdicion,
@@ -468,6 +498,67 @@ class ControladorPartidos extends Controller
         }
 
         return to_route('partido.index', $parametrosRegreso)->with('status', 'Partido eliminado con éxito.');
+    }
+
+    /**
+     * Restablece integralmente el resultado de un partido y vuelve al listado contextual:
+     * borra marcador, goles de jugadores y reportes arbitrales; conserva planillas y cobros.
+     */
+    public function restablecerResultado(Request $request, Partido $partido)
+    {
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $partido->idEdicion,
+            'idCategoria' => $partido->idCategoria,
+            'idGrupo' => $partido->idGrupo,
+            'idFecha' => $partido->idFechas,
+        ]);
+
+        try {
+            $this->partidoService->restablecerResultado($partido);
+        } catch (DomainException $error) {
+            return to_route('partido.index', $parametrosRegreso)->with('error', $error->getMessage());
+        } catch (Throwable $error) {
+            Log::error('No se pudo restablecer el resultado del partido', [
+                'partido_id' => $partido->id,
+                'idEdicion' => $partido->idEdicion,
+            ]);
+
+            return to_route('partido.index', $parametrosRegreso)
+                ->with('error', 'No se pudo restablecer el resultado del partido. Intenta nuevamente.');
+        }
+
+        return to_route('partido.index', $parametrosRegreso)->with('status', 'Resultado restablecido con éxito.');
+    }
+
+    /**
+     * Reactiva el resultado automático por "no vino" de un partido suprimido
+     * y vuelve al listado contextual. Nunca pisa un resultado cargado a mano.
+     */
+    public function reactivarResultadoNoVino(Request $request, Partido $partido)
+    {
+        $parametrosRegreso = $this->construirParametrosRegreso($request, [
+            'idEdicion' => $partido->idEdicion,
+            'idCategoria' => $partido->idCategoria,
+            'idGrupo' => $partido->idGrupo,
+            'idFecha' => $partido->idFechas,
+        ]);
+
+        try {
+            $this->ausenciasCobroService->reactivarResultadoAutomatico($request->user(), (int) $partido->id);
+        } catch (ValidationException $error) {
+            return to_route('partido.index', $parametrosRegreso)
+                ->with('error', collect($error->errors())->flatten()->first());
+        } catch (Throwable $error) {
+            Log::error('No se pudo reactivar el resultado automático del partido', [
+                'partido_id' => $partido->id,
+                'idEdicion' => $partido->idEdicion,
+            ]);
+
+            return to_route('partido.index', $parametrosRegreso)
+                ->with('error', 'No se pudo reactivar el resultado automático. Intenta nuevamente.');
+        }
+
+        return to_route('partido.index', $parametrosRegreso)->with('status', 'Resultado automático reactivado con éxito.');
     }
 
     /**

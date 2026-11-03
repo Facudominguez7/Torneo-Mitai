@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\AusenciaCobroPlanilla;
+use App\Models\CargoPlanilla;
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
@@ -14,7 +16,18 @@ use App\Models\PlanillaJugador;
 use App\Models\TablaGoleador;
 use App\Models\TablaPosicion;
 use App\Models\User;
+use App\Services\Cobros\AusenciasCobroService;
+use App\Services\Cobros\PagosCobroService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+
+require_once __DIR__.'/../Services/Cobros/FixturesCargos.php';
+
+// Las aserciones revisan contenido y no activos: las vistas se renderizan sin
+// Vite para que la suite no dependa de haber ejecutado npm run build.
+beforeEach(function (): void {
+    $this->withoutVite();
+});
 
 function crearAdminPartidos(): User
 {
@@ -163,6 +176,17 @@ function registrarResultadoPartido(Partido $partido, int $golesLocal, int $goles
         'golesEquipoLocal' => $golesLocal,
         'golesEquipoVisitante' => $golesVisitante,
         'jugado' => 1,
+    ]);
+}
+
+function crearCargosNoVino(Partido $partido, Equipo $equipo, array $contexto): CargoPlanilla
+{
+    return CargoPlanilla::create([
+        'tipo' => CargoPlanilla::TIPO_PARTIDO,
+        'parent_type' => Partido::class, 'parent_id' => $partido->id,
+        'idEquipo' => $equipo->id, 'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id, 'precio_original' => 25000,
+        'snapshot' => ['equipo' => ['nombre' => $equipo->nombre]],
     ]);
 }
 
@@ -701,6 +725,87 @@ it('la vista edit deshabilita los equipos solo cuando el partido tiene actividad
     $respuestaNuevo->assertDontSee('Los equipos no pueden modificarse', false);
 });
 
+/**
+ * Escenario de "no vino": partido con cargos de planilla y, opcionalmente, una
+ * ausencia vigente del visitante todavia sin cubrir con pago ni exencion.
+ *
+ * @return array{partido: Partido, local: Equipo, visitante: Equipo, admin: User}
+ */
+function crearEscenarioAusenciaVigente(bool $marcarAusencia = true): array
+{
+    config(['app.key' => 'base64:'.base64_encode(str_repeat('x', 32))]);
+    $contexto = crearContextoCargos('Edicion Partidos Ausencia');
+    $local = crearEquipoCargos($contexto, 'Local Ausencia');
+    $visitante = crearEquipoCargos($contexto, 'Visitante Ausencia');
+    $partido = Partido::create(crearDatosPartidoCargos($contexto, $local, $visitante));
+    foreach (['local' => $local, 'visitante' => $visitante] as $rol => $equipo) {
+        CargoPlanilla::create([
+            'tipo' => CargoPlanilla::TIPO_PARTIDO,
+            'parent_type' => Partido::class, 'parent_id' => $partido->id,
+            'idEquipo' => $equipo->id, 'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id, 'precio_original' => 25000,
+            'snapshot' => ['equipo' => ['nombre' => $equipo->nombre]],
+        ]);
+    }
+    $cargoVisitante = CargoPlanilla::query()->where('parent_id', $partido->id)->where('idEquipo', $visitante->id)->firstOrFail();
+    $admin = crearAdminCargos('Admin Partidos Ausencia');
+    activarCobrosCargos();
+    if ($marcarAusencia) {
+        app(AusenciasCobroService::class)->marcarNoVino($admin, $visitante->id, $cargoVisitante->id);
+    }
+
+    return ['partido' => $partido, 'local' => $local, 'visitante' => $visitante, 'admin' => $admin];
+}
+
+it('la vista edit con ausencia vigente informa el motivo exacto y deshabilita los equipos', function () {
+    $escenario = crearEscenarioAusenciaVigente();
+
+    $respuesta = $this->actingAs($escenario['admin'])->get(route('partido.edit', [
+        'partido' => $escenario['partido']->id,
+        'idEdicion' => $escenario['partido']->idEdicion,
+    ]));
+
+    $respuesta->assertOk();
+    $respuesta->assertSee('Los equipos no pueden modificarse porque el partido tiene una ausencia vigente.', false);
+    $respuesta->assertDontSee('ya tiene resultado, planillas o goles confirmados', false);
+    $respuesta->assertSee('selector.disabled = true', false);
+});
+
+it('la vista edit sin ausencia ni actividad no bloquea los equipos', function () {
+    $escenario = crearEscenarioAusenciaVigente(marcarAusencia: false);
+
+    $respuesta = $this->actingAs($escenario['admin'])->get(route('partido.edit', [
+        'partido' => $escenario['partido']->id,
+        'idEdicion' => $escenario['partido']->idEdicion,
+    ]));
+
+    $respuesta->assertOk();
+    $respuesta->assertDontSee('Los equipos no pueden modificarse', false);
+    $respuesta->assertDontSee('selector.disabled = true', false);
+});
+
+it('permite editar otros campos reenviando los mismos equipos con ausencia vigente', function () {
+    $escenario = crearEscenarioAusenciaVigente();
+
+    $respuesta = $this->actingAs($escenario['admin'])
+        ->withSession(['_token' => tokenDePrueba()])
+        ->withHeaders(cabecerasCsrf())
+        ->patch(route('partido.update', $escenario['partido']->id), [
+            'idFechas' => $escenario['partido']->idFechas,
+            'idEquipoLocal' => $escenario['local']->id,
+            'idEquipoVisitante' => $escenario['visitante']->id,
+            'horario_datetime' => '2026-04-05 10:00:00',
+            'cancha' => '3',
+        ]);
+
+    $respuesta->assertSessionHasNoErrors();
+    $partido = $escenario['partido']->fresh();
+    expect([(int) $partido->idEquipoLocal, (int) $partido->idEquipoVisitante])->toBe([$escenario['local']->id, $escenario['visitante']->id])
+        ->and((int) $partido->cancha)->toBe(3)
+        ->and(CargoPlanilla::query()->where('parent_type', Partido::class)->where('parent_id', $partido->id)->count())->toBe(2)
+        ->and(AusenciaCobroPlanilla::query()->vigentes()->count())->toBe(1);
+});
+
 it('muestra una unica accion primaria para crear partidos que preserva los filtros activos', function () {
     $admin = crearAdminPartidos();
     $contexto = crearContextoPartidos();
@@ -1052,4 +1157,232 @@ it('muestra el titulo de la seleccion de categoria legible sobre el fondo claro 
     expect($contenido)->toContain('<h1 class="text-2xl font-bold text-gray-800">Seleccionar contexto</h1>')
         ->not->toContain('<h1 class="text-xl font-bold text-white">')
         ->not->toContain('rounded-lg bg-white/10 p-3');
+});
+
+it('la tarjeta del listado ofrece eliminar resultado y reactivar el automatico segun el estado', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+    $local = crearEquipoPartido($contexto, 'Rio Grande');
+    $visitante = crearEquipoPartido($contexto, 'Yerba Buena');
+    $partido = crearPartidoRegular($contexto, $local, $visitante);
+
+    $verListado = fn () => $this->actingAs($admin)
+        ->get(route('partido.index', ['idEdicion' => $contexto['edicion']->id]))
+        ->getContent();
+
+    $pendiente = $verListado();
+    expect($pendiente)->not->toContain('Eliminar resultado')
+        ->and($pendiente)->not->toContain('Reactivar resultado');
+
+    registrarResultadoPartido($partido, 2, 1);
+    $conResultado = $verListado();
+    expect($conResultado)->toContain('Eliminar resultado')
+        ->and($conResultado)->toContain('/restablecer-resultado')
+        ->and($conResultado)->not->toContain('Reactivar resultado');
+
+    // Contrato compacto de la tarjeta: los cinco controles comparten altura
+    // mínima y ancho completo, con el texto centrado aunque se envuelva.
+    $tarjeta = substr($conResultado, strpos($conResultado, 'partido-card'));
+    expect(substr_count($tarjeta, 'min-h-9 w-full leading-tight'))->toBe(4)
+        ->and(substr_count($tarjeta, 'inline-flex w-full'))->toBeGreaterThanOrEqual(1)
+        ->and((bool) preg_match('/min-h-9 w-full leading-tight"\s*>\s*Eliminar resultado/', $tarjeta))->toBeTrue();
+
+    $partido->update(['resultado_no_vino_suprimido' => true]);
+    $suprimido = $verListado();
+    expect($suprimido)->toContain('Reactivar resultado automático')
+        ->and($suprimido)->toContain('/reactivar-resultado-no-vino');
+});
+
+it('restablece el marcador desde el listado conservando planillas asistencia y cobros', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+    $local = crearEquipoPartido($contexto, 'Rio Grande');
+    $visitante = crearEquipoPartido($contexto, 'Yerba Buena');
+    $partido = crearPartidoRegular($contexto, $local, $visitante);
+    registrarResultadoPartido($partido, 2, 1);
+
+    TablaPosicion::create([
+        'idGrupo' => $contexto['grupo']->id, 'idEquipo' => $local->id, 'idEdicion' => $contexto['edicion']->id,
+        'golesFavor' => 2, 'golesContra' => 1, 'diferenciaGoles' => 1, 'jugado' => 1, 'ganado' => 1, 'perdido' => 0, 'empatado' => 0, 'puntos' => 3,
+    ]);
+    TablaPosicion::create([
+        'idGrupo' => $contexto['grupo']->id, 'idEquipo' => $visitante->id, 'idEdicion' => $contexto['edicion']->id,
+        'golesFavor' => 1, 'golesContra' => 2, 'diferenciaGoles' => -1, 'jugado' => 1, 'ganado' => 0, 'perdido' => 1, 'empatado' => 0, 'puntos' => 0,
+    ]);
+    $local->update(['partidos_jugados' => 1, 'victorias' => 1, 'puntos' => 3, 'golesFavor' => 2, 'golesContra' => 1]);
+    $visitante->update(['partidos_jugados' => 1, 'derrotas' => 1, 'golesFavor' => 1, 'golesContra' => 2]);
+
+    Jugador::create(['dni' => '30111222', 'nombre' => 'Base', 'apellido' => 'Goleador', 'goles_totales' => 2]);
+    $planilla = crearPlanillaDePartido($partido, '30111222', $local->id, 2);
+    TablaGoleador::create(['dni_jugador' => '30111222', 'cantidadGoles' => 2, 'idEquipo' => $local->id, 'idEdicion' => $contexto['edicion']->id, 'idCategoria' => $contexto['categoria']->id]);
+    GolArbitroReportado::create([
+        'partido_id' => $partido->id, 'partido_type' => Partido::class,
+        'idEdicion' => $contexto['edicion']->id, 'idEquipo' => $local->id, 'goles_reportados' => 2,
+    ]);
+    $partido->update(['goles_confirmados_at' => now()]);
+    EquipoEdicion::where('idEquipo', $local->id)->update(['golesContra' => 3]);
+
+    $response = $this->actingAs($admin)
+        ->withSession(['_token' => tokenDePrueba()])
+        ->withHeaders(cabecerasCsrf())
+        ->post(route('partido.restablecer-resultado', array_filter([
+            'partido' => $partido->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'idGrupo' => $contexto['grupo']->id,
+            'idFecha' => $contexto['fecha']->id,
+        ])));
+
+    $response->assertRedirect(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'idFecha' => $contexto['fecha']->id,
+    ]));
+    $response->assertSessionHas('status', 'Resultado restablecido con éxito.');
+
+    $partido = $partido->fresh();
+    expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado])->toBe([null, null, 0])
+        ->and($partido->ganador_por_no_vino)->toBeNull()
+        ->and($partido->goles_confirmados_at)->toBeNull()
+        ->and((bool) $partido->resultado_no_vino_suprimido)->toBeFalse();
+
+    // El partido y la asistencia se conservan; los goles individuales quedan en cero.
+    $this->assertDatabaseHas('planilla_jugadores', ['id' => $planilla->id, 'partido_id' => $partido->id, 'goles' => 0, 'asistio' => 1]);
+    $this->assertDatabaseMissing('goles_arbitros_reportados', ['partido_id' => $partido->id, 'partido_type' => Partido::class]);
+
+    // Posiciones, historial y golesContra de equipo_ediciones revertidos.
+    $this->assertDatabaseHas('tabla_posiciones', ['idEquipo' => $local->id, 'jugado' => 0, 'ganado' => 0, 'puntos' => 0, 'golesFavor' => 0, 'golesContra' => 0]);
+    $this->assertDatabaseHas('tabla_posiciones', ['idEquipo' => $visitante->id, 'jugado' => 0, 'perdido' => 0, 'puntos' => 0]);
+    $this->assertDatabaseHas('equipos', ['id' => $local->id, 'partidos_jugados' => 0, 'victorias' => 0, 'puntos' => 0, 'golesFavor' => 0, 'golesContra' => 0]);
+    $this->assertDatabaseHas('equipos', ['id' => $visitante->id, 'partidos_jugados' => 0, 'derrotas' => 0]);
+    $this->assertDatabaseHas('jugadores', ['dni' => '30111222', 'goles_totales' => 0]);
+    $this->assertDatabaseMissing('tabla_goleadores', ['dni_jugador' => '30111222']);
+    $this->assertDatabaseHas('equipo_ediciones', ['idEquipo' => $local->id, 'golesContra' => 0]);
+});
+
+it('al fallar el restablecimiento revierte marcador y estadisticas y avisa', function () {
+    Log::spy();
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+    $local = crearEquipoPartido($contexto, 'Rio Grande');
+    $visitante = crearEquipoPartido($contexto, 'Yerba Buena');
+    $partido = crearPartidoRegular($contexto, $local, $visitante);
+    registrarResultadoPartido($partido, 2, 1);
+
+    TablaPosicion::create([
+        'idGrupo' => $contexto['grupo']->id, 'idEquipo' => $local->id, 'idEdicion' => $contexto['edicion']->id,
+        'golesFavor' => 2, 'golesContra' => 1, 'diferenciaGoles' => 1, 'jugado' => 1, 'ganado' => 1, 'perdido' => 0, 'empatado' => 0, 'puntos' => 3,
+    ]);
+
+    Jugador::create(['dni' => '30111222', 'nombre' => 'Base', 'apellido' => 'Goleador', 'goles_totales' => 2]);
+    $planilla = crearPlanillaDePartido($partido, '30111222', $local->id, 2);
+    TablaGoleador::create(['dni_jugador' => '30111222', 'cantidadGoles' => 2, 'idEquipo' => $local->id, 'idEdicion' => $contexto['edicion']->id, 'idCategoria' => $contexto['categoria']->id]);
+    GolArbitroReportado::create([
+        'partido_id' => $partido->id, 'partido_type' => Partido::class,
+        'idEdicion' => $contexto['edicion']->id, 'idEquipo' => $local->id, 'goles_reportados' => 2,
+    ]);
+
+    Partido::updating(function (): void {
+        throw new RuntimeException('Fallo simulado al restablecer');
+    });
+
+    $response = $this->actingAs($admin)
+        ->withSession(['_token' => tokenDePrueba()])
+        ->withHeaders(cabecerasCsrf())
+        ->post(route('partido.restablecer-resultado', array_filter([
+            'partido' => $partido->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'idGrupo' => $contexto['grupo']->id,
+            'idFecha' => $contexto['fecha']->id,
+        ])));
+
+    $response->assertRedirect(route('partido.index', [
+        'idEdicion' => $contexto['edicion']->id,
+        'idCategoria' => $contexto['categoria']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'idFecha' => $contexto['fecha']->id,
+    ]));
+    $response->assertSessionHas('error', 'No se pudo restablecer el resultado del partido. Intenta nuevamente.');
+    Log::assertLogged('error');
+
+    // Nada cambió: la transacción se revierte completa.
+    $this->assertDatabaseHas('partidos', ['id' => $partido->id, 'golesEquipoLocal' => 2, 'golesEquipoVisitante' => 1, 'jugado' => 1]);
+    $this->assertDatabaseHas('planilla_jugadores', ['id' => $planilla->id, 'goles' => 2]);
+    $this->assertDatabaseHas('goles_arbitros_reportados', ['partido_id' => $partido->id, 'partido_type' => Partido::class]);
+    $this->assertDatabaseHas('tabla_posiciones', ['idEquipo' => $local->id, 'jugado' => 1, 'puntos' => 3]);
+    $this->assertDatabaseHas('jugadores', ['dni' => '30111222', 'goles_totales' => 2]);
+    $this->assertDatabaseHas('tabla_goleadores', ['dni_jugador' => '30111222', 'cantidadGoles' => 2]);
+});
+
+it('restablecer requiere acceso al panel y es idempotente', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+    $local = crearEquipoPartido($contexto, 'Rio Grande');
+    $visitante = crearEquipoPartido($contexto, 'Yerba Buena');
+    $partido = crearPartidoRegular($contexto, $local, $visitante);
+    $urlRestablecer = route('partido.restablecer-resultado', ['partido' => $partido->id, 'idEdicion' => $contexto['edicion']->id]);
+    $urlReactivar = route('partido.reactivar-resultado-no-vino', ['partido' => $partido->id, 'idEdicion' => $contexto['edicion']->id]);
+
+    // Invitado: el panel no existe (404).
+    $this->withSession(['_token' => tokenDePrueba()])->withHeaders(cabecerasCsrf())
+        ->post($urlRestablecer)->assertStatus(404);
+
+    // Usuario sin rol admin: redirigido a la home sin tocar nada.
+    $colaborador = User::factory()->create(['rol' => 'regular', 'email_verified_at' => now()]);
+    $this->actingAs($colaborador)->withSession(['_token' => tokenDePrueba()])->withHeaders(cabecerasCsrf())
+        ->post($urlRestablecer)->assertRedirect('/');
+
+    // Dos aplicaciones consecutivas del admin dejan el mismo estado.
+    $this->actingAs($admin)->withSession(['_token' => tokenDePrueba()])->withHeaders(cabecerasCsrf())
+        ->post($urlRestablecer)->assertSessionHas('status', 'Resultado restablecido con éxito.');
+    $this->actingAs($admin)->withSession(['_token' => tokenDePrueba()])->withHeaders(cabecerasCsrf())
+        ->post($urlRestablecer)->assertSessionHas('status', 'Resultado restablecido con éxito.');
+
+    // Reactivar sin supresión previa es un no-op seguro.
+    $this->actingAs($admin)->withSession(['_token' => tokenDePrueba()])->withHeaders(cabecerasCsrf())
+        ->post($urlReactivar)->assertSessionHas('status', 'Resultado automático reactivado con éxito.');
+
+    $partido = $partido->fresh();
+    expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado])->toBe([null, null, 0])
+        ->and((bool) $partido->resultado_no_vino_suprimido)->toBeFalse();
+    $this->assertModelExists($partido);
+});
+
+it('el restablecimiento del automatico queda suprimido y reactivarlo lo reaplica', function () {
+    $admin = crearAdminPartidos();
+    $contexto = crearContextoPartidos();
+    $local = crearEquipoPartido($contexto, 'Rio Grande');
+    $visitante = crearEquipoPartido($contexto, 'Yerba Buena');
+    $partido = crearPartidoRegular($contexto, $local, $visitante);
+    activarCobrosCargos();
+    $cargoLocal = crearCargosNoVino($partido, $local, $contexto);
+    $cargoVisitante = crearCargosNoVino($partido, $visitante, $contexto);
+    app(AusenciasCobroService::class)->marcarNoVino($admin, $local->id, $cargoLocal->id);
+    app(PagosCobroService::class)->registrarPago($admin, $cargoVisitante->id, 25000, 'efectivo', '11111111-1111-4111-8111-111111111111');
+    expect([$partido->fresh()->golesEquipoLocal, $partido->fresh()->golesEquipoVisitante])->toBe([0, 3]);
+
+    $this->actingAs($admin)->withSession(['_token' => tokenDePrueba()])->withHeaders(cabecerasCsrf())
+        ->post(route('partido.restablecer-resultado', ['partido' => $partido->id, 'idEdicion' => $contexto['edicion']->id]))
+        ->assertSessionHas('status', 'Resultado restablecido con éxito.');
+
+    $partido = $partido->fresh();
+    expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado])->toBe([null, null, 0])
+        ->and((bool) $partido->resultado_no_vino_suprimido)->toBeTrue();
+
+    // El cargo de una ausencia no tiene deuda y no admite pagos anticipados.
+    expect(fn () => app(PagosCobroService::class)->registrarPago($admin, $cargoLocal->id, 25000, 'efectivo', '22222222-2222-4222-8222-222222222222'))
+        ->toThrow(ValidationException::class, 'El cargo no registra deuda pendiente; no se admiten anticipos.');
+    expect([$partido->fresh()->golesEquipoLocal, $partido->fresh()->golesEquipoVisitante])->toBe([null, null]);
+
+    // Reactivación expresa desde el listado: el automático vuelve a aplicarse.
+    $this->actingAs($admin)->withSession(['_token' => tokenDePrueba()])->withHeaders(cabecerasCsrf())
+        ->post(route('partido.reactivar-resultado-no-vino', ['partido' => $partido->id, 'idEdicion' => $contexto['edicion']->id]))
+        ->assertSessionHas('status', 'Resultado automático reactivado con éxito.');
+
+    $partido = $partido->fresh();
+    expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado])->toBe([0, 3, 1])
+        ->and($partido->ganador_por_no_vino)->toBe((int) $visitante->id)
+        ->and((bool) $partido->resultado_no_vino_suprimido)->toBeFalse();
 });

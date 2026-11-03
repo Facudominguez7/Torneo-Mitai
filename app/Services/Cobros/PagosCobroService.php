@@ -109,6 +109,8 @@ class PagosCobroService
                     throw new RuntimeException('No se pudo registrar el historial del pago.');
                 }
 
+                app(AusenciasCobroService::class)->sincronizarResultadoDeCargo($cargo);
+
                 return $pago;
             });
         } catch (Throwable $excepcion) {

@@ -8,9 +8,39 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateRequest extends FormRequest
 {
+    public const ERROR_AUSENCIA = 'Los equipos no pueden modificarse porque el partido tiene una ausencia vigente.';
+
+    public const ERROR_ACTIVIDAD = 'Los equipos no pueden modificarse porque el partido ya tiene resultado, planillas o goles confirmados.';
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Reenviar los equipos sin cambios no es una modificación: se descartan
+     * para que el resto de los campos se pueda guardar aunque los equipos
+     * estén bloqueados. Cualquier equipo distinto deja el par completo en la
+     * petición y se reporta el bloqueo sobre ambos campos.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (! $this->equiposBloqueadosPorActividad()) {
+            return;
+        }
+
+        $partido = $this->route('partido');
+        $camposEquipos = ['idEquipoLocal', 'idEquipoVisitante'];
+        $reenvioIdentico = collect($camposEquipos)->every(
+            fn (string $campo): bool => ! $this->has($campo)
+                || (string) $this->input($campo) === (string) $partido->{$campo},
+        );
+
+        if ($reenvioIdentico) {
+            foreach ($camposEquipos as $campo) {
+                $this->request->remove($campo);
+            }
+        }
     }
 
     public function rules(): array
@@ -40,11 +70,16 @@ class UpdateRequest extends FormRequest
 
     public function messages(): array
     {
+        $partido = $this->route('partido');
+        $mensaje = $partido instanceof Partido && app(PartidoService::class)->tieneAusenciaVigente($partido)
+            ? self::ERROR_AUSENCIA
+            : self::ERROR_ACTIVIDAD;
+
         return [
             'idEquipoLocal.different' => 'El equipo local debe ser distinto al equipo visitante.',
             'idEquipoVisitante.different' => 'El equipo visitante debe ser distinto al equipo local.',
-            'idEquipoLocal.prohibited' => 'Los equipos no pueden modificarse porque el partido ya tiene resultado, planillas o goles confirmados.',
-            'idEquipoVisitante.prohibited' => 'Los equipos no pueden modificarse porque el partido ya tiene resultado, planillas o goles confirmados.',
+            'idEquipoLocal.prohibited' => $mensaje,
+            'idEquipoVisitante.prohibited' => $mensaje,
             'idGrupo.prohibited' => 'El grupo no puede ser modificado desde esta pantalla.',
             'idCategoria.prohibited' => 'La categoría no puede ser modificada desde esta pantalla.',
             'idEdicion.prohibited' => 'La edición no puede ser modificada desde esta pantalla.',
@@ -61,6 +96,8 @@ class UpdateRequest extends FormRequest
             return false;
         }
 
-        return app(PartidoService::class)->razonesBloqueoCambioEquipos($partido) !== [];
+        $servicio = app(PartidoService::class);
+
+        return $servicio->razonesBloqueoCambioEquipos($partido) !== [] || $servicio->tieneAusenciaVigente($partido);
     }
 }

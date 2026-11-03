@@ -152,7 +152,8 @@ it('protege el buscador de invitados y no admin', function () {
     $c = otraEdicionContexto();
     $url = route('reemplazo-equipo.buscar-otra-edicion').'?idEdicion=100&idCategoria='.$c['categoria']->id.'&q=Atl';
 
-    $this->get($url)->assertRedirect(route('login'));
+    // El middleware del panel no expone la ruta a invitados: responde 404.
+    $this->get($url)->assertNotFound();
     $usuario = User::factory()->create(['rol' => 'regular', 'email_verified_at' => now()]);
     $this->actingAs($usuario)->get($url)->assertRedirect('/');
 });

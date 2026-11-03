@@ -124,6 +124,10 @@ Route::group(['prefix' => 'Panel', 'middleware' => [UserAccesPanelMiddleware::cl
         ->name('equipogrupo.asignar-pendientes');
     Route::resource('equipoedicion', ControladorEquiposEdiciones::class);
     Route::resource('partido', ControladorPartidos::class);
+    Route::post('partido/{partido}/restablecer-resultado', [ControladorPartidos::class, 'restablecerResultado'])
+        ->name('partido.restablecer-resultado');
+    Route::post('partido/{partido}/reactivar-resultado-no-vino', [ControladorPartidos::class, 'reactivarResultadoNoVino'])
+        ->name('partido.reactivar-resultado-no-vino');
     Route::get('partido-interzonal/create', [ControladorPartidos::class, 'createInterzonal'])->name('partido.create-interzonal');
     Route::post('partido-interzonal/store', [ControladorPartidos::class, 'storeInterzonal'])->name('partido.store-interzonal');
     Route::resource('tabla_goleador', ControladorTablaGoleadores::class);

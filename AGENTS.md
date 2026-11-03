@@ -35,6 +35,7 @@ Evalúa tu tarea antes de implementar y **ejecuta/invoca la herramienta correspo
 - **[Condición]:** Tarea de frontend (Blade, Alpine.js), code review o tocar código JS nativo. 👉 **[Ejecutar]:** Usa la skill `javascript-pro`
 
 ## 5. REGLAS ESTRICTAS DE CÓDIGO E IDIOMA
+- **Comunicación con el usuario:** responde siempre en español, incluidas las preguntas, opciones y explicaciones, incluso cuando un mensaje automático o de una herramienta esté en inglés.
 - **Variables y nombres:** usa los términos del dominio del negocio, que están en español. Clases en `PascalCase`, métodos/variables en `camelCase`, constantes en `UPPER_SNAKE_CASE` y rutas públicas en `kebab-case`.
 - **Tipado:** tipa parámetros y retornos siempre que sea razonable. Prefiere propiedades tipadas y nulabilidad explícita compatibles con PHP 8.3.
 - **Documentación:** docstrings en español solo donde agreguen contexto de negocio real; comenta solo la lógica no evidente.
@@ -355,6 +356,11 @@ it('has emails', function (string $email) {
 - Siempre que se modifique la experiencia de usuario o la interfaz (UX/UI), comprobar el flujo afectado en un navegador real mediante el MCP Playwright antes de dar el cambio por verificado.
 - Usar un navegador con ventana visible y llevar la pestaña de prueba al frente para que el usuario pueda observar las acciones en tiempo real. No sustituirlo silenciosamente por ejecución sin ventana; si no se puede mostrar, informar el bloqueo.
 - Comprobar las interacciones, los estados de error y la presentación en escritorio y móvil; registrar URL, tamaños de pantalla, escenarios y resultados observados.
+- Antes de reproducir un recorte en escritorio, verificá y registrá la resolución real de la pantalla, la escala del sistema, el tamaño efectivo de la ventana y del viewport, y el zoom del navegador; reproducí con esa configuración además de los tamaños obligatorios. No confundas una pantalla emulada, `devicePixelRatio` ni `visualViewport.scale` con la resolución física o el porcentaje de zoom; si no podés comprobarlos, consultá al usuario.
+- Lo que el usuario mira en vivo tiene que entrar completo en su ventana.
+- Para la demostración en vivo, NO usar `browser_resize`. Si antes se usó, ejecutar `browser_close` y volver a navegar para que la página vuelva a seguir la ventana.
+- Después comprobar con `browser_evaluate` que `innerWidth`×`innerHeight` no supera `outerWidth`×`outerHeight`, y que el pie de los diálogos (`.modal-footer`; en este proyecto los diálogos usan SweetAlert2 sin esa clase, así que se mide el pie real del diálogo) queda dentro de `innerHeight`.
+- Los tamaños obligatorios de prueba (escritorio y móvil) se miden con `browser_resize` y `browser_evaluate`, sin pretender que el usuario los vea completos. Al terminar las medidas, ejecutar `browser_close` antes de mostrarle algo en vivo.
 - Tamaños de pantalla obligatorios: en escritorio, *1920×1080 y 1280×720, que son los más utilizados; en móvil, **390×844*. En ambos tamaños de escritorio no debe haber desplazamiento horizontal ni textos de controles recortados. Indicar estos tamaños como criterio al delegar escritura o verificación de UX/UI.
 - Las pruebas unitarias, los contratos de fuente y el DOM simulado complementan esta comprobación, pero no la reemplazan.
 - Si el MCP Playwright no está disponible, registrar el bloqueo y dejar la verificación UX/UI pendiente; no declarar el cambio completamente verificado.
