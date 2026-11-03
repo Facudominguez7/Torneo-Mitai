@@ -1180,6 +1180,13 @@ it('la tarjeta del listado ofrece eliminar resultado y reactivar el automatico s
         ->and($conResultado)->toContain('/restablecer-resultado')
         ->and($conResultado)->not->toContain('Reactivar resultado');
 
+    // Contrato compacto de la tarjeta: los cinco controles comparten altura
+    // mínima y ancho completo, con el texto centrado aunque se envuelva.
+    $tarjeta = substr($conResultado, strpos($conResultado, 'partido-card'));
+    expect(substr_count($tarjeta, 'min-h-9 w-full leading-tight'))->toBe(4)
+        ->and(substr_count($tarjeta, 'inline-flex w-full'))->toBeGreaterThanOrEqual(1)
+        ->and((bool) preg_match('/min-h-9 w-full leading-tight"\s*>\s*Eliminar resultado/', $tarjeta))->toBeTrue();
+
     $partido->update(['resultado_no_vino_suprimido' => true]);
     $suprimido = $verListado();
     expect($suprimido)->toContain('Reactivar resultado automático')

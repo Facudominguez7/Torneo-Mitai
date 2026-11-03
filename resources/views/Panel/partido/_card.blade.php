@@ -83,19 +83,19 @@
     @endif
 
     <div class="grid grid-cols-1 gap-2 px-3 py-3 sm:grid-cols-2 md:mx-auto md:max-w-2xl md:grid-cols-4 md:px-4">
-        <x-ui.button size="sm" variant="primary"
+        <x-ui.button size="sm" variant="primary" class="min-h-9 w-full leading-tight"
             href="{{ route('cargar-resultado', ['idPartido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')]) }}">
             {{ $p->golesEquipoLocal === null && $p->golesEquipoVisitante === null ? 'Cargar resultado' : 'Editar resultado' }}
         </x-ui.button>
-        <x-ui.button size="sm" variant="secondary"
+        <x-ui.button size="sm" variant="secondary" class="min-h-9 w-full leading-tight"
             href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0, 'origen' => 'partido-index', 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha'), 'horario_filtro' => request('horario'), 'busqueda' => request('busqueda')]) }}">
             Planillas
         </x-ui.button>
-        <x-ui.button size="sm" variant="success"
+        <x-ui.button size="sm" variant="success" class="min-h-9 w-full leading-tight"
             href="{{ route('partido.edit', ['partido' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idGrupo' => request('idGrupo'), 'idFecha' => request('idFecha')]) }}">
             Editar
         </x-ui.button>
-        <x-ui.confirm-delete size="sm"
+        <x-ui.confirm-delete size="sm" class="w-full min-h-9"
             action="{{ route('partido.destroy', $camposEliminar) }}"
             message="¿Eliminar este partido? Se revertirán posiciones, historial y estadísticas asociadas."
         />
@@ -105,18 +105,18 @@
                 action="{!! e(route('partido.restablecer-resultado', $camposRestablecer), false) !!}"
                 data-confirm-delete
                 data-confirm-message="¿Eliminar el resultado de este partido? Se restablece el marcador y se borran los goles de jugadores y los reportes arbitrales; las planillas y los cobros se conservan."
-                class="inline-flex">
+                class="sm:col-span-2 md:col-span-4">
                 @csrf
-                <x-ui.button type="submit" variant="danger" size="sm">Eliminar resultado</x-ui.button>
+                <x-ui.button type="submit" variant="danger" size="sm" class="min-h-9 w-full leading-tight">Eliminar resultado</x-ui.button>
             </form>
         @endif
         @if ($p->resultado_no_vino_suprimido)
             {{-- Reactivación expresa del 3 a 0 automático (S5): nunca pisa un resultado cargado a mano. --}}
             <form method="POST"
                 action="{!! e(route('partido.reactivar-resultado-no-vino', $camposRestablecer), false) !!}"
-                class="inline-flex">
+                class="sm:col-span-2 md:col-span-4">
                 @csrf
-                <x-ui.button type="submit" variant="secondary" size="sm">Reactivar resultado automático</x-ui.button>
+                <x-ui.button type="submit" variant="secondary" size="sm" class="min-h-9 w-full leading-tight">Reactivar resultado automático</x-ui.button>
             </form>
         @endif
     </div>
