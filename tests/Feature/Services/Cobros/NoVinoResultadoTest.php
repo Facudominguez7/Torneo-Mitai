@@ -363,14 +363,34 @@ it('el restablecimiento integral borra el 3 a 0 automatico y queda suprimido ant
         ->and(posicionNoVino($partido, $this->visitante->id))->toMatchArray(sinPartidosJugados())
         ->and($this->visitante->fresh()->only(['victorias', 'puntos', 'partidos_jugados']))->toBe(['victorias' => 0, 'puntos' => 0, 'partidos_jugados' => 0]);
 
-    // El pago tardío del equipo ausente no revive el 3 a 0 suprimido (S5).
-    $pagos->registrarPago($this->admin, $this->cargoLocal->id, 25000, 'efectivo', '33333333-3333-4333-8333-333333333333');
+    // El cargo de una ausencia no tiene deuda y no admite pagos anticipados.
+    expect(fn () => $pagos->registrarPago($this->admin, $this->cargoLocal->id, 25000, 'efectivo', '33333333-3333-4333-8333-333333333333'))
+        ->toThrow(ValidationException::class, 'El cargo no registra deuda pendiente; no se admiten anticipos.');
     $partido = $this->partido->fresh();
     expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado])->toBe([null, null, 0])
         ->and($partido->resultado_no_vino_suprimido)->toBeTrue()
-        ->and(PagoPlanilla::query()->count())->toBe(3)
+        ->and(PagoPlanilla::query()->count())->toBe(2)
         ->and(CargoPlanilla::query()->where('parent_id', $partido->id)->where('parent_type', Partido::class)->count())->toBe(2)
         ->and(AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', $this->cargoLocal->id)->exists())->toBeTrue();
+
+    $this->servicio->deshacerNoVino($this->admin, $this->local->id, $this->cargoLocal->id);
+    $partido = $this->partido->fresh();
+    expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado, $partido->resultado_no_vino_suprimido])->toBe([null, null, 0, true])
+        ->and(AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', $this->cargoLocal->id)->exists())->toBeFalse();
+
+    $this->servicio->marcarNoVino($this->admin, $this->local->id, $this->cargoLocal->id);
+    $partido = $this->partido->fresh();
+    expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado, $partido->resultado_no_vino_suprimido])->toBe([null, null, 0, true])
+        ->and($partido->ganador_por_no_vino)->toBeNull()
+        ->and(AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', $this->cargoLocal->id)->exists())->toBeTrue()
+        ->and(posicionNoVino($partido, $this->visitante->id))->toMatchArray(sinPartidosJugados())
+        ->and(PagoPlanilla::query()->count())->toBe(2);
+
+    $this->servicio->reactivarResultadoAutomatico($this->admin, (int) $partido->id);
+    $partido = $this->partido->fresh();
+    expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado, $partido->resultado_no_vino_suprimido])->toBe([0, 3, 1, false])
+        ->and($partido->ganador_por_no_vino)->toBe((int) $this->visitante->id)
+        ->and(posicionNoVino($partido, $this->visitante->id))->toMatchArray(['jugado' => 1, 'ganado' => 1, 'puntos' => 3]);
 });
 
 it('la reactivacion expresa vuelve a aplicar el 3 a 0 automatico', function (): void {
@@ -405,7 +425,7 @@ it('la reactivacion no pisa un resultado cargado a mano', function (): void {
 
 it('solo un administrador puede reactivar el resultado suprimido', function (): void {
     $this->partido->update(['resultado_no_vino_suprimido' => true]);
-    $colaborador = crearUsuarioConRolCargos('colaborador');
+    $colaborador = crearUsuarioConRolCargos('regular');
 
     expect(fn () => $this->servicio->reactivarResultadoAutomatico($colaborador, (int) $this->partido->id))
         ->toThrow(AuthorizationException::class);

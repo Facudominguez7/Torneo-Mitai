@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Services\Cobros\AusenciasCobroService;
 use App\Services\Cobros\PagosCobroService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 require_once __DIR__.'/../Services/Cobros/FixturesCargos.php';
 
@@ -1322,7 +1323,7 @@ it('restablecer requiere acceso al panel y es idempotente', function () {
         ->post($urlRestablecer)->assertStatus(404);
 
     // Usuario sin rol admin: redirigido a la home sin tocar nada.
-    $colaborador = User::factory()->create(['rol' => 'colaborador', 'email_verified_at' => now()]);
+    $colaborador = User::factory()->create(['rol' => 'regular', 'email_verified_at' => now()]);
     $this->actingAs($colaborador)->withSession(['_token' => tokenDePrueba()])->withHeaders(cabecerasCsrf())
         ->post($urlRestablecer)->assertRedirect('/');
 
@@ -1338,8 +1339,8 @@ it('restablecer requiere acceso al panel y es idempotente', function () {
 
     $partido = $partido->fresh();
     expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado])->toBe([null, null, 0])
-        ->and((bool) $partido->resultado_no_vino_suprimido)->toBeFalse()
-        ->and($this->getDatabaseRowsCount('partidos'))->toBeGreaterThan(0);
+        ->and((bool) $partido->resultado_no_vino_suprimido)->toBeFalse();
+    $this->assertModelExists($partido);
 });
 
 it('el restablecimiento del automatico queda suprimido y reactivarlo lo reaplica', function () {
@@ -1363,8 +1364,9 @@ it('el restablecimiento del automatico queda suprimido y reactivarlo lo reaplica
     expect([$partido->golesEquipoLocal, $partido->golesEquipoVisitante, (int) $partido->jugado])->toBe([null, null, 0])
         ->and((bool) $partido->resultado_no_vino_suprimido)->toBeTrue();
 
-    // El pago posterior del equipo ausente no revive el 3 a 0 suprimido (S5).
-    app(PagosCobroService::class)->registrarPago($admin, $cargoLocal->id, 25000, 'efectivo', '22222222-2222-4222-8222-222222222222');
+    // El cargo de una ausencia no tiene deuda y no admite pagos anticipados.
+    expect(fn () => app(PagosCobroService::class)->registrarPago($admin, $cargoLocal->id, 25000, 'efectivo', '22222222-2222-4222-8222-222222222222'))
+        ->toThrow(ValidationException::class, 'El cargo no registra deuda pendiente; no se admiten anticipos.');
     expect([$partido->fresh()->golesEquipoLocal, $partido->fresh()->golesEquipoVisitante])->toBe([null, null]);
 
     // Reactivación expresa desde el listado: el automático vuelve a aplicarse.
