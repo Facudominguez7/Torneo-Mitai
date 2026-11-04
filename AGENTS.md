@@ -54,6 +54,28 @@ Evalúa tu tarea antes de implementar y **ejecuta/invoca la herramienta correspo
 - Pest se ejecuta siempre contra la base fija `mitai_testing`, configurada en `phpunit.xml`, y nunca contra la base de desarrollo `mitai`: `RefreshDatabase` vacía la base que usa. Si otra sesión está usando `mitai_testing`, esperar o informar el bloqueo.
 - La verificación visual con Playwright usa siempre la base de desarrollo `mitai` mediante el servidor del puerto 8000, sin servidores temporales ni datos sintéticos. Cualquier acción que escriba en `mitai` (pagos, exenciones, altas o cambios) requiere autorización previa del usuario.
 
+## 8. ACCESO DESDE OTROS DISPOSITIVOS (TAILSCALE SERVE)
+
+Para abrir la app desde el celular u otra PC de la tailnet del dueño, publicala con `tailscale serve`. No abras puertos en el router, no cambies el bind del servidor a `0.0.0.0` como solución y no uses `tailscale funnel`, que la publica en internet.
+
+| Dato | Valor |
+|---|---|
+| Servidor local | `http://127.0.0.1:8000` |
+| Puerto HTTPS en la tailnet | `8000` (reservado para este proyecto) |
+
+| Acción | Comando |
+|---|---|
+| Publicar (queda activo, también tras reiniciar) | `tailscale serve --bg --https=8000 http://127.0.0.1:8000` |
+| Ver la URL y el estado | `tailscale serve status` → `https://<equipo>.<tailnet>.ts.net:8000` |
+| Dejar de publicar | `tailscale serve --https=8000 off` |
+
+- Usá solo el puerto de esta tabla para no pisar a otros proyectos publicados en el mismo equipo. No ejecutes `tailscale serve reset`: borra la configuración de todos.
+- Requisito único de la tailnet: MagicDNS y HTTPS Certificates habilitados en la consola de Tailscale. Si el comando pide habilitarlos o pide permisos (`sudo tailscale set --operator=$USER`), informá al dueño en vez de cambiarlo por tu cuenta.
+- No commitees el nombre del equipo ni de la tailnet; usá `tailscale serve status` para obtener la URL y pasásela al dueño.
+- `bootstrap/app.php` ya confía en el proxy (`trustProxies(at: '*')`), así que Laravel genera URLs `https://` correctas detrás de Tailscale Serve.
+- Los assets del dev server de Vite (`5173`, archivo `public/hot`) apuntan a `127.0.0.1` y no cargan desde otro dispositivo. Para revisar desde el celular usá assets compilados (`npm run build` dentro de Docker, sin `public/hot`) y avisá al dueño antes de frenar el contenedor de Vite.
+- La verificación visual con Playwright sigue usando `http://localhost:8000`; Tailscale Serve es solo para que el dueño mire desde otro dispositivo.
+
 ===
 
 <laravel-boost-guidelines>
