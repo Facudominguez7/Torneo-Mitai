@@ -11,3 +11,4 @@ Bases de datos: no crees ni borres bases nuevas.
 
 - Antes de reproducir un recorte en escritorio, verificá y registrá la resolución real de la pantalla, la escala del sistema, el tamaño efectivo de la ventana y del viewport, y el zoom del navegador; reproducí con esa configuración además de los tamaños obligatorios. No confundas una pantalla emulada, `devicePixelRatio` ni `visualViewport.scale` con la resolución física o el porcentaje de zoom; si no podés comprobarlos, consultá al usuario.
 - `browser_resize` fija el tamaño de la página (`page.setViewportSize`), no el de la ventana, y queda fijo hasta cerrar el navegador. Para lo que el usuario mira en vivo, no lo uses: si ya lo usaste, ejecutá `browser_close` y volvé a navegar. Verificación y detalles: sección de verificación visual de `AGENTS.md`.
+- Para abrir la app desde otro dispositivo usá `tailscale serve` en el puerto HTTPS 8000 de la tailnet, nunca `funnel` ni puertos abiertos (sección 8 de `AGENTS.md`).
