@@ -83,23 +83,20 @@ function tarjetaDashboardPartido(string $html, Partido $partido): string
     return substr($html, $inicio, min($finales) - $inicio);
 }
 
-it('muestra el listado de partidos siempre abierto, despues de los KPIs y antes de Requiere atencion', function () {
+it('muestra el listado de partidos siempre abierto, antes de Requiere atencion', function () {
     $contexto = crearContextoPartidosEdicion();
     $html = dashboardPartidosEdicion($contexto);
 
-    $posKpis = strpos($html, 'Pendientes de carga');
     $posSeccion = strpos($html, '>Todos los partidos de la edición</h2>');
     $posAtencion = strpos($html, 'Requiere atención');
     $posProxima = strpos($html, 'Próxima fecha');
     $posJugadores = strpos($html, 'Jugadores por categoría');
 
-    expect($posKpis)->not->toBeFalse()
-        ->and($posSeccion)->not->toBeFalse()
+    expect($posSeccion)->not->toBeFalse()
         ->and($posAtencion)->not->toBeFalse()
         ->and($posProxima)->not->toBeFalse()
         ->and($posSeccion)->toBeLessThan($posProxima)
         ->and($posJugadores)->not->toBeFalse()
-        ->and($posSeccion)->toBeGreaterThan($posKpis)
         ->and($posSeccion)->toBeLessThan($posAtencion)
         ->and($posSeccion)->toBeLessThan($posJugadores);
 

@@ -17,7 +17,10 @@ use Illuminate\Support\Carbon;
 
 function crearServicioResumenDashboard(): ResumenDashboard
 {
-    return new ResumenDashboard(new EquiposDeEdicionService, new EstadisticasService);
+    return new ResumenDashboard(
+        new EquiposDeEdicionService,
+        new EstadisticasService,
+    );
 }
 
 function crearContextoServicioResumen(): array
@@ -205,6 +208,9 @@ it('devuelve una proxima fecha nula cuando la edicion no tiene fechas', function
     expect($resumen['equiposInscriptos'])->toBe(0);
 });
 
+// Issue #202: el KPI del dashboard sale del mismo servicio que el listado de
+// Estadísticas de jugadores, con la misma regla de participación real y el
+// umbral configurado (L2).
 function crearPartidoServicioResumen(array $contexto, Fecha $fecha, string $horario, ?int $golesLocal = null, ?int $golesVisitante = null): Partido
 {
     $local = Equipo::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Local '.$horario, 'foto' => 'e.png']);

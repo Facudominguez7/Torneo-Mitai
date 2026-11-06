@@ -10,6 +10,8 @@ use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use App\Models\Fecha;
+use App\Models\Grupo;
 use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
 use App\Models\Partido;
@@ -43,7 +45,30 @@ function crearContextoEstadisticasJugadoresMigration(array $atributos = []): arr
         'idCategoria' => $categoria->id,
     ]);
 
-    return compact('edicion', 'categoria', 'equipo');
+    $equipoRival = Equipo::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => ($atributos['nombreEquipo'] ?? 'Mitai Verde').' Rival',
+        'foto' => 'escudo.png',
+    ]);
+    EquipoEdicion::create([
+        'idEdicion' => $edicion->id,
+        'idEquipo' => $equipoRival->id,
+        'idCategoria' => $categoria->id,
+    ]);
+
+    $fecha = Fecha::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Fecha Migration',
+    ]);
+    $grupo = Grupo::create([
+        'idCategoria' => $categoria->id,
+        'idEdicion' => $edicion->id,
+        'nombre' => 'Grupo Migration',
+    ]);
+
+    return compact('edicion', 'categoria', 'equipo', 'equipoRival', 'fecha', 'grupo');
 }
 
 function crearJugadorActivoEstadisticasMigration(array $contexto, string $dni, string $nombre, string $apellido): Jugador
@@ -67,14 +92,31 @@ function crearJugadorActivoEstadisticasMigration(array $contexto, string $dni, s
     return $jugador;
 }
 
-function crearPartidoJugadoEstadisticasMigration(array $contexto, string $dni, int $goles = 0, int $tarjetasRojas = 0, int $partidoId = 1): void
+// Crea un partido efectivamente disputado (#202) y la línea de planilla del
+// jugador en ese partido: la asistencia solo cuenta si el partido se jugó de
+// verdad y no fue adjudicado por «No vino».
+function crearPartidoJugadoEstadisticasMigration(array $contexto, string $dni, int $goles = 0, int $tarjetasRojas = 0): void
 {
+    $partido = Partido::create([
+        'idCategoria' => $contexto['categoria']->id,
+        'idFechas' => $contexto['fecha']->id,
+        'idEquipoLocal' => $contexto['equipo']->id,
+        'idEquipoVisitante' => $contexto['equipoRival']->id,
+        'idGrupo' => $contexto['grupo']->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'golesEquipoLocal' => 1,
+        'golesEquipoVisitante' => 0,
+        'cancha' => 1,
+        'jugado' => 1,
+        'horario_datetime' => '2026-06-01 09:00:00',
+    ]);
+
     PlanillaJugador::create([
         'dni_jugador' => $dni,
         'idEdicion' => $contexto['edicion']->id,
         'idEquipo' => $contexto['equipo']->id,
         'idCategoria' => $contexto['categoria']->id,
-        'partido_id' => $partidoId,
+        'partido_id' => $partido->id,
         'partido_type' => Partido::class,
         'asistio' => true,
         'goles' => $goles,
@@ -82,14 +124,14 @@ function crearPartidoJugadoEstadisticasMigration(array $contexto, string $dni, i
     ]);
 }
 
-// Carga $cantidad partidos jugados (asistio=true) para el mismo jugador, con
-// partido_id distinto en cada uno (hay un unique de dni_jugador+partido_id
-// +partido_type), para poder empujar su conteo de partidos por encima de un
-// umbral puntual.
+// Carga $cantidad partidos jugados (asistio=true) para el mismo jugador, cada
+// uno en un partido distinto (hay un unique de dni_jugador+partido_id
+// +partido_type), para poder empujar su conteo de participaciones por encima
+// del umbral de 5.
 function crearVariosPartidosJugadosEstadisticasMigration(array $contexto, string $dni, int $cantidad): void
 {
     foreach (range(1, $cantidad) as $numero) {
-        crearPartidoJugadoEstadisticasMigration($contexto, $dni, 0, 0, $numero);
+        crearPartidoJugadoEstadisticasMigration($contexto, $dni);
     }
 }
 
@@ -97,12 +139,12 @@ it('muestra las tarjetas kpi que ya calcula el controlador con los valores reale
     $admin = crearAdminEstadisticasJugadoresMigration();
     $contexto = crearContextoEstadisticasJugadoresMigration();
 
-    // Tres jugadores activos con conteos de partidos distintos entre sí y a
-    // los dos lados del umbral de 5, para que total (3), cinco_o_menos (1) y
-    // mas_de_cinco (2) sean tres valores distinguibles entre ellos: una
-    // clave equivocada o un contador cambiado en el markup no puede pasar
-    // inadvertido si los tres números son distintos (revisión
-    // R3-kpi-valores).
+    // Tres jugadores activos con conteos de participaciones reales distintos
+    // entre sí y a los dos lados del umbral de 5, para que total (3),
+    // menos_de_umbral (1) y umbral_o_mas (2) sean tres valores distinguibles entre
+    // ellos: una clave equivocada o un contador cambiado en el markup no
+    // puede pasar inadvertido si los tres números son distintos (revisión
+    // R3-kpi-valores). El umbral es 5 o más desde la issue #202.
     crearJugadorActivoEstadisticasMigration($contexto, '41000001', 'Mateo', 'Duarte');
     crearVariosPartidosJugadosEstadisticasMigration($contexto, '41000001', 2);
 
@@ -123,8 +165,8 @@ it('muestra las tarjetas kpi que ya calcula el controlador con los valores reale
     // Cada valor atado a su propia etiqueta con una regex, no solo la
     // presencia de la etiqueta estática.
     expect($contenido)->toMatch('/<span class="text-2xl font-bold text-gray-900">3<\/span>\s*<p[^>]*>Jugadores activos<\/p>/');
-    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Con 5 partidos o menos<\/p>/');
-    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">2<\/span>\s*<p[^>]*>Con más de 5 partidos<\/p>/');
+    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 5<\/p>/');
+    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">2<\/span>\s*<p[^>]*>5 o más<\/p>/');
 });
 
 it('conserva el filtro de edicion y la busqueda por nombre apellido o dni', function () {
