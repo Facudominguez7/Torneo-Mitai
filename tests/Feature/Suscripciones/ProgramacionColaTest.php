@@ -27,3 +27,17 @@ it('retoma cada hora los suscriptores sin sincronizar', function (): void {
         ->and($comando->expression)->toBe('0 * * * *')
         ->and($comando->withoutOverlapping)->toBeTrue();
 });
+
+it('invita todos los días el lote de suscriptores sin pedir confirmación', function (): void {
+    $comando = tareaProgramada('suscripciones:invitar-usuarios');
+
+    expect($comando)->not->toBeNull()
+        ->and($comando->command)->toContain('--forzar')->toContain('--limite=50')
+        ->and($comando->expression)->toBe('0 10 * * *')
+        ->and($comando->withoutOverlapping)->toBeTrue();
+});
+
+it('el lote diario de invitaciones es de 50 a las 10:00 salvo que la config lo cambie', function (): void {
+    expect(config('suscripciones.invitaciones.lote_diario'))->toBe(50)
+        ->and(config('suscripciones.invitaciones.hora'))->toBe('10:00');
+});

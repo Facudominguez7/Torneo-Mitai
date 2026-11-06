@@ -35,6 +35,12 @@ return [
         'webhook_tolerancia_segundos' => 300,
     ],
 
+    // Lote diario de invitaciones: cuántos usuarios se invitan por corrida y a qué hora corre.
+    'invitaciones' => [
+        'lote_diario' => (int) env('SUSCRIPCIONES_INVITACIONES_LOTE', 50),
+        'hora' => env('SUSCRIPCIONES_INVITACIONES_HORA', '10:00'),
+    ],
+
     // Avisos que se pueden elegir y su columna en suscriptores.
     'avisos' => [
         'resumen_fecha' => 'recibe_resumen_fecha',

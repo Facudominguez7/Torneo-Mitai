@@ -18,3 +18,8 @@ Schedule::command('queue:work --stop-when-empty --max-time=50')
 Schedule::command('suscripciones:sincronizar')
     ->hourly()
     ->withoutOverlapping();
+
+// Lote diario de invitaciones, sin confirmación: un tope de 50 cuida el cupo y la tasa de rebotes de Resend.
+Schedule::command('suscripciones:invitar-usuarios --forzar --limite='.config('suscripciones.invitaciones.lote_diario'))
+    ->dailyAt((string) config('suscripciones.invitaciones.hora'))
+    ->withoutOverlapping();

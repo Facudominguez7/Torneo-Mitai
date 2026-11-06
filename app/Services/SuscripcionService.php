@@ -86,6 +86,7 @@ class SuscripcionService
     public function invitar(User $usuario, string $email, CarbonInterface $enviarA): bool
     {
         $suscriptor = new Suscriptor(['email' => $email, 'usuario_id' => $usuario->id]);
+        $suscriptor->invitado_at = now();
         foreach (config('suscripciones.avisos') as $columna) {
             $suscriptor->{$columna} = true;
         }
@@ -100,6 +101,34 @@ class SuscripcionService
         RateLimiter::hit($this->claveEsperaConfirmacion($email), (int) config('suscripciones.minutos_entre_confirmaciones') * 60);
 
         return true;
+    }
+
+    /**
+     * Usuarios con cuenta a los que todavía no se los invitó: reciben los avisos, tienen correo válido
+     * y no están en la lista con ese correo. Se devuelve el correo normalizado con su usuario, sin repetirlo,
+     * para no invitar dos veces a la misma persona.
+     *
+     * @return array<string, User> correo normalizado => usuario, en orden de alta
+     */
+    public function usuariosParaInvitar(): array
+    {
+        /** @var array<string, User> $candidatos */
+        $candidatos = [];
+
+        User::query()
+            ->where('email_subscribed', true)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->whereNotExists(fn ($consulta) => $consulta->selectRaw('1')->from('suscriptores')->whereRaw('suscriptores.email = LOWER(TRIM(users.email))'))
+            ->orderBy('id')
+            ->each(function (User $usuario) use (&$candidatos): void {
+                $email = mb_strtolower(trim((string) $usuario->email));
+                if (! EmailDomainGuard::isBlocked($email) && ! isset($candidatos[$email])) {
+                    $candidatos[$email] = $usuario;
+                }
+            });
+
+        return $candidatos;
     }
 
     /**
