@@ -6,6 +6,7 @@ use App\Constants\PartidoConstants;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
+use App\Services\Panel\EstadoAdministrativoPartidoService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
@@ -21,6 +22,9 @@ class PlanillaPublicaService
         $tipoNormalizado = $this->normalizarTipoPartido($tipoPartido);
         $partido = $this->resolverPartido($tipoNormalizado, $publicToken);
         $partidoType = PartidoConstants::getModelClass($tipoNormalizado);
+        $estadoAdministrativo = $partido instanceof Partido
+            ? app(EstadoAdministrativoPartidoService::class)->resolver(collect([$partido]))->get($partido->id)['estado']
+            : null;
 
         $idEdicion = $partido->idEdicion;
 
@@ -93,6 +97,9 @@ class PlanillaPublicaService
                     'equipo_local' => $partido->equipoLocal?->nombre,
                     'equipo_visitante' => $partido->equipoVisitante?->nombre,
                 ],
+                'estado_administrativo' => $estadoAdministrativo,
+                'marcador_local' => $partido->golesEquipoLocal,
+                'marcador_visitante' => $partido->golesEquipoVisitante,
                 'goles_confirmados' => $partido->goles_confirmados_at !== null,
                 'goles_confirmados_at' => $partido->goles_confirmados_at?->format('d/m/Y H:i'),
                 'ultima_actualizacion' => $ultimaActualizacion

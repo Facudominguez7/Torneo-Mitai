@@ -11,7 +11,14 @@
     $estadoGolesLabel = null;
     $estadoGolesVariant = null;
 
-    if ($p->goles_confirmados_at !== null) {
+    $estadoAdministrativo = $estadosAdministrativos->get($p->id)['estado'] ?? null;
+    if ($estadoAdministrativo === 'administrativo') {
+        $estadoGolesLabel = 'Resultado administrativo · No vino';
+        $estadoGolesVariant = 'info';
+    } elseif ($estadoAdministrativo === 'pendiente_regularizacion') {
+        $estadoGolesLabel = 'No vino · pendiente de regularización';
+        $estadoGolesVariant = 'warning';
+    } elseif ($p->goles_confirmados_at !== null) {
         $estadoGolesLabel = 'Goles confirmados';
         $estadoGolesVariant = 'success';
     } elseif ($resultadoCargado) {

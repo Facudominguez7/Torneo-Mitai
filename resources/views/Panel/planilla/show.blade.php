@@ -66,7 +66,19 @@
         $golesConfirmados = $partido->goles_confirmados_at !== null;
         $resultadoCargado = $partido->golesEquipoLocal !== null && $partido->golesEquipoVisitante !== null;
 
-        if ($golesConfirmados) {
+        $estadoAdministrativo = $partido instanceof \App\Models\Partido
+            ? app(\App\Services\Panel\EstadoAdministrativoPartidoService::class)->resolver(collect([$partido]))->get($partido->id)['estado']
+            : null;
+
+        if ($estadoAdministrativo === 'administrativo') {
+            $estadoGolesClase = 'bg-slate-100 text-slate-700';
+            $estadoGolesLabel = 'Resultado administrativo · No vino';
+            $estadoGolesDetalle = $partido->golesEquipoLocal.' - '.$partido->golesEquipoVisitante;
+        } elseif ($estadoAdministrativo === 'pendiente_regularizacion') {
+            $estadoGolesClase = 'bg-amber-100 text-amber-700';
+            $estadoGolesLabel = 'No vino · pendiente de regularización';
+            $estadoGolesDetalle = 'El resultado todavía no es oficial.';
+        } elseif ($golesConfirmados) {
             $estadoGolesClase = 'bg-emerald-100 text-emerald-700';
             $estadoGolesLabel = 'Goles confirmados';
             $estadoGolesDetalle = 'Confirmados el '.$partido->goles_confirmados_at->format('d/m/Y H:i');
@@ -149,6 +161,7 @@
                 </div>
             </div>
 
+            @if ($estadoAdministrativo === null)
             <form action="{{ route($golesConfirmados ? 'planilla.quitarConfirmacionGoles' : 'planilla.confirmarGoles') }}" method="POST" class="flex flex-wrap items-center gap-2">
                 @csrf
                 <input type="hidden" name="partido_id" value="{{ $partido->id }}">
@@ -170,6 +183,7 @@
                     {{ $golesConfirmados ? 'Quitar confirmacion' : 'Confirmar goles' }}
                 </button>
             </form>
+            @endif
         </div>
 
         {{-- Compact debt bar: zero-height sticky wrapper, shown on desktop once the strip scrolls out of view. --}}

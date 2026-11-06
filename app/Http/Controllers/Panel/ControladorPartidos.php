@@ -15,6 +15,7 @@ use App\Models\Grupo;
 use App\Models\Partido;
 use App\Services\Cobros\AusenciasCobroService;
 use App\Services\Cobros\ProgramacionCobroService;
+use App\Services\Panel\EstadoAdministrativoPartidoService;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
 use Carbon\Carbon;
@@ -113,6 +114,8 @@ class ControladorPartidos extends Controller
             ->orderByDesc('partidos.id')
             ->get();
 
+        $estadosAdministrativos = app(EstadoAdministrativoPartidoService::class)->resolver($partidos);
+
         $categorias = Categoria::where('idEdicion', $idEdicion)
             ->select('id', 'nombreCategoria')
             ->orderBy('nombreCategoria', 'desc')
@@ -182,10 +185,10 @@ class ControladorPartidos extends Controller
             $categoria = $categorias->firstWhere('id', $idCategoria);
             $nombreCategoria = $categoria ? $categoria->nombreCategoria : null;
 
-            return view('Panel.partido.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fechas', 'categorias', 'grupos', 'idCategoria', 'idGrupo', 'nombreFecha', 'nombreGrupo', 'nombreCategoria', 'horariosDisponibles', 'mostrarFiltroGrupo'));
+            return view('Panel.partido.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fechas', 'categorias', 'grupos', 'idCategoria', 'idGrupo', 'nombreFecha', 'nombreGrupo', 'nombreCategoria', 'horariosDisponibles', 'mostrarFiltroGrupo', 'estadosAdministrativos'));
         }
 
-        return view('Panel.partido.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fechas', 'categorias', 'grupos', 'idCategoria', 'idGrupo', 'horariosDisponibles', 'mostrarFiltroGrupo'));
+        return view('Panel.partido.index', compact('partidos', 'ediciones', 'EdicionSeleccionada', 'fechas', 'categorias', 'grupos', 'idCategoria', 'idGrupo', 'horariosDisponibles', 'mostrarFiltroGrupo', 'estadosAdministrativos'));
     }
 
     /**

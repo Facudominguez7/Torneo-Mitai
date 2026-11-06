@@ -6,6 +6,7 @@ use App\Models\Fecha;
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
+use App\Services\Panel\EstadoAdministrativoPartidoService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -135,10 +136,12 @@ class EstadisticasService
             ->keyBy(fn ($item) => $item->partido_id.'-'.$item->idEquipo);
 
         $equiposPendientes = [];
+        $estados = app(EstadoAdministrativoPartidoService::class)->resolver($partidos);
 
         foreach ($partidos as $partido) {
-            $equipoLocal = $this->normalizarPendienteEquipo($partido, $resumenPlanillas, true);
-            $equipoVisitante = $this->normalizarPendienteEquipo($partido, $resumenPlanillas, false);
+            $ausentes = $estados->get($partido->id)['ausentes'] ?? [];
+            $equipoLocal = in_array((int) $partido->idEquipoLocal, $ausentes, true) ? null : $this->normalizarPendienteEquipo($partido, $resumenPlanillas, true);
+            $equipoVisitante = in_array((int) $partido->idEquipoVisitante, $ausentes, true) ? null : $this->normalizarPendienteEquipo($partido, $resumenPlanillas, false);
 
             if ($equipoLocal !== null) {
                 $equiposPendientes[] = $equipoLocal;
