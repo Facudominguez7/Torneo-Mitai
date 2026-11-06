@@ -29,7 +29,8 @@ class ResumenDashboard
      * @return array{
      *     equiposInscriptos: int,
      *     jugadoresHabilitados: int,
-     *     jugadoresConCincoOMasPartidos: int,
+     *     participacionesMinimas: int,
+     *     jugadoresConParticipacionesMinimas: int,
      *     partidosJugados: int,
      *     partidosTotales: int,
      *     partidosPendientes: Collection<int, array<string, mixed>>,
@@ -59,10 +60,13 @@ class ResumenDashboard
 
         $proximaFecha = $this->resolverProximaFecha($idEdicion);
 
+        $participacionesMinimas = $this->participaciones->kpiJugadoresDesdeUmbral($idEdicion);
+
         return [
             'equiposInscriptos' => $equiposInscriptos,
             'jugadoresHabilitados' => $jugadoresHabilitados,
-            'jugadoresConCincoOMasPartidos' => $this->participaciones->cantidadJugadoresCincoOMas($idEdicion),
+            'participacionesMinimas' => $participacionesMinimas['umbral'],
+            'jugadoresConParticipacionesMinimas' => $participacionesMinimas['jugadores'],
             'partidosJugados' => $partidosJugados,
             'partidosTotales' => $partidosTotales,
             'partidosPendientes' => $partidosPendientes,

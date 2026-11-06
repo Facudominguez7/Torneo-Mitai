@@ -26,14 +26,39 @@ use Illuminate\Support\Facades\DB;
 class ParticipacionesJugadoresService
 {
     /**
-     * Cantidad de participaciones reales que separa los dos grupos del
-     * listado y del KPI del dashboard.
+     * Rango aceptado por el filtro «Participaciones mínimas».
      */
-    public const PARTICIPACIONES_MINIMAS = 5;
+    public const DESDE_MINIMO = 1;
 
-    public const UMBRAL_TODOS = 'todos';
+    public const DESDE_MAXIMO = 999;
 
-    public const UMBRAL_CINCO = 'cinco';
+    /**
+     * Umbral vigente para separar «menos de N» de «N o más». Sale de
+     * config/estadisticas.php para que el KPI y el listado compartan la
+     * misma cifra sin números escritos a mano (#202, L2).
+     */
+    public function participacionesMinimas(): int
+    {
+        $umbral = (int) config('estadisticas.participaciones_minimas');
+
+        return min(self::DESDE_MAXIMO, max(self::DESDE_MINIMO, $umbral));
+    }
+
+    /**
+     * Normaliza el filtro «Participaciones mínimas» del listado. Devuelve
+     * null —sin filtro— cuando el valor viene vacío, no es un entero o cae
+     * fuera del rango aceptado.
+     */
+    public function normalizarDesde(mixed $desde): ?int
+    {
+        $valor = filter_var($desde, FILTER_VALIDATE_INT);
+
+        if ($valor === false || $valor < self::DESDE_MINIMO || $valor > self::DESDE_MAXIMO) {
+            return null;
+        }
+
+        return $valor;
+    }
 
     /**
      * Condición SQL de participación real, con dos marcadores que se
@@ -57,7 +82,8 @@ class ParticipacionesJugadoresService
 
     /**
      * Consulta paginable del listado: un jugador por DNI con la cantidad de
-     * participaciones reales, ordenada de mayor a menor.
+     * participaciones reales, ordenada de mayor a menor. Con `$desde` solo
+     * quedan los jugadores que alcanzan esa cantidad.
      *
      * @return Builder<int, Jugador>
      */
@@ -65,14 +91,14 @@ class ParticipacionesJugadoresService
         ?int $idEdicion,
         ?int $idCategoria = null,
         ?string $busqueda = null,
-        string $umbral = self::UMBRAL_TODOS,
+        ?int $desde = null,
     ): Builder {
         $consulta = $this->consultaBase($idEdicion, $idCategoria, $busqueda);
 
-        if ($umbral === self::UMBRAL_CINCO) {
+        if ($desde !== null) {
             $consulta->whereRaw(
                 'COALESCE(participaciones.total_participaciones, 0) >= ?',
-                [self::PARTICIPACIONES_MINIMAS]
+                [$desde]
             );
         }
 
@@ -84,37 +110,51 @@ class ParticipacionesJugadoresService
 
     /**
      * Contadores que acompañan al listado: total de jugadores activos y
-     * cuántos quedan por debajo y por encima del umbral.
+     * cuántos quedan por debajo y desde el umbral pedido.
      *
-     * @return array{total: int, menos_de_5: int, cinco_o_mas: int}
+     * @return array{total: int, umbral: int, menos_de_umbral: int, umbral_o_mas: int}
      */
-    public function obtenerContadores(?int $idEdicion, ?int $idCategoria = null, ?string $busqueda = null): array
-    {
+    public function obtenerContadores(
+        ?int $idEdicion,
+        ?int $idCategoria = null,
+        ?string $busqueda = null,
+        ?int $umbral = null,
+    ): array {
+        $umbral ??= $this->participacionesMinimas();
+
         $fila = DB::query()
             ->fromSub($this->consultaBase($idEdicion, $idCategoria, $busqueda)->toBase(), 'listado')
             ->selectRaw(
                 'COUNT(*) as total,'
-                .' SUM(CASE WHEN listado.partidos_calculados < ? THEN 1 ELSE 0 END) as menos_de_5,'
-                .' SUM(CASE WHEN listado.partidos_calculados >= ? THEN 1 ELSE 0 END) as cinco_o_mas',
-                [self::PARTICIPACIONES_MINIMAS, self::PARTICIPACIONES_MINIMAS]
+                .' SUM(CASE WHEN listado.partidos_calculados < ? THEN 1 ELSE 0 END) as menos_de_umbral,'
+                .' SUM(CASE WHEN listado.partidos_calculados >= ? THEN 1 ELSE 0 END) as umbral_o_mas',
+                [$umbral, $umbral]
             )
             ->first();
 
         return [
             'total' => (int) ($fila->total ?? 0),
-            'menos_de_5' => (int) ($fila->menos_de_5 ?? 0),
-            'cinco_o_mas' => (int) ($fila->cinco_o_mas ?? 0),
+            'umbral' => $umbral,
+            'menos_de_umbral' => (int) ($fila->menos_de_umbral ?? 0),
+            'umbral_o_mas' => (int) ($fila->umbral_o_mas ?? 0),
         ];
     }
 
     /**
-     * Cifra del KPI del dashboard: jugadores de la edición con 5 o más
-     * participaciones reales. Sale del mismo cálculo que el listado para que
-     * la tarjeta y la tabla no puedan divergir.
+     * Datos del KPI del dashboard: el umbral configurado y cuántos jugadores
+     * de la edición lo alcanzan. Sale del mismo cálculo que el listado para
+     * que la tarjeta y la tabla no puedan divergir.
+     *
+     * @return array{umbral: int, jugadores: int}
      */
-    public function cantidadJugadoresCincoOMas(int $idEdicion): int
+    public function kpiJugadoresDesdeUmbral(int $idEdicion): array
     {
-        return $this->obtenerContadores($idEdicion)['cinco_o_mas'];
+        $contadores = $this->obtenerContadores($idEdicion);
+
+        return [
+            'umbral' => $contadores['umbral'],
+            'jugadores' => $contadores['umbral_o_mas'],
+        ];
     }
 
     /**

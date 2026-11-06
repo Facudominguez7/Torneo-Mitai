@@ -141,7 +141,7 @@ it('muestra las tarjetas kpi que ya calcula el controlador con los valores reale
 
     // Tres jugadores activos con conteos de participaciones reales distintos
     // entre sí y a los dos lados del umbral de 5, para que total (3),
-    // menos_de_5 (1) y cinco_o_mas (2) sean tres valores distinguibles entre
+    // menos_de_umbral (1) y umbral_o_mas (2) sean tres valores distinguibles entre
     // ellos: una clave equivocada o un contador cambiado en el markup no
     // puede pasar inadvertido si los tres números son distintos (revisión
     // R3-kpi-valores). El umbral es 5 o más desde la issue #202.

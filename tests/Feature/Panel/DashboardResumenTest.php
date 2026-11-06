@@ -259,8 +259,8 @@ it('muestra un estado vacio de proxima fecha cuando no quedan partidos por jugar
         ->assertSee(e(route('partido.index', ['idEdicion' => $contexto['edicion']->id])), false);
 });
 
-// Issue #202: el KPI cuenta jugadores con 5 o más participaciones reales y
-// enlaza al listado de Estadísticas de jugadores ya filtrado por ese umbral.
+// Issue #202: el KPI cuenta jugadores con N o más participaciones reales
+// (N sale de la configuración) y enlaza al listado ya filtrado por ese valor.
 it('muestra el kpi de jugadores con cinco o mas partidos enlazado al listado filtrado', function () {
     $admin = crearAdminDashboard();
     $contexto = crearContextoDashboard();
@@ -319,7 +319,7 @@ it('muestra el kpi de jugadores con cinco o mas partidos enlazado al listado fil
 
     $urlListadoFiltrado = e(route('estadisticas-jugadores', [
         'idEdicion' => $contexto['edicion']->id,
-        'umbral' => 'cinco',
+        'desde' => 5,
     ]));
 
     $response->assertSee($urlListadoFiltrado, false);
@@ -328,6 +328,76 @@ it('muestra el kpi de jugadores con cinco o mas partidos enlazado al listado fil
     // participaciones no suma al KPI.
     expect($response->getContent())->toMatch(
         '/<a href="'.preg_quote($urlListadoFiltrado, '/').'"[^>]*>\s*<p[^>]*>Jugadores con 5 o más partidos<\/p>\s*<p[^>]*>1<\/p>/'
+    );
+});
+
+// L2 (#202): el umbral del KPI sale de config/estadisticas.php, así que
+// cambia la etiqueta, el conteo y el enlace sin tocar código.
+it('toma el umbral del kpi desde la configuracion', function () {
+    config()->set('estadisticas.participaciones_minimas', 3);
+
+    $admin = crearAdminDashboard();
+    $contexto = crearContextoDashboard();
+    $local = crearEquipoDashboard($contexto, 'Mitai Config Local');
+    $visitante = crearEquipoDashboard($contexto, 'Mitai Config Visitante');
+
+    foreach ([['30533333', 3], ['30544444', 2]] as [$dni, $cantidad]) {
+        Jugador::create(['dni' => $dni, 'nombre' => 'Jugador', 'apellido' => $dni]);
+        ListaBuenaFe::create([
+            'dni_jugador' => $dni,
+            'idEquipo' => $local->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'fecha_nacimiento' => '2015-01-01',
+            'fecha_alta' => now(),
+            'activo' => true,
+        ]);
+
+        foreach (range(1, $cantidad) as $numero) {
+            $partido = Partido::create([
+                'idCategoria' => $contexto['categoria']->id,
+                'idFechas' => $contexto['fecha']->id,
+                'idEquipoLocal' => $local->id,
+                'idEquipoVisitante' => $visitante->id,
+                'idGrupo' => $contexto['grupo']->id,
+                'idEdicion' => $contexto['edicion']->id,
+                'golesEquipoLocal' => 2,
+                'golesEquipoVisitante' => 0,
+                'goles_confirmados_at' => now(),
+                'cancha' => 1,
+                'jugado' => 1,
+                'horario_datetime' => '2026-04-02 09:00:00',
+            ]);
+
+            PlanillaJugador::create([
+                'partido_id' => $partido->id,
+                'partido_type' => Partido::class,
+                'dni_jugador' => $dni,
+                'idEquipo' => $local->id,
+                'idEdicion' => $contexto['edicion']->id,
+                'idCategoria' => $contexto['categoria']->id,
+                'numero_camiseta' => 5,
+                'goles' => 0,
+                'asistio' => true,
+                'tarjeta_roja' => false,
+            ]);
+        }
+    }
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]));
+
+    $response->assertOk()->assertSee('Jugadores con 3 o más partidos');
+
+    $urlListadoFiltrado = e(route('estadisticas-jugadores', [
+        'idEdicion' => $contexto['edicion']->id,
+        'desde' => 3,
+    ]));
+
+    $response->assertSee($urlListadoFiltrado, false);
+
+    expect($response->getContent())->toMatch(
+        '/<a href="'.preg_quote($urlListadoFiltrado, '/').'"[^>]*>\s*<p[^>]*>Jugadores con 3 o más partidos<\/p>\s*<p[^>]*>1<\/p>/'
     );
 });
 

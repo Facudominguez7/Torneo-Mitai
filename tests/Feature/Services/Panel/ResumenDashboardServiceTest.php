@@ -211,8 +211,9 @@ it('devuelve una proxima fecha nula cuando la edicion no tiene fechas', function
 });
 
 // Issue #202: el KPI del dashboard sale del mismo servicio que el listado de
-// Estadísticas de jugadores, con la misma regla de participación real.
-it('cuenta para el kpi solo a los jugadores con cinco o mas participaciones reales', function () {
+// Estadísticas de jugadores, con la misma regla de participación real y el
+// umbral configurado (L2).
+it('cuenta para el kpi solo a los jugadores que alcanzan el umbral configurado', function () {
     $contexto = crearContextoServicioResumen();
     $local = Equipo::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Local KPI', 'foto' => 'e.png']);
     $visitante = Equipo::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Visitante KPI', 'foto' => 'e.png']);
@@ -293,7 +294,65 @@ it('cuenta para el kpi solo a los jugadores con cinco o mas participaciones real
 
     $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
 
-    expect($resumen['jugadoresConCincoOMasPartidos'])->toBe(1);
+    expect($resumen['participacionesMinimas'])->toBe(5)
+        ->and($resumen['jugadoresConParticipacionesMinimas'])->toBe(1);
+});
+
+it('toma el umbral del kpi desde la configuracion', function () {
+    config()->set('estadisticas.participaciones_minimas', 4);
+
+    $contexto = crearContextoServicioResumen();
+    $local = Equipo::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Local Umbral', 'foto' => 'e.png']);
+    $visitante = Equipo::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Visitante Umbral', 'foto' => 'e.png']);
+
+    $participaciones = ['30610001' => 4, '30610002' => 3];
+
+    foreach ($participaciones as $dni => $cantidad) {
+        Jugador::create(['dni' => (string) $dni, 'nombre' => 'Jugador', 'apellido' => (string) $dni]);
+        ListaBuenaFe::create([
+            'dni_jugador' => (string) $dni,
+            'idEquipo' => $local->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'fecha_nacimiento' => '2013-01-01',
+            'fecha_alta' => now(),
+            'activo' => true,
+        ]);
+
+        foreach (range(1, $cantidad) as $numero) {
+            $partido = Partido::create([
+                'idCategoria' => $contexto['categoria']->id,
+                'idFechas' => $contexto['fecha']->id,
+                'idEquipoLocal' => $local->id,
+                'idEquipoVisitante' => $visitante->id,
+                'idGrupo' => $contexto['grupo']->id,
+                'idEdicion' => $contexto['edicion']->id,
+                'golesEquipoLocal' => 1,
+                'golesEquipoVisitante' => 1,
+                'cancha' => 1,
+                'jugado' => 1,
+                'horario_datetime' => '2026-05-03 09:00:00',
+            ]);
+
+            PlanillaJugador::create([
+                'partido_id' => $partido->id,
+                'partido_type' => Partido::class,
+                'dni_jugador' => (string) $dni,
+                'idEquipo' => $local->id,
+                'idEdicion' => $contexto['edicion']->id,
+                'idCategoria' => $contexto['categoria']->id,
+                'numero_camiseta' => 4,
+                'goles' => 0,
+                'asistio' => true,
+                'tarjeta_roja' => false,
+            ]);
+        }
+    }
+
+    $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
+
+    expect($resumen['participacionesMinimas'])->toBe(4)
+        ->and($resumen['jugadoresConParticipacionesMinimas'])->toBe(1);
 });
 
 function crearPartidoServicioResumen(array $contexto, Fecha $fecha, string $horario, ?int $golesLocal = null, ?int $golesVisitante = null): Partido
