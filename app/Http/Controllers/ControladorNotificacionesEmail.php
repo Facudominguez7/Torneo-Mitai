@@ -7,6 +7,7 @@ use App\Models\Edicion;
 use App\Models\Fecha;
 use App\Models\User;
 use App\Services\EmailDomainGuard;
+use App\Services\InvitacionesSuscripcionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ use Illuminate\View\View;
  */
 class ControladorNotificacionesEmail extends Controller
 {
+    public function __construct(private readonly InvitacionesSuscripcionService $invitaciones) {}
+
     /**
      * Listar usuarios para gestión de notificaciones.
      * Solo accesible por administradores.
@@ -102,6 +105,8 @@ class ControladorNotificacionesEmail extends Controller
                 ->get(['id', 'nombre', 'idCategoria']);
         }
 
+        $invitaciones = $this->invitaciones->resumen();
+
         return view('Panel.suscriptores-email', compact(
             'usuarios',
             'ediciones',
@@ -113,6 +118,7 @@ class ControladorNotificacionesEmail extends Controller
             'resumenNombreEdicion',
             'resumenIdCategoria',
             'resumenIdFecha',
+            'invitaciones',
         ));
     }
 

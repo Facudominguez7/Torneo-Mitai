@@ -28,6 +28,8 @@
         </x-slot>
     </x-ui.page-header>
 
+    @include('Panel.partials.invitaciones-suscripcion', ['invitaciones' => $invitaciones])
+
     <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         {{-- Resumen de la fecha --}}
         <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
