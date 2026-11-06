@@ -67,7 +67,8 @@ class EmailDeliverabilityHeaders
             $message->replyTo($replyTo);
         }
 
-        if ($returnPath = self::fromAddress()) {
+        // Return-Path in the sender's own domain: Resend rejects any header address on an unverified domain.
+        if ($returnPath = ($message->getFrom()[0] ?? null)?->getAddress() ?? self::fromAddress()) {
             $message->returnPath($returnPath);
         }
 
