@@ -2,8 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User;
-use App\Services\EmailDomainGuard;
 use App\Services\SuscripcionService;
 use Illuminate\Console\Command;
 
@@ -20,7 +18,8 @@ class InvitarUsuariosASuscribirse extends Command
      */
     protected $signature = 'suscripciones:invitar-usuarios
         {--limite=80 : Máximo de invitaciones por corrida (el plan gratuito de Resend permite 100 correos por día)}
-        {--simular : Mostrar a cuántos se invitaría sin guardar ni enviar nada}';
+        {--simular : Mostrar a cuántos se invitaría sin guardar ni enviar nada}
+        {--forzar : Invitar sin pedir confirmación, como el lote programado de todos los días}';
 
     /**
      * @var string
@@ -30,21 +29,7 @@ class InvitarUsuariosASuscribirse extends Command
     public function handle(SuscripcionService $suscripciones): int
     {
         $limite = max(1, (int) $this->option('limite'));
-
-        /** @var array<string, User> $candidatos correo normalizado => usuario, sin repetir correos */
-        $candidatos = [];
-        User::query()
-            ->where('email_subscribed', true)
-            ->whereNotNull('email')
-            ->where('email', '!=', '')
-            ->whereNotExists(fn ($consulta) => $consulta->selectRaw('1')->from('suscriptores')->whereRaw('suscriptores.email = LOWER(TRIM(users.email))'))
-            ->orderBy('id')
-            ->each(function (User $usuario) use (&$candidatos): void {
-                $email = mb_strtolower(trim((string) $usuario->email));
-                if (! EmailDomainGuard::isBlocked($email) && ! isset($candidatos[$email])) {
-                    $candidatos[$email] = $usuario;
-                }
-            });
+        $candidatos = $suscripciones->usuariosParaInvitar();
 
         $total = count($candidatos);
 
@@ -65,7 +50,7 @@ class InvitarUsuariosASuscribirse extends Command
             return self::SUCCESS;
         }
 
-        if (! $this->confirm('¿Invitar a suscribirse a '.count($lote).' usuario(s)?')) {
+        if (! $this->option('forzar') && ! $this->confirm('¿Invitar a suscribirse a '.count($lote).' usuario(s)?')) {
             $this->info('No se envió ningún correo.');
 
             return self::SUCCESS;

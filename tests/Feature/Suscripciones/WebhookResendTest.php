@@ -168,8 +168,80 @@ it('responde sin cambios a un correo que no es suscriptor o a eventos que no usa
     expect($suscriptor->fresh()->estaActivo())->toBeTrue();
 })->with([
     'correo desconocido' => fn (): string => eventoResend('contact.updated', ['email' => 'otra@correo.com', 'unsubscribed' => true]),
-    'evento de envio' => fn (): string => eventoResend('email.bounced', ['email' => 'madre@correo.com']),
+    'evento de envio entregado' => fn (): string => eventoResend('email.delivered', ['to' => ['madre@correo.com']]),
+    // El rebote de un correo que no es suscriptor no se guarda en ningún lado, pero tampoco es un error.
+    'rebote de un correo desconocido' => fn (): string => eventoResend('email.bounced', ['to' => ['otra@correo.com'], 'bounce' => ['type' => 'Permanent']]),
+    'queja de un correo desconocido' => fn (): string => eventoResend('email.complained', ['to' => ['otra@correo.com']]),
 ]);
+
+it('registra el rebote permanente con la fecha del evento y da de baja al suscriptor', function (): void {
+    $suscriptor = suscriptorAnterior();
+    $creado = now()->subMinutes(5)->startOfSecond();
+    $cuerpo = eventoResend('email.bounced', [
+        'email_id' => 'envio-1',
+        'to' => [' Madre@Correo.com '],
+        'bounce' => ['type' => 'Permanent', 'subType' => 'General'],
+    ], $creado->toIso8601ZuluString('millisecond'));
+
+    enviarWebhook($cuerpo, encabezadosWebhook($cuerpo))->assertNoContent();
+
+    $suscriptor->refresh();
+    expect($suscriptor->rebote_at->toDateTimeString())->toBe($creado->toDateTimeString())
+        ->and($suscriptor->queja_at)->toBeNull()
+        ->and($suscriptor->baja_at->toDateTimeString())->toBe($creado->toDateTimeString())
+        ->and($suscriptor->estaActivo())->toBeFalse();
+    Queue::assertNothingPushed();
+});
+
+it('cuenta como rebote el evento que no informa el tipo de rebote', function (): void {
+    $suscriptor = suscriptorAnterior();
+    $cuerpo = eventoResend('email.bounced', ['to' => ['madre@correo.com']]);
+
+    enviarWebhook($cuerpo, encabezadosWebhook($cuerpo))->assertNoContent();
+
+    $suscriptor->refresh();
+    expect($suscriptor->rebote_at)->not->toBeNull()
+        ->and($suscriptor->estaActivo())->toBeFalse();
+});
+
+it('no cuenta el rebote transitorio, que puede haber llegado igual', function (): void {
+    $suscriptor = suscriptorAnterior();
+    $cuerpo = eventoResend('email.bounced', ['to' => ['madre@correo.com'], 'bounce' => ['type' => 'Transient']]);
+
+    enviarWebhook($cuerpo, encabezadosWebhook($cuerpo))->assertNoContent();
+
+    $suscriptor->refresh();
+    expect($suscriptor->rebote_at)->toBeNull()
+        ->and($suscriptor->baja_at)->toBeNull()
+        ->and($suscriptor->estaActivo())->toBeTrue();
+});
+
+it('registra la queja por spam con la fecha del evento y da de baja al suscriptor', function (): void {
+    $suscriptor = suscriptorAnterior();
+    $creado = now()->subMinutes(10)->startOfSecond();
+    $cuerpo = eventoResend('email.complained', ['email_id' => 'envio-1', 'to' => ['Madre@Correo.com']], $creado->toIso8601ZuluString('millisecond'));
+
+    enviarWebhook($cuerpo, encabezadosWebhook($cuerpo))->assertNoContent();
+
+    $suscriptor->refresh();
+    expect($suscriptor->queja_at->toDateTimeString())->toBe($creado->toDateTimeString())
+        ->and($suscriptor->rebote_at)->toBeNull()
+        ->and($suscriptor->baja_at->toDateTimeString())->toBe($creado->toDateTimeString())
+        ->and($suscriptor->estaActivo())->toBeFalse();
+    Queue::assertNothingPushed();
+});
+
+it('fecha el rebote al momento en que llega cuando el evento no trae fecha', function (): void {
+    $this->freezeTime();
+    $suscriptor = suscriptorAnterior();
+    $cuerpo = eventoResend('email.bounced', ['to' => ['madre@correo.com'], 'bounce' => ['type' => 'Permanent']], '');
+
+    enviarWebhook($cuerpo, encabezadosWebhook($cuerpo))->assertNoContent();
+
+    $suscriptor->refresh();
+    expect($suscriptor->rebote_at->toDateTimeString())->toBe(now()->toDateTimeString())
+        ->and($suscriptor->baja_at->toDateTimeString())->toBe(now()->toDateTimeString());
+});
 
 it('rechaza el pedido sin una firma valida y no toca al suscriptor', function (string $caso): void {
     $suscriptor = suscriptorAnterior();

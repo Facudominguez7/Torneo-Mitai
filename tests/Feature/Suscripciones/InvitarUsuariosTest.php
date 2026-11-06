@@ -9,12 +9,24 @@ use App\Models\Suscriptor;
 use App\Models\User;
 use App\Services\SuscripcionService;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 /** @param  array<string, mixed>  $atributos */
 function usuarioParaInvitar(string $email, array $atributos = []): User
 {
     return User::factory()->create(['email' => $email, 'email_subscribed' => true, 'email_verified_at' => null, ...$atributos]);
+}
+
+/** Deja el suscriptor con la antigüedad indicada, como si se hubiera creado ese día. */
+function crearSuscriptorConFecha(Suscriptor $suscriptor, string $creado, ?string $confirmadoAt = null): void
+{
+    DB::table('suscriptores')->where('id', $suscriptor->id)->update([
+        'created_at' => $creado,
+        'updated_at' => $creado,
+        'confirmado_at' => $confirmadoAt,
+    ]);
 }
 
 it('en modo simulación informa a cuántos invitaría y no guarda ni envía nada', function (): void {
@@ -30,6 +42,74 @@ it('en modo simulación informa a cuántos invitaría y no guarda ni envía nada
 
     Mail::assertNothingQueued();
     expect(Suscriptor::query()->count())->toBe(0);
+});
+
+it('invita sin pedir confirmación cuando se fuerza el lote programado y marca la invitación', function (): void {
+    Mail::fake();
+    $this->freezeTime();
+    usuarioParaInvitar('uno@correo.com');
+
+    $this->artisan('suscripciones:invitar-usuarios', ['--forzar' => true])
+        ->expectsOutputToContain('Invitaciones en cola: 1')
+        ->assertSuccessful();
+
+    Mail::assertQueuedCount(1);
+    expect(Suscriptor::query()->sole()->invitado_at?->toDateTimeString())->toBe(now()->toDateTimeString());
+});
+
+it('sin candidatos no envía nada ni siquiera forzando el lote', function (): void {
+    Mail::fake();
+
+    $this->artisan('suscripciones:invitar-usuarios', ['--forzar' => true, '--limite' => 50])
+        ->expectsOutputToContain('No hay usuarios para invitar.')
+        ->assertSuccessful();
+
+    Mail::assertNothingQueued();
+    expect(Suscriptor::query()->count())->toBe(0);
+});
+
+it('la consulta de candidatos se puede reutilizar y devuelve un correo normalizado por usuario en orden de alta', function (): void {
+    $primero = usuarioParaInvitar('Uno@Correo.com');
+    usuarioParaInvitar(' uno@correo.com');
+    usuarioParaInvitar('ya-esta@correo.com');
+    Suscriptor::factory()->pendiente()->create(['email' => 'ya-esta@correo.com']);
+    usuarioParaInvitar('sin-avisos@correo.com', ['email_subscribed' => false]);
+    usuarioParaInvitar('bloqueado@mail.ru');
+    $segundo = usuarioParaInvitar('dos@correo.com');
+
+    $candidatos = app(SuscripcionService::class)->usuariosParaInvitar();
+
+    expect(array_keys($candidatos))->toBe(['uno@correo.com', 'dos@correo.com'])
+        ->and($candidatos['uno@correo.com']->id)->toBe($primero->id)
+        ->and($candidatos['dos@correo.com']->id)->toBe($segundo->id);
+});
+
+it('marca como invitadas las invitaciones pendientes del 6 de noviembre al migrar', function (): void {
+    expect(Schema::hasColumn('suscriptores', 'invitado_at'))->toBeTrue();
+    $migracion = require database_path('migrations/2026_11_06_000001_add_invitado_at_to_suscriptores_table.php');
+    $usuario = User::factory()->create(['email' => 'invitado@correo.com']);
+
+    // El lote reenviado a mano el 2026-11-06 09:12 quedó pendiente y debe quedar marcado como invitación.
+    $loteManual = Suscriptor::factory()->pendiente()->create(['email' => 'lote@correo.com', 'usuario_id' => $usuario->id]);
+    crearSuscriptorConFecha($loteManual, '2026-11-06 09:12:00');
+    $posterior = Suscriptor::factory()->pendiente()->create(['email' => 'posterior@correo.com', 'usuario_id' => $usuario->id]);
+    crearSuscriptorConFecha($posterior, '2026-11-07 10:00:00');
+    $anterior = Suscriptor::factory()->pendiente()->create(['email' => 'anterior@correo.com', 'usuario_id' => $usuario->id]);
+    crearSuscriptorConFecha($anterior, '2026-11-05 23:59:59');
+    $confirmada = Suscriptor::factory()->pendiente()->create(['email' => 'confirmada@correo.com', 'usuario_id' => $usuario->id]);
+    crearSuscriptorConFecha($confirmada, '2026-11-06 10:00:00', confirmadoAt: '2026-11-06 11:00:00');
+    $delSitio = Suscriptor::factory()->pendiente()->create(['email' => 'sitio@correo.com']);
+    crearSuscriptorConFecha($delSitio, '2026-11-06 10:00:00');
+
+    $migracion->marcarInvitacionesPrevias();
+
+    expect(DB::table('suscriptores')->orderBy('id')->pluck('invitado_at', 'email')->all())->toBe([
+        'lote@correo.com' => '2026-11-06 09:12:00',
+        'posterior@correo.com' => '2026-11-07 10:00:00',
+        'anterior@correo.com' => null,
+        'confirmada@correo.com' => null,
+        'sitio@correo.com' => null,
+    ]);
 });
 
 it('invita a los usuarios fuera de la lista y los deja pendientes hasta que confirmen', function (): void {
@@ -48,7 +128,8 @@ it('invita a los usuarios fuera de la lista y los deja pendientes hasta que conf
         'recibe_resumen_fecha' => true,
         'recibe_avisos' => true,
         'recibe_proxima_fecha' => true,
-    ])->and($suscriptor->estaActivo())->toBeFalse();
+    ])->and($suscriptor->estaActivo())->toBeFalse()
+        ->and($suscriptor->invitado_at)->not->toBeNull();
 
     Mail::assertQueuedCount(1);
     Mail::assertQueued(InvitacionSuscripcionMail::class, fn (InvitacionSuscripcionMail $mail): bool => $mail->hasTo('madre.halcones@correo.com')
@@ -107,8 +188,8 @@ it('espacia las invitaciones un segundo para no superar el límite de pedidos po
     $this->freezeTime();
     usuarioParaInvitar('a@correo.com');
     usuarioParaInvitar('b@correo.com');
-    $servicio = $this->spy(SuscripcionService::class);
-    $servicio->allows('invitar')->andReturn(true);
+    $servicio = $this->partialMock(SuscripcionService::class);
+    $servicio->shouldReceive('invitar')->andReturn(true);
 
     $this->artisan('suscripciones:invitar-usuarios')
         ->expectsConfirmation('¿Invitar a suscribirse a 2 usuario(s)?', 'yes')
