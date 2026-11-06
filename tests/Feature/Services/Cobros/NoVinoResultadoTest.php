@@ -122,6 +122,40 @@ it('ignora la ausencia historica del reemplazado al cambiar la ausencia del riva
         ->and(AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', $this->cargoLocal->id)->exists())->toBeTrue();
 });
 
+it('muestra los estados de no vino al regularizar y deshacer sin inventar goleadores', function (): void {
+    $this->servicio->marcarNoVino($this->admin, $this->local->id, $this->cargoLocal->id);
+    $url = route('planillas-publicas.show', ['tipoPartido' => 'partido', 'publicToken' => $this->partido->public_token]);
+
+    $this->getJson($url)->assertOk()
+        ->assertJsonPath('data.estado_administrativo', 'pendiente_regularizacion')
+        ->assertJsonPath('data.marcador_local', null)
+        ->assertJsonPath('data.marcador_visitante', null);
+    $dashboard = route('admin', ['idEdicion' => $this->contexto['edicion']->id]);
+    $this->actingAs($this->admin)->get($dashboard)->assertOk()
+        ->assertSee('No vino · pendiente de regularización')
+        ->assertDontSee('Local No Vino (Local): Sin planilla');
+
+    app(PagosCobroService::class)->registrarPago($this->admin, $this->cargoVisitante->id, 25000, 'efectivo', '12121212-1212-4121-8121-121212121212');
+    $this->getJson($url)->assertOk()
+        ->assertJsonPath('data.estado_administrativo', 'administrativo')
+        ->assertJsonPath('data.marcador_local', 0)
+        ->assertJsonPath('data.marcador_visitante', 3)
+        ->assertJsonPath('data.local', [])
+        ->assertJsonPath('data.visitante', []);
+    $this->actingAs($this->admin)->get($dashboard)->assertOk()
+        ->assertSee('Resultado administrativo · No vino')
+        ->assertDontSee('Goles pendientes de carga')
+        ->assertDontSee('Local No Vino (Local): Sin planilla');
+
+    app(PartidoService::class)->restablecerResultado($this->partido);
+    $this->getJson($url)->assertOk()->assertJsonPath('data.estado_administrativo', null);
+    $this->servicio->reactivarResultadoAutomatico($this->admin, (int) $this->partido->id);
+    $this->getJson($url)->assertOk()->assertJsonPath('data.estado_administrativo', 'administrativo');
+
+    $this->servicio->deshacerNoVino($this->admin, $this->local->id, $this->cargoLocal->id);
+    $this->getJson($url)->assertOk()->assertJsonPath('data.estado_administrativo', null);
+});
+
 it('espera el pago completo posterior para aplicar el resultado y las posiciones', function (): void {
     $this->servicio->marcarNoVino($this->admin, $this->local->id, $this->cargoLocal->id);
     $partido = $this->partido->fresh();

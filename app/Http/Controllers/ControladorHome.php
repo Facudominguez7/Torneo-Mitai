@@ -22,6 +22,7 @@ use App\Services\Cobros\ConsultaCobrosService;
 use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use App\Services\FixtureExploradorService;
+use App\Services\Panel\EstadoAdministrativoPartidoService;
 use App\Services\Panel\ResumenDashboard;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -186,6 +187,7 @@ class ControladorHome extends Controller
             ->groupBy('nombre_categoria');
 
         $categorias = Categoria::where('idEdicion', $idEdicion)->get();
+        $estadosAdministrativos = app(EstadoAdministrativoPartidoService::class)->resolver($partidos->flatten(1));
 
         $cobrosPorPartido = $request->user()?->isAdmin()
             ? app(ConsultaCobrosService::class)->cargosDePartidos(CargoPlanilla::TIPO_PARTIDO, $partidos->flatten(1)->pluck('id')->all())
@@ -216,7 +218,7 @@ class ControladorHome extends Controller
             $resumenDashboard = $this->resumenDashboard->obtenerResumen((int) $idEdicionResumen);
         }
 
-        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion', 'resumenDashboard', 'cobrosPorPartido'));
+        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion', 'resumenDashboard', 'cobrosPorPartido', 'estadosAdministrativos'));
     }
 
     public function campeones(Request $request)

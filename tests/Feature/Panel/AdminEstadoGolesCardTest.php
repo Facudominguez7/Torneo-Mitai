@@ -97,6 +97,34 @@ it('muestra goles pendientes de carga en el card admin cuando el resultado ya ex
         ->assertSee('Goles pendientes de carga', false);
 });
 
+it('identifica el resultado administrativo sin pedir goles individuales en el dashboard', function () {
+    $admin = crearAdminEstadoGoles();
+    $contexto = crearContextoEstadoGoles();
+    $local = crearEquipoEstadoGoles($contexto, 'Local administrativo');
+    $visitante = crearEquipoEstadoGoles($contexto, 'Visitante administrativo');
+    $partido = crearPartidoEstadoGoles($contexto, $local, $visitante);
+    $partido->update(['golesEquipoLocal' => 3, 'golesEquipoVisitante' => 0, 'ganador_por_no_vino' => $local->id]);
+
+    $this->actingAs($admin)->get(route('admin', ['idEdicion' => $contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSee('Resultado administrativo · No vino')
+        ->assertDontSee('Goles pendientes de carga');
+});
+
+it('mantiene pendientes los goles de un 3 a 0 manual', function () {
+    $admin = crearAdminEstadoGoles();
+    $contexto = crearContextoEstadoGoles();
+    $local = crearEquipoEstadoGoles($contexto, 'Local manual');
+    $visitante = crearEquipoEstadoGoles($contexto, 'Visitante manual');
+    $partido = crearPartidoEstadoGoles($contexto, $local, $visitante);
+    $partido->update(['golesEquipoLocal' => 3, 'golesEquipoVisitante' => 0]);
+
+    $this->actingAs($admin)->get(route('admin', ['idEdicion' => $contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSee('Goles pendientes de carga')
+        ->assertDontSee('Resultado administrativo · No vino');
+});
+
 it('muestra goles confirmados en el card admin cuando la revision ya fue confirmada', function () {
     $admin = crearAdminEstadoGoles();
     $contexto = crearContextoEstadoGoles();

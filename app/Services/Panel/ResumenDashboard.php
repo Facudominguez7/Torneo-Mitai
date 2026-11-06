@@ -48,10 +48,11 @@ class ResumenDashboard
         $partidosTotales = Partido::where('idEdicion', $idEdicion)->count();
 
         $partidosEnCurso = $this->partidosDeFechasEnCurso($idEdicion);
-        $partidosConAsistenciaPendiente = $this->partidosConAsistenciaPendiente($idEdicion, $partidosEnCurso);
+        $estados = app(EstadoAdministrativoPartidoService::class)->resolver($partidosEnCurso);
+        $partidosConAsistenciaPendiente = $this->partidosConAsistenciaPendiente($idEdicion, $partidosEnCurso, $estados);
 
         $partidosPendientes = $partidosEnCurso
-            ->map(fn (Partido $partido): ?array => $this->normalizarPartidoPendiente($partido, $idEdicion, $partidosConAsistenciaPendiente))
+            ->map(fn (Partido $partido): ?array => $this->normalizarPartidoPendiente($partido, $idEdicion, $partidosConAsistenciaPendiente, $estados))
             ->filter()
             ->values();
 
@@ -108,7 +109,7 @@ class ResumenDashboard
      * @param  Collection<int, Partido>  $partidos
      * @return Collection<int, int>
      */
-    private function partidosConAsistenciaPendiente(int $idEdicion, Collection $partidos): Collection
+    private function partidosConAsistenciaPendiente(int $idEdicion, Collection $partidos, Collection $estados): Collection
     {
         if ($partidos->isEmpty()) {
             return collect();
@@ -123,7 +124,10 @@ class ResumenDashboard
             ->get()
             ->keyBy(fn ($fila): string => $fila->partido_id.'-'.$fila->idEquipo);
 
-        $sinAsistencia = function (Partido $partido, ?int $idEquipo) use ($asistenciasPorEquipo): bool {
+        $sinAsistencia = function (Partido $partido, ?int $idEquipo) use ($asistenciasPorEquipo, $estados): bool {
+            if (in_array((int) $idEquipo, $estados->get($partido->id)['ausentes'] ?? [], true)) {
+                return false;
+            }
             $fila = $asistenciasPorEquipo->get($partido->id.'-'.$idEquipo);
 
             return $fila === null || (int) $fila->total_asistencias === 0;
@@ -139,7 +143,7 @@ class ResumenDashboard
      * @param  Collection<int, int>  $partidosConAsistenciaPendiente
      * @return array<string, mixed>|null
      */
-    private function normalizarPartidoPendiente(Partido $partido, int $idEdicion, Collection $partidosConAsistenciaPendiente): ?array
+    private function normalizarPartidoPendiente(Partido $partido, int $idEdicion, Collection $partidosConAsistenciaPendiente, Collection $estados): ?array
     {
         // Un partido que todavía no se jugó no puede tener cargas pendientes.
         $yaSeJugo = $partido->horario_datetime !== null && Carbon::parse($partido->horario_datetime)->lessThanOrEqualTo(now());
@@ -148,14 +152,19 @@ class ResumenDashboard
         }
 
         $sinResultado = $partido->golesEquipoLocal === null || $partido->golesEquipoVisitante === null;
-        $golesSinConfirmar = ! $sinResultado && $partido->goles_confirmados_at === null;
+        $estadoAdministrativo = $estados->get($partido->id)['estado'] ?? null;
+        $golesSinConfirmar = ! $sinResultado && $partido->goles_confirmados_at === null && $estadoAdministrativo !== 'administrativo';
         $sinAsistencia = $partidosConAsistenciaPendiente->contains($partido->id);
 
         if (! $sinResultado && ! $golesSinConfirmar && ! $sinAsistencia) {
             return null;
         }
 
-        if ($sinResultado) {
+        if ($estadoAdministrativo === 'pendiente_regularizacion') {
+            $estado = ['tipo' => 'no_vino_pendiente', 'label' => 'No vino · pendiente de regularización', 'clase' => 'bg-amber-100 text-amber-700'];
+            $accionUrl = route('planilla.show', ['partidoId' => $partido->id, 'idEdicion' => $idEdicion, 'tipoPartido' => 'partido', 'horario' => 0]);
+            $accionLabel = 'Ver planilla';
+        } elseif ($sinResultado) {
             $estado = [
                 'tipo' => 'sin_resultado',
                 'label' => 'Sin resultado',

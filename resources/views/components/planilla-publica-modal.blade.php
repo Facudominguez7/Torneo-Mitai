@@ -23,7 +23,8 @@
                 <template x-if="!planillaCargando && !planillaError && planillaPayload">
                     <div>
                         <div class="planilla-publica__meta">
-                            <strong x-text="planillaPayload.data.goles_confirmados ? 'Goles confirmados' : 'Goles pendientes de carga'"></strong>
+                            <strong x-text="planillaPayload.data.estado_administrativo === 'administrativo' ? 'Resultado administrativo · No vino' : (planillaPayload.data.estado_administrativo === 'pendiente_regularizacion' ? 'No vino · pendiente de regularización' : (planillaPayload.data.goles_confirmados ? 'Goles confirmados' : 'Goles pendientes de carga'))"></strong>
+                            <template x-if="planillaPayload.data.estado_administrativo === 'administrativo'"><span x-text="`${planillaPayload.data.marcador_local} - ${planillaPayload.data.marcador_visitante}`"></span></template>
                             <template x-if="planillaPayload.data.goles_confirmados_at"><span>Confirmados el <span x-text="planillaPayload.data.goles_confirmados_at"></span></span></template>
                             <span>Última actualización: <span x-text="planillaPayload.data.ultima_actualizacion || 'Sin registros todavía'"></span></span>
                             <span class="planilla-publica__rotulo">Solo lectura</span>
@@ -72,7 +73,6 @@
                 planillaCargando: false,
                 planillaError: null,
                 planillaPayload: null,
-                planillasCacheadas: {},
                 planillaOrigen: null,
                 async abrirPlanilla(url) {
                     this.planillaOrigen = document.activeElement;
@@ -81,12 +81,6 @@
                     document.body.classList.add('overflow-hidden');
                     this.$nextTick(() => this.$refs.cerrarPlanilla?.focus());
 
-                    if (this.planillasCacheadas[url]) {
-                        this.planillaPayload = this.planillasCacheadas[url];
-                        this.planillaCargando = false;
-                        return;
-                    }
-
                     this.planillaPayload = null;
                     this.planillaCargando = true;
                     try {
@@ -94,7 +88,6 @@
                         const body = await response.text();
                         const payload = body ? JSON.parse(body) : {};
                         if (!response.ok) throw new Error(payload.message || 'No se pudo consultar la planilla.');
-                        this.planillasCacheadas[url] = payload;
                         this.planillaPayload = payload;
                     } catch (error) {
                         this.planillaError = error.message || 'No se pudo consultar la planilla.';
