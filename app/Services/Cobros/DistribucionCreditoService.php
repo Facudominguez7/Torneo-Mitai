@@ -133,10 +133,10 @@ class DistribucionCreditoService
             throw new RuntimeException("El cargo {$id} tiene un eximido_ars inválido o supera la deuda pendiente.");
         }
 
-        // "No vino": el equipo no pagó, pero no debe. Nunca convive con pagos ni exenciones.
+        // Una ausencia puede coexistir con una exención, pero no con pagos aplicados.
         if (($fila['ausente'] ?? false) === true) {
-            if ($aplicado > 0 || $eximido > 0) {
-                throw new RuntimeException("El cargo {$id} figura como que no vino pero registra pagos o exención.");
+            if ($aplicado > 0) {
+                throw new RuntimeException("El cargo {$id} figura como que no vino pero registra pagos.");
             }
 
             return 0;

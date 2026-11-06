@@ -11,6 +11,7 @@ use App\Models\HistorialCobroPlanilla;
 use App\Models\PagoPlanilla;
 use App\Models\Partido;
 use App\Services\Cobros\ConfiguracionCobroService;
+use App\Services\Cobros\ExencionesCobroService;
 use Illuminate\Support\Str;
 
 require_once __DIR__.'/../Services/Cobros/FixturesCargos.php';
@@ -76,6 +77,21 @@ it('ofrece no vino en la planilla solo a quien debe sin haber pagado', function 
         ->and($filas[$this->cargo->id])->toContain('>No vino</button>')
         ->and(substr_count($filas[$this->cargos[$this->rival->id]->id], 'data-cobro="no_vino"'))->toBe(0)
         ->and($html)->not->toContain('data-cobro="deshacer_no_vino"');
+});
+
+it('permite marcar y deshacer no vino desde una planilla exenta', function (): void {
+    app(ExencionesCobroService::class)->eximirCargo($this->admin, $this->equipo->id, $this->cargo->id);
+    $this->actingAs($this->admin);
+    $fila = filasCobroNoVino(seccionCobroNoVino($this))[$this->cargo->id];
+    expect($fila)->toContain('data-estado="exento"')->toContain('data-cobro="no_vino"');
+
+    $this->postJson('/Panel/cobros/no-vino', $this->entrada + ['motivo' => 'Ausente'])->assertSuccessful();
+    $fila = filasCobroNoVino(seccionCobroNoVino($this))[$this->cargo->id];
+    expect($fila)->toContain('data-deuda="0" data-estado="no_vino"')->toContain('data-cobro="deshacer_no_vino"');
+
+    $this->postJson('/Panel/cobros/no-vino-deshacer', $this->entrada)->assertSuccessful();
+    $fila = filasCobroNoVino(seccionCobroNoVino($this))[$this->cargo->id];
+    expect($fila)->toContain('data-deuda="0" data-estado="exento"')->toContain('data-cobro="no_vino"');
 });
 
 it('marca no vino y la planilla lo muestra sin deuda con boton para deshacer', function (): void {

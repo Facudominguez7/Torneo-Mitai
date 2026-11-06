@@ -22,7 +22,7 @@ use Throwable;
 
 /**
  * "No vino": el equipo no pagó la planilla de ese partido y no queda debiendo.
- * A diferencia de una exención no registra importe eximido y se puede deshacer.
+ * La ausencia no modifica la exención existente y se puede deshacer.
  * Bloquea en el mismo orden que las exenciones: actor, configuración, cuenta y cargo.
  */
 class AusenciasCobroService
@@ -44,9 +44,6 @@ class AusenciasCobroService
                 if (AplicacionPagoPlanilla::query()->where('cargo_id', $cargoId)->lockForUpdate()->exists()) {
                     throw ValidationException::withMessages(['cargo' => ['El cargo ya tiene pagos: si pagó, el equipo vino.']]);
                 }
-                if (ExencionCobroPlanilla::query()->where('cargo_id', $cargoId)->lockForUpdate()->exists()) {
-                    throw ValidationException::withMessages(['cargo' => ['El cargo ya tiene una exención.']]);
-                }
                 if (AusenciaCobroPlanilla::query()->vigentes()->where('cargo_id', $cargoId)->lockForUpdate()->exists()) {
                     throw ValidationException::withMessages(['cargo' => ['El equipo ya figura como que no vino en este partido.']]);
                 }
@@ -66,9 +63,10 @@ class AusenciasCobroService
                     throw new RuntimeException('No se pudo registrar que el equipo no vino.');
                 }
 
+                $eximido = (int) ExencionCobroPlanilla::query()->where('cargo_id', $cargoId)->sum('importe_ars');
                 $this->registrarEvento($actorVigente, 'marcar_no_vino', [
                     'idEquipo' => $equipoId, 'idEdicion' => (int) $cargo->idEdicion,
-                    'cargo_id' => $cargoId, 'pendiente_ars' => (int) $cargo->precio_original,
+                    'cargo_id' => $cargoId, 'pendiente_ars' => (int) $cargo->precio_original - $eximido,
                 ], ['ausencia_id' => (int) $ausencia->id, 'motivo' => $motivo, 'pendiente_ars' => 0]);
                 $this->sincronizarResultado($partido);
 
@@ -100,10 +98,11 @@ class AusenciasCobroService
                     throw new RuntimeException('No se pudo deshacer que el equipo no vino.');
                 }
 
+                $eximido = (int) ExencionCobroPlanilla::query()->where('cargo_id', $cargoId)->sum('importe_ars');
                 $this->registrarEvento($actorVigente, 'deshacer_no_vino', [
                     'idEquipo' => $equipoId, 'idEdicion' => (int) $cargo->idEdicion,
                     'cargo_id' => $cargoId, 'ausencia_id' => (int) $ausencia->id, 'pendiente_ars' => 0,
-                ], ['pendiente_ars' => (int) $cargo->precio_original]);
+                ], ['pendiente_ars' => (int) $cargo->precio_original - $eximido]);
                 $this->sincronizarResultado($this->partidoRegular($cargo));
 
                 return $ausencia;

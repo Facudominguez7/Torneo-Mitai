@@ -210,8 +210,8 @@
         contexto.textContent += ({
             exencion: 'Exime solo el saldo pendiente de este cargo. No devuelve pagos ni genera crédito.',
             politica: 'Solo alcanza cargos futuros de este equipo en esta edición. No elimina deuda actual.',
-            no_vino: 'El equipo no se presentó: no paga la planilla de este partido y no queda debiendo. En fase regular el rival gana 3 a 0 automáticamente (salvo que tampoco haya venido). No es una exención y se puede deshacer.',
-            deshacer_no_vino: 'Vuelve a cobrarse la planilla de este partido: el equipo queda debiendo el precio original. Si el partido tenía el 3 a 0 automático, se quita.',
+            no_vino: 'El equipo no se presentó y no queda debiendo esta planilla. En fase regular el rival gana 3 a 0 si cubrió su planilla y se presentó. La exención existente se conserva y la ausencia se puede deshacer.',
+            deshacer_no_vino: `Se revierte la ausencia. La deuda será ${ars(Math.max(0, (cargo?.precio_ars ?? 0) - (cargo?.eximido_ars ?? 0) - (cargo?.aplicado_ars ?? 0)))}; cualquier exención se conserva. Si el partido tenía el 3 a 0 automático, se quita.`,
             exencion_edicion: `${cargo?.exento ? 'El equipo ya es exento para los partidos futuros.' : 'No pagará planilla en los partidos futuros de esta edición.'} Además se exime todo lo que debe hoy. Los pagos ya registrados se conservan y no se devuelven.`,
             tarifa: 'Afecta futuras altas de todas las ediciones. No cambia cargos históricos ni activa cobros.',
             activar: 'Acción global explícita. Revisá la tarifa antes de confirmar.',
@@ -297,7 +297,7 @@
                 ? `${cargo.equipo} quedó exento de planilla en esta edición. Se eximieron ${exento.cargos_eximidos} cargos por ${ars(exento.eximido_ars)}.`
                 : ({
                     no_vino: `${cargo.equipo} figura como que no vino: no debe la planilla de este partido.`,
-                    deshacer_no_vino: `Se deshizo "No vino": ${cargo.equipo} vuelve a deber ${ars(cargo.precio_ars)} por este partido.`,
+                    deshacer_no_vino: `Se deshizo "No vino": ${cargo.equipo} ${cargo.eximido_ars >= cargo.precio_ars ? 'mantiene la planilla exenta' : `vuelve a deber ${ars(Math.max(0, cargo.precio_ars - cargo.eximido_ars - cargo.aplicado_ars))} por este partido`}.`,
                 })[operacion] ?? 'Operación registrada. Saldos actualizados.');
             if (operacion === 'pago') {
                 sinConfirmar = null;

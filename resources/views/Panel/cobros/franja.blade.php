@@ -72,7 +72,7 @@
                         <button type="button" data-cobro="exencion" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md border border-gray-300 px-3.5 text-sm">Marcar exento</button>
                     </div>
                 @endif
-                @if ($cargoActual['deuda_ars'] > 0 && $cargoActual['aplicado_ars'] === 0)
+                @if ($cargoActual['aplicado_ars'] === 0 && in_array($cargoActual['estado'], ['pendiente', 'exento'], true))
                     <div><button type="button" data-cobro="no_vino" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md border border-gray-300 px-3.5 text-sm">No vino</button></div>
                 @elseif ($cargoActual['estado'] === 'no_vino')
                     <div><button type="button" data-cobro="deshacer_no_vino" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md border border-gray-300 px-3.5 text-sm">Deshacer no vino</button></div>
