@@ -137,6 +137,30 @@ it('espera el pago completo posterior para aplicar el resultado y las posiciones
         ->and(posicionNoVino($partido, $this->visitante->id))->toMatchArray(['jugado' => 1, 'ganado' => 1, 'puntos' => 3]);
 });
 
+it('conserva la exencion del ausente y espera que el rival cubra su planilla', function (string $forma): void {
+    $exenciones = app(ExencionesCobroService::class);
+    $exenciones->eximirEdicion($this->admin, $this->local->id, $this->contexto['edicion']->id);
+    $exencion = ExencionCobroPlanilla::query()->where('cargo_id', $this->cargoLocal->id)->sole();
+    $politicaId = $exencion->politica_id;
+
+    $this->servicio->marcarNoVino($this->admin, $this->local->id, $this->cargoLocal->id, 'No se presentó');
+    expect([$this->partido->fresh()->golesEquipoLocal, $this->partido->fresh()->golesEquipoVisitante, (int) $this->partido->fresh()->jugado])->toBe([null, null, 0]);
+
+    if ($forma === 'pago') {
+        app(PagosCobroService::class)->registrarPago($this->admin, $this->cargoVisitante->id, 25000, 'efectivo', '11111111-1111-4111-8111-111111111111');
+    } else {
+        $exenciones->eximirCargo($this->admin, $this->visitante->id, $this->cargoVisitante->id);
+    }
+    expect([$this->partido->fresh()->golesEquipoLocal, $this->partido->fresh()->golesEquipoVisitante])->toBe([0, 3])
+        ->and(PlanillaJugador::query()->count())->toBe(0);
+
+    $this->servicio->deshacerNoVino($this->admin, $this->local->id, $this->cargoLocal->id);
+    $fila = app(ConsultaCobrosService::class)->consultar(['idEdicion' => $this->contexto['edicion']->id, 'estado' => 'todos', 'periodo' => 'todos'])['cargos']->firstWhere('id', $this->cargoLocal->id);
+    expect($fila)->toMatchArray(['estado' => 'exento', 'deuda_ars' => 0, 'eximido_ars' => 25000])
+        ->and(ExencionCobroPlanilla::query()->where('cargo_id', $this->cargoLocal->id)->sole()->politica_id)->toBe($politicaId)
+        ->and([$this->partido->fresh()->golesEquipoLocal, $this->partido->fresh()->golesEquipoVisitante])->toBe([null, null]);
+})->with(['pago', 'exencion']);
+
 it('aplica el resultado con exencion antes o despues de la ausencia', function (bool $antes): void {
     $eximir = fn () => app(ExencionesCobroService::class)->eximirCargo($this->admin, $this->visitante->id, $this->cargoVisitante->id);
     if ($antes) {

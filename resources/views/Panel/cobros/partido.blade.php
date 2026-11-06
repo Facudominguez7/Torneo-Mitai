@@ -23,10 +23,10 @@
                 <div class="flex flex-wrap gap-2">
                     <button type="button" data-cobro="pago" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded bg-blue-900 px-4 py-2 text-sm font-medium text-white">Registrar pago</button>
                     <button type="button" data-cobro="exencion" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700">Marcar exento</button>
-                    @if ($cargoCobro['aplicado_ars'] === 0)
-                        <button type="button" data-cobro="no_vino" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700">No vino</button>
-                    @endif
                 </div>
+            @endif
+            @if ($configuracionCobros?->activado_at && $cargoCobro['aplicado_ars'] === 0 && in_array($cargoCobro['estado'], ['pendiente', 'exento'], true))
+                <button type="button" data-cobro="no_vino" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700">No vino</button>
             @elseif ($cargoCobro['estado'] === 'no_vino' && $configuracionCobros?->activado_at)
                 <button type="button" data-cobro="deshacer_no_vino" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700">Deshacer no vino</button>
             @endif

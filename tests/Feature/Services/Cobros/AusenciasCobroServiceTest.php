@@ -125,10 +125,26 @@ it('permite volver a marcar no vino despues de deshacerlo', function (): void {
         ->and(AusenciaCobroPlanilla::query()->where('cargo_id', $this->cargo->id)->whereNull('revertido_at')->count())->toBe(1);
 });
 
+it('conserva la exencion y el saldo cero al marcar y deshacer no vino', function (): void {
+    app(ExencionesCobroService::class)->eximirCargo($this->admin, $this->equipo->id, $this->cargo->id);
+    $exenciones = DB::table('exencion_cobro_planillas')->where('cargo_id', $this->cargo->id)->get()->toArray();
+
+    $this->servicio->marcarNoVino($this->admin, $this->equipo->id, $this->cargo->id, 'Ausente');
+    expect(filaAusencia($this->cargo))->toMatchArray(['estado' => 'no_vino', 'deuda_ars' => 0, 'eximido_ars' => 25000, 'aplicado_ars' => 0]);
+
+    $this->servicio->deshacerNoVino($this->admin, $this->equipo->id, $this->cargo->id);
+    expect(filaAusencia($this->cargo))->toMatchArray(['estado' => 'exento', 'deuda_ars' => 0, 'eximido_ars' => 25000, 'aplicado_ars' => 0])
+        ->and(DB::table('exencion_cobro_planillas')->where('cargo_id', $this->cargo->id)->get()->toArray())->toEqual($exenciones);
+
+    $eventos = HistorialCobroPlanilla::query()->whereIn('accion', ['marcar_no_vino', 'deshacer_no_vino'])->orderBy('id')->get();
+    expect($eventos)->toHaveCount(2)
+        ->and($eventos[0]->valores_antes['pendiente_ars'])->toBe(0)
+        ->and($eventos[1]->valores_despues['pendiente_ars'])->toBe(0);
+});
+
 it('rechaza marcar no vino sin escribir nada', function (string $caso, string $mensaje): void {
     match ($caso) {
         'pagado' => app(PagosCobroService::class)->registrarPago($this->admin, $this->cargo->id, 10000, 'efectivo', (string) Str::uuid()),
-        'exento' => app(ExencionesCobroService::class)->eximirCargo($this->admin, $this->equipo->id, $this->cargo->id),
         'marcado' => $this->servicio->marcarNoVino($this->admin, $this->equipo->id, $this->cargo->id),
     };
     $antes = estadoAusencias();
@@ -143,7 +159,6 @@ it('rechaza marcar no vino sin escribir nada', function (string $caso, string $m
     expect(estadoAusencias())->toBe($antes);
 })->with([
     'con pagos aplicados' => ['pagado', 'El cargo ya tiene pagos: si pagó, el equipo vino.'],
-    'exento' => ['exento', 'El cargo ya tiene una exención.'],
     'ya marcado' => ['marcado', 'El equipo ya figura como que no vino en este partido.'],
 ]);
 
