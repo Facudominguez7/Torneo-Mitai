@@ -599,9 +599,9 @@ it('muestra a todos los jugadores con su cantidad cuando no hay umbral pedido', 
     expect(partidosMostradosCincoPartidos($contenido, '41200210'))->toBe(5)
         ->and(partidosMostradosCincoPartidos($contenido, '41200211'))->toBe(2)
         // Sin filtro, los contadores usan el valor de configuración y el
-        // campo numérico arranca precargado con ese mismo valor.
+        // campo numérico arranca vacío para listar a todos.
         ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
-        ->and($contenido)->toMatch('/name="desde"[^>]*value="5"/')
+        ->and($contenido)->toMatch('/name="desde"[^>]*value=""/')
         ->and($contenido)->toMatch('/name="desde"[^>]*min="1"/')
         ->and($contenido)->toMatch('/name="desde"[^>]*max="999"/')
         ->and($contenido)->toMatch('/name="desde"[^>]*inputmode="numeric"/');
@@ -656,5 +656,6 @@ it('toma el umbral de configuracion para las etiquetas y los contadores', functi
 
     expect($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 3<\/p>/')
         ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>3 o más<\/p>/')
-        ->and($contenido)->toMatch('/name="desde"[^>]*value="3"/');
+        // El campo arranca vacío aunque las etiquetas usen el umbral configurado.
+        ->and($contenido)->toMatch('/name="desde"[^>]*value=""/');
 });

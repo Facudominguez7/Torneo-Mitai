@@ -92,10 +92,10 @@ Ordenados por partidos jugados (mayor a menor).
                 @endif
 
                 <div class="w-full md:w-44">
-                    {{-- El umbral es libre (#202): cualquier entero del rango; el valor
-                         inicial es el configurado en config/estadisticas.php. --}}
+                    {{-- El umbral es libre (#202): cualquier entero del rango. Arranca
+                         vacío para listar a todos; el KPI marca la referencia configurada. --}}
                     <label for="desde" class="mb-1 block text-sm font-medium text-gray-700">Participaciones mínimas</label>
-                    <input type="number" name="desde" id="desde" value="{{ $umbral }}" min="1" max="999"
+                    <input type="number" name="desde" id="desde" value="{{ $desde }}" min="1" max="999"
                         step="1" inputmode="numeric"
                         class="block w-full rounded-lg border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm placeholder:text-gray-400 focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30 focus-visible:ring-2" />
                 </div>
