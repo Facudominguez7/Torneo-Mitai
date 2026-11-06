@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Jobs\SincronizarSuscriptorResend;
 use App\Mail\ConfirmacionSuscripcionMail;
+use App\Mail\InvitacionSuscripcionMail;
 use App\Models\Suscriptor;
 use App\Models\User;
 use Carbon\CarbonInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
@@ -73,6 +75,31 @@ class SuscripcionService
     {
         Mail::mailer(config('suscripciones.mailer'))->to($suscriptor->email)->later($enviarA, new ConfirmacionSuscripcionMail($this->urlConfirmacion($suscriptor)));
         RateLimiter::hit($this->claveEsperaConfirmacion($suscriptor->email), (int) config('suscripciones.minutos_entre_confirmaciones') * 60);
+    }
+
+    /**
+     * Invita una sola vez a quien tiene cuenta y no está en la lista. Queda pendiente con todos los avisos
+     * y solo se activa si confirma; el registro evita invitarlo de nuevo.
+     *
+     * @return bool false si el correo ya estaba en la lista (por ejemplo, se suscribió mientras tanto)
+     */
+    public function invitar(User $usuario, string $email, CarbonInterface $enviarA): bool
+    {
+        $suscriptor = new Suscriptor(['email' => $email, 'usuario_id' => $usuario->id]);
+        foreach (config('suscripciones.avisos') as $columna) {
+            $suscriptor->{$columna} = true;
+        }
+
+        try {
+            $suscriptor->save();
+        } catch (UniqueConstraintViolationException) {
+            return false;
+        }
+
+        Mail::mailer(config('suscripciones.mailer'))->to($email)->later($enviarA, new InvitacionSuscripcionMail($this->urlConfirmacion($suscriptor)));
+        RateLimiter::hit($this->claveEsperaConfirmacion($email), (int) config('suscripciones.minutos_entre_confirmaciones') * 60);
+
+        return true;
     }
 
     /**

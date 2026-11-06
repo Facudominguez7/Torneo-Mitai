@@ -8,7 +8,8 @@ use Illuminate\Console\Command;
 
 /**
  * Reenvía el enlace de confirmación (doble opt-in) a quienes pidieron suscribirse y nunca confirmaron,
- * por ejemplo porque Resend rechazó el correo original. No toca a activos ni a quienes se dieron de baja.
+ * por ejemplo porque Resend rechazó el correo original. No toca a activos ni a quienes se dieron de baja,
+ * ni a los usuarios invitados (pendientes con usuario_id), que nunca pidieron suscribirse.
  * El tope por corrida cuida el cupo diario de Resend; --desde-id permite seguir otro día sin repetir.
  */
 class ReenviarConfirmacionesSuscripcion extends Command
@@ -33,6 +34,7 @@ class ReenviarConfirmacionesSuscripcion extends Command
         $pendientes = Suscriptor::query()
             ->whereNull('confirmado_at')
             ->whereNull('baja_at')
+            ->whereNull('usuario_id')
             ->where('id', '>', (int) $this->option('desde-id'))
             ->orderBy('id');
 
