@@ -9,6 +9,7 @@ use App\Models\Suscriptor;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
@@ -236,6 +237,62 @@ class SuscripcionService
     private function claveEsperaConfirmacion(string $email): string
     {
         return 'suscripcion-confirmacion:'.sha1($email);
+    }
+
+    /**
+     * Registra el rebote o la queja que informó Resend y da de baja ese correo para no seguir escribiéndole.
+     * Un rebote transitorio no cuenta: el correo puede haber llegado. Como en los demás eventos del webhook,
+     * no se toca resend_sincronizado_at ni se encola otra sincronización: Resend ya conoce ese estado.
+     * Resend fecha sus eventos en UTC y se guardan en la zona de la aplicación, como el resto de las fechas.
+     *
+     * @param  array<string, mixed>  $datos  campo data del evento (email.bounced | email.complained)
+     */
+    public function registrarReboteDesdeResend(string $tipo, array $datos, CarbonInterface $emitido): void
+    {
+        $esQueja = $tipo === 'email.complained';
+
+        if (! $esQueja && ! $this->esRebotePermanente($datos)) {
+            return;
+        }
+
+        $columna = $esQueja ? 'queja_at' : 'rebote_at';
+        $momento = Carbon::instance($emitido)->setTimezone((string) config('app.timezone'));
+
+        foreach ($this->destinatariosDelEvento($datos) as $email) {
+            $suscriptor = Suscriptor::query()->where('email', $email)->first();
+
+            if ($suscriptor === null) {
+                continue;
+            }
+
+            $suscriptor->forceFill([
+                $columna => $suscriptor->{$columna} ?? $momento,
+                'baja_at' => $suscriptor->baja_at ?? $momento,
+            ])->save();
+        }
+    }
+
+    /** Un rebote sin tipo cuenta como rebote: Resend no siempre lo informa y el correo no llegó. */
+    private function esRebotePermanente(array $datos): bool
+    {
+        $rebote = is_array($datos['bounce'] ?? null) ? $datos['bounce'] : [];
+        $tipo = mb_strtolower(trim((string) ($rebote['type'] ?? '')));
+
+        return $tipo === '' || $tipo === 'permanent';
+    }
+
+    /**
+     * @param  array<string, mixed>  $datos  campo data del evento
+     * @return list<string> correos destinatarios, normalizados y sin repetir
+     */
+    private function destinatariosDelEvento(array $datos): array
+    {
+        $destinatarios = is_array($datos['to'] ?? null) ? $datos['to'] : [];
+
+        return array_values(array_unique(array_filter(
+            array_map(fn ($email): string => mb_strtolower(trim((string) $email)), $destinatarios),
+            fn (string $email): bool => $email !== '',
+        )));
     }
 
     /**

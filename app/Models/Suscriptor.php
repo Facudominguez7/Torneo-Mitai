@@ -28,6 +28,8 @@ class Suscriptor extends Model
             'confirmado_at' => 'datetime',
             'invitado_at' => 'datetime',
             'baja_at' => 'datetime',
+            'rebote_at' => 'datetime',
+            'queja_at' => 'datetime',
             'resend_sincronizado_at' => 'datetime',
         ];
     }

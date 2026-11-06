@@ -13,11 +13,14 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Recibe de Resend las bajas y cambios de tópicos que el suscriptor hace desde allá
- * (enlace de baja de Resend, botón de Gmail), para que el estado local no los pise al sincronizar.
+ * (enlace de baja de Resend, botón de Gmail) y los rebotes y quejas de los correos enviados,
+ * para que el estado local no los pise al sincronizar.
  */
 class ControladorWebhookResend extends Controller
 {
-    private const EVENTOS = ['contact.updated', 'contact.deleted', 'contact.topics.updated'];
+    private const EVENTOS_CONTACTO = ['contact.updated', 'contact.deleted', 'contact.topics.updated'];
+
+    private const EVENTOS_ENVIO = ['email.bounced', 'email.complained'];
 
     public function __invoke(Request $request, FirmaWebhookResend $firma, SuscripcionService $suscripciones): Response
     {
@@ -31,8 +34,9 @@ class ControladorWebhookResend extends Controller
 
         $tipo = (string) $request->json('type');
         $datos = $request->json('data');
+        $esEventoDeEnvio = in_array($tipo, self::EVENTOS_ENVIO, true);
 
-        if (! in_array($tipo, self::EVENTOS, true) || ! is_array($datos)) {
+        if ((! $esEventoDeEnvio && ! in_array($tipo, self::EVENTOS_CONTACTO, true)) || ! is_array($datos)) {
             return response('', 204);
         }
 
@@ -51,7 +55,12 @@ class ControladorWebhookResend extends Controller
             return response('', 204);
         }
 
-        $suscripciones->aplicarCambioDesdeResend($tipo, $datos, $emitido);
+        if ($esEventoDeEnvio) {
+            $suscripciones->registrarReboteDesdeResend($tipo, $datos, $emitido);
+        } else {
+            $suscripciones->aplicarCambioDesdeResend($tipo, $datos, $emitido);
+        }
+
         Cache::put($claveEvento, true, now()->addDay());
 
         return response('', 204);
