@@ -50,16 +50,19 @@ class ControladorEstadisticasJugadores extends Controller
         // Filtro de categoría (solo tiene sentido dentro de una edición)
         $idCategoria = $request->filled('idCategoria') ? (int) $request->input('idCategoria') : null;
 
-        // Umbral de participaciones del listado: todos o 5 o más
-        $umbral = $request->input('umbral') === ParticipacionesJugadoresService::UMBRAL_CINCO
-            ? ParticipacionesJugadoresService::UMBRAL_CINCO
-            : ParticipacionesJugadoresService::UMBRAL_TODOS;
+        // Filtro «Participaciones mínimas»: cualquier cantidad entera del
+        // rango aceptado; vacío o inválido significa sin filtro (#202, L2).
+        $desde = $this->participaciones->normalizarDesde($request->input('desde'));
+
+        // Umbral de las etiquetas y los contadores: el pedido en el filtro o,
+        // sin filtro, el configurado en config/estadisticas.php.
+        $umbral = $desde ?? $this->participaciones->participacionesMinimas();
 
         // Listado paginado de jugadores activos con sus participaciones reales
-        $jugadoresData = $this->obtenerJugadoresConEstadisticas($idEdicion, $idCategoria, $busqueda, $umbral);
+        $jugadoresData = $this->obtenerJugadoresConEstadisticas($idEdicion, $idCategoria, $busqueda, $desde);
 
         // Contadores de jugadores por cantidad de participaciones
-        $contadores = $this->participaciones->obtenerContadores($idEdicion, $idCategoria, $busqueda);
+        $contadores = $this->participaciones->obtenerContadores($idEdicion, $idCategoria, $busqueda, $umbral);
 
         // Obtener conteo de jugadores por edición
         $conteoPorEdicion = $this->obtenerConteoPorEdicion();
@@ -78,6 +81,7 @@ class ControladorEstadisticasJugadores extends Controller
             'busqueda',
             'categorias',
             'idCategoria',
+            'desde',
             'umbral'
         ));
     }
@@ -91,17 +95,17 @@ class ControladorEstadisticasJugadores extends Controller
      * @param  int|null  $idEdicion  ID de edición para filtrar
      * @param  int|null  $idCategoria  ID de categoría para filtrar
      * @param  string|null  $busqueda  Término de búsqueda
-     * @param  string  $umbral  Umbral de participaciones del listado
+     * @param  int|null  $desde  Participaciones mínimas pedidas (null = todas)
      * @return LengthAwarePaginator
      */
     private function obtenerJugadoresConEstadisticas(
         ?int $idEdicion,
         ?int $idCategoria,
         ?string $busqueda,
-        string $umbral
+        ?int $desde
     ) {
         $jugadoresPaginados = $this->participaciones
-            ->consultaListado($idEdicion, $idCategoria, $busqueda, $umbral)
+            ->consultaListado($idEdicion, $idCategoria, $busqueda, $desde)
             ->paginate(20);
 
         // Enriquecer cada jugador con estadísticas completas

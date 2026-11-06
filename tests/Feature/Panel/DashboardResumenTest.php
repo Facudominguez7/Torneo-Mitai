@@ -61,7 +61,7 @@ it('muestra el estado vacio accesible cuando no hay edicion seleccionada', funct
         ->assertDontSee('Equipos inscriptos');
 });
 
-it('calcula las tarjetas KPI del dashboard con datos de la edicion', function () {
+it('ya no muestra las tarjetas KPI del dashboard', function () {
     $admin = crearAdminDashboard();
     $contexto = crearContextoDashboard();
 
@@ -120,11 +120,11 @@ it('calcula las tarjetas KPI del dashboard con datos de la edicion', function ()
         ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]));
 
     $response->assertOk()
-        ->assertSee('Equipos inscriptos')
-        ->assertSee('Jugadores habilitados')
-        ->assertSee('Partidos jugados')
-        ->assertSee('1 / 2', false)
-        ->assertSee('Pendientes de carga');
+        ->assertDontSee('Equipos inscriptos')
+        ->assertDontSee('Jugadores habilitados')
+        ->assertDontSee('Partidos jugados')
+        ->assertDontSee('Pendientes de carga')
+        ->assertDontSee('Jugadores con 5 o más partidos');
 });
 
 it('lista los partidos que requieren atencion con su badge y accion', function () {
@@ -258,6 +258,8 @@ it('muestra un estado vacio de proxima fecha cuando no quedan partidos por jugar
         ->assertSee(e(route('partido.index', ['idEdicion' => $contexto['edicion']->id])), false);
 });
 
+// Issue #202: el KPI cuenta jugadores con N o más participaciones reales
+// (N sale de la configuración) y enlaza al listado ya filtrado por ese valor.
 it('saluda segun la hora de Buenos Aires', function (string $hora, string $saludo) {
     $admin = crearAdminDashboard();
     $contexto = crearContextoDashboard();

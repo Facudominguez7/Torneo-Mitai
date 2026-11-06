@@ -223,7 +223,7 @@ it('no cuenta al jugador que solo tiene cuatro participaciones reales', function
 
     $responseFiltrada = $this->actingAs($admin)->get(route('estadisticas-jugadores', [
         'idEdicion' => $contexto['edicion']->id,
-        'umbral' => 'cinco',
+        'desde' => 5,
     ]));
 
     $responseFiltrada->assertOk()
@@ -255,7 +255,7 @@ it('cuenta al jugador con exactamente cinco participaciones y reemplaza las etiq
 
     $this->actingAs($admin)->get(route('estadisticas-jugadores', [
         'idEdicion' => $contexto['edicion']->id,
-        'umbral' => 'cinco',
+        'desde' => 5,
     ]))->assertOk()
         ->assertSee('Sosa, Bruno')
         ->assertSee('DNI: 41200010');
@@ -305,7 +305,7 @@ it('no cuenta participaciones de un partido adjudicado por no vino', function ()
 
     $this->actingAs($admin)->get(route('estadisticas-jugadores', [
         'idEdicion' => $contexto['edicion']->id,
-        'umbral' => 'cinco',
+        'desde' => 5,
     ]))->assertOk()->assertDontSee('DNI: 41200030');
 });
 
@@ -503,7 +503,7 @@ it('aplica el filtro de categoria en los contadores y en el listado', function (
         ->and(partidosMostradosCincoPartidos($contenidoFiltrado, '41200080'))->toBe(5);
 });
 
-it('conserva los filtros de edicion busqueda categoria y umbral en la paginacion', function () {
+it('conserva los filtros de edicion busqueda categoria y participaciones minimas en la paginacion', function () {
     $admin = crearAdminCincoPartidos();
     $contexto = crearContextoCincoPartidos();
 
@@ -523,7 +523,7 @@ it('conserva los filtros de edicion busqueda categoria y umbral en la paginacion
         'idEdicion' => $contexto['edicion']->id,
         'busqueda' => 'Comun',
         'idCategoria' => $contexto['categoria']->id,
-        'umbral' => 'cinco',
+        'desde' => 5,
     ]));
 
     $response->assertOk()->assertSee('Mostrando');
@@ -538,5 +538,124 @@ it('conserva los filtros de edicion busqueda categoria y umbral en la paginacion
         ->and($enlacePaginaDos)->toContain('idEdicion='.$contexto['edicion']->id)
         ->and($enlacePaginaDos)->toContain('busqueda=Comun')
         ->and($enlacePaginaDos)->toContain('idCategoria='.$contexto['categoria']->id)
-        ->and($enlacePaginaDos)->toContain('umbral=cinco');
+        ->and($enlacePaginaDos)->toContain('desde=5');
+});
+
+// L2 (#202): el umbral deja de estar fijo en 5. La configuración define la
+// etiqueta del KPI y el valor inicial del filtro; el listado acepta cualquier
+// cantidad entera por `desde` y, sin filtro, muestra a todos los jugadores.
+
+it('filtra y cuenta con un umbral distinto al configurado', function () {
+    $admin = crearAdminCincoPartidos();
+    $contexto = crearContextoCincoPartidos();
+
+    crearJugadorCincoPartidos($contexto, '41200200', 'Ramiro', 'Vega');
+    crearParticipacionesCincoPartidos($contexto, '41200200', 10);
+
+    crearJugadorCincoPartidos($contexto, '41200201', 'Elian', 'Paz');
+    crearParticipacionesCincoPartidos($contexto, '41200201', 6);
+
+    $response = $this->actingAs($admin)->get(route('estadisticas-jugadores', [
+        'idEdicion' => $contexto['edicion']->id,
+        'desde' => 10,
+    ]));
+
+    $response->assertOk()
+        ->assertSee('DNI: 41200200')
+        ->assertDontSee('DNI: 41200201');
+
+    $contenido = $response->getContent();
+
+    // Los contadores siguen el umbral pedido, no el de configuración.
+    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-gray-900">2<\/span>\s*<p[^>]*>Jugadores activos<\/p>/')
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 10<\/p>/')
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>10 o más<\/p>/')
+        ->and($contenido)->toMatch('/de\s*<span class="font-semibold">1<\/span>\s*jugadores/')
+        // El campo queda precargado con el filtro pedido.
+        ->and($contenido)->toMatch('/name="desde"[^>]*value="10"/');
+});
+
+it('muestra a todos los jugadores con su cantidad cuando no hay umbral pedido', function () {
+    $admin = crearAdminCincoPartidos();
+    $contexto = crearContextoCincoPartidos();
+
+    crearJugadorCincoPartidos($contexto, '41200210', 'Bruno', 'Sosa');
+    crearParticipacionesCincoPartidos($contexto, '41200210', 5);
+
+    crearJugadorCincoPartidos($contexto, '41200211', 'Lucas', 'Cabrera');
+    crearParticipacionesCincoPartidos($contexto, '41200211', 2);
+
+    $response = $this->actingAs($admin)->get(route('estadisticas-jugadores', [
+        'idEdicion' => $contexto['edicion']->id,
+        'desde' => '',
+    ]));
+
+    $response->assertOk()
+        ->assertSee('DNI: 41200210')
+        ->assertSee('DNI: 41200211');
+
+    $contenido = $response->getContent();
+
+    expect(partidosMostradosCincoPartidos($contenido, '41200210'))->toBe(5)
+        ->and(partidosMostradosCincoPartidos($contenido, '41200211'))->toBe(2)
+        // Sin filtro, los contadores usan el valor de configuración y el
+        // campo numérico arranca vacío para listar a todos.
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
+        ->and($contenido)->toMatch('/name="desde"[^>]*value=""/')
+        ->and($contenido)->toMatch('/name="desde"[^>]*min="1"/')
+        ->and($contenido)->toMatch('/name="desde"[^>]*max="999"/')
+        ->and($contenido)->toMatch('/name="desde"[^>]*inputmode="numeric"/');
+});
+
+it('ignora un umbral invalido sin romper el listado', function (string $desdeInvalido) {
+    $admin = crearAdminCincoPartidos();
+    $contexto = crearContextoCincoPartidos();
+
+    crearJugadorCincoPartidos($contexto, '41200220', 'Santino', 'Ortiz');
+    crearParticipacionesCincoPartidos($contexto, '41200220', 2);
+
+    $response = $this->actingAs($admin)->get(route('estadisticas-jugadores', [
+        'idEdicion' => $contexto['edicion']->id,
+        'desde' => $desdeInvalido,
+    ]));
+
+    $response->assertOk()->assertSee('DNI: 41200220');
+
+    $contenido = $response->getContent();
+
+    // Sin filtro aplicado: sigue apareciendo y los contadores vuelven al
+    // umbral de configuración.
+    expect(partidosMostradosCincoPartidos($contenido, '41200220'))->toBe(2)
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 5<\/p>/')
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">0<\/span>\s*<p[^>]*>5 o más<\/p>/');
+})->with([
+    'texto' => ['abc'],
+    'cero' => ['0'],
+    'fuera de rango' => ['1000'],
+]);
+
+it('toma el umbral de configuracion para las etiquetas y los contadores', function () {
+    config()->set('estadisticas.participaciones_minimas', 3);
+
+    $admin = crearAdminCincoPartidos();
+    $contexto = crearContextoCincoPartidos();
+
+    crearJugadorCincoPartidos($contexto, '41200230', 'Dante', 'Ferrari');
+    crearParticipacionesCincoPartidos($contexto, '41200230', 4);
+
+    crearJugadorCincoPartidos($contexto, '41200231', 'Tobias', 'Ledesma');
+    crearParticipacionesCincoPartidos($contexto, '41200231', 2);
+
+    $response = $this->actingAs($admin)->get(route('estadisticas-jugadores', [
+        'idEdicion' => $contexto['edicion']->id,
+    ]));
+
+    $response->assertOk();
+
+    $contenido = $response->getContent();
+
+    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 3<\/p>/')
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>3 o más<\/p>/')
+        // El campo arranca vacío aunque las etiquetas usen el umbral configurado.
+        ->and($contenido)->toMatch('/name="desde"[^>]*value=""/');
 });
