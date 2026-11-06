@@ -164,7 +164,7 @@
                 </div>
 
                 {{-- KPIs --}}
-                <div class="mb-4 grid grid-cols-2 gap-3 px-3 sm:px-4 xl:grid-cols-4">
+                <div class="mb-4 grid grid-cols-2 gap-3 px-3 sm:px-4 xl:grid-cols-5">
                     <div class="rounded-xl border border-gray-200 bg-white p-5">
                         <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Equipos inscriptos</p>
                         <p class="mt-2 text-3xl font-bold text-gray-900">{{ $resumenDashboard['equiposInscriptos'] }}</p>
@@ -173,6 +173,12 @@
                         <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Jugadores habilitados</p>
                         <p class="mt-2 text-3xl font-bold text-gray-900">{{ $resumenDashboard['jugadoresHabilitados'] }}</p>
                     </div>
+                    {{-- KPI #202: jugadores con 5 o más participaciones reales; abre el listado ya filtrado. --}}
+                    <a href="{{ route('estadisticas-jugadores', ['idEdicion' => $idEdicionContexto, 'umbral' => 'cinco']) }}"
+                        class="rounded-xl border border-gray-200 bg-white p-5 transition hover:border-brand-navy/40 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Jugadores con 5 o más partidos</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ $resumenDashboard['jugadoresConCincoOMasPartidos'] }}</p>
+                    </a>
                     <div class="rounded-xl border border-gray-200 bg-white p-5">
                         <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Partidos jugados</p>
                         <p class="mt-2 text-3xl font-bold text-gray-900">{{ $partidosJugadosResumen }} / {{ $partidosTotalesResumen }}</p>

@@ -22,12 +22,14 @@ class ResumenDashboard
     public function __construct(
         private readonly EquiposDeEdicionService $equiposDeEdicion,
         private readonly EstadisticasService $estadisticas,
+        private readonly ParticipacionesJugadoresService $participaciones,
     ) {}
 
     /**
      * @return array{
      *     equiposInscriptos: int,
      *     jugadoresHabilitados: int,
+     *     jugadoresConCincoOMasPartidos: int,
      *     partidosJugados: int,
      *     partidosTotales: int,
      *     partidosPendientes: Collection<int, array<string, mixed>>,
@@ -60,6 +62,7 @@ class ResumenDashboard
         return [
             'equiposInscriptos' => $equiposInscriptos,
             'jugadoresHabilitados' => $jugadoresHabilitados,
+            'jugadoresConCincoOMasPartidos' => $this->participaciones->cantidadJugadoresCincoOMas($idEdicion),
             'partidosJugados' => $partidosJugados,
             'partidosTotales' => $partidosTotales,
             'partidosPendientes' => $partidosPendientes,

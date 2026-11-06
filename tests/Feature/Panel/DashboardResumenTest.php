@@ -9,6 +9,7 @@ use App\Models\Grupo;
 use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
 use App\Models\Partido;
+use App\Models\PlanillaJugador;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 
@@ -256,6 +257,78 @@ it('muestra un estado vacio de proxima fecha cuando no quedan partidos por jugar
         ->assertSee('Próxima fecha')
         ->assertSee('No hay partidos programados')
         ->assertSee(e(route('partido.index', ['idEdicion' => $contexto['edicion']->id])), false);
+});
+
+// Issue #202: el KPI cuenta jugadores con 5 o más participaciones reales y
+// enlaza al listado de Estadísticas de jugadores ya filtrado por ese umbral.
+it('muestra el kpi de jugadores con cinco o mas partidos enlazado al listado filtrado', function () {
+    $admin = crearAdminDashboard();
+    $contexto = crearContextoDashboard();
+    $local = crearEquipoDashboard($contexto, 'Mitai Cinco Local');
+    $visitante = crearEquipoDashboard($contexto, 'Mitai Cinco Visitante');
+
+    foreach ([['30511111', 5], ['30522222', 4]] as [$dni, $cantidad]) {
+        Jugador::create(['dni' => $dni, 'nombre' => 'Jugador', 'apellido' => $dni]);
+        ListaBuenaFe::create([
+            'dni_jugador' => $dni,
+            'idEquipo' => $local->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+            'fecha_nacimiento' => '2015-01-01',
+            'fecha_alta' => now(),
+            'activo' => true,
+        ]);
+
+        foreach (range(1, $cantidad) as $numero) {
+            $partido = Partido::create([
+                'idCategoria' => $contexto['categoria']->id,
+                'idFechas' => $contexto['fecha']->id,
+                'idEquipoLocal' => $local->id,
+                'idEquipoVisitante' => $visitante->id,
+                'idGrupo' => $contexto['grupo']->id,
+                'idEdicion' => $contexto['edicion']->id,
+                'golesEquipoLocal' => 3,
+                'golesEquipoVisitante' => 1,
+                'goles_confirmados_at' => now(),
+                'cancha' => 1,
+                'jugado' => 1,
+                'horario_datetime' => '2026-04-01 09:00:00',
+            ]);
+
+            PlanillaJugador::create([
+                'partido_id' => $partido->id,
+                'partido_type' => Partido::class,
+                'dni_jugador' => $dni,
+                'idEquipo' => $local->id,
+                'idEdicion' => $contexto['edicion']->id,
+                'idCategoria' => $contexto['categoria']->id,
+                'numero_camiseta' => 8,
+                'goles' => 0,
+                'asistio' => true,
+                'tarjeta_roja' => false,
+            ]);
+        }
+    }
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]));
+
+    $response->assertOk()
+        ->assertSee('Jugadores con 5 o más partidos')
+        ->assertSee('xl:grid-cols-5', false);
+
+    $urlListadoFiltrado = e(route('estadisticas-jugadores', [
+        'idEdicion' => $contexto['edicion']->id,
+        'umbral' => 'cinco',
+    ]));
+
+    $response->assertSee($urlListadoFiltrado, false);
+
+    // El enlace, la etiqueta y el valor en la misma tarjeta: el jugador con 4
+    // participaciones no suma al KPI.
+    expect($response->getContent())->toMatch(
+        '/<a href="'.preg_quote($urlListadoFiltrado, '/').'"[^>]*>\s*<p[^>]*>Jugadores con 5 o más partidos<\/p>\s*<p[^>]*>1<\/p>/'
+    );
 });
 
 it('saluda segun la hora de Buenos Aires', function (string $hora, string $saludo) {
