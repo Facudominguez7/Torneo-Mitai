@@ -3,7 +3,9 @@ Vista de Estadísticas Globales de Jugadores
 
 Muestra todos los jugadores del torneo con sus equipos,
 estadísticas globales y estadísticas por edición.
-Incluye filtros por edición y búsqueda por nombre/DNI.
+Incluye filtros por edición, categoría, umbral de participaciones y
+búsqueda por nombre/DNI. Solo cuentan las participaciones reales (asistencia
+en un partido efectivamente disputado, #202).
 Ordenados por partidos jugados (mayor a menor).
 --}}
 @extends('Panel.admin')
@@ -20,12 +22,12 @@ Ordenados por partidos jugados (mayor a menor).
                 <p class="text-xs font-medium text-gray-500">Jugadores activos</p>
             </div>
             <div class="min-w-[160px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
-                <span class="text-2xl font-bold text-amber-600">{{ $contadores['cinco_o_menos'] }}</span>
-                <p class="text-xs font-medium text-gray-500">Con 5 partidos o menos</p>
+                <span class="text-2xl font-bold text-amber-600">{{ $contadores['menos_de_5'] }}</span>
+                <p class="text-xs font-medium text-gray-500">Menos de 5</p>
             </div>
             <div class="min-w-[160px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
-                <span class="text-2xl font-bold text-emerald-600">{{ $contadores['mas_de_cinco'] }}</span>
-                <p class="text-xs font-medium text-gray-500">Con más de 5 partidos</p>
+                <span class="text-2xl font-bold text-emerald-600">{{ $contadores['cinco_o_mas'] }}</span>
+                <p class="text-xs font-medium text-gray-500">5 o más</p>
             </div>
         </div>
     @endif
@@ -52,6 +54,9 @@ Ordenados por partidos jugados (mayor a menor).
         $mensajeVacioJugadores = 'No se encontraron jugadores';
         if ($busqueda) {
             $descripcionVacioJugadores = 'No hay jugadores que coincidan con la búsqueda "'.e($busqueda).'".';
+        } elseif ($umbral === \App\Services\Panel\ParticipacionesJugadoresService::UMBRAL_CINCO) {
+            $descripcionVacioJugadores = 'No hay jugadores con 5 o más participaciones'
+                .(isset($EdicionSeleccionada) ? ' en la edición '.e($EdicionSeleccionada->nombre) : '').'.';
         } elseif (isset($EdicionSeleccionada)) {
             $descripcionVacioJugadores = 'No hay jugadores registrados en la edición '.e($EdicionSeleccionada->nombre).'.';
         } else {
@@ -70,6 +75,26 @@ Ordenados por partidos jugados (mayor a menor).
                                 {{ $edicion->nombre }}
                             </option>
                         @endforeach
+                    </x-ui.select>
+                </div>
+
+                @if ($categorias->isNotEmpty())
+                    <div class="w-full md:w-56">
+                        <x-ui.select label="Categoría" name="idCategoria" id="idCategoria">
+                            <option value="">Todas las categorías</option>
+                            @foreach ($categorias as $categoria)
+                                <option value="{{ $categoria->id }}" {{ (int) $idCategoria === $categoria->id ? 'selected' : '' }}>
+                                    {{ $categoria->nombreCategoria }}
+                                </option>
+                            @endforeach
+                        </x-ui.select>
+                    </div>
+                @endif
+
+                <div class="w-full md:w-48">
+                    <x-ui.select label="Participaciones" name="umbral" id="umbral">
+                        <option value="todos" {{ $umbral !== 'cinco' ? 'selected' : '' }}>Todos</option>
+                        <option value="cinco" {{ $umbral === 'cinco' ? 'selected' : '' }}>5 o más</option>
                     </x-ui.select>
                 </div>
 

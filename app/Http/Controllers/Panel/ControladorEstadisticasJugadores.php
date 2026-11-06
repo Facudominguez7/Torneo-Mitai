@@ -8,6 +8,7 @@ use App\Models\Edicion;
 use App\Models\Jugador;
 use App\Models\ListaBuenaFe;
 use App\Models\PlanillaJugador;
+use App\Services\Panel\ParticipacionesJugadoresService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -23,43 +24,50 @@ use Illuminate\Support\Facades\DB;
  */
 class ControladorEstadisticasJugadores extends Controller
 {
+    public function __construct(
+        private readonly ParticipacionesJugadoresService $participaciones,
+    ) {}
+
     /**
      * Mostrar la vista de estadísticas de jugadores.
      *
-     * Obtiene todos los jugadores registrados, ordenados por cantidad de
-     * partidos jugados (descendente). Muestra contadores de jugadores
-     * totales, con ≤5 partidos y con >5 partidos.
-     *
-     * @return View
+     * Obtiene los jugadores activos ordenados por participaciones reales
+     * (descendente), con contadores de totales y de ambos lados del umbral de
+     * 5 partidos. La cifra y el listado salen del mismo servicio (#202).
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         // Obtener todas las ediciones para filtros y selector
         $ediciones = Edicion::orderBy('id', 'desc')->get();
 
         // Edición seleccionada (opcional)
-        $idEdicion = $request->input('idEdicion');
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
+        $idEdicion = $request->filled('idEdicion') ? (int) $request->input('idEdicion') : null;
+        $EdicionSeleccionada = $idEdicion !== null ? Edicion::find($idEdicion) : null;
 
         // Valor de búsqueda
         $busqueda = $request->input('busqueda');
 
-        // Obtener jugadores únicos con estadísticas agregadas
-        $jugadoresData = $this->obtenerJugadoresConEstadisticas($idEdicion, $busqueda);
+        // Filtro de categoría (solo tiene sentido dentro de una edición)
+        $idCategoria = $request->filled('idCategoria') ? (int) $request->input('idCategoria') : null;
 
-        // Obtener contadores de partidos
-        $contadores = $this->obtenerContadoresPartidos($idEdicion, $busqueda);
+        // Umbral de participaciones del listado: todos o 5 o más
+        $umbral = $request->input('umbral') === ParticipacionesJugadoresService::UMBRAL_CINCO
+            ? ParticipacionesJugadoresService::UMBRAL_CINCO
+            : ParticipacionesJugadoresService::UMBRAL_TODOS;
+
+        // Listado paginado de jugadores activos con sus participaciones reales
+        $jugadoresData = $this->obtenerJugadoresConEstadisticas($idEdicion, $idCategoria, $busqueda, $umbral);
+
+        // Contadores de jugadores por cantidad de participaciones
+        $contadores = $this->participaciones->obtenerContadores($idEdicion, $idCategoria, $busqueda);
 
         // Obtener conteo de jugadores por edición
         $conteoPorEdicion = $this->obtenerConteoPorEdicion();
 
         // Obtener categorías para la edición seleccionada (si aplica)
-        $categorias = $idEdicion
+        $categorias = $idEdicion !== null
             ? Categoria::where('idEdicion', $idEdicion)->orderBy('nombreCategoria', 'desc')->get()
             : collect();
-
-        // Filtro de categoría
-        $idCategoria = $request->input('idCategoria');
 
         return view('Panel.estadisticas-jugadores.index', compact(
             'ediciones',
@@ -69,7 +77,8 @@ class ControladorEstadisticasJugadores extends Controller
             'conteoPorEdicion',
             'busqueda',
             'categorias',
-            'idCategoria'
+            'idCategoria',
+            'umbral'
         ));
     }
 
@@ -77,58 +86,23 @@ class ControladorEstadisticasJugadores extends Controller
      * Obtener jugadores únicos con sus estadísticas agregadas.
      *
      * Agrupa jugadores por DNI para manejar casos donde un jugador
-     * participa en múltiples categorías. Ordena por partidos jugados DESC.
+     * participa en múltiples categorías. Ordena por participaciones DESC.
      *
      * @param  int|null  $idEdicion  ID de edición para filtrar
+     * @param  int|null  $idCategoria  ID de categoría para filtrar
      * @param  string|null  $busqueda  Término de búsqueda
+     * @param  string  $umbral  Umbral de participaciones del listado
      * @return LengthAwarePaginator
      */
-    private function obtenerJugadoresConEstadisticas(?int $idEdicion, ?string $busqueda)
-    {
-        // Subquery para contar partidos por jugador
-        $subqueryPartidos = PlanillaJugador::query()
-            ->select('dni_jugador', DB::raw('COUNT(CASE WHEN asistio = 1 THEN 1 END) as total_partidos'))
-            ->when($idEdicion, fn ($q) => $q->where('idEdicion', $idEdicion))
-            ->groupBy('dni_jugador');
-
-        // Query principal: obtener jugadores únicos
-        $query = Jugador::query()
-            ->select([
-                'jugadores.dni',
-                'jugadores.nombre',
-                'jugadores.apellido',
-                DB::raw('COALESCE(partidos_sub.total_partidos, 0) as partidos_calculados'),
-            ])
-            ->leftJoinSub($subqueryPartidos, 'partidos_sub', function ($join) {
-                $join->on('jugadores.dni', '=', 'partidos_sub.dni_jugador');
-            })
-            ->whereExists(function ($q) use ($idEdicion) {
-                $q->select(DB::raw(1))
-                    ->from('lista_buena_fe')
-                    ->whereColumn('lista_buena_fe.dni_jugador', 'jugadores.dni')
-                    ->where('lista_buena_fe.activo', true);
-
-                if ($idEdicion) {
-                    $q->where('lista_buena_fe.idEdicion', $idEdicion);
-                }
-            });
-
-        // Aplicar filtro de búsqueda
-        if ($busqueda) {
-            $query->where(function ($q) use ($busqueda) {
-                $q->where('jugadores.nombre', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('jugadores.apellido', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('jugadores.dni', 'LIKE', "%{$busqueda}%");
-            });
-        }
-
-        // Ordenar por partidos jugados (descendente), luego por apellido
-        $query->orderBy('partidos_calculados', 'desc')
-            ->orderBy('jugadores.apellido')
-            ->orderBy('jugadores.nombre');
-
-        // Paginar resultados
-        $jugadoresPaginados = $query->paginate(20);
+    private function obtenerJugadoresConEstadisticas(
+        ?int $idEdicion,
+        ?int $idCategoria,
+        ?string $busqueda,
+        string $umbral
+    ) {
+        $jugadoresPaginados = $this->participaciones
+            ->consultaListado($idEdicion, $idCategoria, $busqueda, $umbral)
+            ->paginate(20);
 
         // Enriquecer cada jugador con estadísticas completas
         $jugadoresPaginados->getCollection()->transform(function ($jugador) use ($idEdicion) {
@@ -169,25 +143,10 @@ class ControladorEstadisticasJugadores extends Controller
 
         $jugador->equipos = $equiposQuery->orderBy('ediciones.id', 'desc')->get();
 
-        // Obtener estadísticas por edición
-        $statsQuery = PlanillaJugador::query()
-            ->select([
-                'planilla_jugadores.idEdicion',
-                'ediciones.nombre as nombre_edicion',
-                DB::raw('SUM(planilla_jugadores.goles) as goles'),
-                DB::raw('COUNT(CASE WHEN planilla_jugadores.asistio = 1 THEN 1 END) as partidos'),
-                DB::raw('COUNT(CASE WHEN planilla_jugadores.tarjeta_roja = 1 THEN 1 END) as tarjetas_rojas'),
-            ])
-            ->join('ediciones', 'planilla_jugadores.idEdicion', '=', 'ediciones.id')
-            ->where('planilla_jugadores.dni_jugador', $jugador->dni)
-            ->groupBy('planilla_jugadores.idEdicion', 'ediciones.nombre')
-            ->orderBy('planilla_jugadores.idEdicion', 'desc');
-
-        if ($idEdicion) {
-            $statsQuery->where('planilla_jugadores.idEdicion', $idEdicion);
-        }
-
-        $jugador->estadisticas_por_edicion = $statsQuery->get();
+        // Estadísticas por edición, con los partidos contados como
+        // participaciones reales igual que el listado (#202).
+        $jugador->estadisticas_por_edicion = $this->participaciones
+            ->obtenerEstadisticasPorEdicion((string) $jugador->dni, $idEdicion);
 
         // Calcular totales
         $jugador->goles_calculados = $jugador->estadisticas_por_edicion->sum('goles');
@@ -196,57 +155,6 @@ class ControladorEstadisticasJugadores extends Controller
         // partidos_calculados ya viene de la query principal
 
         return $jugador;
-    }
-
-    /**
-     * Obtener contadores de jugadores por cantidad de partidos.
-     *
-     * Retorna total de jugadores, cantidad con ≤5 partidos y >5 partidos.
-     */
-    private function obtenerContadoresPartidos(?int $idEdicion, ?string $busqueda): array
-    {
-        // Subquery para contar partidos por jugador
-        $subquery = PlanillaJugador::query()
-            ->select('dni_jugador', DB::raw('COUNT(CASE WHEN asistio = 1 THEN 1 END) as total_partidos'))
-            ->when($idEdicion, fn ($q) => $q->where('idEdicion', $idEdicion))
-            ->groupBy('dni_jugador');
-
-        // Query para obtener jugadores con sus partidos
-        $query = Jugador::query()
-            ->select([
-                'jugadores.dni',
-                DB::raw('COALESCE(partidos_sub.total_partidos, 0) as total_partidos'),
-            ])
-            ->leftJoinSub($subquery, 'partidos_sub', function ($join) {
-                $join->on('jugadores.dni', '=', 'partidos_sub.dni_jugador');
-            })
-            ->whereExists(function ($q) use ($idEdicion) {
-                $q->select(DB::raw(1))
-                    ->from('lista_buena_fe')
-                    ->whereColumn('lista_buena_fe.dni_jugador', 'jugadores.dni')
-                    ->where('lista_buena_fe.activo', true);
-
-                if ($idEdicion) {
-                    $q->where('lista_buena_fe.idEdicion', $idEdicion);
-                }
-            });
-
-        // Aplicar filtro de búsqueda
-        if ($busqueda) {
-            $query->where(function ($q) use ($busqueda) {
-                $q->where('jugadores.nombre', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('jugadores.apellido', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('jugadores.dni', 'LIKE', "%{$busqueda}%");
-            });
-        }
-
-        $resultados = $query->get();
-
-        return [
-            'total' => $resultados->count(),
-            'cinco_o_menos' => $resultados->where('total_partidos', '<=', 5)->count(),
-            'mas_de_cinco' => $resultados->where('total_partidos', '>', 5)->count(),
-        ];
     }
 
     /**
