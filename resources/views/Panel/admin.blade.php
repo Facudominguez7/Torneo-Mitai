@@ -115,8 +115,6 @@
                         $horaActualDashboard >= 12 && $horaActualDashboard < 20 => 'Buenas tardes',
                         default => 'Buenas noches',
                     };
-                    $partidosJugadosResumen = $resumenDashboard['partidosJugados'] ?? 0;
-                    $partidosTotalesResumen = $resumenDashboard['partidosTotales'] ?? 0;
                     $jugadoresPorCategoriaResumen = $resumenDashboard['jugadoresPorCategoria'] ?? [];
                     $maxJugadoresCategoriaResumen = collect($jugadoresPorCategoriaResumen)->max('total_jugadores') ?: 1;
                 @endphp
@@ -160,32 +158,6 @@
                             </svg>
                             Imprimir Fixture
                         </button>
-                    </div>
-                </div>
-
-                {{-- KPIs --}}
-                <div class="mb-4 grid grid-cols-2 gap-3 px-3 sm:px-4 xl:grid-cols-5">
-                    <div class="rounded-xl border border-gray-200 bg-white p-5">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Equipos inscriptos</p>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ $resumenDashboard['equiposInscriptos'] }}</p>
-                    </div>
-                    <div class="rounded-xl border border-gray-200 bg-white p-5">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Jugadores habilitados</p>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ $resumenDashboard['jugadoresHabilitados'] }}</p>
-                    </div>
-                    {{-- KPI #202: jugadores con el umbral configurado de participaciones reales; abre el listado ya filtrado. --}}
-                    <a href="{{ route('estadisticas-jugadores', ['idEdicion' => $idEdicionContexto, 'desde' => $resumenDashboard['participacionesMinimas']]) }}"
-                        class="rounded-xl border border-gray-200 bg-white p-5 transition hover:border-brand-navy/40 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Jugadores con {{ $resumenDashboard['participacionesMinimas'] }} o más partidos</p>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ $resumenDashboard['jugadoresConParticipacionesMinimas'] }}</p>
-                    </a>
-                    <div class="rounded-xl border border-gray-200 bg-white p-5">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Partidos jugados</p>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ $partidosJugadosResumen }} / {{ $partidosTotalesResumen }}</p>
-                    </div>
-                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Pendientes de carga</p>
-                        <p class="mt-2 text-3xl font-bold text-amber-700">{{ $resumenDashboard['pendientesDeCarga'] }}</p>
                     </div>
                 </div>
 

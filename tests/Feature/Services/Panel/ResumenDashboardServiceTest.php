@@ -12,7 +12,6 @@ use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
-use App\Services\Panel\ParticipacionesJugadoresService;
 use App\Services\Panel\ResumenDashboard;
 use Illuminate\Support\Carbon;
 
@@ -21,7 +20,6 @@ function crearServicioResumenDashboard(): ResumenDashboard
     return new ResumenDashboard(
         new EquiposDeEdicionService,
         new EstadisticasService,
-        new ParticipacionesJugadoresService,
     );
 }
 
@@ -213,148 +211,6 @@ it('devuelve una proxima fecha nula cuando la edicion no tiene fechas', function
 // Issue #202: el KPI del dashboard sale del mismo servicio que el listado de
 // Estadísticas de jugadores, con la misma regla de participación real y el
 // umbral configurado (L2).
-it('cuenta para el kpi solo a los jugadores que alcanzan el umbral configurado', function () {
-    $contexto = crearContextoServicioResumen();
-    $local = Equipo::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Local KPI', 'foto' => 'e.png']);
-    $visitante = Equipo::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Visitante KPI', 'foto' => 'e.png']);
-
-    $participaciones = ['30600001' => 5, '30600002' => 4];
-
-    foreach ($participaciones as $dni => $cantidad) {
-        Jugador::create(['dni' => (string) $dni, 'nombre' => 'Jugador', 'apellido' => (string) $dni]);
-        ListaBuenaFe::create([
-            'dni_jugador' => (string) $dni,
-            'idEquipo' => $local->id,
-            'idEdicion' => $contexto['edicion']->id,
-            'idCategoria' => $contexto['categoria']->id,
-            'fecha_nacimiento' => '2013-01-01',
-            'fecha_alta' => now(),
-            'activo' => true,
-        ]);
-
-        foreach (range(1, $cantidad) as $numero) {
-            $partido = Partido::create([
-                'idCategoria' => $contexto['categoria']->id,
-                'idFechas' => $contexto['fecha']->id,
-                'idEquipoLocal' => $local->id,
-                'idEquipoVisitante' => $visitante->id,
-                'idGrupo' => $contexto['grupo']->id,
-                'idEdicion' => $contexto['edicion']->id,
-                'golesEquipoLocal' => 2,
-                'golesEquipoVisitante' => 0,
-                'cancha' => 1,
-                'jugado' => 1,
-                'horario_datetime' => '2026-05-01 09:00:00',
-            ]);
-
-            PlanillaJugador::create([
-                'partido_id' => $partido->id,
-                'partido_type' => Partido::class,
-                'dni_jugador' => (string) $dni,
-                'idEquipo' => $local->id,
-                'idEdicion' => $contexto['edicion']->id,
-                'idCategoria' => $contexto['categoria']->id,
-                'numero_camiseta' => 9,
-                'goles' => 0,
-                'asistio' => true,
-                'tarjeta_roja' => false,
-            ]);
-        }
-    }
-
-    // Un partido adjudicado por «No vino» no es participación física: si
-    // contara, el jugador con 4 llegaría a 5 y el KPI daría 2.
-    $adjudicado = Partido::create([
-        'idCategoria' => $contexto['categoria']->id,
-        'idFechas' => $contexto['fecha']->id,
-        'idEquipoLocal' => $local->id,
-        'idEquipoVisitante' => $visitante->id,
-        'idGrupo' => $contexto['grupo']->id,
-        'idEdicion' => $contexto['edicion']->id,
-        'golesEquipoLocal' => 3,
-        'golesEquipoVisitante' => 0,
-        'cancha' => 2,
-        'jugado' => 1,
-        'ganador_por_no_vino' => $local->id,
-        'horario_datetime' => '2026-05-02 09:00:00',
-    ]);
-
-    PlanillaJugador::create([
-        'partido_id' => $adjudicado->id,
-        'partido_type' => Partido::class,
-        'dni_jugador' => '30600002',
-        'idEquipo' => $local->id,
-        'idEdicion' => $contexto['edicion']->id,
-        'idCategoria' => $contexto['categoria']->id,
-        'numero_camiseta' => 10,
-        'goles' => 0,
-        'asistio' => true,
-        'tarjeta_roja' => false,
-    ]);
-
-    $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
-
-    expect($resumen['participacionesMinimas'])->toBe(5)
-        ->and($resumen['jugadoresConParticipacionesMinimas'])->toBe(1);
-});
-
-it('toma el umbral del kpi desde la configuracion', function () {
-    config()->set('estadisticas.participaciones_minimas', 4);
-
-    $contexto = crearContextoServicioResumen();
-    $local = Equipo::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Local Umbral', 'foto' => 'e.png']);
-    $visitante = Equipo::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Visitante Umbral', 'foto' => 'e.png']);
-
-    $participaciones = ['30610001' => 4, '30610002' => 3];
-
-    foreach ($participaciones as $dni => $cantidad) {
-        Jugador::create(['dni' => (string) $dni, 'nombre' => 'Jugador', 'apellido' => (string) $dni]);
-        ListaBuenaFe::create([
-            'dni_jugador' => (string) $dni,
-            'idEquipo' => $local->id,
-            'idEdicion' => $contexto['edicion']->id,
-            'idCategoria' => $contexto['categoria']->id,
-            'fecha_nacimiento' => '2013-01-01',
-            'fecha_alta' => now(),
-            'activo' => true,
-        ]);
-
-        foreach (range(1, $cantidad) as $numero) {
-            $partido = Partido::create([
-                'idCategoria' => $contexto['categoria']->id,
-                'idFechas' => $contexto['fecha']->id,
-                'idEquipoLocal' => $local->id,
-                'idEquipoVisitante' => $visitante->id,
-                'idGrupo' => $contexto['grupo']->id,
-                'idEdicion' => $contexto['edicion']->id,
-                'golesEquipoLocal' => 1,
-                'golesEquipoVisitante' => 1,
-                'cancha' => 1,
-                'jugado' => 1,
-                'horario_datetime' => '2026-05-03 09:00:00',
-            ]);
-
-            PlanillaJugador::create([
-                'partido_id' => $partido->id,
-                'partido_type' => Partido::class,
-                'dni_jugador' => (string) $dni,
-                'idEquipo' => $local->id,
-                'idEdicion' => $contexto['edicion']->id,
-                'idCategoria' => $contexto['categoria']->id,
-                'numero_camiseta' => 4,
-                'goles' => 0,
-                'asistio' => true,
-                'tarjeta_roja' => false,
-            ]);
-        }
-    }
-
-    $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
-
-    expect($resumen['participacionesMinimas'])->toBe(4)
-        ->and($resumen['jugadoresConParticipacionesMinimas'])->toBe(1);
-});
-
 function crearPartidoServicioResumen(array $contexto, Fecha $fecha, string $horario, ?int $golesLocal = null, ?int $golesVisitante = null): Partido
 {
     $local = Equipo::create(['idCategoria' => $contexto['categoria']->id, 'idEdicion' => $contexto['edicion']->id, 'nombre' => 'Local '.$horario, 'foto' => 'e.png']);

@@ -141,23 +141,6 @@ class ParticipacionesJugadoresService
     }
 
     /**
-     * Datos del KPI del dashboard: el umbral configurado y cuántos jugadores
-     * de la edición lo alcanzan. Sale del mismo cálculo que el listado para
-     * que la tarjeta y la tabla no puedan divergir.
-     *
-     * @return array{umbral: int, jugadores: int}
-     */
-    public function kpiJugadoresDesdeUmbral(int $idEdicion): array
-    {
-        $contadores = $this->obtenerContadores($idEdicion);
-
-        return [
-            'umbral' => $contadores['umbral'],
-            'jugadores' => $contadores['umbral_o_mas'],
-        ];
-    }
-
-    /**
      * Estadísticas por edición de un jugador. Goles y tarjetas se leen tal
      * como están cargados en la planilla; «partidos» respeta la regla de
      * participación real para no contradecir el total del listado.

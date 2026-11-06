@@ -22,15 +22,12 @@ class ResumenDashboard
     public function __construct(
         private readonly EquiposDeEdicionService $equiposDeEdicion,
         private readonly EstadisticasService $estadisticas,
-        private readonly ParticipacionesJugadoresService $participaciones,
     ) {}
 
     /**
      * @return array{
      *     equiposInscriptos: int,
      *     jugadoresHabilitados: int,
-     *     participacionesMinimas: int,
-     *     jugadoresConParticipacionesMinimas: int,
      *     partidosJugados: int,
      *     partidosTotales: int,
      *     partidosPendientes: Collection<int, array<string, mixed>>,
@@ -60,13 +57,9 @@ class ResumenDashboard
 
         $proximaFecha = $this->resolverProximaFecha($idEdicion);
 
-        $participacionesMinimas = $this->participaciones->kpiJugadoresDesdeUmbral($idEdicion);
-
         return [
             'equiposInscriptos' => $equiposInscriptos,
             'jugadoresHabilitados' => $jugadoresHabilitados,
-            'participacionesMinimas' => $participacionesMinimas['umbral'],
-            'jugadoresConParticipacionesMinimas' => $participacionesMinimas['jugadores'],
             'partidosJugados' => $partidosJugados,
             'partidosTotales' => $partidosTotales,
             'partidosPendientes' => $partidosPendientes,
