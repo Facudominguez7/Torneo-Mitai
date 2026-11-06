@@ -5,6 +5,7 @@
 
 use App\Mail\ConfirmacionSuscripcionMail;
 use App\Models\Suscriptor;
+use App\Models\User;
 use App\Services\SuscripcionService;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Mail;
@@ -41,6 +42,18 @@ it('reenvía la confirmación solo a quienes nunca confirmaron ni se dieron de b
             && str_contains($mail->urlConfirmacion, '/'.$pendiente->id);
     });
     expect($pendiente->fresh()->confirmado_at)->toBeNull();
+});
+
+it('no le reenvía la confirmación a los usuarios invitados, que nunca pidieron suscribirse', function (): void {
+    Mail::fake();
+    $usuario = User::factory()->create(['email' => 'invitado@correo.com']);
+    Suscriptor::factory()->pendiente()->create(['email' => 'invitado@correo.com', 'usuario_id' => $usuario->id]);
+
+    $this->artisan('suscripciones:reenviar-confirmaciones')
+        ->expectsOutputToContain('No hay suscriptores pendientes de confirmar.')
+        ->assertSuccessful();
+
+    Mail::assertNothingQueued();
 });
 
 it('respeta el límite y avisa desde qué ID seguir', function (): void {
