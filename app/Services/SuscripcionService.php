@@ -37,7 +37,7 @@ class SuscripcionService
             && mb_strtolower((string) $usuario->email) === $email
             && $usuario->hasVerifiedEmail();
 
-        $claveEspera = 'suscripcion-confirmacion:'.sha1($email);
+        $claveEspera = $this->claveEsperaConfirmacion($email);
         if (! $verificadoPorCuenta && RateLimiter::tooManyAttempts($claveEspera, 1)) {
             return false;
         }
@@ -63,6 +63,16 @@ class SuscripcionService
         }
 
         return $verificadoPorCuenta;
+    }
+
+    /**
+     * Vuelve a mandar el enlace de confirmación a quien pidió suscribirse y no confirmó.
+     * Usa la misma espera que el alta, así un pedido desde el sitio no duplica el correo enseguida.
+     */
+    public function reenviarConfirmacion(Suscriptor $suscriptor, CarbonInterface $enviarA): void
+    {
+        Mail::mailer(config('suscripciones.mailer'))->to($suscriptor->email)->later($enviarA, new ConfirmacionSuscripcionMail($this->urlConfirmacion($suscriptor)));
+        RateLimiter::hit($this->claveEsperaConfirmacion($suscriptor->email), (int) config('suscripciones.minutos_entre_confirmaciones') * 60);
     }
 
     /**
@@ -165,6 +175,11 @@ class SuscripcionService
         if ($cambios !== []) {
             $suscriptor->forceFill($cambios)->save();
         }
+    }
+
+    private function claveEsperaConfirmacion(string $email): string
+    {
+        return 'suscripcion-confirmacion:'.sha1($email);
     }
 
     /**
