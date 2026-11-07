@@ -49,7 +49,7 @@
                                 $deuda['aplicado_ars'] > 0 ? 'Pagó '.$formatoArs($deuda['aplicado_ars']).' de '.$formatoArs($deuda['precio_ars']).'.' : 'Sin pagos aplicados.',
                             ])->filter()->implode(' ');
                         @endphp
-                        <div x-show="seleccion === '{{ $deuda['id'] }}'" class="contents" data-planilla-cobro="{{ $deuda['id'] }}" data-deuda="{{ $deuda['deuda_ars'] }}" data-estado="{{ $deuda['estado'] }}">
+                        <div x-show="seleccion === '{{ $deuda['id'] }}'" class="contents" data-planilla-cobro="{{ $deuda['id'] }}" data-deuda="{{ $deuda['deuda_ars'] }}" data-estado="{{ $deuda['estado'] }}" data-pagos="{{ collect($deuda['pagos'] ?? [])->map(fn (array $pago): string => $pago['pago_id'].':'.$pago['importe_ars'].':'.$pago['medio'].':'.(int) $pago['editable'])->implode('|') }}">
                             @if ($puedeCobrar)
                                 <div class="flex flex-wrap gap-2">
                                     <button type="button" data-cobro="pago" data-cargo="{{ json_encode($deuda) }}" class="min-h-10 whitespace-nowrap rounded-md bg-brand-navy px-3.5 text-sm font-semibold text-white hover:bg-brand-navy-deep">Registrar pago</button>
@@ -57,6 +57,9 @@
                                 </div>
                             @endif
                             <p class="text-sm text-gray-500 sm:col-span-2">{{ $detalle }}</p>
+                            @if ($puedeCobrar)
+                                @include('Panel.cobros.pagos-cargo', ['cargo' => $deuda])
+                            @endif
                         </div>
                     @endforeach
                 </div>
@@ -65,8 +68,11 @@
                 <p class="text-sm text-gray-600">Planilla actual: {{ match ($cargoActual['estado']) { 'pagado' => 'Pagada', 'exento' => 'Exenta', 'no_vino' => 'No vino', default => 'Sin deuda' } }}</p>
             @endif
             @if ($puedeCobrar && $cargoActual)
+                @if (! $deudasEquipo->contains('id', $cargoActual['id']))
+                    @include('Panel.cobros.pagos-cargo', ['cargo' => $cargoActual])
+                @endif
                 @if ($cargoActual['deuda_ars'] > 0 && ! $deudasEquipo->contains('id', $cargoActual['id']))
-                    <div class="flex flex-wrap gap-2" data-planilla-cobro="{{ $cargoActual['id'] }}" data-deuda="{{ $cargoActual['deuda_ars'] }}" data-estado="{{ $cargoActual['estado'] }}">
+                    <div class="flex flex-wrap gap-2" data-planilla-cobro="{{ $cargoActual['id'] }}" data-deuda="{{ $cargoActual['deuda_ars'] }}" data-estado="{{ $cargoActual['estado'] }}" data-pagos="{{ collect($cargoActual['pagos'] ?? [])->map(fn (array $pago): string => $pago['pago_id'].':'.$pago['importe_ars'].':'.$pago['medio'].':'.(int) $pago['editable'])->implode('|') }}">
                         <span class="w-full text-sm text-gray-600">Cobro del partido actual</span>
                         <button type="button" data-cobro="pago" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md bg-brand-navy px-3.5 text-sm font-semibold text-white hover:bg-brand-navy-deep">Registrar pago</button>
                         <button type="button" data-cobro="exencion" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md border border-gray-300 px-3.5 text-sm">Marcar exento</button>

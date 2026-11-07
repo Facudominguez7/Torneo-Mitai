@@ -27,7 +27,12 @@
     <section aria-label="Historial auditable">
         <h3 class="font-semibold">Historial</h3>
         @forelse ($eventos as $evento)
-            <p class="mt-2 break-words text-sm">#{{ $evento->id }} · {{ $evento->created_at }} · {{ $evento->accion }} · {{ $evento->actor_nombre }}</p>
+            @if ($evento->accion === 'editar_pago')
+                @php($motivoEvento = data_get($evento->valores_despues, 'motivo'))
+                <p class="mt-2 break-words text-sm">#{{ $evento->id }} · {{ $evento->created_at }} · {{ $evento->actor_nombre }} · Pago #{{ data_get($evento->valores_antes, 'pago_id', '?') }} editado: $ {{ number_format((int) data_get($evento->valores_antes, 'importe_ars', 0), 0, ',', '.') }} {{ data_get($evento->valores_antes, 'medio') === 'mercado_pago' ? 'Mercado Pago' : 'Efectivo' }} → $ {{ number_format((int) data_get($evento->valores_despues, 'importe_ars', 0), 0, ',', '.') }} {{ data_get($evento->valores_despues, 'medio') === 'mercado_pago' ? 'Mercado Pago' : 'Efectivo' }}@if (is_string($motivoEvento) && trim($motivoEvento) !== '') · Motivo: {{ $motivoEvento }}@endif</p>
+            @else
+                <p class="mt-2 break-words text-sm">#{{ $evento->id }} · {{ $evento->created_at }} · {{ $evento->accion }} · {{ $evento->actor_nombre }}</p>
+            @endif
         @empty <p class="text-sm">Sin eventos.</p> @endforelse
     </section>
 </div>

@@ -6,7 +6,7 @@
         <h2 id="cobros-titulo" class="text-xl font-semibold" tabindex="-1"></h2>
         <button type="button" data-cobros-cerrar class="min-h-11 rounded border px-3 py-2">Cerrar</button>
     </div>
-    <p id="cobros-contexto" class="mt-3 break-words text-sm"></p>
+    <p id="cobros-contexto" class="mt-3 break-words text-sm empty:hidden"></p>
     <div id="cobros-detalle" class="mt-4" hidden></div>
     <form id="cobros-form" class="mt-4 space-y-4">
         @csrf
@@ -27,9 +27,32 @@
             <p id="cobros-total" class="text-sm font-semibold text-gray-900">Total recibido: $ 0</p>
             <p class="text-sm text-gray-600">Completá uno o ambos medios. Se aplica primero al cargo elegido; el excedente cubre otras deudas de este equipo en esta edición por orden de fecha y conserva el resto como crédito.</p>
         </fieldset>
+        <div data-campo="editar_pago" hidden class="space-y-4">
+            <dl id="cobros-editar-resumen" class="grid grid-cols-1 gap-3 sm:grid-cols-2"></dl>
+            <p class="text-sm text-gray-600">Se corrige este mismo pago: no se anula ni se crea otro. Conserva la fecha de recepción y quién lo registró.</p>
+            <div>
+                <label for="cobros-editar-importe" class="block text-sm font-medium">Importe en pesos</label>
+                <input id="cobros-editar-importe" name="importe_ars" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" class="mt-1 min-h-11 w-full rounded border-gray-300" aria-describedby="ayuda-importe_ars error-importe_ars cobros-editar-aviso">
+                <p id="ayuda-importe_ars" class="mt-1 text-sm text-gray-600">Solo números, sin puntos ni decimales.</p>
+                <p id="error-importe_ars" data-error="importe_ars" class="text-sm text-red-700"></p>
+            </div>
+            <fieldset>
+                <legend class="text-sm font-medium">Medio de pago</legend>
+                <div class="mt-1 flex flex-wrap gap-4">
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input id="cobros-editar-efectivo" name="medio" type="radio" value="efectivo" class="border-gray-300 text-brand-navy focus:ring-brand-teal">Efectivo</label>
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input id="cobros-editar-mercado-pago" name="medio" type="radio" value="mercado_pago" class="border-gray-300 text-brand-navy focus:ring-brand-teal">Mercado Pago</label>
+                </div>
+                <p id="error-medio" data-error="medio" class="text-sm text-red-700"></p>
+            </fieldset>
+            <div class="rounded-md border border-gray-200 bg-gray-50 p-3">
+                <p class="text-sm font-semibold text-gray-900">Al guardar</p>
+                <div id="cobros-editar-aviso" role="status" aria-live="polite" class="mt-1 space-y-1 text-sm text-gray-700"></div>
+            </div>
+        </div>
         <div data-campo="motivo" hidden>
-            <label for="cobros-motivo" class="block font-medium">Motivo (opcional, se conserva literalmente)</label>
-            <textarea id="cobros-motivo" name="motivo" maxlength="2000" class="mt-1 w-full rounded border-gray-300" aria-describedby="error-motivo"></textarea>
+            <label id="cobros-motivo-etiqueta" for="cobros-motivo" class="block font-medium">Motivo (opcional, se conserva literalmente)</label>
+            <textarea id="cobros-motivo" name="motivo" maxlength="2000" class="mt-1 w-full rounded border-gray-300" aria-describedby="ayuda-motivo error-motivo"></textarea>
+            <p id="ayuda-motivo" class="mt-1 text-sm text-gray-600 empty:hidden"></p>
             <p id="error-motivo" data-error="motivo" class="text-sm text-red-700"></p>
         </div>
         <div data-campo="tarifa_ars" hidden>

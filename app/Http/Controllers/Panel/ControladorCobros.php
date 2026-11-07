@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cobros\ConsultaRequest;
 use App\Http\Requests\Cobros\DeudaManualRequest;
+use App\Http\Requests\Cobros\EditarPagoRequest;
 use App\Http\Requests\Cobros\OperacionRequest;
 use App\Models\AplicacionPagoPlanilla;
 use App\Models\CargoPlanilla;
@@ -24,6 +25,7 @@ use App\Services\Cobros\ConfiguracionCobroService;
 use App\Services\Cobros\ConsultaCobrosService;
 use App\Services\Cobros\CreditosCobroService;
 use App\Services\Cobros\DeudasManualesCobroService;
+use App\Services\Cobros\EdicionPagosCobroService;
 use App\Services\Cobros\ExencionesCobroService;
 use App\Services\Cobros\PagosCobroService;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -129,6 +131,47 @@ class ControladorCobros extends Controller
 
             return response()->json(['message' => 'No se pudo completar la operación. Revisá e intentá nuevamente.'], 500);
         }
+    }
+
+    /**
+     * Corrige importe y medio de un pago registrado. El evento `editar_pago` es el
+     * comprobante inmutable de lo enviado; el estado vigente se relee después de la
+     * operación y se devuelve por separado para no presentar el snapshot como actual.
+     */
+    public function editarPago(EditarPagoRequest $request, ConsultaCobrosService $consulta): JsonResponse
+    {
+        $datos = $request->validated();
+        try {
+            $evento = app(EdicionPagosCobroService::class)->editarPago(
+                $request->user(), (int) $datos['pago_id'], (int) $datos['importe_ars'],
+                (string) $datos['medio'], $datos['motivo'] ?? null, (string) $datos['clave_idempotencia'],
+            );
+            $vigente = PagoPlanilla::query()->with('cuenta')->findOrFail((int) $datos['pago_id']);
+
+            return response()->json([
+                'message' => 'Pago editado.',
+                'evento' => $this->comprobanteEdicion($evento),
+                'pago' => $consulta->resultadoPago($vigente),
+            ]);
+        } catch (ValidationException|AuthorizationException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            Log::error('Falló la edición HTTP de un pago de planilla.', ['actor_id' => $request->user()->id, 'pago_id' => (int) $datos['pago_id'], 'excepcion' => $exception::class]);
+
+            return response()->json(['message' => 'No se pudo completar la operación. Revisá e intentá nuevamente.'], 500);
+        }
+    }
+
+    /** Comprobante de la edición: solo importes y medio antes y después, y el motivo guardado. */
+    private function comprobanteEdicion(HistorialCobroPlanilla $evento): array
+    {
+        return [
+            'id' => (int) $evento->id, 'accion' => $evento->accion,
+            'pago_id' => (int) ($evento->valores_antes['pago_id'] ?? 0),
+            'importe_antes' => (int) $evento->valores_antes['importe_ars'], 'medio_antes' => $evento->valores_antes['medio'],
+            'importe_despues' => (int) $evento->valores_despues['importe_ars'], 'medio_despues' => $evento->valores_despues['medio'],
+            'motivo' => $evento->valores_despues['motivo'] ?? null,
+        ];
     }
 
     public function detalle(ConsultaRequest $request, ConsultaCobrosService $consulta): View

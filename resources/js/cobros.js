@@ -45,6 +45,10 @@
         aviso.dataset.tono = tono;
     };
     const total = document.querySelector('#cobros-total');
+    const resumenEdicion = document.querySelector('#cobros-editar-resumen');
+    const avisoEdicion = document.querySelector('#cobros-editar-aviso');
+    const etiquetaMotivo = document.querySelector('#cobros-motivo-etiqueta');
+    const ayudaMotivo = document.querySelector('#ayuda-motivo');
     const seccion = document.querySelector('[data-cobros-seccion]');
     const importes = ['importe_efectivo_ars', 'importe_mercado_pago_ars'];
     const medios = { efectivo: 'Efectivo', mercado_pago: 'Mercado Pago', transferencia: 'Transferencia' };
@@ -57,6 +61,7 @@
         deshacer_no_vino: ['Deshacer no vino', 'no-vino-deshacer', []],
         tarifa: ['Guardar tarifa global', 'tarifa', ['tarifa_ars']],
         activar: ['Activar cobros globalmente', 'activar', ['confirmar']],
+        editar_pago: ['Editar pago', 'pagos-editar', ['editar_pago', 'motivo']],
         detalle: ['Detalle e historial del equipo', 'detalle', []],
     };
     let operacion;
@@ -82,6 +87,24 @@
     };
     const ars = (importe) => `$ ${Number(importe).toLocaleString('es-AR')} ARS`;
     const sumar = (pagos, campo) => pagos.reduce((suma, pago) => suma + pago[campo], 0);
+    const medio = (nombre) => medios[nombre] ?? nombre;
+    const pesos = (importe) => `$ ${Number(importe).toLocaleString('es-AR')}`;
+    const fraseMedio = (nombre) => ({ efectivo: 'en efectivo', mercado_pago: 'por Mercado Pago' })[nombre] ?? `por ${medio(nombre)}`;
+    const TEXTO_EDITAR = 'Guardar cambios';
+    const TEXTO_CONFIRMAR = 'Confirmar';
+    const MOTIVO = 'Motivo (opcional, se conserva literalmente)';
+    const MOTIVO_EDICION = 'Motivo (opcional)';
+    const AYUDA_MOTIVO_EDICION = 'Se guarda en el historial tal como lo escribas.';
+    // El comprobante de edición combina el evento (antes) con el estado vigente releído (después), nunca el snapshot.
+    const reciboEdicion = (vigente, evento) => {
+        const deuda = Number(vigente.deuda_cargo_ars) > 0
+            ? `La planilla debe ${pesos(vigente.deuda_cargo_ars)}.`
+            : 'La planilla queda paga.';
+        const credito = Number(vigente.credito_equipo_ars) > 0
+            ? ` Crédito disponible del equipo en esta edición: ${pesos(vigente.credito_equipo_ars)}.`
+            : '';
+        return `Pago #${vigente.id} corregido: ${pesos(evento.importe_antes)} ${fraseMedio(evento.medio_antes)} → ${pesos(vigente.importe_ars)} ${fraseMedio(vigente.medio)}. ${deuda}${credito}`;
+    };
     const recibo = (pagos) => {
         const ultimo = pagos[pagos.length - 1];
         const detalle = pagos.map((pago) => `#${pago.id} ${medios[pago.medio] ?? pago.medio} ${ars(pago.importe_ars)}`).join(' + ');
@@ -91,11 +114,75 @@
         const suma = importes.reduce((acumulado, nombre) => acumulado + (Number.parseInt(form.elements.namedItem(nombre).value, 10) || 0), 0);
         total.textContent = `Total recibido: ${ars(suma)}`;
     };
+    const importeEdicion = () => {
+        const valor = (form.elements.namedItem('importe_ars')?.value ?? '').trim();
+        return /^\d+$/.test(valor) && Number(valor) > 0 ? Number(valor) : null;
+    };
+    const medioElegido = () => form.querySelector('input[name="medio"]:checked')?.value;
+    const sinCambiosEdicion = () => {
+        if (operacion !== 'editar_pago' || !cargo) return false;
+        const importe = importeEdicion();
+        return importe !== null && importe === Number(cargo.importe_ars) && medioElegido() === cargo.medio;
+    };
+    const puedeGuardarEdicion = () => operacion !== 'editar_pago' || (importeEdicion() !== null && !sinCambiosEdicion());
+    // Aviso «Al guardar»: D = deuda actual, A = importe que este pago aplica hoy, N = importe nuevo.
+    const lineasEdicion = () => {
+        const importe = importeEdicion();
+        if (importe === null) return ['Ingresá un importe entero mayor que cero.'];
+        if (sinCambiosEdicion()) return ['Todavía no cambiaste nada. Modificá el importe o el medio para poder guardar.'];
+        if (importe === Number(cargo.importe_ars)) return ['Solo cambia el medio de pago. La deuda de la planilla no cambia.'];
+        const sinEstePago = Number(cargo.deuda_ars) + Number(cargo.aplicado_origen_ars ?? 0);
+        const deudaNueva = Math.max(0, sinEstePago - importe);
+        const sobrante = Math.max(0, importe - sinEstePago);
+        if (deudaNueva > 0) {
+            return [`La planilla va a quedar debiendo ${pesos(deudaNueva)}.`, 'Si este partido se ganó 3–0 porque el rival no vino, ese resultado queda suspendido hasta que esta planilla vuelva a estar paga.'];
+        }
+        if (sobrante > 0) {
+            return [`La planilla queda paga. Sobran ${pesos(sobrante)}: se usan para pagar otras planillas que deba el equipo en esta edición, y lo que quede se guarda como crédito.`];
+        }
+        return ['La planilla queda paga.'];
+    };
+    const actualizarAvisoEdicion = () => {
+        if (operacion !== 'editar_pago' || !cargo) return;
+        avisoEdicion.replaceChildren(...lineasEdicion().map((linea, indice) => {
+            const parrafo = document.createElement('p');
+            parrafo.textContent = linea;
+            if (indice > 0) parrafo.className = 'text-gray-600';
+            return parrafo;
+        }));
+        enviar.disabled = !puedeGuardarEdicion();
+    };
+    const datoResumen = (etiqueta, valor, secundario) => {
+        const grupo = document.createElement('div');
+        const termino = document.createElement('dt');
+        termino.className = 'text-sm text-gray-600';
+        termino.textContent = etiqueta;
+        const definicion = document.createElement('dd');
+        definicion.className = 'text-base font-semibold text-gray-900';
+        definicion.textContent = valor;
+        if (secundario) {
+            const extra = document.createElement('span');
+            extra.className = 'ml-2 text-sm font-normal text-gray-600';
+            extra.textContent = secundario;
+            definicion.append(extra);
+        }
+        grupo.append(termino, definicion);
+        return grupo;
+    };
+    const pintarResumenEdicion = () => {
+        resumenEdicion.replaceChildren(
+            datoResumen('Equipo', cargo.equipo ?? ''),
+            datoResumen('Registrado', `${pesos(cargo.importe_ars)} ${fraseMedio(cargo.medio)}`),
+            datoResumen('Deuda actual de la planilla', pesos(cargo.deuda_ars), `Cargo #${cargo.id}`),
+        );
+    };
     form.addEventListener('input', (evento) => {
         if (importes.includes(evento.target.name)) actualizarTotal();
+        actualizarAvisoEdicion();
     });
+    form.addEventListener('change', actualizarAvisoEdicion);
     const firma = (raiz) => raiz.querySelector('[data-cobros-grilla]')?.dataset.firma ?? [...raiz.querySelectorAll('[data-planilla-cobro]')]
-        .map((fila) => `${fila.dataset.planillaCobro}:${fila.dataset.deuda}:${fila.dataset.estado}`).join('|');
+        .map((fila) => `${fila.dataset.planillaCobro}:${fila.dataset.deuda}:${fila.dataset.estado}:${fila.dataset.pagos ?? ''}`).join('|');
     // Reemplaza solo la grilla de cobros: el resto de la planilla y el modal abierto no se tocan.
     const refrescarSeccion = async (forzar = false) => {
         if (!seccion || (refrescando && !forzar)) return;
@@ -190,11 +277,15 @@
             ponerAviso(`Volvé a la edición #${sinConfirmar.datos.idEdicion} para recuperar el pago sin confirmar.`, 'error');
             return;
         }
-        cargo = sinConfirmar && operacion === 'pago' ? sinConfirmar.cargo : (boton.dataset.cargo ? JSON.parse(boton.dataset.cargo) : null);
+        cargo = sinConfirmar && operacion === 'pago' ? sinConfirmar.cargo : (boton.dataset.pago ? JSON.parse(boton.dataset.pago) : (boton.dataset.cargo ? JSON.parse(boton.dataset.cargo) : null));
         clave = sinConfirmar && operacion === 'pago' ? sinConfirmar.datos.clave_idempotencia : uuid();
         const [nombre, , campos] = configuraciones[operacion];
         form.reset();
         desbloquearPago();
+        enviar.disabled = false;
+        enviar.textContent = operacion === 'editar_pago' ? TEXTO_EDITAR : TEXTO_CONFIRMAR;
+        etiquetaMotivo.textContent = operacion === 'editar_pago' ? MOTIVO_EDICION : MOTIVO;
+        ayudaMotivo.textContent = operacion === 'editar_pago' ? AYUDA_MOTIVO_EDICION : '';
         aviso.textContent = '';
         delete aviso.dataset.tono;
         error.textContent = '';
@@ -205,8 +296,13 @@
             elemento.hidden = !activo;
             elemento.querySelectorAll('input, select, textarea').forEach((input) => { input.disabled = !activo; });
         });
-        titulo.textContent = nombre;
-        contexto.textContent = cargo ? `${cargo.equipo}${cargo.id ? ` · Cargo #${cargo.id}` : ''} · Deuda $ ${cargo.deuda_ars.toLocaleString('es-AR')}. ` : '';
+        titulo.textContent = operacion === 'editar_pago' && cargo ? `Editar pago #${cargo.pago_id}` : nombre;
+        contexto.textContent = '';
+        if (cargo) {
+            contexto.textContent = operacion === 'editar_pago'
+                ? ''
+                : `${cargo.equipo}${cargo.id ? ` · Cargo #${cargo.id}` : ''} · Deuda $ ${cargo.deuda_ars.toLocaleString('es-AR')}. `;
+        }
         contexto.textContent += ({
             exencion: 'Exime solo el saldo pendiente de este cargo. No devuelve pagos ni genera crédito.',
             politica: 'Solo alcanza cargos futuros de este equipo en esta edición. No elimina deuda actual.',
@@ -227,6 +323,13 @@
             contexto.textContent += ' Recuperación: se reenviará exactamente el pago anterior con la misma clave, sin duplicar el ingreso. Confirmalo antes de iniciar otro pago.';
         }
         actualizarTotal();
+        if (operacion === 'editar_pago' && cargo) {
+            form.elements.namedItem('importe_ars').value = String(cargo.importe_ars);
+            const elegido = form.querySelector(`input[name="medio"][value="${cargo.medio}"]`);
+            if (elegido) elegido.checked = true;
+            pintarResumenEdicion();
+            actualizarAvisoEdicion();
+        }
         form.hidden = operacion === 'detalle';
         detalle.hidden = operacion !== 'detalle';
         detalle.replaceChildren();
@@ -249,13 +352,14 @@
     });
     form.addEventListener('submit', async (evento) => {
         evento.preventDefault();
-        if (pendiente) return;
+        if (pendiente || !puedeGuardarEdicion()) return;
         const recuperando = operacion === 'pago' && sinConfirmar !== null;
         const token = form.elements.namedItem('_token').value;
         const datos = operacion === 'pago' && sinConfirmar ? { ...sinConfirmar.datos } : Object.fromEntries(new FormData(form));
         if (!(operacion === 'pago' && sinConfirmar)) {
             Object.assign(datos, { idEdicion: modal.dataset.edicion, idEquipo: cargo?.idEquipo, cargo_id: cargo?.id, clave_idempotencia: clave });
         }
+        if (operacion === 'editar_pago') datos.pago_id = cargo?.pago_id;
         delete datos._token;
         pendiente = true;
         enviar.disabled = true;
@@ -293,7 +397,9 @@
             }
             const pagos = resultado.pagos ?? (resultado.pago ? [resultado.pago] : null);
             const exento = resultado.exencion_edicion;
-            const mensaje = pagos ? recibo(pagos) : (exento
+            const mensaje = operacion === 'editar_pago' && resultado.evento
+                ? reciboEdicion(resultado.pago, resultado.evento)
+                : pagos ? recibo(pagos) : (exento
                 ? `${cargo.equipo} quedó exento de planilla en esta edición. Se eximieron ${exento.cargos_eximidos} cargos por ${ars(exento.eximido_ars)}.`
                 : ({
                     no_vino: `${cargo.equipo} figura como que no vino: no debe la planilla de este partido.`,
@@ -321,7 +427,8 @@
         } finally {
             pendiente = false;
             enviar.disabled = false;
-            enviar.textContent = 'Confirmar';
+            enviar.textContent = operacion === 'editar_pago' ? TEXTO_EDITAR : TEXTO_CONFIRMAR;
+            actualizarAvisoEdicion();
         }
     });
 })();

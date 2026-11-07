@@ -118,11 +118,15 @@ it('imprime los cobros en hoja A4 vertical', function (): void {
 it('pide importes de efectivo y mercado pago sin ofrecer transferencia', function (): void {
     $html = $this->actingAs($this->admin)->get(rutaPlanillaAccesos($this->partido))->assertOk()->getContent();
     $modal = Str::between($html, 'id="cobros-modal"', '</dialog>');
+    $campoPago = Str::between($modal, 'data-campo="importes"', 'data-campo="editar_pago"');
+    $campoEdicion = Str::between($modal, 'data-campo="editar_pago"', 'data-campo="motivo"');
 
-    expect($modal)->toContain('name="importe_efectivo_ars"')
-        ->and($modal)->toContain('name="importe_mercado_pago_ars"')
-        ->and($modal)->not->toContain('name="importe_ars"')
-        ->and($modal)->not->toContain('name="medio"')
+    expect($campoPago)->toContain('name="importe_efectivo_ars"')
+        ->and($campoPago)->toContain('name="importe_mercado_pago_ars"')
+        ->and($campoPago)->not->toContain('name="importe_ars"')
+        ->and($campoPago)->not->toContain('name="medio"')
+        ->and($campoEdicion)->toContain('name="importe_ars"')
+        ->and($campoEdicion)->toContain('value="efectivo"')->toContain('value="mercado_pago"')
         ->and(mb_strtolower($modal))->not->toContain('transferencia');
 });
 
