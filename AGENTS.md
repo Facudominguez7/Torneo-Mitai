@@ -52,7 +52,7 @@ Evalúa tu tarea antes de implementar y **ejecuta/invoca la herramienta correspo
 - Si el contenedor no está levantado, primero iniciarlo y recién después ejecutar validaciones/comandos.
 - No crear ni borrar bases de datos nuevas.
 - Pest se ejecuta siempre contra la base fija `mitai_testing`, configurada en `phpunit.xml`, y nunca contra la base de desarrollo `mitai`: `RefreshDatabase` vacía la base que usa. Si otra sesión está usando `mitai_testing`, esperar o informar el bloqueo.
-- La verificación visual con Playwright usa siempre la base de desarrollo `mitai` mediante el servidor del puerto 8000, sin servidores temporales ni datos sintéticos. Cualquier acción que escriba en `mitai` (pagos, exenciones, altas o cambios) requiere autorización previa del usuario.
+- La verificación visual con Playwright usa siempre la base de desarrollo `mitai` mediante el servidor del puerto 8000, sin servidores temporales ni datos sintéticos. Para iniciar sesión usá los usuarios de prueba `playwright-{admin,editor,regular}@mitai.test`; la contraseña está en `~/.local/mitai-playwright/CREDENCIALES.md` (fuera del repo, nunca commitearla ni copiarla a Engram). Cualquier acción que escriba en `mitai` (pagos, exenciones, altas o cambios) requiere autorización previa del usuario.
 
 ## 8. ACCESO DESDE OTROS DISPOSITIVOS (TAILSCALE SERVE)
 
