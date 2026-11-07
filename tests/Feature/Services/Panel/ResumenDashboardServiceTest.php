@@ -3,14 +3,11 @@
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
-use App\Models\EquipoEdicion;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Jugador;
-use App\Models\ListaBuenaFe;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
-use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use App\Services\Panel\ResumenDashboard;
 use Illuminate\Support\Carbon;
@@ -18,7 +15,6 @@ use Illuminate\Support\Carbon;
 function crearServicioResumenDashboard(): ResumenDashboard
 {
     return new ResumenDashboard(
-        new EquiposDeEdicionService,
         new EstadisticasService,
     );
 }
@@ -44,60 +40,12 @@ function crearContextoServicioResumen(): array
     return compact('edicion', 'categoria', 'fecha', 'grupo');
 }
 
-it('cuenta equipos inscriptos sin duplicar entre inscripcion directa y pivote', function () {
+it('devuelve solo los datos que muestra el dashboard', function () {
     $contexto = crearContextoServicioResumen();
-
-    $equipoDirecto = Equipo::create([
-        'idCategoria' => $contexto['categoria']->id,
-        'idEdicion' => $contexto['edicion']->id,
-        'nombre' => 'Equipo Directo',
-        'foto' => 'e.png',
-    ]);
-
-    $equipoPivote = Equipo::create([
-        'idCategoria' => $contexto['categoria']->id,
-        'idEdicion' => $contexto['edicion']->id,
-        'nombre' => 'Equipo Pivote',
-        'foto' => 'e.png',
-    ]);
-
-    EquipoEdicion::create([
-        'idEdicion' => $contexto['edicion']->id,
-        'idEquipo' => $equipoPivote->id,
-        'idCategoria' => $contexto['categoria']->id,
-    ]);
 
     $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
 
-    expect($resumen['equiposInscriptos'])->toBe(2);
-});
-
-it('cuenta solo jugadores activos de la lista de buena fe como habilitados', function () {
-    $contexto = crearContextoServicioResumen();
-    $equipo = Equipo::create([
-        'idCategoria' => $contexto['categoria']->id,
-        'idEdicion' => $contexto['edicion']->id,
-        'nombre' => 'Equipo Habilitados',
-        'foto' => 'e.png',
-    ]);
-
-    foreach ([['30100001', true], ['30100002', true], ['30100003', false]] as [$dni, $activo]) {
-        Jugador::create(['dni' => $dni, 'nombre' => 'Jugador', 'apellido' => $dni]);
-        ListaBuenaFe::create([
-            'dni_jugador' => $dni,
-            'idEquipo' => $equipo->id,
-            'idEdicion' => $contexto['edicion']->id,
-            'idCategoria' => $contexto['categoria']->id,
-            'fecha_nacimiento' => '2013-01-01',
-            'fecha_alta' => now(),
-            'activo' => $activo,
-            'fecha_baja' => $activo ? null : now(),
-        ]);
-    }
-
-    $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
-
-    expect($resumen['jugadoresHabilitados'])->toBe(2);
+    expect(array_keys($resumen))->toEqualCanonicalizing(['partidosPendientes', 'proximaFecha', 'jugadoresPorCategoria']);
 });
 
 it('arma la lista de partidos pendientes y excluye a los que ya tienen resultado confirmado y asistencia', function () {
@@ -152,7 +100,7 @@ it('arma la lista de partidos pendientes y excluye a los que ya tienen resultado
 
     $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
 
-    expect($resumen['pendientesDeCarga'])->toBe(1);
+    expect($resumen['partidosPendientes'])->toHaveCount(1);
     $pendiente = $resumen['partidosPendientes']->firstWhere('id', $partidoSinResultado->id);
     expect($pendiente)->not->toBeNull();
     expect($pendiente['estado']['tipo'])->toBe('sin_resultado');
@@ -205,7 +153,6 @@ it('devuelve una proxima fecha nula cuando la edicion no tiene fechas', function
 
     expect($resumen['proximaFecha'])->toBeNull();
     expect($resumen['partidosPendientes'])->toHaveCount(0);
-    expect($resumen['equiposInscriptos'])->toBe(0);
 });
 
 // Issue #202: el KPI del dashboard sale del mismo servicio que el listado de
@@ -239,7 +186,7 @@ it('no marca como pendiente un partido sin resultado que todavia no se jugo', fu
     $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
 
     expect($resumen['partidosPendientes']->firstWhere('id', $partidoFuturo->id))->toBeNull()
-        ->and($resumen['pendientesDeCarga'])->toBe(0);
+        ->and($resumen['partidosPendientes'])->toHaveCount(0);
 });
 
 it('elige como proxima fecha la del proximo partido y no la ultima fecha creada', function () {

@@ -3,50 +3,33 @@
 namespace App\Services\Panel;
 
 use App\Models\Fecha;
-use App\Models\ListaBuenaFe;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
-use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Calcula los datos del nuevo dashboard admin (KPIs, partidos que requieren
- * atención y la próxima fecha), reutilizando el padrón de equipos y la
- * lógica de asistencia/goles ya existentes para no duplicar reglas.
+ * Calcula los datos del dashboard admin (partidos que requieren atención, la
+ * próxima fecha y jugadores por categoría), reutilizando la lógica de
+ * asistencia/goles ya existente para no duplicar reglas.
  */
 class ResumenDashboard
 {
     public function __construct(
-        private readonly EquiposDeEdicionService $equiposDeEdicion,
         private readonly EstadisticasService $estadisticas,
     ) {}
 
     /**
      * @return array{
-     *     equiposInscriptos: int,
-     *     jugadoresHabilitados: int,
-     *     partidosJugados: int,
-     *     partidosTotales: int,
      *     partidosPendientes: Collection<int, array<string, mixed>>,
-     *     pendientesDeCarga: int,
      *     proximaFecha: array<string, mixed>|null,
      *     jugadoresPorCategoria: array<int, array<string, mixed>>,
      * }
      */
     public function obtenerResumen(int $idEdicion): array
     {
-        $equiposInscriptos = $this->equiposDeEdicion->participantes($idEdicion)->count();
-
-        $jugadoresHabilitados = ListaBuenaFe::where('idEdicion', $idEdicion)
-            ->activos()
-            ->count();
-
-        $partidosJugados = Partido::where('idEdicion', $idEdicion)->where('jugado', 1)->count();
-        $partidosTotales = Partido::where('idEdicion', $idEdicion)->count();
-
         $partidosEnCurso = $this->partidosDeFechasEnCurso($idEdicion);
         $estados = app(EstadoAdministrativoPartidoService::class)->resolver($partidosEnCurso);
         $partidosConAsistenciaPendiente = $this->partidosConAsistenciaPendiente($idEdicion, $partidosEnCurso, $estados);
@@ -59,12 +42,7 @@ class ResumenDashboard
         $proximaFecha = $this->resolverProximaFecha($idEdicion);
 
         return [
-            'equiposInscriptos' => $equiposInscriptos,
-            'jugadoresHabilitados' => $jugadoresHabilitados,
-            'partidosJugados' => $partidosJugados,
-            'partidosTotales' => $partidosTotales,
             'partidosPendientes' => $partidosPendientes,
-            'pendientesDeCarga' => $partidosPendientes->count(),
             'proximaFecha' => $proximaFecha,
             'jugadoresPorCategoria' => $this->estadisticas->obtenerJugadoresPorCategoriaDosUltimasFechas($idEdicion),
         ];
