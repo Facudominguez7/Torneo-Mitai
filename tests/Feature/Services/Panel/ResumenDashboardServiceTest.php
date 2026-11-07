@@ -7,7 +7,6 @@ use App\Models\EquipoEdicion;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Jugador;
-use App\Models\ListaBuenaFe;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Services\EquiposDeEdicionService;
@@ -70,34 +69,6 @@ it('cuenta equipos inscriptos sin duplicar entre inscripcion directa y pivote', 
     $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
 
     expect($resumen['equiposInscriptos'])->toBe(2);
-});
-
-it('cuenta solo jugadores activos de la lista de buena fe como habilitados', function () {
-    $contexto = crearContextoServicioResumen();
-    $equipo = Equipo::create([
-        'idCategoria' => $contexto['categoria']->id,
-        'idEdicion' => $contexto['edicion']->id,
-        'nombre' => 'Equipo Habilitados',
-        'foto' => 'e.png',
-    ]);
-
-    foreach ([['30100001', true], ['30100002', true], ['30100003', false]] as [$dni, $activo]) {
-        Jugador::create(['dni' => $dni, 'nombre' => 'Jugador', 'apellido' => $dni]);
-        ListaBuenaFe::create([
-            'dni_jugador' => $dni,
-            'idEquipo' => $equipo->id,
-            'idEdicion' => $contexto['edicion']->id,
-            'idCategoria' => $contexto['categoria']->id,
-            'fecha_nacimiento' => '2013-01-01',
-            'fecha_alta' => now(),
-            'activo' => $activo,
-            'fecha_baja' => $activo ? null : now(),
-        ]);
-    }
-
-    $resumen = crearServicioResumenDashboard()->obtenerResumen($contexto['edicion']->id);
-
-    expect($resumen['jugadoresHabilitados'])->toBe(2);
 });
 
 it('arma la lista de partidos pendientes y excluye a los que ya tienen resultado confirmado y asistencia', function () {

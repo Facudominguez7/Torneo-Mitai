@@ -3,7 +3,6 @@
 namespace App\Services\Panel;
 
 use App\Models\Fecha;
-use App\Models\ListaBuenaFe;
 use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Services\EquiposDeEdicionService;
@@ -27,7 +26,6 @@ class ResumenDashboard
     /**
      * @return array{
      *     equiposInscriptos: int,
-     *     jugadoresHabilitados: int,
      *     partidosJugados: int,
      *     partidosTotales: int,
      *     partidosPendientes: Collection<int, array<string, mixed>>,
@@ -39,10 +37,6 @@ class ResumenDashboard
     public function obtenerResumen(int $idEdicion): array
     {
         $equiposInscriptos = $this->equiposDeEdicion->participantes($idEdicion)->count();
-
-        $jugadoresHabilitados = ListaBuenaFe::where('idEdicion', $idEdicion)
-            ->activos()
-            ->count();
 
         $partidosJugados = Partido::where('idEdicion', $idEdicion)->where('jugado', 1)->count();
         $partidosTotales = Partido::where('idEdicion', $idEdicion)->count();
@@ -60,7 +54,6 @@ class ResumenDashboard
 
         return [
             'equiposInscriptos' => $equiposInscriptos,
-            'jugadoresHabilitados' => $jugadoresHabilitados,
             'partidosJugados' => $partidosJugados,
             'partidosTotales' => $partidosTotales,
             'partidosPendientes' => $partidosPendientes,
