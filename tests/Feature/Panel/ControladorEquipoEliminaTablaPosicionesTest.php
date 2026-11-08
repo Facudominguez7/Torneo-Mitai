@@ -4,9 +4,11 @@ use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use App\Models\EquipoGrupo;
 use App\Models\Grupo;
 use App\Models\TablaPosicion;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 function crearAdminParaEliminarEquipo(): User
 {
@@ -55,16 +57,12 @@ function crearEquipoConEdicion(array $contexto, string $nombreEquipo): Equipo
     return $equipo;
 }
 
-it('elimina la posicion de tabla de la misma edicion al borrar un equipo', function () {
-    $admin = crearAdminParaEliminarEquipo();
-    $contextoPrincipal = crearContextoTablaPosiciones('Edicion Principal', 'Sub 12', 'Grupo A');
-    $contextoAjeno = crearContextoTablaPosiciones('Edicion Ajena', 'Sub 13', 'Grupo B');
-    $equipo = crearEquipoConEdicion($contextoPrincipal, 'Mitai Azul');
-
-    TablaPosicion::create([
-        'idGrupo' => $contextoPrincipal['grupo']->id,
+function filaTablaEliminar(array $contexto, Equipo $equipo, int $idEdicionFila): TablaPosicion
+{
+    return TablaPosicion::create([
+        'idGrupo' => $contexto['grupo']->id,
         'idEquipo' => $equipo->id,
-        'idEdicion' => $contextoPrincipal['edicion']->id,
+        'idEdicion' => $idEdicionFila,
         'puntos' => 9,
         'golesFavor' => 8,
         'golesContra' => 2,
@@ -74,31 +72,42 @@ it('elimina la posicion de tabla de la misma edicion al borrar un equipo', funct
         'perdido' => 0,
         'empatado' => 0,
     ]);
+}
 
-    TablaPosicion::create([
-        'idGrupo' => $contextoAjeno['grupo']->id,
+function eliminarEquipoComoAdmin(object $test, User $admin, Equipo $equipo, int $idEdicion): void
+{
+    $token = Str::random(40);
+
+    $test->actingAs($admin)
+        ->withSession(['_token' => $token])
+        ->delete(route('equipo.destroy', [
+            'equipo' => $equipo,
+            'idEdicion' => $idEdicion,
+        ]), ['_token' => $token]);
+}
+
+it('elimina la posicion de tabla de la misma edicion al borrar un equipo', function () {
+    $admin = crearAdminParaEliminarEquipo();
+    $contextoPrincipal = crearContextoTablaPosiciones('Edicion Principal', 'Sub 12', 'Grupo A');
+    $contextoAjeno = crearContextoTablaPosiciones('Edicion Ajena', 'Sub 13', 'Grupo B');
+    $equipo = crearEquipoConEdicion($contextoPrincipal, 'Mitai Azul');
+    EquipoEdicion::create([
         'idEquipo' => $equipo->id,
         'idEdicion' => $contextoAjeno['edicion']->id,
-        'puntos' => 4,
-        'golesFavor' => 3,
-        'golesContra' => 5,
-        'diferenciaGoles' => -2,
-        'jugado' => 2,
-        'ganado' => 1,
-        'perdido' => 1,
-        'empatado' => 0,
+        'idCategoria' => $contextoAjeno['categoria']->id,
     ]);
 
-    $response = $this->actingAs($admin)->delete(route('equipo.destroy', [
-        'equipo' => $equipo,
-        'idEdicion' => $contextoPrincipal['edicion']->id,
-    ]));
+    EquipoGrupo::create(['idEquipo' => $equipo->id, 'idGrupo' => $contextoPrincipal['grupo']->id]);
+    EquipoGrupo::create(['idEquipo' => $equipo->id, 'idGrupo' => $contextoAjeno['grupo']->id]);
 
-    $response->assertRedirect(route('equipo.index', ['idEdicion' => $contextoPrincipal['edicion']->id]));
+    filaTablaEliminar($contextoPrincipal, $equipo, $contextoPrincipal['edicion']->id);
+    filaTablaEliminar($contextoAjeno, $equipo, $contextoAjeno['edicion']->id);
+
+    eliminarEquipoComoAdmin($this, $admin, $equipo, $contextoPrincipal['edicion']->id);
 
     $this->assertDatabaseMissing('tabla_posiciones', [
         'idEquipo' => $equipo->id,
-        'idEdicion' => $contextoPrincipal['edicion']->id,
+        'idGrupo' => $contextoPrincipal['grupo']->id,
     ]);
 
     $this->assertDatabaseHas('tabla_posiciones', [
@@ -109,48 +118,70 @@ it('elimina la posicion de tabla de la misma edicion al borrar un equipo', funct
 
 it('no borra posiciones ajenas cuando el equipo no tiene coincidencia en la edicion actual', function () {
     $admin = crearAdminParaEliminarEquipo();
-    $contextoPrincipal = crearContextoTablaPosiciones('Edicion Principal', 'Sub 14', 'Grupo C');
-    $contextoAjeno = crearContextoTablaPosiciones('Edicion Ajena', 'Sub 15', 'Grupo D');
+    $contextoPrincipal = crearContextoTablaPosiciones('Edicion Principal Dos', 'Sub 14', 'Grupo C');
+    $contextoAjeno = crearContextoTablaPosiciones('Edicion Ajena Dos', 'Sub 15', 'Grupo D');
     $equipoPrincipal = crearEquipoConEdicion($contextoPrincipal, 'Mitai Verde');
     $equipoAjeno = crearEquipoConEdicion($contextoAjeno, 'Mitai Rojo');
 
-    TablaPosicion::create([
-        'idGrupo' => $contextoPrincipal['grupo']->id,
-        'idEquipo' => $equipoPrincipal->id,
-        'idEdicion' => $contextoPrincipal['edicion']->id,
-        'puntos' => 7,
-        'golesFavor' => 5,
-        'golesContra' => 1,
-        'diferenciaGoles' => 4,
-        'jugado' => 3,
-        'ganado' => 2,
-        'perdido' => 0,
-        'empatado' => 1,
-    ]);
+    filaTablaEliminar($contextoPrincipal, $equipoPrincipal, $contextoPrincipal['edicion']->id);
+    filaTablaEliminar($contextoAjeno, $equipoAjeno, $contextoAjeno['edicion']->id);
 
-    TablaPosicion::create([
-        'idGrupo' => $contextoAjeno['grupo']->id,
-        'idEquipo' => $equipoAjeno->id,
-        'idEdicion' => $contextoAjeno['edicion']->id,
-        'puntos' => 10,
-        'golesFavor' => 11,
-        'golesContra' => 3,
-        'diferenciaGoles' => 8,
-        'jugado' => 4,
-        'ganado' => 3,
-        'perdido' => 0,
-        'empatado' => 1,
-    ]);
-
-    $response = $this->actingAs($admin)->delete(route('equipo.destroy', [
-        'equipo' => $equipoPrincipal,
-        'idEdicion' => $contextoPrincipal['edicion']->id,
-    ]));
-
-    $response->assertRedirect(route('equipo.index', ['idEdicion' => $contextoPrincipal['edicion']->id]));
+    eliminarEquipoComoAdmin($this, $admin, $equipoPrincipal, $contextoPrincipal['edicion']->id);
 
     $this->assertDatabaseHas('tabla_posiciones', [
         'idEquipo' => $equipoAjeno->id,
         'idEdicion' => $contextoAjeno['edicion']->id,
+    ]);
+});
+
+it('elimina las filas legacy con idEdicion en cero del grupo de la edicion actual', function () {
+    $admin = crearAdminParaEliminarEquipo();
+    $contexto = crearContextoTablaPosiciones('Edicion Legacy Baja', 'Sub 11', 'Grupo Unico');
+    $equipo = crearEquipoConEdicion($contexto, 'Mitai Legacy');
+
+    filaTablaEliminar($contexto, $equipo, 0);
+
+    eliminarEquipoComoAdmin($this, $admin, $equipo, $contexto['edicion']->id);
+
+    $this->assertDatabaseMissing('tabla_posiciones', [
+        'idEquipo' => $equipo->id,
+        'idGrupo' => $contexto['grupo']->id,
+    ]);
+});
+
+it('saca al equipo de la edicion y del grupo sin tocar sus grupos de otras ediciones', function () {
+    $admin = crearAdminParaEliminarEquipo();
+    $contextoPrincipal = crearContextoTablaPosiciones('Edicion Actual', 'Sub 10', 'Grupo Actual');
+    $contextoAjeno = crearContextoTablaPosiciones('Edicion Otra', 'Sub 9', 'Grupo Otra');
+    $equipo = crearEquipoConEdicion($contextoPrincipal, 'Mitai Naranja');
+    EquipoEdicion::create([
+        'idEquipo' => $equipo->id,
+        'idEdicion' => $contextoAjeno['edicion']->id,
+        'idCategoria' => $contextoAjeno['categoria']->id,
+    ]);
+
+    EquipoGrupo::create(['idEquipo' => $equipo->id, 'idGrupo' => $contextoPrincipal['grupo']->id]);
+    EquipoGrupo::create(['idEquipo' => $equipo->id, 'idGrupo' => $contextoAjeno['grupo']->id]);
+
+    eliminarEquipoComoAdmin($this, $admin, $equipo, $contextoPrincipal['edicion']->id);
+
+    $this->assertDatabaseMissing('equipo_ediciones', [
+        'idEquipo' => $equipo->id,
+        'idEdicion' => $contextoPrincipal['edicion']->id,
+    ]);
+
+    $this->assertDatabaseMissing('equipos_grupos', [
+        'idEquipo' => $equipo->id,
+        'idGrupo' => $contextoPrincipal['grupo']->id,
+    ]);
+
+    $this->assertDatabaseHas('equipo_ediciones', [
+        'idEquipo' => $equipo->id,
+        'idEdicion' => $contextoAjeno['edicion']->id,
+    ]);
+
+    $this->assertDatabaseHas('equipos_grupos', [
+        'idEquipo' => $equipo->id,
+        'idGrupo' => $contextoAjeno['grupo']->id,
     ]);
 });

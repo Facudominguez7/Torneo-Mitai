@@ -3,6 +3,7 @@
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\Grupo;
 use App\Models\TablaPosicion;
 
@@ -47,6 +48,18 @@ function crearContextoPosicionesDefault(): array
         'idEdicion' => $edicion->id,
         'nombre' => 'Equipo Sur',
         'foto' => 'escudo.png',
+    ]);
+
+    // Toda fila de tabla pertenece a un equipo con inscripción vigente en la edición.
+    EquipoEdicion::create([
+        'idEquipo' => $equipoPrimero->id,
+        'idEdicion' => $edicion->id,
+        'idCategoria' => $categoriaPrimera->id,
+    ]);
+    EquipoEdicion::create([
+        'idEquipo' => $equipoSegundo->id,
+        'idEdicion' => $edicion->id,
+        'idCategoria' => $categoriaSegunda->id,
     ]);
 
     TablaPosicion::create([

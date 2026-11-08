@@ -339,6 +339,15 @@ it('permite ver posiciones por categoria y grupo desde tabs y filtro', function 
         'foto' => 'escudo.png',
     ]);
 
+    // Toda fila de tabla pertenece a un equipo con inscripción vigente en la edición.
+    foreach ([[$equipoA, $categoriaA], [$equipoB, $categoriaB]] as [$equipo, $categoriaEquipo]) {
+        EquipoEdicion::create([
+            'idEquipo' => $equipo->id,
+            'idEdicion' => $edicion->id,
+            'idCategoria' => $categoriaEquipo->id,
+        ]);
+    }
+
     TablaPosicion::create([
         'idGrupo' => $grupoA->id,
         'idEquipo' => $equipoA->id,
@@ -432,6 +441,15 @@ it('usa por defecto la ultima categoria cargada cuando no llega idCategoria', fu
         'nombre' => 'Mitai Nuevo',
         'foto' => 'escudo.png',
     ]);
+
+    // Toda fila de tabla pertenece a un equipo con inscripción vigente en la edición.
+    foreach ([[$equipoViejo, $categoriaVieja], [$equipoNuevo, $categoriaNueva]] as [$equipo, $categoriaEquipo]) {
+        EquipoEdicion::create([
+            'idEquipo' => $equipo->id,
+            'idEdicion' => $edicion->id,
+            'idCategoria' => $categoriaEquipo->id,
+        ]);
+    }
 
     TablaPosicion::create([
         'idGrupo' => $grupoViejo->id,

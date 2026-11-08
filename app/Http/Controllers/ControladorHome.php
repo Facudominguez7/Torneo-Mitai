@@ -670,6 +670,14 @@ class ControladorHome extends Controller
                 $query->where('tabla_posiciones.idEdicion', $idEdicion)
                     ->orWhere('tabla_posiciones.idEdicion', 0);
             })
+            // Solo equipos con inscripción vigente en la edición: una baja deja la
+            // fila de tabla huérfana (legacy idEdicion 0 incluido) y no debe verse.
+            ->when($idEdicion, fn ($query) => $query->whereExists(function ($subquery) use ($idEdicion) {
+                $subquery->selectRaw('1')
+                    ->from('equipo_ediciones')
+                    ->whereColumn('equipo_ediciones.idEquipo', 'tabla_posiciones.idEquipo')
+                    ->where('equipo_ediciones.idEdicion', $idEdicion);
+            }))
             ->orderBy('tabla_posiciones.puntos', 'DESC')
             ->orderByRaw('CASE WHEN tabla_posiciones.jugado > 0 THEN 1 ELSE 0 END DESC')
             ->orderBy('tabla_posiciones.diferenciaGoles', 'DESC')
@@ -898,7 +906,10 @@ class ControladorHome extends Controller
             $gruposConTabla = [];
 
             foreach ($grupos as $grupo) {
-                // Obtener la tabla de posiciones de cada grupo
+                // Obtener la tabla de posiciones de cada grupo. Solo se imprimen
+                // equipos con inscripción vigente en la edición: al dar de baja un
+                // equipo su fila de tabla queda huérfana (incluidas las legacy con
+                // idEdicion 0) y no debe aparecer en la impresión.
                 $tablaPosiciones = TablaPosicion::select(
                     'tabla_posiciones.*',
                     'equipos.nombre as nombreEquipo',
@@ -910,6 +921,12 @@ class ControladorHome extends Controller
                     ->where(function ($query) use ($idEdicion) {
                         $query->where('tabla_posiciones.idEdicion', $idEdicion)
                             ->orWhere('tabla_posiciones.idEdicion', 0);
+                    })
+                    ->whereExists(function ($query) use ($idEdicion) {
+                        $query->selectRaw('1')
+                            ->from('equipo_ediciones')
+                            ->whereColumn('equipo_ediciones.idEquipo', 'tabla_posiciones.idEquipo')
+                            ->where('equipo_ediciones.idEdicion', $idEdicion);
                     })
                     ->orderBy('tabla_posiciones.puntos', 'DESC')
                     ->orderByRaw('CASE WHEN tabla_posiciones.jugado > 0 THEN 1 ELSE 0 END DESC')
