@@ -2,7 +2,13 @@
 
 Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como para hacer commits y pushes. No mergees este rediseño a `main` sin una autorización nueva y explícita del usuario.
 
-Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
+Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24; alta con fecha nueva y planilla al 2026-11-08. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
+
+## Alta con fecha nueva y planilla (rama `fix/partido-fecha-y-planilla`, 2026-11-08)
+
+- Alta de partido (regular e interzonal): el formulario acepta un nombre de fecha y la crea para la edición y categoría elegidas, en la misma transacción que el partido (un alta fallida no deja fecha huérfana). Sin nombre se usa la del select; si vienen las dos, gana la nueva. Pruebas nuevas en `PartidoFechaNuevaTest` (7).
+- Planilla: el aviso «N° repetido» ahora solo cuenta y marca jugadores con asistencia marcada, igual que la regla del servidor, y se actualiza al marcar la asistencia. La vista de los dos equipos se activa desde 1280 px (antes 1536), así que entra en 1366×768 y 1280×720.
+- Verificado con Pest (97 pruebas de las pantallas afectadas) y Playwright en 1280×720, 1366×768, 1920×1080 y 390×844, sin desborde horizontal. La comprobación del aviso en el navegador se hizo bloqueando el autosave, sin escribir en la base.
 
 ## Envíos a suscriptores con Resend (rama `feat/suscriptores-resend`, 2026-11-01)
 

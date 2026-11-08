@@ -254,16 +254,45 @@ class ControladorPartidos extends Controller
     public function store(StoreRequest $request, ProgramacionCobroService $programacionCobroService)
     {
         $data = $request->validated();
-        $programacionCobroService->crearPartido($request->user(), $data);
+        $nombreFecha = trim((string) ($data['nombreFecha'] ?? ''));
+        unset($data['nombreFecha']);
+
+        // La fecha nueva y el partido se crean en la misma transacción: si el
+        // alta falla, no queda una fecha huérfana en la edición.
+        $idFechas = DB::transaction(function () use ($data, $nombreFecha, $request, $programacionCobroService): int {
+            $data['idFechas'] = $this->resolverFechaDelAlta($data, $nombreFecha);
+            $programacionCobroService->crearPartido($request->user(), $data);
+
+            return (int) $data['idFechas'];
+        });
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $data['idEdicion'],
             'idCategoria' => $data['idCategoria'] ?? $request->input('idCategoria'),
             'idGrupo' => $data['idGrupo'] ?? $request->input('idGrupo'),
-            'idFecha' => $request->input('idFechas') ?: $request->input('idFecha'),
+            'idFecha' => $idFechas,
         ]);
 
         return to_route('partido.index', $parametrosRegreso)->with('status', 'Partido creado con éxito.');
+    }
+
+    /**
+     * Fecha del alta: la escrita en el formulario (se crea para la edición y
+     * categoría elegidas) o la que ya existía en el select.
+     */
+    private function resolverFechaDelAlta(array $data, string $nombreFecha): int
+    {
+        if ($nombreFecha === '') {
+            return (int) $data['idFechas'];
+        }
+
+        $fecha = Fecha::create([
+            'nombre' => $nombreFecha,
+            'idEdicion' => (int) $data['idEdicion'],
+            'idCategoria' => isset($data['idCategoria']) ? (int) $data['idCategoria'] : null,
+        ]);
+
+        return (int) $fecha->id;
     }
 
     /**
@@ -336,7 +365,8 @@ class ControladorPartidos extends Controller
             'idCategoria' => ['required', 'exists:categorias,id'],
             'idEquipoLocal' => ['required', 'exists:equipos,id'],
             'idEquipoVisitante' => ['required', 'exists:equipos,id', 'different:idEquipoLocal'],
-            'idFechas' => ['required', 'exists:fechas,id'],
+            'idFechas' => ['nullable', 'required_without:nombreFecha', 'exists:fechas,id'],
+            'nombreFecha' => ['nullable', 'required_without:idFechas', 'string', 'min:5', 'max:50'],
             'horario_datetime' => ['nullable', 'date'],
             'cancha' => ['nullable', 'string', 'max:250'],
         ]);
@@ -345,7 +375,16 @@ class ControladorPartidos extends Controller
         $data['idGrupo'] = null;
         $data['es_interzonal'] = true;
 
-        $programacionCobroService->crearPartido($request->user(), $data);
+        $nombreFecha = trim((string) ($data['nombreFecha'] ?? ''));
+        unset($data['nombreFecha']);
+
+        $data['idFechas'] = DB::transaction(function () use ($data, $nombreFecha, $request, $programacionCobroService): int {
+            $idFechas = $this->resolverFechaDelAlta($data, $nombreFecha);
+            $data['idFechas'] = $idFechas;
+            $programacionCobroService->crearPartido($request->user(), $data);
+
+            return $idFechas;
+        });
 
         $parametrosRegreso = $this->construirParametrosRegreso($request, [
             'idEdicion' => $data['idEdicion'],
