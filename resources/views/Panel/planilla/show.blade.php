@@ -493,7 +493,7 @@
         </div>
     </div>
     <div data-autosave-alerta role="alert" aria-live="assertive" hidden
-        class="fixed inset-x-0 bottom-0 z-40 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-red-200 bg-red-50 px-4 py-3 text-sm text-pa-tinta shadow-[0_-6px_18px_-8px_rgba(8,47,59,0.25)] sm:px-6 [&[hidden]]:hidden">
+        class="fixed inset-x-0 bottom-0 z-40 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-red-200 bg-red-50 px-4 py-3 text-sm text-pa-aviso-tinta shadow-[0_-6px_18px_-8px_rgba(8,47,59,0.25)] sm:px-6 [&[hidden]]:hidden">
         <svg class="h-5 w-5 shrink-0 text-red-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>
         <p class="font-bold text-red-700" data-autosave-alerta-titulo></p>
         <ul class="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1" data-autosave-alerta-lista></ul>
