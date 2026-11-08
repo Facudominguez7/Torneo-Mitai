@@ -100,7 +100,8 @@ class ResumenFechaService
 
     /**
      * Partidos programados (todavía sin resultado) de una fecha de la última edición, para avisar
-     * a los suscriptores cuándo y dónde se juega.
+     * a los suscriptores cuándo y dónde se juega. Sin categoría entran las de todas: una fecha
+     * puede tener partidos de varias (la que se crea desde el alta de un partido guarda la suya).
      *
      * @return array<string, mixed>|null null si la fecha no es de esa edición o no tiene partidos por jugar
      */
@@ -115,15 +116,15 @@ class ResumenFechaService
             return null;
         }
 
-        $idCategoriaFinal = $idCategoria ?: (int) $fecha->idCategoria;
+        $idCategoriaFinal = ($idCategoria ?? 0) > 0 ? (int) $idCategoria : null;
 
         $consulta = Partido::query()
-            ->with(['equipoLocal:id,nombre,foto', 'equipoVisitante:id,nombre,foto', 'grupo:id,nombre'])
+            ->with(['equipoLocal:id,nombre,foto', 'equipoVisitante:id,nombre,foto', 'grupo:id,nombre', 'categoria:id,nombreCategoria'])
             ->where('idEdicion', $idEdicion)
             ->where('idFechas', $idFecha)
             ->where(fn ($partidos) => $partidos->whereNull('golesEquipoLocal')->orWhereNull('golesEquipoVisitante'));
 
-        if ($idCategoriaFinal > 0) {
+        if ($idCategoriaFinal !== null) {
             $consulta->where('idCategoria', $idCategoriaFinal);
         }
 
@@ -140,10 +141,10 @@ class ResumenFechaService
         return [
             'id_edicion' => $idEdicion,
             'id_fecha' => $idFecha,
-            'id_categoria' => $idCategoriaFinal > 0 ? $idCategoriaFinal : null,
+            'id_categoria' => $idCategoriaFinal,
             'edicion_nombre' => Edicion::query()->whereKey($idEdicion)->value('nombre') ?? 'Edición vigente',
             'fecha_nombre' => $fecha->nombre,
-            'categoria_nombre' => $idCategoriaFinal > 0
+            'categoria_nombre' => $idCategoriaFinal !== null
                 ? Categoria::query()->whereKey($idCategoriaFinal)->value('nombreCategoria')
                 : null,
             'url_fixture' => '/fixture?idEdicion='.$idEdicion,
@@ -155,6 +156,7 @@ class ResumenFechaService
                 'escudo_local' => $this->urlEscudo($partido->equipoLocal->foto ?? null),
                 'escudo_visitante' => $this->urlEscudo($partido->equipoVisitante->foto ?? null),
                 'grupo' => $this->etiquetaGrupo($partido->grupo->nombre ?? null),
+                'categoria' => $partido->categoria->nombreCategoria ?? null,
                 'cancha' => $partido->cancha ? ('Cancha '.$partido->cancha) : null,
                 'horario' => $partido->horario_datetime ? $this->diaYHora(Carbon::parse($partido->horario_datetime)) : null,
             ])->values()->all(),

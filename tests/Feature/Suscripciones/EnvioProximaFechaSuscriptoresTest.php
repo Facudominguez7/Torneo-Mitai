@@ -110,9 +110,56 @@ it('no ofrece enviar una fecha sin partidos programados', function (): void {
     Queue::assertNothingPushed();
 });
 
+it('con todas las categorias envia los partidos de todas, no solo los de la categoria de la fecha', function (): void {
+    Queue::fake();
+    // La fecha creada desde el alta de un partido queda con la categoría de ese partido; con
+    // "Todas las categorías" igual entran los partidos de las demás.
+    ['fecha' => $fecha, 'categoria' => $categoria] = fechaProgramada();
+    $otraCategoria = Categoria::create(['idEdicion' => $fecha->idEdicion, 'nombreCategoria' => 'Categoría 2020/2021']);
+    $otroGrupo = Grupo::create(['idCategoria' => $otraCategoria->id, 'idEdicion' => $fecha->idEdicion, 'nombre' => 'C']);
+    $pumas = Equipo::create(['idCategoria' => $otraCategoria->id, 'idEdicion' => $fecha->idEdicion, 'nombre' => 'Pumas', 'foto' => 'p.png']);
+    $condores = Equipo::create(['idCategoria' => $otraCategoria->id, 'idEdicion' => $fecha->idEdicion, 'nombre' => 'Cóndores', 'foto' => 'c.png']);
+
+    Partido::create([
+        'idCategoria' => $otraCategoria->id,
+        'idFechas' => $fecha->id,
+        'idEquipoLocal' => $pumas->id,
+        'idEquipoVisitante' => $condores->id,
+        'idGrupo' => $otroGrupo->id,
+        'idEdicion' => $fecha->idEdicion,
+        'horario_datetime' => '2026-11-07 12:00:00',
+        'cancha' => 3,
+        'jugado' => 0,
+    ]);
+
+    Suscriptor::factory()->activo()->create(['recibe_proxima_fecha' => true]);
+    $admin = adminProximaFecha();
+
+    $this->actingAs($admin)
+        ->getJson(route('notificaciones.proxima-fecha.contar', ['idFecha' => $fecha->id]))
+        ->assertOk()
+        ->assertJson(['success' => true, 'partidos_count' => 2, 'categoria_nombre' => null]);
+
+    enviarProximaFecha($this, $admin, ['idFecha' => $fecha->id])->assertAccepted();
+
+    $envio = EnvioSuscriptores::query()->sole();
+    expect($envio->only(['clave', 'idCategoria']))->toBe([
+        'clave' => "proxima_fecha:{$fecha->id}:todas",
+        'idCategoria' => null,
+    ]);
+
+    $proxima = app(ResumenFechaService::class)->armarProximaFecha($fecha->idEdicion, $fecha->id);
+    $correo = new ProximaFechaMail($proxima, 'https://torneosmitai.test/preferencias');
+
+    expect($correo->build()->subject)->toBe("Próxima fecha: Fecha 5 - Torneos Mita'i")
+        ->and($correo->render())->toContain('Los Teros')->toContain('Pumas')
+        ->and($correo->render())->toContain($categoria->nombreCategoria)
+        ->toContain($otraCategoria->nombreCategoria);
+});
+
 it('registra la proxima fecha en la auditoria, la encola y no la repite', function (): void {
     Queue::fake();
-    ['fecha' => $fecha, 'categoria' => $categoria] = fechaProgramada();
+    ['fecha' => $fecha] = fechaProgramada();
     Suscriptor::factory()->activo()->count(3)->create(['recibe_proxima_fecha' => true]);
     $admin = adminProximaFecha();
 
@@ -128,10 +175,10 @@ it('registra la proxima fecha en la auditoria, la encola y no la repite', functi
     $envio = EnvioSuscriptores::query()->sole();
     expect($envio->only(['tipo', 'clave', 'idEdicion', 'idFecha', 'idCategoria', 'usuario_id', 'estado']))->toBe([
         'tipo' => 'proxima_fecha',
-        'clave' => "proxima_fecha:{$fecha->id}:{$categoria->id}",
+        'clave' => "proxima_fecha:{$fecha->id}:todas",
         'idEdicion' => $fecha->idEdicion,
         'idFecha' => $fecha->id,
-        'idCategoria' => $categoria->id,
+        'idCategoria' => null,
         'usuario_id' => $admin->id,
         'estado' => 'pendiente',
     ]);
@@ -157,9 +204,9 @@ it('en produccion la manda como broadcast al topico de la proxima fecha con los 
         respuestaResend(['id' => 'b-proxima']),
         respuestaResend(['id' => 'b-proxima']),
     ]);
-    ['fecha' => $fecha] = fechaProgramada();
+    ['fecha' => $fecha, 'categoria' => $categoria] = fechaProgramada();
     Suscriptor::factory()->activo()->count(2)->create(['recibe_proxima_fecha' => true]);
-    enviarProximaFecha($this, adminProximaFecha(), ['idFecha' => $fecha->id])->assertAccepted();
+    enviarProximaFecha($this, adminProximaFecha(), ['idFecha' => $fecha->id, 'idCategoria' => $categoria->id])->assertAccepted();
 
     procesarProximaFecha(EnvioSuscriptores::query()->sole());
 

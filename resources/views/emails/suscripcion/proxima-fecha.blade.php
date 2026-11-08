@@ -23,7 +23,9 @@
                 $horario = (string) ($partido['horario'] ?? '');
                 $hora = str_contains($horario, ' ') ? substr($horario, strrpos($horario, ' ') + 1) : 'A conf.';
                 $dia = str_contains($horario, ' ') ? substr($horario, 0, strrpos($horario, ' ')) : '';
-                $metadatos = array_filter([$partido['cancha'] ?? null, $partido['grupo'] ?? null]);
+                // Sin una categoría sola ("Todas las categorías") cada partido aclara la suya.
+                $categoriaPartido = empty($proximaFecha['categoria_nombre']) ? ($partido['categoria'] ?? null) : null;
+                $metadatos = array_filter([$partido['cancha'] ?? null, $partido['grupo'] ?? null, $categoriaPartido]);
             @endphp
             <tr>
                 <td style="padding:0 0 10px;">
