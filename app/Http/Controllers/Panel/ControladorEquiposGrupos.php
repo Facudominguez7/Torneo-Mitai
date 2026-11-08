@@ -16,6 +16,7 @@ use App\Traits\SeleccionarCategoriaTrait;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ControladorEquiposGrupos extends Controller
@@ -182,8 +183,17 @@ class ControladorEquiposGrupos extends Controller
      */
     public function destroy(Request $request, EquipoGrupo $equipogrupo)
     {
-        $equipogrupo->delete();
         $grupo = $equipogrupo->idGrupo;
+
+        DB::transaction(function () use ($equipogrupo, $grupo): void {
+            // Al sacar el equipo del grupo su fila de la tabla de posiciones de ese
+            // grupo deja de tener sentido (incluidas las legacy con idEdicion 0).
+            TablaPosicion::where('idEquipo', $equipogrupo->idEquipo)
+                ->where('idGrupo', $grupo)
+                ->delete();
+
+            $equipogrupo->delete();
+        });
 
         return redirect()->action([ControladorGrupos::class, 'show'], ['idEdicion' => $request->idEdicion, 'grupo' => $grupo])->with('status', 'Equipo eliminado correctamente');
     }

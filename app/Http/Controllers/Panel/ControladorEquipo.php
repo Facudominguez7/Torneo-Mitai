@@ -9,6 +9,8 @@ use App\Models\ConfiguracionCobroPlanilla;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use App\Models\EquipoGrupo;
+use App\Models\Grupo;
 use App\Models\TablaPosicion;
 use App\Services\Cobros\ConsultaCobrosService;
 use App\Services\Panel\DetalleEquipo;
@@ -176,8 +178,17 @@ class ControladorEquipo extends Controller
                 ->where('idEquipo', $equipo->id)
                 ->delete();
 
-            TablaPosicion::where('idEdicion', $idEdicion)
-                ->where('idEquipo', $equipo->id)
+            // La fila de tabla puede tener idEdicion 0 (legacy) aunque pertenezca a
+            // esta edición: se borra por grupo para no dejarla huérfana en la tabla
+            // pública, el panel ni la impresión.
+            TablaPosicion::where('idEquipo', $equipo->id)
+                ->whereIn('idGrupo', Grupo::where('idEdicion', $idEdicion)->select('id'))
+                ->delete();
+
+            // Sacarlo también del grupo de la edición actual, para que no quede
+            // asignado a un grupo del que ya no forma parte.
+            EquipoGrupo::where('idEquipo', $equipo->id)
+                ->whereIn('idGrupo', Grupo::where('idEdicion', $idEdicion)->select('id'))
                 ->delete();
         });
 
