@@ -49,7 +49,7 @@
     ], static fn ($valor) => $valor !== null && $valor !== '');
 @endphp
 
-<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+<div class="rounded-lg border border-pa-linea bg-pa-superficie p-4 shadow-sm">
     <div class="flex flex-wrap items-center justify-between gap-2">
         @if ($resultadoCargado)
             <x-ui.badge variant="success">Jugado</x-ui.badge>
@@ -65,27 +65,27 @@
         <div class="flex min-w-0 flex-1 items-center gap-2">
             <img src="{{ asset('fotos/equipos/' . $p->equipoLocal->foto) }}" width="32" height="32"
                 alt="{{ $p->equipoLocal->nombre }}" class="h-8 w-8 shrink-0 rounded-full object-cover" />
-            <span class="truncate text-sm text-gray-900 {{ $localGana ? 'font-semibold' : 'font-medium' }}">{{ $p->equipoLocal->nombre }}</span>
+            <span class="truncate text-sm text-pa-tinta {{ $localGana ? 'font-semibold' : 'font-medium' }}">{{ $p->equipoLocal->nombre }}</span>
         </div>
-        <span class="text-lg font-bold text-gray-900">{{ $p->golesEquipoLocal ?? '-' }}</span>
+        <span class="text-lg font-bold text-pa-tinta">{{ $p->golesEquipoLocal ?? '-' }}</span>
     </div>
     <div class="mt-2 flex items-center justify-between gap-2">
         <div class="flex min-w-0 flex-1 items-center gap-2">
             <img src="{{ asset('fotos/equipos/' . $p->equipoVisitante->foto) }}" width="32" height="32"
                 alt="{{ $p->equipoVisitante->nombre }}" class="h-8 w-8 shrink-0 rounded-full object-cover" />
-            <span class="truncate text-sm text-gray-900 {{ $visitanteGana ? 'font-semibold' : 'font-medium' }}">{{ $p->equipoVisitante->nombre }}</span>
+            <span class="truncate text-sm text-pa-tinta {{ $visitanteGana ? 'font-semibold' : 'font-medium' }}">{{ $p->equipoVisitante->nombre }}</span>
         </div>
-        <span class="text-lg font-bold text-gray-900">{{ $p->golesEquipoVisitante ?? '-' }}</span>
+        <span class="text-lg font-bold text-pa-tinta">{{ $p->golesEquipoVisitante ?? '-' }}</span>
     </div>
 
     @if ($hayPenales)
-        <p class="mt-1 text-center text-xs text-gray-500">Penales: {{ $p->penalesEquipoLocal }} - {{ $p->penalesEquipoVisitante }}</p>
+        <p class="mt-1 text-center text-xs text-pa-tinta-suave">Penales: {{ $p->penalesEquipoLocal }} - {{ $p->penalesEquipoVisitante }}</p>
     @endif
     @if (! is_null($p->resultadoGlobal))
         <p class="mt-1 text-center text-xs font-semibold text-[--color-primary]">Global: {{ $p->resultadoGlobal }}</p>
     @endif
 
-    <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+    <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-pa-tinta-suave">
         <span>{{ \Carbon\Carbon::parse($p->horario)->format('d-m-Y H:i') }}</span>
         <span>Cancha {{ $p->cancha }}</span>
     </div>

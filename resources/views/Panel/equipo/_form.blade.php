@@ -1,7 +1,7 @@
 @csrf
 <div class="space-y-5">
     <div>
-        <label for="nombre" class="mb-1 block text-sm font-medium text-gray-700">
+        <label for="nombre" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Nombre del Equipo
         </label>
         <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $equipo->nombre) }}"
@@ -21,7 +21,7 @@
     </x-ui.select>
 
     <div>
-        <label for="foto" class="mb-1 block text-sm font-medium text-gray-700">
+        <label for="foto" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Agregar Logo
         </label>
         <input type="file" id="foto" name="foto" class="panel-form-input">

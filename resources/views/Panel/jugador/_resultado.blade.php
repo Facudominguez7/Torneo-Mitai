@@ -1,6 +1,6 @@
 {{-- Resultado de Consulta de jugador: lo comparten la pantalla y el modal del buscador del header. --}}
 {{-- Información del Jugador --}}
-<div class="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+<div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-6">
     <div class="mb-4 flex items-center gap-4">
         <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-navy/10">
             <span class="text-lg font-bold text-brand-navy">{{ Str::substr($jugador->nombre, 0, 1) }}</span>
@@ -9,7 +9,7 @@
             <h2 class="text-2xl font-bold text-pa-tinta">
                 {{ $jugador->apellido }}, {{ $jugador->nombre }}
             </h2>
-            <p class="text-gray-600">DNI: {{ $jugador->dni }}</p>
+            <p class="text-pa-tinta-cuerpo">DNI: {{ $jugador->dni }}</p>
         </div>
     </div>
 
@@ -24,30 +24,30 @@
     @endif
 
     <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <p class="text-sm text-gray-500">Equipo</p>
-            <p class="text-lg font-semibold text-gray-800">{{ $equipoActual?->nombre ?? 'Sin equipo asignado' }}</p>
+        <div class="rounded-lg border border-pa-linea bg-pa-fila-bg p-4">
+            <p class="text-sm text-pa-tinta-suave">Equipo</p>
+            <p class="text-lg font-semibold text-pa-tinta">{{ $equipoActual?->nombre ?? 'Sin equipo asignado' }}</p>
         </div>
 
-        <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <p class="text-sm text-gray-500">Categoría</p>
-            <p class="text-lg font-semibold text-gray-800">{{ $categoriaActual?->nombreCategoria ?? 'Sin categoría' }}</p>
+        <div class="rounded-lg border border-pa-linea bg-pa-fila-bg p-4">
+            <p class="text-sm text-pa-tinta-suave">Categoría</p>
+            <p class="text-lg font-semibold text-pa-tinta">{{ $categoriaActual?->nombreCategoria ?? 'Sin categoría' }}</p>
         </div>
 
         <div class="rounded-lg border border-green-200 bg-green-50 p-4">
-            <p class="text-sm text-gray-500">Goles</p>
+            <p class="text-sm text-pa-tinta-suave">Goles</p>
             <p class="text-lg font-semibold text-green-600">{{ $totalGoles }}</p>
         </div>
 
         <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p class="text-sm text-gray-500">Partidos Jugados</p>
+            <p class="text-sm text-pa-tinta-suave">Partidos Jugados</p>
             <p class="text-lg font-semibold text-blue-600">{{ $totalPartidos }}</p>
         </div>
     </div>
 
     @if ($totalTarjetasRojas > 0)
         <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
-            <p class="text-sm text-gray-500">Tarjetas Rojas</p>
+            <p class="text-sm text-pa-tinta-suave">Tarjetas Rojas</p>
             <p class="text-lg font-semibold text-red-600">{{ $totalTarjetasRojas }}</p>
         </div>
     @endif
@@ -55,8 +55,8 @@
 
 {{-- Partidos donde Hizo Goles --}}
 @if ($partidosConGoles->isNotEmpty())
-    <div class="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-        <h3 class="mb-4 text-xl font-bold text-gray-800">
+    <div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-6">
+        <h3 class="mb-4 text-xl font-bold text-pa-tinta">
             Partidos donde Hizo Goles
         </h3>
 
@@ -82,7 +82,7 @@
                         <td>{{ ($partido['origen'] ?? 'partido') === 'instancia_final' ? 'IF-' : 'P-' }}{{ $partido['idReferencia'] ?? '-' }}</td>
                         <td>{{ $partido['fecha'] }}</td>
                         <td>{{ $partido['equipoLocal'] }} vs {{ $partido['equipoVisitante'] }}</td>
-                        <td class="text-center font-semibold text-gray-900">
+                        <td class="text-center font-semibold text-pa-tinta">
                             {{ $partido['golesLocal'] ?? '-' }} - {{ $partido['golesVisitante'] ?? '-' }}
                         </td>
                         <td class="text-center">
@@ -96,8 +96,8 @@
 @endif
 
 @if (isset($bajasArchivadas) && $bajasArchivadas->isNotEmpty())
-    <div class="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-        <h3 class="mb-4 text-xl font-bold text-gray-800">
+    <div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-6">
+        <h3 class="mb-4 text-xl font-bold text-pa-tinta">
             Historial Archivado por Bajas
         </h3>
 
@@ -121,22 +121,22 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 gap-4 bg-white p-4 md:grid-cols-4">
-                        <div class="rounded-lg bg-gray-50 p-4">
-                            <p class="text-sm text-gray-500">Goles archivados</p>
-                            <p class="text-lg font-semibold text-gray-800">{{ $bajaArchivada->total_goles }}</p>
+                    <div class="grid grid-cols-1 gap-4 bg-pa-superficie p-4 md:grid-cols-4">
+                        <div class="rounded-lg bg-pa-fila-bg p-4">
+                            <p class="text-sm text-pa-tinta-suave">Goles archivados</p>
+                            <p class="text-lg font-semibold text-pa-tinta">{{ $bajaArchivada->total_goles }}</p>
                         </div>
-                        <div class="rounded-lg bg-gray-50 p-4">
-                            <p class="text-sm text-gray-500">Partidos archivados</p>
-                            <p class="text-lg font-semibold text-gray-800">{{ $bajaArchivada->total_partidos }}</p>
+                        <div class="rounded-lg bg-pa-fila-bg p-4">
+                            <p class="text-sm text-pa-tinta-suave">Partidos archivados</p>
+                            <p class="text-lg font-semibold text-pa-tinta">{{ $bajaArchivada->total_partidos }}</p>
                         </div>
-                        <div class="rounded-lg bg-gray-50 p-4">
-                            <p class="text-sm text-gray-500">Tarjetas rojas</p>
-                            <p class="text-lg font-semibold text-gray-800">{{ $bajaArchivada->total_tarjetas_rojas }}</p>
+                        <div class="rounded-lg bg-pa-fila-bg p-4">
+                            <p class="text-sm text-pa-tinta-suave">Tarjetas rojas</p>
+                            <p class="text-lg font-semibold text-pa-tinta">{{ $bajaArchivada->total_tarjetas_rojas }}</p>
                         </div>
-                        <div class="rounded-lg bg-gray-50 p-4">
-                            <p class="text-sm text-gray-500">Planillas archivadas</p>
-                            <p class="text-lg font-semibold text-gray-800">{{ $bajaArchivada->cantidad_planillas_archivadas }}</p>
+                        <div class="rounded-lg bg-pa-fila-bg p-4">
+                            <p class="text-sm text-pa-tinta-suave">Planillas archivadas</p>
+                            <p class="text-lg font-semibold text-pa-tinta">{{ $bajaArchivada->cantidad_planillas_archivadas }}</p>
                         </div>
                     </div>
 
@@ -175,8 +175,8 @@
 @endif
 
 {{-- Todos los Partidos Jugados --}}
-<div class="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-    <h3 class="mb-4 text-xl font-bold text-gray-800">
+<div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-6">
+    <h3 class="mb-4 text-xl font-bold text-pa-tinta">
         Historial Completo de Partidos
     </h3>
 
@@ -204,14 +204,14 @@
                     <td>{{ ($partido['origen'] ?? 'partido') === 'instancia_final' ? 'IF-' : 'P-' }}{{ $partido['idReferencia'] ?? '-' }}</td>
                     <td>{{ $partido['fecha'] }}</td>
                     <td>{{ $partido['equipoLocal'] }} vs {{ $partido['equipoVisitante'] }}</td>
-                    <td class="text-center font-semibold text-gray-900">
+                    <td class="text-center font-semibold text-pa-tinta">
                         {{ $partido['golesLocal'] ?? '-' }} - {{ $partido['golesVisitante'] ?? '-' }}
                     </td>
                     <td class="text-center">
                         @if ($partido['goles_jugador'] > 0)
                             <x-ui.badge variant="success">{{ $partido['goles_jugador'] }}</x-ui.badge>
                         @else
-                            <span class="text-gray-400">-</span>
+                            <span class="text-pa-tinta-tenue">-</span>
                         @endif
                     </td>
                     <td class="text-center">

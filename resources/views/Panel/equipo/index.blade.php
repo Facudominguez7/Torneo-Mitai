@@ -88,7 +88,7 @@
                                 @else
                                     <button type="button" data-cobro="exencion_edicion"
                                         data-cargo="{{ json_encode(['idEquipo' => $e->id, 'equipo' => $e->nombre, 'deuda_ars' => $cobroEquipo['deuda_ars'], 'exento' => $cobroEquipo['exento']]) }}"
-                                        class="min-h-9 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        class="min-h-9 rounded-md border border-pa-campo-borde px-3 py-1.5 text-sm font-medium text-pa-tinta-media hover:bg-pa-fila-bg">
                                         Marcar exento de planilla
                                     </button>
                                 @endif

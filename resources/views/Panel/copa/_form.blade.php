@@ -1,7 +1,7 @@
 @csrf
 <div class="space-y-5">
     <div>
-        <label for="nombre" class="mb-1 block text-sm font-medium text-gray-700">
+        <label for="nombre" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Nombre de la Copa
         </label>
         <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $copa->nombre) }}"

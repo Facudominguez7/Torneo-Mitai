@@ -18,10 +18,10 @@
     ];
 @endphp
 
-<section class="mt-6 rounded-xl border border-gray-200 bg-white p-4">
+<section class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-4">
     <div>
-        <h2 class="text-base font-bold text-gray-800">Invitaciones</h2>
-        <p class="mt-1 text-sm text-gray-500">Invitaciones diarias a los usuarios con cuenta que todavía no reciben los avisos por correo.</p>
+        <h2 class="text-base font-bold text-pa-tinta">Invitaciones</h2>
+        <p class="mt-1 text-sm text-pa-tinta-suave">Invitaciones diarias a los usuarios con cuenta que todavía no reciben los avisos por correo.</p>
     </div>
 
     <dl class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -29,10 +29,10 @@
             @php
                 $enAlerta = $alertaRebote && $tile['clave'] === 'tasa-rebote';
             @endphp
-            <div class="min-w-0 rounded-lg border p-3 {{ $enAlerta ? 'border-yellow-300 bg-yellow-50' : 'border-gray-200 bg-gray-50' }}">
-                <dt class="break-words text-[11px] font-semibold uppercase tracking-wide text-gray-500">{{ $tile['etiqueta'] }}</dt>
+            <div class="min-w-0 rounded-lg border p-3 {{ $enAlerta ? 'border-yellow-300 bg-yellow-50' : 'border-pa-linea bg-pa-fila-bg' }}">
+                <dt class="break-words text-[11px] font-semibold uppercase tracking-wide text-pa-tinta-suave">{{ $tile['etiqueta'] }}</dt>
                 <dd class="mt-1 break-words text-2xl font-extrabold tabular-nums text-brand-navy" data-estadistica="{{ $tile['clave'] }}">{{ $tile['valor'] }}</dd>
-                <p class="mt-1 text-[11px] leading-snug text-gray-500">{{ $tile['detalle'] }}</p>
+                <p class="mt-1 text-[11px] leading-snug text-pa-tinta-suave">{{ $tile['detalle'] }}</p>
                 @if($enAlerta)
                     <x-ui.badge variant="warning" class="mt-2">Supera el {{ $limiteRebote }} % de Resend</x-ui.badge>
                 @endif
@@ -47,7 +47,7 @@
         </p>
     @endif
 
-    <p class="mt-3 text-sm text-gray-600">
+    <p class="mt-3 text-sm text-pa-tinta-cuerpo">
         Próximo lote:
         @if($invitaciones['faltan_invitar'] === 0)
             no queda nadie por invitar

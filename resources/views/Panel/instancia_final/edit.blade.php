@@ -11,7 +11,7 @@
 
     <div class="mb-4 mt-6">
         <a href="{{ route('instancia_final.index', $parametrosRegreso) }}"
-            class="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-100">
+            class="inline-flex items-center gap-2 rounded-md bg-pa-superficie px-3 py-2 text-sm font-semibold text-pa-tinta-media shadow hover:bg-pa-fila-hover">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>

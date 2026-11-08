@@ -99,7 +99,7 @@
         <div class="mt-6 space-y-8">
             @foreach ($secciones as $seccion)
                 <section aria-labelledby="seccion-impresion-{{ $loop->index }}">
-                    <h2 id="seccion-impresion-{{ $loop->index }}" class="text-sm font-bold uppercase tracking-wide text-gray-600">
+                    <h2 id="seccion-impresion-{{ $loop->index }}" class="text-sm font-bold uppercase tracking-wide text-pa-tinta-cuerpo">
                         {{ $seccion['titulo'] }}
                     </h2>
 
@@ -113,18 +113,18 @@
                             @endphp
 
                             <article data-impresion="{{ $tarjeta['clave'] }}"
-                                class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
+                                class="flex flex-col gap-3 rounded-xl border border-pa-linea bg-pa-superficie p-4">
                                 <div>
-                                    <h3 class="text-base font-bold text-gray-800">{{ $tarjeta['nombre'] }}</h3>
-                                    <p class="mt-1 text-sm text-gray-500">{{ $tarjeta['descripcion'] }}</p>
+                                    <h3 class="text-base font-bold text-pa-tinta">{{ $tarjeta['nombre'] }}</h3>
+                                    <p class="mt-1 text-sm text-pa-tinta-suave">{{ $tarjeta['descripcion'] }}</p>
                                     @isset($tarjeta['nota'])
-                                        <p class="mt-1 text-xs text-gray-500">{{ $tarjeta['nota'] }}</p>
+                                        <p class="mt-1 text-xs text-pa-tinta-suave">{{ $tarjeta['nota'] }}</p>
                                     @endisset
                                 </div>
 
                                 @if ($filtro)
                                     <div>
-                                        <label for="{{ $idSelect }}" class="mb-1 block text-sm font-medium text-gray-700">{{ $filtro['etiqueta'] }}</label>
+                                        <label for="{{ $idSelect }}" class="mb-1 block text-sm font-medium text-pa-tinta-media">{{ $filtro['etiqueta'] }}</label>
                                         <x-ui.select id="{{ $idSelect }}"
                                             :data-print-param="$filtro['param'] ?? null"
                                             :data-print-placeholder="$filtro['placeholder'] ?? null"

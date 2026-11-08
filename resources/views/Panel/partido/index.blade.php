@@ -86,12 +86,12 @@
         </x-ui.page-header>
     @endif
 
-    <div class="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+    <div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-5">
         <div class="flex flex-wrap items-end gap-3">
             <div class="relative w-full md:w-64">
                 <x-ui.search label="Buscar equipo" labelHidden id="buscar-equipo" name="busqueda"
                     value="{{ request('busqueda') }}" placeholder="Buscar equipo..." />
-                <button type="button" id="limpiar-busqueda" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button type="button" id="limpiar-busqueda" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-pa-tinta-tenue hover:text-pa-tinta-cuerpo">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -183,7 +183,7 @@
             </div>
         @endif
 
-        <p id="contador-partidos" class="mt-4 text-center text-sm text-gray-500">
+        <p id="contador-partidos" class="mt-4 text-center text-sm text-pa-tinta-suave">
             Mostrando {{ $totalPartidos }} {{ $totalPartidos === 1 ? 'partido' : 'partidos' }}
         </p>
     </div>
@@ -202,7 +202,7 @@
     @elseif ($agruparPorHorario)
         @foreach ($gruposPorHorario as $horarioGrupo => $partidosGrupo)
             <div class="mt-6">
-                <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+                <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-pa-tinta-suave">
                     {{ $horarioGrupo === 'sin-horario' ? 'Sin horario asignado' : $horarioGrupo . ' hs' }}
                 </h2>
                 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">

@@ -77,7 +77,7 @@
     </div>
 
     <div>
-        <label for="horario" class="mb-1 block text-sm font-medium text-gray-700">
+        <label for="horario" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Fecha y hora del partido
         </label>
         <input type="datetime-local" name="horario" id="horario" class="panel-form-input" value="{{ $horarioPorDefecto }}">
@@ -87,7 +87,7 @@
     </div>
 
     <div>
-        <label for="cancha" class="mb-1 block text-sm font-medium text-gray-700">
+        <label for="cancha" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Cancha
         </label>
         <input type="text" name="cancha" id="cancha" value="{{ old('cancha', $partido->cancha) }}" class="panel-form-input">

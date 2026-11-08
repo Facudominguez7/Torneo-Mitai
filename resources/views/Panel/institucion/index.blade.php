@@ -6,22 +6,22 @@
 
     {{-- Contadores --}}
     <div class="mt-6 flex flex-wrap justify-center gap-4">
-        <div class="min-w-[140px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
-            <span class="text-2xl font-bold text-gray-900">{{ $totalInstituciones }}</span>
-            <p class="text-xs font-medium text-gray-500">Instituciones</p>
+        <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
+            <span class="text-2xl font-bold text-pa-tinta">{{ $totalInstituciones }}</span>
+            <p class="text-xs font-medium text-pa-tinta-suave">Instituciones</p>
         </div>
-        <div class="min-w-[140px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
+        <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
             <span class="text-2xl font-bold text-emerald-600">{{ $institucionesConEquipos }}</span>
-            <p class="text-xs font-medium text-gray-500">Con equipos</p>
+            <p class="text-xs font-medium text-pa-tinta-suave">Con equipos</p>
         </div>
-        <div class="min-w-[140px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
+        <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
             <span class="text-2xl font-bold text-amber-600">{{ $totalEquiposSinInstitucion }}</span>
-            <p class="text-xs font-medium text-gray-500">Sin institución</p>
+            <p class="text-xs font-medium text-pa-tinta-suave">Sin institución</p>
         </div>
     </div>
 
     {{-- Filtro de Edición --}}
-    <div class="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+    <div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-5">
         <form action="{{ route('institucion.index') }}" method="GET" class="max-w-xs">
             <x-ui.select label="Filtrar por edición" name="idEdicion" onchange="this.form.submit()">
                 <option value="">Todas las ediciones</option>
@@ -42,9 +42,9 @@
         <form action="{{ route('institucion.store') }}" method="POST" class="flex flex-wrap items-end gap-4">
             @csrf
             <div class="min-w-64 flex-1">
-                <label class="mb-1 block text-sm font-medium text-gray-700">Nombre de la institución:</label>
+                <label class="mb-1 block text-sm font-medium text-pa-tinta-media">Nombre de la institución:</label>
                 <input type="text" name="nombre" required placeholder="Ej: Escuela San José"
-                    class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-brand-navy/30">
+                    class="w-full rounded-lg border-pa-campo-borde px-3 py-2 focus:ring-2 focus:ring-brand-navy/30">
             </div>
             <x-ui.button type="submit" variant="primary">
                 Crear Institución
@@ -68,19 +68,19 @@
 
             <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                 @foreach ($equiposSinInstitucion as $equipo)
-                    <div class="flex items-center gap-3 rounded-lg border border-amber-200 bg-white p-3">
-                        <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100">
+                    <div class="flex items-center gap-3 rounded-lg border border-amber-200 bg-pa-superficie p-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-pa-fila-hover">
                             @if ($equipo->foto)
                                 <img src="{{ asset('fotos/equipos/'.$equipo->foto) }}" class="h-full w-full object-cover" alt="{{ $equipo->nombre }}">
                             @else
-                                <span class="text-xs font-bold text-gray-600">{{ substr($equipo->nombre, 0, 2) }}</span>
+                                <span class="text-xs font-bold text-pa-tinta-cuerpo">{{ substr($equipo->nombre, 0, 2) }}</span>
                             @endif
                         </div>
                         <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-medium text-gray-800">{{ $equipo->nombre }}</p>
+                            <p class="truncate text-sm font-medium text-pa-tinta">{{ $equipo->nombre }}</p>
                             @if ($EdicionSeleccionada)
                                 @foreach ($equipo->equipoEdiciones as $ee)
-                                    <p class="text-xs text-gray-500">{{ $ee->categoria->nombreCategoria ?? 'Sin categoría' }}</p>
+                                    <p class="text-xs text-pa-tinta-suave">{{ $ee->categoria->nombreCategoria ?? 'Sin categoría' }}</p>
                                 @endforeach
                             @endif
                         </div>
@@ -90,7 +90,7 @@
                             <input type="hidden" name="equipo_id" value="{{ $equipo->id }}">
                             <select name="institucion_id"
                                 onchange="if(confirm('¿Vincular este equipo a la institución seleccionada?')) this.form.submit();"
-                                class="w-32 rounded border-gray-300 bg-white text-xs focus:border-brand-navy focus:ring-brand-navy/30">
+                                class="w-32 rounded border-pa-campo-borde bg-pa-superficie text-xs focus:border-brand-navy focus:ring-brand-navy/30">
                                 <option value="">Seleccionar...</option>
                                 @foreach ($instituciones as $inst)
                                     <option value="{{ $inst->id }}">
@@ -112,7 +112,7 @@
     @endif
 
     {{-- Lista de Instituciones --}}
-    <h2 class="mb-4 mt-6 text-lg font-semibold text-gray-800">Instituciones Registradas</h2>
+    <h2 class="mb-4 mt-6 text-lg font-semibold text-pa-tinta">Instituciones Registradas</h2>
 
     @if ($instituciones->isEmpty())
         <x-ui.empty-state message="No hay instituciones registradas" />
@@ -125,17 +125,17 @@
                 @endphp
 
                 @if ($tieneEquipos || ! $EdicionSeleccionada)
-                    <div class="overflow-hidden rounded-xl border border-gray-200 {{ $equipos->count() > 0 ? 'bg-white' : 'bg-gray-50' }}">
-                        <div class="flex items-center justify-between bg-gray-100 px-4 py-3">
+                    <div class="overflow-hidden rounded-xl border border-pa-linea {{ $equipos->count() > 0 ? 'bg-pa-superficie' : 'bg-pa-fila-bg' }}">
+                        <div class="flex items-center justify-between bg-pa-fila-hover px-4 py-3">
                             <div class="flex items-center gap-3">
                                 <x-ui.badge variant="info">ID: {{ $institucion->id }}</x-ui.badge>
-                                <h3 class="font-semibold text-gray-800">{{ $institucion->nombre }}</h3>
+                                <h3 class="font-semibold text-pa-tinta">{{ $institucion->nombre }}</h3>
                                 @if ($EdicionSeleccionada)
-                                    <span class="text-sm text-gray-500">
+                                    <span class="text-sm text-pa-tinta-suave">
                                         ({{ $equipos->count() }} en esta edición / {{ $institucion->equipos_count }} total)
                                     </span>
                                 @else
-                                    <span class="text-sm text-gray-500">({{ $institucion->equipos_count }} equipos total)</span>
+                                    <span class="text-sm text-pa-tinta-suave">({{ $institucion->equipos_count }} equipos total)</span>
                                 @endif
                             </div>
                             <button type="button" onclick="toggleEdit(this.dataset.institucionId)" data-institucion-id="{{ $institucion->id }}"
@@ -151,11 +151,11 @@
                                 @csrf
                                 @method('PUT')
                                 <input type="text" name="nombre" value="{{ $institucion->nombre }}"
-                                    class="flex-1 rounded-lg border-gray-300 px-3 py-1" required>
+                                    class="flex-1 rounded-lg border-pa-campo-borde px-3 py-1" required>
                                 <x-ui.button type="submit" size="sm" variant="primary">
                                     Guardar
                                 </x-ui.button>
-                                <button type="button" onclick="toggleEdit(this.dataset.institucionId)" data-institucion-id="{{ $institucion->id }}" class="text-sm text-gray-600">
+                                <button type="button" onclick="toggleEdit(this.dataset.institucionId)" data-institucion-id="{{ $institucion->id }}" class="text-sm text-pa-tinta-cuerpo">
                                     Cancelar
                                 </button>
                             </form>
@@ -164,23 +164,23 @@
                         {{-- Equipos de esta institución --}}
                         @if ($equipos->count() > 0)
                             <div class="px-4 py-3">
-                                <p class="mb-2 text-sm font-medium text-gray-600">
+                                <p class="mb-2 text-sm font-medium text-pa-tinta-cuerpo">
                                     Equipos en {{ $EdicionSeleccionada->nombre ?? 'esta edición' }}:
                                 </p>
                                 <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                                     @foreach ($equipos as $equipo)
-                                        <div class="flex items-center gap-3 rounded-lg bg-gray-50 p-2">
-                                            <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200">
+                                        <div class="flex items-center gap-3 rounded-lg bg-pa-fila-bg p-2">
+                                            <div class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-pa-linea">
                                                 @if ($equipo->foto)
                                                     <img src="{{ asset('fotos/equipos/'.$equipo->foto) }}" class="h-full w-full object-cover" alt="{{ $equipo->nombre }}">
                                                 @else
-                                                    <span class="text-xs text-gray-600">{{ substr($equipo->nombre, 0, 2) }}</span>
+                                                    <span class="text-xs text-pa-tinta-cuerpo">{{ substr($equipo->nombre, 0, 2) }}</span>
                                                 @endif
                                             </div>
                                             <div class="min-w-0 flex-1">
-                                                <p class="truncate text-sm font-medium text-gray-800">{{ $equipo->nombre }}</p>
+                                                <p class="truncate text-sm font-medium text-pa-tinta">{{ $equipo->nombre }}</p>
                                                 @foreach ($equipo->equipoEdiciones as $ee)
-                                                    <p class="text-xs text-gray-500">{{ $ee->categoria->nombreCategoria ?? 'Sin categoría' }}</p>
+                                                    <p class="text-xs text-pa-tinta-suave">{{ $ee->categoria->nombreCategoria ?? 'Sin categoría' }}</p>
                                                 @endforeach
                                             </div>
                                             <div class="flex shrink-0 items-center gap-1">
@@ -190,7 +190,7 @@
                                                     <input type="hidden" name="equipo_id" value="{{ $equipo->id }}">
                                                     <select name="institucion_id"
                                                         onchange="if(confirm('¿Mover este equipo a otra institución?')) this.form.submit();"
-                                                        class="w-20 rounded border-gray-200 bg-white text-xs">
+                                                        class="w-20 rounded border-pa-linea bg-pa-superficie text-xs">
                                                         @foreach ($instituciones as $inst)
                                                             <option value="{{ $inst->id }}" {{ $inst->id == $institucion->id ? 'selected' : '' }}>
                                                                 {{ Str::limit($inst->nombre, 12) }}
@@ -225,7 +225,7 @@
                                 </div>
                             </div>
                         @elseif (! $EdicionSeleccionada)
-                            <div class="px-4 py-2 text-sm italic text-gray-500">
+                            <div class="px-4 py-2 text-sm italic text-pa-tinta-suave">
                                 Selecciona una edición para ver los equipos
                             </div>
                         @endif

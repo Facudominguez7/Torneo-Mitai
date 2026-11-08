@@ -45,9 +45,9 @@
     @else
         <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
             @foreach ($categorias as $categoria)
-                <div class="rounded-xl border border-gray-200 bg-white p-5">
+                <div class="rounded-xl border border-pa-linea bg-pa-superficie p-5">
                     <div class="flex items-center justify-between gap-2">
-                        <h2 class="text-lg font-bold text-gray-800">{{ $categoria['nombreCategoria'] }}</h2>
+                        <h2 class="text-lg font-bold text-pa-tinta">{{ $categoria['nombreCategoria'] }}</h2>
                         <x-ui.badge :variant="$variantePorEstado[$categoria['estado']['tipo']] ?? 'neutral'">
                             {{ $categoria['estado']['label'] }}
                         </x-ui.badge>
@@ -55,15 +55,15 @@
 
                     <div class="mt-4 space-y-5">
                         @foreach ($categoria['copas'] as $copa)
-                            <div class="rounded-lg border border-gray-100 p-3">
-                                <h3 class="mb-2 text-sm font-semibold text-gray-600">{{ $copa['nombreCopa'] }}</h3>
+                            <div class="rounded-lg border border-pa-linea-suave p-3">
+                                <h3 class="mb-2 text-sm font-semibold text-pa-tinta-cuerpo">{{ $copa['nombreCopa'] }}</h3>
 
                                 <div class="space-y-3 text-sm">
                                     <div>
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">1° Campeón</p>
+                                        <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-tenue">1° Campeón</p>
                                         @forelse ($copa['campeones'] as $campeon)
                                             <div class="mt-1 flex items-center justify-between gap-2">
-                                                <span class="text-gray-800">{{ $campeon->equipo->nombre ?? 'Equipo sin nombre' }}</span>
+                                                <span class="text-pa-tinta">{{ $campeon->equipo->nombre ?? 'Equipo sin nombre' }}</span>
                                                 <div class="flex shrink-0 items-center gap-2">
                                                     <x-ui.button href="{{ route('campeon.edit', $campeon) }}" variant="secondary" size="sm">
                                                         Editar
@@ -77,7 +77,7 @@
                                             </div>
                                         @empty
                                             <div class="mt-1 flex items-center justify-between gap-2">
-                                                <span class="text-gray-400">Sin cargar</span>
+                                                <span class="text-pa-tinta-tenue">Sin cargar</span>
                                                 <x-ui.button
                                                     href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $categoria['idCategoria'], 'tipo' => 'campeon']) }}"
                                                     variant="secondary" size="sm">
@@ -88,10 +88,10 @@
                                     </div>
 
                                     <div>
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">2° Subcampeón</p>
+                                        <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-tenue">2° Subcampeón</p>
                                         @forelse ($copa['subcampeones'] as $subcampeon)
                                             <div class="mt-1 flex items-center justify-between gap-2">
-                                                <span class="text-gray-800">{{ $subcampeon->equipo->nombre ?? 'Equipo sin nombre' }}</span>
+                                                <span class="text-pa-tinta">{{ $subcampeon->equipo->nombre ?? 'Equipo sin nombre' }}</span>
                                                 <div class="flex shrink-0 items-center gap-2">
                                                     <x-ui.button href="{{ route('subcampeon.edit', $subcampeon) }}" variant="secondary" size="sm">
                                                         Editar
@@ -105,7 +105,7 @@
                                             </div>
                                         @empty
                                             <div class="mt-1 flex items-center justify-between gap-2">
-                                                <span class="text-gray-400">Sin cargar</span>
+                                                <span class="text-pa-tinta-tenue">Sin cargar</span>
                                                 <x-ui.button
                                                     href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $categoria['idCategoria'], 'tipo' => 'subcampeon']) }}"
                                                     variant="secondary" size="sm">

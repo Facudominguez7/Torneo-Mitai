@@ -20,23 +20,23 @@
             <thead>
                 <tr>
                     <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
+                        class="p-3 font-bold uppercase bg-pa-linea text-pa-tinta-cuerpo border border-pa-campo-borde hidden lg:table-cell">
                         Id
                     </th>
                     <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
+                        class="p-3 font-bold uppercase bg-pa-linea text-pa-tinta-cuerpo border border-pa-campo-borde hidden lg:table-cell">
                         Nombre
                     </th>
                     <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
+                        class="p-3 font-bold uppercase bg-pa-linea text-pa-tinta-cuerpo border border-pa-campo-borde hidden lg:table-cell">
                         Copa
                     </th>
                     <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
+                        class="p-3 font-bold uppercase bg-pa-linea text-pa-tinta-cuerpo border border-pa-campo-borde hidden lg:table-cell">
                         Categoria
                     </th>
                     <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
+                        class="p-3 font-bold uppercase bg-pa-linea text-pa-tinta-cuerpo border border-pa-campo-borde hidden lg:table-cell">
                         Accion
                     </th>
                 </tr>
@@ -44,46 +44,46 @@
             <tbody>
                 @if ($subcampeones->isempty())
                     <tr
-                        class="bg-white lg:hover:bg-gray-100 flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
+                        class="bg-pa-superficie lg:hover:bg-pa-fila-hover flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
                         <td colspan="5"
-                            class="w-full lg:w-auto p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                            class="w-full lg:w-auto p-3 text-pa-tinta text-center border border-b block lg:table-cell relative lg:static">
                             No existen registros
                         </td>
                     </tr>
                 @endif
                 @foreach ($subcampeones as $s)
                     <tr
-                        class="bg-white lg:hover:bg-gray-100 flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
+                        class="bg-pa-superficie lg:hover:bg-pa-fila-hover flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
                         <td
-                            class="w-full lg:w-auto p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                            class="w-full lg:w-auto p-3 text-pa-tinta text-center border border-b block lg:table-cell relative lg:static">
                             <span
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Id
                             </span>
                             {{ $s->idEquipo }}
                         </td>
                         <td
-                            class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                            class="w-full lg:w-1/3 p-3 text-pa-tinta text-center border border-b block lg:table-cell relative lg:static">
                             <span
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">nombre
                             </span>
                             {{ $s->nombreEquipo }}
                         </td>
                         <td
-                            class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                            class="w-full lg:w-1/3 p-3 text-pa-tinta text-center border border-b block lg:table-cell relative lg:static">
                             <span
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Copa
                             </span>
                             {{ $s->nombreCopa }}
                         </td>
                         <td
-                            class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                            class="w-full lg:w-1/3 p-3 text-pa-tinta text-center border border-b block lg:table-cell relative lg:static">
                             <span
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Categoria
                             </span>
                             {{ $s->nombreCategoria }}
                         </td>
                         <td
-                            class="w-full lg:w-full p-3 text-gray-800 text-center border border-b  block lg:table-cell relative lg:static">
+                            class="w-full lg:w-full p-3 text-pa-tinta text-center border border-b  block lg:table-cell relative lg:static">
                             <span
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Accion
                             </span>

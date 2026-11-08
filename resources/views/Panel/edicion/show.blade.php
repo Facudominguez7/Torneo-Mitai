@@ -10,19 +10,19 @@
             </x-slot>
         </x-ui.page-header>
 
-        <div class="overflow-hidden rounded-xl bg-white shadow-lg">
+        <div class="overflow-hidden rounded-xl bg-pa-superficie shadow-lg">
             <div class="grid gap-0 sm:grid-cols-3">
-                <div class="border-b border-gray-100 p-4 sm:border-b-0 sm:border-r">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">ID</p>
-                    <p class="mt-2 text-lg font-semibold text-gray-800">{{ $edicion->id }}</p>
+                <div class="border-b border-pa-linea-suave p-4 sm:border-b-0 sm:border-r">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">ID</p>
+                    <p class="mt-2 text-lg font-semibold text-pa-tinta">{{ $edicion->id }}</p>
                 </div>
-                <div class="border-b border-gray-100 p-4 sm:border-b-0 sm:border-r">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Nombre</p>
-                    <p class="mt-2 text-lg font-semibold text-gray-800">{{ $edicion->nombre }}</p>
+                <div class="border-b border-pa-linea-suave p-4 sm:border-b-0 sm:border-r">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">Nombre</p>
+                    <p class="mt-2 text-lg font-semibold text-pa-tinta">{{ $edicion->nombre }}</p>
                 </div>
                 <div class="p-4">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Jugadores por Planilla</p>
-                    <p class="mt-2 text-lg font-semibold text-gray-800">{{ $edicion->jugadores_por_planilla ?? 18 }}</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">Jugadores por Planilla</p>
+                    <p class="mt-2 text-lg font-semibold text-pa-tinta">{{ $edicion->jugadores_por_planilla ?? 18 }}</p>
                 </div>
             </div>
         </div>

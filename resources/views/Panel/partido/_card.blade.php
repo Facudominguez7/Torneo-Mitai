@@ -40,9 +40,9 @@
     $camposRestablecer = $camposEliminar;
 @endphp
 
-<div class="partido-card rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+<div class="partido-card rounded-xl border border-pa-linea bg-pa-superficie p-5 shadow-sm"
     data-local="{{ strtolower($p->equipoLocal->nombre) }}" data-visitante="{{ strtolower($p->equipoVisitante->nombre) }}">
-    <div class="flex flex-wrap items-center justify-center gap-2 text-center text-sm font-semibold uppercase tracking-wide text-gray-500">
+    <div class="flex flex-wrap items-center justify-center gap-2 text-center text-sm font-semibold uppercase tracking-wide text-pa-tinta-suave">
         {{ $p->fecha->nombre }}
         @if ($p->es_interzonal)
             <x-ui.badge variant="warning">Interzonal</x-ui.badge>
@@ -64,21 +64,21 @@
         <div class="flex flex-col items-center gap-2">
             <img src="{{ asset('fotos/equipos/' . $p->equipoLocal->foto) }}" width="60" height="60" alt="{{ $p->equipoLocal->nombre }}"
                 class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
-            <div class="text-center text-base font-bold leading-tight text-gray-900 md:text-xl">{{ $p->equipoLocal->nombre }}</div>
+            <div class="text-center text-base font-bold leading-tight text-pa-tinta md:text-xl">{{ $p->equipoLocal->nombre }}</div>
         </div>
-        <div class="text-sm font-semibold text-gray-400 md:text-lg">vs</div>
+        <div class="text-sm font-semibold text-pa-tinta-tenue md:text-lg">vs</div>
         <div class="flex flex-col items-center gap-2">
             <img src="{{ asset('fotos/equipos/' . $p->equipoVisitante->foto) }}" width="60" height="60" alt="{{ $p->equipoVisitante->nombre }}"
                 class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
-            <div class="text-center text-base font-bold leading-tight text-gray-900 md:text-xl">{{ $p->equipoVisitante->nombre }}</div>
+            <div class="text-center text-base font-bold leading-tight text-pa-tinta md:text-xl">{{ $p->equipoVisitante->nombre }}</div>
         </div>
     </div>
 
-    <div class="mt-2 text-center text-2xl font-extrabold text-gray-900 md:text-3xl">
+    <div class="mt-2 text-center text-2xl font-extrabold text-pa-tinta md:text-3xl">
         {{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}
     </div>
 
-    <div class="mt-3 flex flex-col items-center justify-center gap-2 text-sm text-gray-600 md:flex-row md:justify-around md:text-base">
+    <div class="mt-3 flex flex-col items-center justify-center gap-2 text-sm text-pa-tinta-cuerpo md:flex-row md:justify-around md:text-base">
         <span class="font-medium">{{ is_null($p->horario) ? \Carbon\Carbon::parse($p->horario_datetime)->format('d-m-Y H:i') : $p->horario . ' PM' }}</span>
         <span class="font-medium">Cancha {{ $p->cancha }}</span>
     </div>

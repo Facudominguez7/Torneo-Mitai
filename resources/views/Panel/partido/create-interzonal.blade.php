@@ -16,7 +16,7 @@
 
     <div class="mb-4">
         <a href="{{ route('partido.index', $parametrosRegreso) }}"
-            class="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-100">
+            class="inline-flex items-center gap-2 rounded-md bg-pa-superficie px-3 py-2 text-sm font-semibold text-pa-tinta-media shadow hover:bg-pa-fila-hover">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -95,7 +95,7 @@
                 </div>
 
                 <div>
-                    <label for="horario_datetime" class="mb-1 block text-sm font-medium text-gray-700">
+                    <label for="horario_datetime" class="mb-1 block text-sm font-medium text-pa-tinta-media">
                         Horario
                     </label>
                     <input type="datetime-local" name="horario_datetime" id="horario_datetime"
@@ -107,7 +107,7 @@
                 </div>
 
                 <div>
-                    <label for="cancha" class="mb-1 block text-sm font-medium text-gray-700">
+                    <label for="cancha" class="mb-1 block text-sm font-medium text-pa-tinta-media">
                         Cancha
                     </label>
                     <input type="text" name="cancha" id="cancha" value="{{ old('cancha') }}"

@@ -66,19 +66,19 @@
                     @class([
                         'flex items-center gap-4 rounded-xl border p-4',
                         'border-brand-gold bg-brand-gold/10' => $posicion === 1,
-                        'border-gray-200 bg-white' => $posicion !== 1,
+                        'border-pa-linea bg-pa-superficie' => $posicion !== 1,
                     ])
                 >
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-gold/40 text-lg font-extrabold text-brand-navy">
                         {{ $posicion }}
                     </span>
                     <div class="min-w-0 flex-1">
-                        <p class="truncate font-bold text-gray-900">{{ $g->nombre }}</p>
-                        <p class="truncate text-sm text-gray-500">{{ $g->nombreEquipo }}</p>
+                        <p class="truncate font-bold text-pa-tinta">{{ $g->nombre }}</p>
+                        <p class="truncate text-sm text-pa-tinta-suave">{{ $g->nombreEquipo }}</p>
                     </div>
                     <div class="flex flex-col items-end">
                         <span class="text-2xl font-extrabold text-brand-navy">{{ $g->cantidadGoles }}</span>
-                        <span class="text-xs text-gray-500">goles</span>
+                        <span class="text-xs text-pa-tinta-suave">goles</span>
                     </div>
                 </article>
             @endforeach
@@ -123,9 +123,9 @@
                          omite el atributo data-posicion (revisión
                          R3-podio-busqueda). --}}
                     @if (empty($searchValue))
-                        <td data-posicion="{{ $rank }}" class="font-semibold text-gray-500">{{ $rank }}</td>
+                        <td data-posicion="{{ $rank }}" class="font-semibold text-pa-tinta-suave">{{ $rank }}</td>
                     @else
-                        <td class="font-semibold text-gray-500">—</td>
+                        <td class="font-semibold text-pa-tinta-suave">—</td>
                     @endif
                     <td class="font-semibold">{{ $g->nombre }}</td>
                     <td>{{ $g->nombreEquipo }}</td>

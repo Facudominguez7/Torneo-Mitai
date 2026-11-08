@@ -69,7 +69,7 @@
                                     1
                                 </span>
                             @else
-                                <span class="font-semibold text-gray-500">{{ $posicion }}</span>
+                                <span class="font-semibold text-pa-tinta-suave">{{ $posicion }}</span>
                             @endif
                         </td>
                         <td class="font-semibold">{{ $equipoEdicion->equipo->nombre ?? 'Equipo sin nombre' }}</td>
@@ -77,7 +77,7 @@
                             <td>{{ $equipoEdicion->categoria->nombreCategoria ?? '' }}</td>
                         @endif
                         <td class="text-center font-extrabold text-brand-navy">{{ $equipoEdicion->golesContra }}</td>
-                        <td class="{{ $arquero ? 'text-gray-800' : 'text-gray-400' }}">
+                        <td class="{{ $arquero ? 'text-pa-tinta' : 'text-pa-tinta-tenue' }}">
                             {{ $arquero->nombre ?? 'Sin definir' }}
                         </td>
                     </tr>

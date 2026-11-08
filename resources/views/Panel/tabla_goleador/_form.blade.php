@@ -19,7 +19,7 @@
 @endphp
 
 <div class="space-y-5">
-    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+    <div class="rounded-lg border border-pa-linea bg-pa-fila-bg p-4 text-sm text-pa-tinta-media">
         @if ($esEdicionGoleador)
             La información del jugador se va a actualizar en la
             <span class="font-semibold text-brand-navy">{{ isset($CategoriaSeleccionada) ? $CategoriaSeleccionada->nombreCategoria : $idCategoria }}</span>
@@ -37,21 +37,21 @@
     <input type="hidden" name="idCategoria" id="idCategoria" value="{{ $CategoriaSeleccionada->id }}">
 
     <div>
-        <label for="nombre" class="mb-1 block text-sm font-medium text-gray-700">
+        <label for="nombre" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Nombre del Jugador
         </label>
         <input type="text" name="nombre" id="nombre" value="{{ $nombreJugadorMostrar }}"
             {{ $esEdicionGoleador ? 'readonly' : '' }}
             class="panel-form-input">
         @if ($esEdicionGoleador)
-            <p class="mt-1 text-xs text-gray-500">
+            <p class="mt-1 text-xs text-pa-tinta-suave">
                 El nombre se obtiene desde el jugador asociado por DNI en la tabla de goleadores.
             </p>
         @endif
     </div>
 
     <div>
-        <label for="cantidadGoles" class="mb-1 block text-sm font-medium text-gray-700">
+        <label for="cantidadGoles" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Goles
         </label>
         <input type="number" name="cantidadGoles" id="cantidadGoles" value="{{ old('cantidadGoles', $goleador_t->cantidadGoles) }}"
@@ -60,7 +60,7 @@
 
     @if ($esEdicionGoleador)
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">
+            <label class="mb-1 block text-sm font-medium text-pa-tinta-media">
                 Equipo (automático según jugador)
             </label>
             <input type="text" value="{{ $goleador_t->equipo->nombre ?? 'Sin equipo asociado' }}" readonly class="panel-form-input-static">
