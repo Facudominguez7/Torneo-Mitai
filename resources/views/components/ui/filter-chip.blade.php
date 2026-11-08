@@ -24,7 +24,7 @@
 @php
     $toneClasses = [
         'panel' => $active
-            ? 'bg-brand-navy text-white'
+            ? 'bg-pa-resaltado text-pa-form-tinta'
             : 'bg-pa-fila-hover text-pa-tinta-media hover:bg-pa-linea-suave',
         'portal' => $active
             ? 'border border-brand-gold bg-brand-gold/20 text-brand-gold'

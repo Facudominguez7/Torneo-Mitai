@@ -79,7 +79,7 @@ it('renderiza el encabezado de Partidos con x-ui.page-header y las tres acciones
         ->assertSee('Nuevo partido')
         ->assertSee('Partido interzonal')
         ->assertSee('Imprimir planilla de árbitros')
-        ->assertSee('text-2xl font-bold text-gray-800', false);
+        ->assertSee('text-2xl font-bold text-pa-tinta', false);
 });
 
 it('no muestra la accion Partido interzonal sin contexto de categoria', function () {

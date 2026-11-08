@@ -29,7 +29,7 @@
 
     <div class="mx-auto w-full max-w-2xl px-4 py-4">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h1 class="text-2xl font-bold text-gray-800">Seleccionar contexto</h1>
+            <h1 class="text-2xl font-bold text-pa-tinta">Seleccionar contexto</h1>
             <a href="{{ route($rutaIndice, $parametrosVolver) }}"
                 class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-100">
                 Volver al listado

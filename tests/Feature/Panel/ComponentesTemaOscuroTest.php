@@ -42,7 +42,7 @@ it('renderiza cada componente del panel con roles de tema y sin colores claros f
     ],
     'filter-chip activo' => [
         '<x-ui.filter-chip tone="panel" :active="true">Todas</x-ui.filter-chip>',
-        ['bg-brand-navy', 'text-white'],
+        ['bg-pa-resaltado', 'text-pa-form-tinta'],
     ],
     'form-card con acciones' => [
         '<x-ui.form-card><div>Campo</div><x-slot name="actions">Guardar</x-slot></x-ui.form-card>',

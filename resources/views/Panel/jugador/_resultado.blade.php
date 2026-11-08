@@ -6,7 +6,7 @@
             <span class="text-lg font-bold text-brand-navy">{{ Str::substr($jugador->nombre, 0, 1) }}</span>
         </div>
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">
+            <h2 class="text-2xl font-bold text-pa-tinta">
                 {{ $jugador->apellido }}, {{ $jugador->nombre }}
             </h2>
             <p class="text-gray-600">DNI: {{ $jugador->dni }}</p>

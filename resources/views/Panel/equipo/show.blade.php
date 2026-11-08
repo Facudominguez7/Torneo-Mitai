@@ -21,7 +21,7 @@
                     >
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Equipo</p>
-                        <p class="text-2xl font-bold text-gray-800">{{ $equipo->nombre }}</p>
+                        <p class="text-2xl font-bold text-pa-tinta">{{ $equipo->nombre }}</p>
                         <p class="text-sm text-gray-500">{{ ($detalle['categoria'] ?? null)?->nombreCategoria ?? $equipo->categoria?->nombreCategoria }}</p>
                     </div>
                 </div>

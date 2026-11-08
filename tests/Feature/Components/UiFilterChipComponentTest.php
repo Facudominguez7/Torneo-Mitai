@@ -51,8 +51,8 @@ it('marks the active state with aria-current and active-specific classes on the 
     $html = renderUiFilterChip(':active="true" tone="panel"');
 
     expect($html)->toContain('aria-current="page"')
-        ->and($html)->toContain('bg-brand-navy')
-        ->and($html)->toContain('text-white');
+        ->and($html)->toContain('bg-pa-resaltado')
+        ->and($html)->toContain('text-pa-form-tinta');
 });
 
 it('renders the inactive classes on the panel tone by default', function () {

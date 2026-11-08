@@ -92,7 +92,7 @@ it('renderiza el encabezado de Instancias finales con x-ui.page-header y las acc
         ->assertSee('Planilla Árbitros')
         ->assertDontSee('Planilla de Cobro')
         ->assertDontSee('planilla_cobro')
-        ->assertSee('text-2xl font-bold text-gray-800', false);
+        ->assertSee('text-2xl font-bold text-pa-tinta', false);
 });
 
 it('no muestra la accion Agregar en esta categoria sin filtro de categoria', function () {

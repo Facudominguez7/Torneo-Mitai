@@ -950,8 +950,8 @@ it('la barra de acciones muestra un unico signo mas y controles compactos equiva
     // de la primaria (brand-navy) de "Nuevo partido".
     $bloqueInterzonal = bloqueDeAccion($contenido, 'Partido interzonal');
 
-    expect($bloqueInterzonal)->toContain('bg-brand-teal');
-    expect($bloqueInterzonal)->not->toContain('bg-brand-navy');
+    expect($bloqueInterzonal)->toContain('bg-pa-acento');
+    expect($bloqueInterzonal)->not->toContain('bg-pa-resaltado');
 });
 
 it('muestra la cantidad de partidos que devuelve el filtro aplicado', function () {
@@ -1154,7 +1154,7 @@ it('muestra el titulo de la seleccion de categoria legible sobre el fondo claro 
         'forzarSeleccion' => 1,
     ]))->assertOk()->getContent();
 
-    expect($contenido)->toContain('<h1 class="text-2xl font-bold text-gray-800">Seleccionar contexto</h1>')
+    expect($contenido)->toContain('<h1 class="text-2xl font-bold text-pa-tinta">Seleccionar contexto</h1>')
         ->not->toContain('<h1 class="text-xl font-bold text-white">')
         ->not->toContain('rounded-lg bg-white/10 p-3');
 });

@@ -6,7 +6,7 @@
 
     <x-ui.form-card class="mt-6">
         <div>
-            <label for="buscarEquipoGlobal" class="mb-1 block text-sm font-medium text-gray-700">Buscar equipo (todas las ediciones)</label>
+            <label for="buscarEquipoGlobal" class="mb-1 block text-sm font-medium text-pa-tinta-media">Buscar equipo (todas las ediciones)</label>
             <div class="relative">
                 <input id="buscarEquipoGlobal" type="text" placeholder="Escribe el nombre del equipo..." autocomplete="off"
                        class="block w-full rounded-md border-gray-300 bg-white py-2 px-3 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30" />
