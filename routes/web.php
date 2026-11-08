@@ -98,6 +98,7 @@ Route::group(['prefix' => 'Panel', 'middleware' => [UserAccesPanelMiddleware::cl
     foreach (['pagos', 'exenciones', 'exenciones-edicion', 'politicas', 'no-vino', 'no-vino-deshacer', 'tarifa', 'activar'] as $operacion) {
         Route::post('cobros/'.$operacion, [ControladorCobros::class, 'operar'])->name('cobros.'.$operacion);
     }
+    Route::post('cobros/pagos-editar', [ControladorCobros::class, 'editarPago'])->name('cobros.pagos-editar');
     Route::resource('equipo', ControladorEquipo::class);
     Route::resource('categoria', ControladorCategoria::class);
     Route::resource('edicion', ControladorEdicion::class);
