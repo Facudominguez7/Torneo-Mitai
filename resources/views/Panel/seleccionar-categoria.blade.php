@@ -107,7 +107,7 @@
                                 <div id="card-asignacion-masiva" class="mt-4 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 via-cyan-50 to-white p-4 shadow-sm">
                                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
-                                            <p class="text-xs font-semibold uppercase tracking-wide text-blue-800">Asignacion automatica</p>
+                                            <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta">Asignacion automatica</p>
                                             <h2 class="text-lg font-bold text-pa-tinta">Distribuir equipos pendientes en 1 click</h2>
                                         </div>
                                         <button type="button" id="btn-asignar-pendientes"
@@ -134,13 +134,13 @@
                                     </div>
 
                                     <div class="mt-4 rounded-lg border border-blue-100 bg-pa-superficie p-3">
-                                        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-700">Distribucion actual por grupo</p>
+                                        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-pa-tinta">Distribucion actual por grupo</p>
                                         <div class="space-y-2">
                                             @foreach ($resumenAsignacion['grupos'] as $grupoResumen)
                                                 <div class="flex items-center justify-between rounded-md bg-pa-fila-bg px-3 py-2" data-grupo-id="{{ $grupoResumen['id'] }}">
                                                     <span class="text-sm font-medium text-pa-tinta">{{ $grupoResumen['nombre'] }}</span>
                                                     <div class="flex items-center gap-2">
-                                                        <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-bold text-blue-800" data-grupo-total>{{ $grupoResumen['equipos_actuales'] }}</span>
+                                                        <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-bold text-pa-aviso-tinta" data-grupo-total>{{ $grupoResumen['equipos_actuales'] }}</span>
                                                         <span class="hidden rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800" data-grupo-nuevos></span>
                                                     </div>
                                                 </div>
@@ -164,7 +164,7 @@
                     @endif
 
                     @if ($tipo === 'partido' && $categoriaSeleccionada)
-                        <div class="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                        <div class="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-pa-aviso-tinta">
                             Atajo: también podés crear un interzonal sin seleccionar grupo.
                             <a href="{{ route('partido.create-interzonal', ['idEdicion' => $EdicionSeleccionada->id ?? request('idEdicion'), 'idCategoria' => $categoriaSeleccionada]) }}"
                                 class="ml-1 font-semibold underline">

@@ -299,6 +299,7 @@
         --tm-sombra-panel: none;
 
         --pa-fondo: 243 244 246;
+        color-scheme: light;
         --pa-superficie: 255 255 255;
         --pa-elevada: 255 255 255;
         --pa-campo-fondo: 255 255 255;
@@ -364,15 +365,16 @@
     @media (prefers-color-scheme: dark) {
         :root:not([data-tema="claro"]) {
             --pa-fondo: 8 47 59;
+        color-scheme: dark;
             --pa-superficie: 14 75 94;
             --pa-elevada: 14 75 94;
             --pa-campo-fondo: 8 47 59;
             --pa-control-fondo: 8 47 59;
             --pa-tinta: 255 255 255;
-            --pa-tinta-media: 226 232 240;
-            --pa-tinta-cuerpo: 203 213 225;
-            --pa-tinta-suave: 173 186 199;
-            --pa-tinta-tenue: 148 163 184;
+            --pa-tinta-media: 255 255 255;
+            --pa-tinta-cuerpo: 255 255 255;
+            --pa-tinta-suave: 255 255 255;
+            --pa-tinta-tenue: 255 255 255;
             --pa-acento: 155 211 226;
             --pa-resaltado: 155 211 226;
             --pa-aviso-fondo: 155 211 226;
@@ -468,10 +470,10 @@
         --pa-campo-fondo: 8 47 59;
         --pa-control-fondo: 8 47 59;
         --pa-tinta: 255 255 255;
-        --pa-tinta-media: 226 232 240;
-        --pa-tinta-cuerpo: 203 213 225;
-        --pa-tinta-suave: 173 186 199;
-        --pa-tinta-tenue: 148 163 184;
+        --pa-tinta-media: 255 255 255;
+        --pa-tinta-cuerpo: 255 255 255;
+        --pa-tinta-suave: 255 255 255;
+        --pa-tinta-tenue: 255 255 255;
         --pa-acento: 155 211 226;
         --pa-resaltado: 155 211 226;
         --pa-aviso-fondo: 155 211 226;

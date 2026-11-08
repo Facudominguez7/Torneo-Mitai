@@ -74,16 +74,16 @@
 
         @if (isset($partidoIda) && $partidoIda)
             <div class="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-5 py-4">
-                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-500">Resultado IDA</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-pa-tinta">Resultado IDA</p>
                 <div class="flex items-center justify-between gap-4">
                     <span class="font-medium text-pa-tinta">{{ $partidoIda->equipoLocal->nombre }}</span>
-                    <span class="text-2xl font-bold text-blue-700">
+                    <span class="text-2xl font-bold text-pa-tinta">
                         {{ $partidoIda->golesEquipoLocal }} - {{ $partidoIda->golesEquipoVisitante }}
                     </span>
                     <span class="font-medium text-pa-tinta">{{ $partidoIda->equipoVisitante->nombre }}</span>
                 </div>
                 @if ($partidoIda->penalesEquipoLocal !== null && $partidoIda->penalesEquipoVisitante !== null)
-                    <p class="mt-1 text-center text-xs text-blue-400">
+                    <p class="mt-1 text-center text-xs text-pa-tinta">
                         Penales: {{ $partidoIda->penalesEquipoLocal }} - {{ $partidoIda->penalesEquipoVisitante }}
                     </p>
                 @endif

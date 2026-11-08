@@ -131,7 +131,7 @@
     <div class="w-full p-6 bg-pa-superficie rounded-lg shadow-md">
         <!-- Botón de Volver -->
         <a href="{{ $rutaVolver }}"
-            class="inline-block mb-4 text-blue-500 hover:text-blue-700">
+            class="inline-block mb-4 text-pa-tinta underline underline-offset-2 hover:opacity-80">
             <svg class="w-6 h-6 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>

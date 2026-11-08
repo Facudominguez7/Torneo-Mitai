@@ -54,7 +54,7 @@ it('renderiza cada componente del panel con roles de tema y sin colores claros f
     ],
     'search con etiqueta' => [
         '<x-ui.search tone="panel" name="q" label="Buscar" placeholder="Buscar" />',
-        ['border-pa-campo-borde', 'bg-pa-superficie', 'text-pa-tinta-media', 'placeholder:text-pa-tinta-tenue'],
+        ['border-pa-campo-borde', 'bg-pa-superficie', 'text-pa-tinta-media', 'placeholder:text-pa-tinta-tenue/60'],
     ],
     'select con etiqueta' => [
         '<x-ui.select tone="panel" name="equipo" label="Equipo"><option>Mitai</option></x-ui.select>',

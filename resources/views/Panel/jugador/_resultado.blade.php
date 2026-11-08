@@ -41,7 +41,7 @@
 
         <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
             <p class="text-sm text-pa-tinta-suave">Partidos Jugados</p>
-            <p class="text-lg font-semibold text-blue-600">{{ $totalPartidos }}</p>
+            <p class="text-lg font-semibold text-pa-tinta">{{ $totalPartidos }}</p>
         </div>
     </div>
 

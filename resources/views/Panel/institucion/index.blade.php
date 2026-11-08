@@ -36,7 +36,7 @@
 
     {{-- Crear Nueva Institución --}}
     <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
-        <h3 class="mb-3 font-semibold text-blue-800">
+        <h3 class="mb-3 font-semibold text-pa-tinta">
             Crear Nueva Institución
         </h3>
         <form action="{{ route('institucion.store') }}" method="POST" class="flex flex-wrap items-end gap-4">

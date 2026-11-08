@@ -110,10 +110,10 @@ it('declara todos los tokens del panel con sus valores exactos en los cuatro est
         'superficie' => '14 75 94',
         'elevada' => '14 75 94',
         'tinta' => '255 255 255',
-        'tinta-media' => '226 232 240',
-        'tinta-cuerpo' => '203 213 225',
-        'tinta-suave' => '173 186 199',
-        'tinta-tenue' => '148 163 184',
+        'tinta-media' => '255 255 255',
+        'tinta-cuerpo' => '255 255 255',
+        'tinta-suave' => '255 255 255',
+        'tinta-tenue' => '255 255 255',
         'campo-fondo' => '8 47 59',
         'control-fondo' => '8 47 59',
         'acento' => '155 211 226',
@@ -184,15 +184,29 @@ it('elimina los tokens retirados y el prefijo anterior del tablero', function ()
     }
 });
 
-it('mantiene cinco tonos de texto distintos en ambos bloques oscuros', function () {
+it('deja todas las letras en blanco en oscuro y conserva la escala en claro', function () {
     $css = file_get_contents(resource_path('css/app.css'));
-    $patrones = [
+    $oscuros = [
         '~@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root:not\(\[data-tema="claro"\]\)\s*\{([^{}]*)\}~s',
         '~:root\[data-tema="oscuro"\]\s*\{([^{}]*)\}~s',
     ];
+    $claros = [
+        '~:root\s*\{([^{}]*)\}~s',
+        '~:root\[data-tema="claro"\]\s*\{([^{}]*)\}~s',
+    ];
     $nombres = ['tinta', 'tinta-media', 'tinta-cuerpo', 'tinta-suave', 'tinta-tenue'];
 
-    foreach ($patrones as $patron) {
+    // Decisión del dueño: en oscuro no hay tonos apagados, todas las letras son blancas.
+    foreach ($oscuros as $patron) {
+        $bloque = bloqueTokensTemaPanel($css, $patron);
+        foreach ($nombres as $nombre) {
+            preg_match('/--pa-'.preg_quote($nombre, '/').'\s*:\s*([^;{}]+);/', $bloque, $coincidencia);
+            expect(trim($coincidencia[1] ?? ''))->toBe('255 255 255');
+        }
+    }
+
+    // En claro se conserva la jerarquía original de cinco pasos.
+    foreach ($claros as $patron) {
         $bloque = bloqueTokensTemaPanel($css, $patron);
         $tonos = [];
         foreach ($nombres as $nombre) {

@@ -97,7 +97,7 @@ Ordenados por partidos jugados (mayor a menor).
                     <label for="desde" class="mb-1 block text-sm font-medium text-pa-tinta-media">Participaciones mínimas</label>
                     <input type="number" name="desde" id="desde" value="{{ $desde }}" min="1" max="999"
                         step="1" inputmode="numeric"
-                        class="block w-full rounded-lg border-pa-campo-borde bg-pa-superficie px-4 py-2 text-sm text-pa-tinta-media shadow-sm placeholder:text-pa-tinta-tenue focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30 focus-visible:ring-2" />
+                        class="block w-full rounded-lg border-pa-campo-borde bg-pa-superficie px-4 py-2 text-sm text-pa-tinta-media shadow-sm placeholder:text-pa-tinta-tenue/60 focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30 focus-visible:ring-2" />
                 </div>
 
                 <div class="min-w-[16rem] flex-1">
