@@ -204,6 +204,12 @@ class EquipoSeguidoService
                 $query->where('tabla_posiciones.idEdicion', $idEdicion)
                     ->orWhere('tabla_posiciones.idEdicion', 0);
             })
+            ->whereExists(function ($query) use ($idEdicion) {
+                $query->selectRaw('1')
+                    ->from('equipo_ediciones')
+                    ->whereColumn('equipo_ediciones.idEquipo', 'tabla_posiciones.idEquipo')
+                    ->where('equipo_ediciones.idEdicion', $idEdicion);
+            })
             ->orderBy('tabla_posiciones.puntos', 'DESC')
             ->orderByRaw('CASE WHEN tabla_posiciones.jugado > 0 THEN 1 ELSE 0 END DESC')
             ->orderBy('tabla_posiciones.diferenciaGoles', 'DESC')

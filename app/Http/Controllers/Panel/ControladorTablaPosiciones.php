@@ -23,6 +23,12 @@ class ControladorTablaPosiciones extends Controller
 
         $tablaPosiciones = TablaPosicion::with(['grupo.categoria', 'equipo', 'edicion'])
             ->when($contexto['idEdicion'], fn ($query) => $query->where('idEdicion', $contexto['idEdicion']))
+            ->when($contexto['idEdicion'], fn ($query) => $query->whereExists(function ($subquery) use ($contexto) {
+                $subquery->selectRaw('1')
+                    ->from('equipo_ediciones')
+                    ->whereColumn('equipo_ediciones.idEquipo', 'tabla_posiciones.idEquipo')
+                    ->where('equipo_ediciones.idEdicion', $contexto['idEdicion']);
+            }))
             ->when($contexto['idCategoria'], fn ($query) => $query->whereHas('grupo', fn ($grupoQuery) => $grupoQuery->where('idCategoria', $contexto['idCategoria'])))
             ->when($contexto['idGrupo'], fn ($query) => $query->where('idGrupo', $contexto['idGrupo']))
             ->orderBy('idGrupo')

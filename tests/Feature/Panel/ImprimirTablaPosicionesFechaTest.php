@@ -3,9 +3,11 @@
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Equipo;
+use App\Models\EquipoEdicion;
 use App\Models\Fecha;
 use App\Models\Grupo;
 use App\Models\Partido;
+use App\Models\TablaPosicion;
 use App\Models\User;
 
 function crearContextoImpresionTablaPosiciones(string $nombreEdicion = 'Edicion Tablas Fecha'): array
@@ -163,6 +165,63 @@ it('usa el mayor idFechas como desempate cuando todos los jugados carecen de hor
         ->assertOk()
         ->assertSee('Fecha de resultados: Fecha Ultima', false)
         ->assertDontSee('Fecha de resultados: Fecha Inicial', false);
+});
+
+function filaTablaImpresion(array $contexto, string $nombreEquipo, bool $inscripto, int $idEdicionFila): TablaPosicion
+{
+    $equipo = Equipo::create([
+        'idCategoria' => $contexto['categoria']->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'nombre' => $nombreEquipo,
+        'foto' => 'equipo.png',
+    ]);
+
+    if ($inscripto) {
+        EquipoEdicion::create([
+            'idEquipo' => $equipo->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+        ]);
+    }
+
+    return TablaPosicion::create([
+        'idGrupo' => $contexto['grupo']->id,
+        'idEquipo' => $equipo->id,
+        'idEdicion' => $idEdicionFila,
+        'puntos' => 0,
+        'golesFavor' => 0,
+        'golesContra' => 0,
+        'diferenciaGoles' => 0,
+        'jugado' => 0,
+        'ganado' => 0,
+        'perdido' => 0,
+        'empatado' => 0,
+    ]);
+}
+
+it('no imprime equipos que ya no estan inscriptos en la edicion', function (): void {
+    $contexto = crearContextoImpresionTablaPosiciones('Edicion Eliminados');
+
+    filaTablaImpresion($contexto, 'Equipo Sigue Inscripto', inscripto: true, idEdicionFila: $contexto['edicion']->id);
+    filaTablaImpresion($contexto, 'Equipo Borrado De La Edicion', inscripto: false, idEdicionFila: $contexto['edicion']->id);
+
+    $response = $this->actingAs($contexto['admin'])
+        ->get(route('admin.imprimir-tabla-posiciones', ['idEdicion' => $contexto['edicion']->id]));
+
+    $response->assertOk()
+        ->assertSee('Equipo Sigue Inscripto', false)
+        ->assertDontSee('Equipo Borrado De La Edicion', false);
+});
+
+it('mantiene las filas legacy con idEdicion en cero de equipos que siguen inscriptos', function (): void {
+    $contexto = crearContextoImpresionTablaPosiciones('Edicion Legacy Cero');
+
+    filaTablaImpresion($contexto, 'Equipo Legacy Inscripto', inscripto: true, idEdicionFila: 0);
+
+    $this->actingAs($contexto['admin'])
+        ->get(route('admin.imprimir-tabla-posiciones', ['idEdicion' => $contexto['edicion']->id]))
+        ->assertOk()
+        ->assertSee('Equipo Legacy Inscripto', false);
 });
 
 it('renderiza sin etiqueta de fecha cuando la edicion no tiene resultados cargados', function (): void {

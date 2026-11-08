@@ -143,6 +143,15 @@ it('devuelve posicion en su grupo y forma de los ultimos cinco', function () {
     $river = equipoSeguido($contexto, 'River Junior');
     $fecha = fechaSeguido($contexto, 'Fecha 1');
 
+    // La tabla solo cuenta equipos con inscripción vigente en la edición.
+    foreach ([$amigos, $boca] as $equipo) {
+        EquipoEdicion::create([
+            'idEquipo' => $equipo->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+        ]);
+    }
+
     // Mismos puntos que Boca, pero mejor diferencia: va primero en la tabla.
     TablaPosicion::create([
         'idGrupo' => $contexto['grupo']->id, 'idEquipo' => $amigos->id,
@@ -178,6 +187,50 @@ it('devuelve posicion en su grupo y forma de los ultimos cinco', function () {
         'diferencia' => 3,
     ]);
     expect($respuesta->json('forma'))->toBe(['G', 'P', 'P', 'E', 'G']);
+});
+
+it('no cuenta en la posicion a equipos que ya no estan inscriptos en la edicion', function () {
+    $contexto = seguirEquipoBase();
+    $propio = equipoSeguido($contexto, 'Seguido Inscripto');
+    $rival = equipoSeguido($contexto, 'Rival Inscripto');
+    $borrado = equipoSeguido($contexto, 'Equipo Dado De Baja');
+
+    $propio->grupos()->attach($contexto['grupo']->id);
+
+    foreach ([$propio, $rival] as $equipo) {
+        EquipoEdicion::create([
+            'idEquipo' => $equipo->id,
+            'idEdicion' => $contexto['edicion']->id,
+            'idCategoria' => $contexto['categoria']->id,
+        ]);
+    }
+
+    TablaPosicion::create([
+        'idGrupo' => $contexto['grupo']->id, 'idEquipo' => $propio->id,
+        'idEdicion' => $contexto['edicion']->id, 'puntos' => 3,
+        'golesFavor' => 2, 'golesContra' => 2, 'diferenciaGoles' => 0,
+        'jugado' => 1, 'ganado' => 1, 'perdido' => 0, 'empatado' => 0,
+    ]);
+    TablaPosicion::create([
+        'idGrupo' => $contexto['grupo']->id, 'idEquipo' => $borrado->id,
+        'idEdicion' => $contexto['edicion']->id, 'puntos' => 9,
+        'golesFavor' => 9, 'golesContra' => 0, 'diferenciaGoles' => 9,
+        'jugado' => 3, 'ganado' => 3, 'perdido' => 0, 'empatado' => 0,
+    ]);
+
+    $respuesta = $this->get(seguirEquipoUrl([
+        'nombre' => 'Seguido Inscripto',
+        'idEdicion' => $contexto['edicion']->id,
+    ]));
+
+    $respuesta->assertOk();
+
+    expect($respuesta->json('posicion'))->toBe([
+        'posicion' => 1,
+        'total' => 1,
+        'puntos' => 3,
+        'diferencia' => 0,
+    ]);
 });
 
 it('devuelve proximo nulo cuando no hay pendientes pero si ultimo', function () {
