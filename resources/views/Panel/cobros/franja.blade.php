@@ -18,11 +18,11 @@
             <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <h3 class="text-base font-bold text-pa-tinta">{{ $nombre }} <span class="text-sm font-medium text-pa-tinta-suave">{{ $condicion }}</span></h3>
                 @if ($deudasEquipo->isNotEmpty())
-                    <strong class="whitespace-nowrap font-normal tabular-nums"><b class="font-bold text-red-700">Debe {{ $formatoArs((int) $deudasEquipo->sum('deuda_ars')) }}</b> <small class="text-sm text-pa-tinta-suave">en {{ $deudasEquipo->count() }} {{ $deudasEquipo->count() === 1 ? 'planilla' : 'planillas' }}</small></strong>
+                    <strong class="whitespace-nowrap font-normal tabular-nums"><b class="font-bold text-pa-peligro">Debe {{ $formatoArs((int) $deudasEquipo->sum('deuda_ars')) }}</b> <small class="text-sm text-pa-tinta-suave">en {{ $deudasEquipo->count() }} {{ $deudasEquipo->count() === 1 ? 'planilla' : 'planillas' }}</small></strong>
                 @elseif ($incierto)
                     <strong class="whitespace-nowrap font-semibold text-pa-tinta-media">Saldo indeterminado</strong>
                 @else
-                    <strong class="whitespace-nowrap font-semibold text-green-700">Al día</strong>
+                    <strong class="whitespace-nowrap font-semibold text-pa-exito">Al día</strong>
                 @endif
             </div>
             @if ($deudasEquipo->isNotEmpty() && $incierto)

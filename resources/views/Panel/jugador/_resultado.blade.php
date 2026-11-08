@@ -3,7 +3,7 @@
 <div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-6">
     <div class="mb-4 flex items-center gap-4">
         <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-navy/10">
-            <span class="text-lg font-bold text-brand-navy">{{ Str::substr($jugador->nombre, 0, 1) }}</span>
+            <span class="text-lg font-bold text-pa-resaltado">{{ Str::substr($jugador->nombre, 0, 1) }}</span>
         </div>
         <div>
             <h2 class="text-2xl font-bold text-pa-tinta">
@@ -36,7 +36,7 @@
 
         <div class="rounded-lg border border-green-200 bg-green-50 p-4">
             <p class="text-sm text-pa-tinta-suave">Goles</p>
-            <p class="text-lg font-semibold text-green-600">{{ $totalGoles }}</p>
+            <p class="text-lg font-semibold text-pa-exito">{{ $totalGoles }}</p>
         </div>
 
         <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
@@ -48,7 +48,7 @@
     @if ($totalTarjetasRojas > 0)
         <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
             <p class="text-sm text-pa-tinta-suave">Tarjetas Rojas</p>
-            <p class="text-lg font-semibold text-red-600">{{ $totalTarjetasRojas }}</p>
+            <p class="text-lg font-semibold text-pa-peligro">{{ $totalTarjetasRojas }}</p>
         </div>
     @endif
 </div>
@@ -211,7 +211,7 @@
                         @if ($partido['goles_jugador'] > 0)
                             <x-ui.badge variant="success">{{ $partido['goles_jugador'] }}</x-ui.badge>
                         @else
-                            <span class="text-pa-tinta-tenue">-</span>
+                            <span class="text-pa-tinta-suave">-</span>
                         @endif
                     </td>
                     <td class="text-center">

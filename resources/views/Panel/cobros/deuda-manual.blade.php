@@ -6,9 +6,9 @@
         @if (! $EdicionSeleccionada)
             <x-ui.empty-state message="Seleccioná una edición" description="Elegí una edición en la barra superior para cargar una deuda." />
         @else
-            @if (session('success'))<p role="status" class="rounded-md border border-brand-teal bg-pa-superficie p-3 text-brand-navy">{{ session('success') }}</p>@endif
+            @if (session('success'))<p role="status" class="rounded-md border border-brand-teal bg-pa-superficie p-3 text-pa-resaltado">{{ session('success') }}</p>@endif
             @if ($errors->any())
-                <div role="alert" class="rounded-md border border-red-300 bg-pa-superficie p-3 text-red-700">
+                <div role="alert" class="rounded-md border border-red-300 bg-pa-superficie p-3 text-pa-peligro">
                     <ul class="list-inside list-disc">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
                 </div>
             @endif

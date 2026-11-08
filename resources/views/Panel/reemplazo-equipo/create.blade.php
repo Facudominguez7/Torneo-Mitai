@@ -109,7 +109,7 @@
                 <fieldset class="mb-5 space-y-4">
                     <legend class="mb-2 text-base font-semibold text-pa-tinta">¿Quién reemplaza a {{ $equipoReemplazado->nombre }}?</legend>
 
-                    <div data-opcion-reemplazo="existente" @if ($hayElegibles) @click="origen = 'existente'" @endif class="rounded-xl border-2 bg-pa-superficie p-4 transition {{ $hayElegibles ? 'cursor-pointer' : 'cursor-not-allowed opacity-70' }}" :class="origen === 'existente' ? 'border-brand-navy bg-brand-navy/5' : 'border-pa-linea hover:bg-pa-fila-bg'">
+                    <div data-opcion-reemplazo="existente" @if ($hayElegibles) @click="origen = 'existente'" @endif class="rounded-xl border-2 bg-pa-superficie p-4 transition {{ $hayElegibles ? 'cursor-pointer' : 'cursor-not-allowed opacity-70' }}" :class="origen === 'existente' ? 'border-pa-resaltado bg-brand-navy/5' : 'border-pa-linea hover:bg-pa-fila-bg'">
                         <label class="flex items-center gap-2 font-medium text-pa-tinta">
                             <input type="radio" name="origen" value="existente" x-model="origen" @disabled(! $hayElegibles)>
                             Equipo ya inscripto
@@ -126,7 +126,7 @@
                         @endif
                     </div>
 
-                    <div data-opcion-reemplazo="nuevo" @click="origen = 'nuevo'" class="rounded-xl border-2 bg-pa-superficie p-4 transition cursor-pointer" :class="origen === 'nuevo' ? 'border-brand-navy bg-brand-navy/5' : 'border-pa-linea hover:bg-pa-fila-bg'">
+                    <div data-opcion-reemplazo="nuevo" @click="origen = 'nuevo'" class="rounded-xl border-2 bg-pa-superficie p-4 transition cursor-pointer" :class="origen === 'nuevo' ? 'border-pa-resaltado bg-brand-navy/5' : 'border-pa-linea hover:bg-pa-fila-bg'">
                         <label class="flex items-center gap-2 font-medium text-pa-tinta">
                             <input type="radio" name="origen" value="nuevo" x-model="origen">
                             Equipo nuevo
@@ -143,7 +143,7 @@
                         </div>
                     </div>
 
-                    <div data-opcion-reemplazo="otra_edicion" @click="origen = 'otra_edicion'" class="rounded-xl border-2 bg-pa-superficie p-4 transition cursor-pointer" :class="origen === 'otra_edicion' ? 'border-brand-navy bg-brand-navy/5' : 'border-pa-linea hover:bg-pa-fila-bg'">
+                    <div data-opcion-reemplazo="otra_edicion" @click="origen = 'otra_edicion'" class="rounded-xl border-2 bg-pa-superficie p-4 transition cursor-pointer" :class="origen === 'otra_edicion' ? 'border-pa-resaltado bg-brand-navy/5' : 'border-pa-linea hover:bg-pa-fila-bg'">
                         <label class="flex items-center gap-2 font-medium text-pa-tinta">
                             <input type="radio" name="origen" value="otra_edicion" x-model="origen">
                             Equipo de otra edición o sin inscribir
@@ -155,7 +155,7 @@
                             <input type="search" id="buscar-otra-edicion" autocomplete="off" class="panel-form-input"
                                 placeholder="Escribí al menos 2 letras" x-model="otra.q" @input="otra.buscar()" :disabled="origen !== 'otra_edicion'">
                             <p class="mt-2 text-sm text-pa-tinta-suave" x-show="otra.buscando" x-cloak>Buscando...</p>
-                            <p class="mt-2 text-sm text-red-600" x-show="otra.error" x-cloak>No se pudo buscar. Probá de nuevo.</p>
+                            <p class="mt-2 text-sm text-pa-peligro" x-show="otra.error" x-cloak>No se pudo buscar. Probá de nuevo.</p>
                             <p class="mt-2 text-sm text-pa-tinta-suave" x-show="!otra.buscando && !otra.error && otra.items.length === 0" x-cloak>No hay equipos para mostrar.</p>
 
                             <ul class="mt-3 max-h-64 space-y-2 overflow-y-auto" role="radiogroup" aria-label="Equipos de otras ediciones">

@@ -19,7 +19,7 @@
                     id="dni"
                     name="dni"
                     value="{{ $dni ?? old('dni', request('dni')) }}"
-                    class="w-full rounded-lg border-pa-campo-borde px-4 py-2 focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/30"
+                    class="w-full rounded-lg border-pa-campo-borde px-4 py-2 focus:border-pa-resaltado focus:ring-2 focus:ring-pa-resaltado/30"
                     placeholder="Ej: 12345678"
                     required
                 >

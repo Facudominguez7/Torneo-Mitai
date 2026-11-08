@@ -27,10 +27,10 @@
 @endif
 
 @error('idGrupo')
-    <p class="mb-2 text-sm text-red-600">{{ $message }}</p>
+    <p class="mb-2 text-sm text-pa-peligro">{{ $message }}</p>
 @enderror
 @error('idCategoria')
-    <p class="mb-2 text-sm text-red-600">{{ $message }}</p>
+    <p class="mb-2 text-sm text-pa-peligro">{{ $message }}</p>
 @enderror
 
 <div class="space-y-5">
@@ -45,7 +45,7 @@
             @endforeach
         </x-ui.select>
         @error('idEquipoLocal')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 
@@ -60,7 +60,7 @@
             @endforeach
         </x-ui.select>
         @error('idEquipoVisitante')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 
@@ -74,7 +74,7 @@
             @endforeach
         </x-ui.select>
         @error('idFechas')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 
@@ -92,7 +92,7 @@
                 Escribí un nombre para crearla en esta edición y usarla en el partido. Si la dejás vacía, se usa la fecha elegida arriba.
             </p>
             @error('nombreFecha')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
             @enderror
         </div>
     @endunless
@@ -105,7 +105,7 @@
             class="panel-form-input"
             value="{{ $horarioPorDefecto }}">
         @error('horario_datetime')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 
@@ -116,7 +116,7 @@
         <input type="text" name="cancha" id="cancha" value="{{ old('cancha', $partido->cancha) }}"
             class="panel-form-input" />
         @error('cancha')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 </div>

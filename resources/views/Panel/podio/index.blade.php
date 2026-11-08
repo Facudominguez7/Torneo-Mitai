@@ -60,7 +60,7 @@
 
                                 <div class="space-y-3 text-sm">
                                     <div>
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-tenue">1° Campeón</p>
+                                        <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">1° Campeón</p>
                                         @forelse ($copa['campeones'] as $campeon)
                                             <div class="mt-1 flex items-center justify-between gap-2">
                                                 <span class="text-pa-tinta">{{ $campeon->equipo->nombre ?? 'Equipo sin nombre' }}</span>
@@ -77,7 +77,7 @@
                                             </div>
                                         @empty
                                             <div class="mt-1 flex items-center justify-between gap-2">
-                                                <span class="text-pa-tinta-tenue">Sin cargar</span>
+                                                <span class="text-pa-tinta-suave">Sin cargar</span>
                                                 <x-ui.button
                                                     href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $categoria['idCategoria'], 'tipo' => 'campeon']) }}"
                                                     variant="secondary" size="sm">
@@ -88,7 +88,7 @@
                                     </div>
 
                                     <div>
-                                        <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-tenue">2° Subcampeón</p>
+                                        <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">2° Subcampeón</p>
                                         @forelse ($copa['subcampeones'] as $subcampeon)
                                             <div class="mt-1 flex items-center justify-between gap-2">
                                                 <span class="text-pa-tinta">{{ $subcampeon->equipo->nombre ?? 'Equipo sin nombre' }}</span>
@@ -105,7 +105,7 @@
                                             </div>
                                         @empty
                                             <div class="mt-1 flex items-center justify-between gap-2">
-                                                <span class="text-pa-tinta-tenue">Sin cargar</span>
+                                                <span class="text-pa-tinta-suave">Sin cargar</span>
                                                 <x-ui.button
                                                     href="{{ route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $categoria['idCategoria'], 'tipo' => 'subcampeon']) }}"
                                                     variant="secondary" size="sm">
@@ -119,7 +119,7 @@
                                 @if ($copa['sugerencia'])
                                     <div class="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3">
                                         <p class="text-sm font-semibold text-emerald-800">Sugerido por el resultado de la final</p>
-                                        <p class="mt-1 text-sm text-emerald-700">
+                                        <p class="mt-1 text-sm text-pa-exito">
                                             Campeón: {{ $copa['sugerencia']['nombreCampeon'] }} · Subcampeón: {{ $copa['sugerencia']['nombreSubcampeon'] }}
                                         </p>
                                         <form action="{{ route('podio.confirmar') }}" method="POST" class="mt-2">

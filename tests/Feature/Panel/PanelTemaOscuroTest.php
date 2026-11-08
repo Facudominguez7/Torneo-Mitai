@@ -79,6 +79,8 @@ it('declara todos los tokens del panel con sus valores exactos en los cuatro est
         'campo-fondo' => '255 255 255',
         'control-fondo' => '241 245 249',
         'acento' => '42 109 129',
+        'exito' => '5 150 105',
+        'peligro' => '220 38 38',
         'resaltado' => '14 75 94',
         'aviso-fondo' => '147 197 253',
         'aviso-tinta' => '17 24 39',
@@ -117,6 +119,8 @@ it('declara todos los tokens del panel con sus valores exactos en los cuatro est
         'campo-fondo' => '8 47 59',
         'control-fondo' => '8 47 59',
         'acento' => '155 211 226',
+        'exito' => '255 255 255',
+        'peligro' => '255 255 255',
         'resaltado' => '155 211 226',
         'aviso-fondo' => '155 211 226',
         'aviso-tinta' => '8 47 59',
@@ -253,7 +257,7 @@ it('mapea los tokens opacos y translucidos del panel en Tailwind', function () {
     $opacos = [
         'fondo', 'superficie', 'elevada', 'campo-fondo', 'control-fondo',
         'tinta', 'tinta-media', 'tinta-cuerpo', 'tinta-suave', 'tinta-tenue',
-        'acento', 'resaltado', 'aviso-fondo', 'aviso-tinta', 'form-borde', 'form-acento', 'form-tinta',
+        'acento', 'exito', 'peligro', 'resaltado', 'aviso-fondo', 'aviso-tinta', 'form-borde', 'form-acento', 'form-tinta',
         'tablero-inicio', 'tablero-fin', 'tablero-leyenda', 'tablero-foco',
         'tablero-accion', 'tablero-accion-hover', 'contorno-control', 'velo-menu', 'velo-modal',
     ];

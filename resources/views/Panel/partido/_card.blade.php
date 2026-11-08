@@ -66,7 +66,7 @@
                 class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
             <div class="text-center text-base font-bold leading-tight text-pa-tinta md:text-xl">{{ $p->equipoLocal->nombre }}</div>
         </div>
-        <div class="text-sm font-semibold text-pa-tinta-tenue md:text-lg">vs</div>
+        <div class="text-sm font-semibold text-pa-tinta-suave md:text-lg">vs</div>
         <div class="flex flex-col items-center gap-2">
             <img src="{{ asset('fotos/equipos/' . $p->equipoVisitante->foto) }}" width="60" height="60" alt="{{ $p->equipoVisitante->nombre }}"
                 class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />

@@ -212,7 +212,7 @@
                             class="rounded-full bg-pa-linea px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-pa-tinta-cuerpo">
                             {{ count($grupoNav['items']) }}
                         </span>
-                        <svg class="h-3 w-3 shrink-0 text-pa-tinta-tenue transition-transform duration-150" :class="{ '-rotate-90': !open }"
+                        <svg class="h-3 w-3 shrink-0 text-pa-tinta-suave transition-transform duration-150" :class="{ '-rotate-90': !open }"
                             fill="none" viewBox="0 0 10 6" aria-hidden="true">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
                         </svg>

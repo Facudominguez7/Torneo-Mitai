@@ -24,7 +24,7 @@
             'border' => 'border-pa-linea',
             'icon' => 'text-pa-campo-borde',
             'message' => 'text-pa-tinta-suave',
-            'description' => 'text-pa-tinta-tenue',
+            'description' => 'text-pa-tinta-suave',
         ],
         'portal' => [
             'border' => 'border-white/20',

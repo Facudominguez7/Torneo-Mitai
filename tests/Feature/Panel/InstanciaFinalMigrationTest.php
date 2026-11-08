@@ -184,7 +184,7 @@ it('muestra las tarjetas estadisticas con los conteos correctos', function () {
     $html = $response->getContent();
 
     expect($html)->toMatch('/text-pa-tinta">\s*2\s*<\/span>\s*<p class="text-xs font-medium text-pa-tinta-suave">Partidos/s')
-        ->and($html)->toMatch('/text-emerald-600">\s*1\s*<\/span>\s*<p class="text-xs font-medium text-pa-tinta-suave">Jugados/s')
+        ->and($html)->toMatch('/text-pa-exito">\s*1\s*<\/span>\s*<p class="text-xs font-medium text-pa-tinta-suave">Jugados/s')
         ->and($html)->toMatch('/text-amber-600">\s*1\s*<\/span>\s*<p class="text-xs font-medium text-pa-tinta-suave">Pendientes/s');
 });
 

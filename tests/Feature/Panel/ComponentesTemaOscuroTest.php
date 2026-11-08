@@ -34,7 +34,7 @@ it('renderiza cada componente del panel con roles de tema y sin colores claros f
     ],
     'empty-state' => [
         '<x-ui.empty-state tone="panel" message="Sin resultados" description="Probá de nuevo" />',
-        ['border-pa-linea', 'text-pa-campo-borde', 'text-pa-tinta-suave', 'text-pa-tinta-tenue'],
+        ['border-pa-linea', 'text-pa-campo-borde', 'text-pa-tinta-suave', 'text-pa-tinta-suave'],
     ],
     'filter-chip inactivo' => [
         '<x-ui.filter-chip tone="panel">Todas</x-ui.filter-chip>',

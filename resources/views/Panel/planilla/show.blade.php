@@ -79,7 +79,7 @@
             $estadoGolesLabel = 'No vino · pendiente de regularización';
             $estadoGolesDetalle = 'El resultado todavía no es oficial.';
         } elseif ($golesConfirmados) {
-            $estadoGolesClase = 'bg-emerald-100 text-emerald-700';
+            $estadoGolesClase = 'bg-emerald-100 text-pa-exito';
             $estadoGolesLabel = 'Goles confirmados';
             $estadoGolesDetalle = 'Confirmados el '.$partido->goles_confirmados_at->format('d/m/Y H:i');
         } elseif ($resultadoCargado) {
@@ -189,7 +189,7 @@
         {{-- Compact debt bar: zero-height sticky wrapper, shown on desktop once the strip scrolls out of view. --}}
         <div class="sticky top-0 z-30 -mx-6 hidden h-0 lg:block" data-franja-resumen-ancla>
             <div data-franja-resumen aria-hidden="true"
-                class="pointer-events-none flex flex-wrap items-center gap-x-6 gap-y-1 border-b border-pa-linea bg-pa-superficie px-6 py-2 text-sm text-brand-navy opacity-0 shadow-sm transition-opacity duration-150 motion-reduce:transition-none">
+                class="pointer-events-none flex flex-wrap items-center gap-x-6 gap-y-1 border-b border-pa-linea bg-pa-superficie px-6 py-2 text-sm text-pa-resaltado opacity-0 shadow-sm transition-opacity duration-150 motion-reduce:transition-none">
             </div>
         </div>
         <section class="-mx-6 mb-6 border-y border-pa-linea bg-pa-superficie" aria-labelledby="cobro-planilla-titulo" data-franja-deudas>
@@ -244,7 +244,7 @@
                                 <h3 class="font-bold text-pa-tinta">{{ $panelArbitral['titulo'] }}</h3>
                                 <span>Oficial {{ $panelArbitral['oficial'] }} · Árbitros {{ $panelArbitral['resumen']['total_reportado'] }} ·
                                     @if ($panelArbitral['resumen']['total_inconsistencias'] > 0)
-                                        <span class="font-semibold text-red-700">{{ $panelArbitral['resumen']['total_inconsistencias'] }} {{ $panelArbitral['resumen']['total_inconsistencias'] === 1 ? 'inconsistencia' : 'inconsistencias' }}</span>
+                                        <span class="font-semibold text-pa-peligro">{{ $panelArbitral['resumen']['total_inconsistencias'] }} {{ $panelArbitral['resumen']['total_inconsistencias'] === 1 ? 'inconsistencia' : 'inconsistencias' }}</span>
                                     @else
                                         Sin inconsistencias
                                     @endif
@@ -264,7 +264,7 @@
                                     @php
                                         $estadoReporte = $estadoPorReporte[(int) ($reporteArbitral['id'] ?? 0)] ?? ['label' => 'Ignorado', 'clase' => 'text-pa-tinta-suave'];
                                         if ($reporteArbitral['es_inconsistencia']) {
-                                            $estadoReporte = ['label' => 'Inconsistencia', 'clase' => 'text-red-700'];
+                                            $estadoReporte = ['label' => 'Inconsistencia', 'clase' => 'text-pa-peligro'];
                                         }
                                     @endphp
                                     <div class="rounded-md border px-3 py-2 {{ $reporteArbitral['es_inconsistencia'] ? 'border-red-200 bg-red-50' : 'border-pa-linea bg-pa-superficie' }}">
@@ -282,7 +282,7 @@
                                         @endif
 
                                         @if ($reporteArbitral['es_inconsistencia'])
-                                            <p class="mt-1 text-sm text-red-700">{{ $reporteArbitral['motivo_inconsistencia'] }}</p>
+                                            <p class="mt-1 text-sm text-pa-peligro">{{ $reporteArbitral['motivo_inconsistencia'] }}</p>
                                         @endif
                                     </div>
                                 @empty
@@ -358,7 +358,7 @@
             <span>{{ $partido->equipoLocal->nombre }}</span>
         </h2>
         @php $localCount = $jugadoresLocalPlanilla->count(); @endphp
-        <p class="text-center mb-2 font-medium {{ $localCount > 18 ? 'text-red-600' : ($localCount == 18 ? 'text-yellow-600' : 'text-green-600') }}">
+        <p class="text-center mb-2 font-medium {{ $localCount > 18 ? 'text-pa-peligro' : ($localCount == 18 ? 'text-yellow-600' : 'text-pa-exito') }}">
             Jugadores en planilla: {{ $localCount }} / 18
         </p>
         <!-- Botón para generar el PDF -->
@@ -383,7 +383,7 @@
                 <input type="search" id="buscar-jugador-local" data-player-search-input="local" placeholder="DNI sin puntos o nombre" autocomplete="off"
                     class="block h-12 w-full rounded-lg border-pa-campo-borde pl-10 text-lg font-semibold text-pa-tinta placeholder:font-medium placeholder:text-pa-tinta-suave focus:border-brand-teal focus:ring-brand-teal">
             </div>
-            <p class="min-h-[1.25rem] text-sm text-pa-tinta-cuerpo data-[tono=error]:font-semibold data-[tono=error]:text-red-700 data-[tono=ok]:font-semibold data-[tono=ok]:text-brand-teal" data-player-search-eco="local" aria-live="polite">Enter marca la asistencia del jugador encontrado y pasa a su número.</p>
+            <p class="min-h-[1.25rem] text-sm text-pa-tinta-cuerpo data-[tono=error]:font-semibold data-[tono=error]:text-pa-peligro data-[tono=ok]:font-semibold data-[tono=ok]:text-brand-teal" data-player-search-eco="local" aria-live="polite">Enter marca la asistencia del jugador encontrado y pasa a su número.</p>
         </div>
     <form action="{{ route('planilla.actualizarJugadores') }}" method="POST" data-player-scope="local" data-player-autosave-endpoint="{{ route('planilla.actualizarJugadores') }}">
             @csrf
@@ -429,7 +429,7 @@
             <span>{{ $partido->equipoVisitante->nombre }}</span>
         </h2>
         @php $visitanteCount = $jugadoresVisitantePlanilla->count(); @endphp
-        <p class="text-center mb-2 font-medium {{ $visitanteCount > 18 ? 'text-red-600' : ($visitanteCount == 18 ? 'text-yellow-600' : 'text-green-600') }}">
+        <p class="text-center mb-2 font-medium {{ $visitanteCount > 18 ? 'text-pa-peligro' : ($visitanteCount == 18 ? 'text-yellow-600' : 'text-pa-exito') }}">
             Jugadores en planilla: {{ $visitanteCount }} / 18
         </p>
         <!-- Botón para generar el PDF -->
@@ -454,7 +454,7 @@
                 <input type="search" id="buscar-jugador-visitante" data-player-search-input="visitante" placeholder="DNI sin puntos o nombre" autocomplete="off"
                     class="block h-12 w-full rounded-lg border-pa-campo-borde pl-10 text-lg font-semibold text-pa-tinta placeholder:font-medium placeholder:text-pa-tinta-suave focus:border-brand-teal focus:ring-brand-teal">
             </div>
-            <p class="min-h-[1.25rem] text-sm text-pa-tinta-cuerpo data-[tono=error]:font-semibold data-[tono=error]:text-red-700 data-[tono=ok]:font-semibold data-[tono=ok]:text-brand-teal" data-player-search-eco="visitante" aria-live="polite">Enter marca la asistencia del jugador encontrado y pasa a su número.</p>
+            <p class="min-h-[1.25rem] text-sm text-pa-tinta-cuerpo data-[tono=error]:font-semibold data-[tono=error]:text-pa-peligro data-[tono=ok]:font-semibold data-[tono=ok]:text-brand-teal" data-player-search-eco="visitante" aria-live="polite">Enter marca la asistencia del jugador encontrado y pasa a su número.</p>
         </div>
     <form action="{{ route('planilla.actualizarJugadores') }}" method="POST" data-player-scope="visitante" data-player-autosave-endpoint="{{ route('planilla.actualizarJugadores') }}">
             @csrf
@@ -494,8 +494,8 @@
     </div>
     <div data-autosave-alerta role="alert" aria-live="assertive" hidden
         class="fixed inset-x-0 bottom-0 z-40 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-red-200 bg-red-50 px-4 py-3 text-sm text-pa-aviso-tinta shadow-[0_-6px_18px_-8px_rgba(8,47,59,0.25)] sm:px-6 [&[hidden]]:hidden">
-        <svg class="h-5 w-5 shrink-0 text-red-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>
-        <p class="font-bold text-red-700" data-autosave-alerta-titulo></p>
+        <svg class="h-5 w-5 shrink-0 text-pa-peligro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>
+        <p class="font-bold text-pa-peligro" data-autosave-alerta-titulo></p>
         <ul class="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1" data-autosave-alerta-lista></ul>
         <div class="flex flex-wrap gap-2">
             <button type="button" data-autosave-reintentar-todos class="min-h-10 rounded-md bg-red-700 px-3 text-sm font-semibold text-white hover:bg-red-800 [&[hidden]]:hidden">Reintentar</button>
@@ -924,8 +924,8 @@
                 }
 
                 feedback.textContent = message;
-                feedback.classList.remove('text-emerald-700', 'text-red-700', 'text-pa-tinta-cuerpo');
-                feedback.classList.add(tone === 'error' ? 'text-red-700' : tone === 'ok' ? 'text-emerald-700' : 'text-pa-tinta-cuerpo');
+                feedback.classList.remove('text-pa-exito', 'text-pa-peligro', 'text-pa-tinta-cuerpo');
+                feedback.classList.add(tone === 'error' ? 'text-pa-peligro' : tone === 'ok' ? 'text-pa-exito' : 'text-pa-tinta-cuerpo');
             };
 
             const refreshCopiedRow = (scope, filaActualizada) => {

@@ -73,7 +73,7 @@
                                             </x-ui.button>
                                         </form>
                                     @else
-                                        <p class="text-sm text-pa-tinta-tenue">Sin sugerencia disponible todavía</p>
+                                        <p class="text-sm text-pa-tinta-suave">Sin sugerencia disponible todavía</p>
                                     @endif
                                 @endforelse
 
@@ -125,13 +125,13 @@
                                             </label>
                                             <input type="text" id="nombre_arquero_{{ $categoria['idCategoria'] }}" name="nombre"
                                                 required maxlength="50" placeholder="Nombre del arquero"
-                                                class="block w-full rounded-md border-pa-campo-borde py-2 px-3 text-sm text-pa-tinta-media shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30">
+                                                class="block w-full rounded-md border-pa-campo-borde py-2 px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30">
                                             <x-ui.button type="submit" variant="success" size="sm">
                                                 Guardar
                                             </x-ui.button>
                                         </form>
                                     @else
-                                        <p class="text-sm text-pa-tinta-tenue">Sin sugerencia disponible todavía</p>
+                                        <p class="text-sm text-pa-tinta-suave">Sin sugerencia disponible todavía</p>
                                     @endif
                                 @endforelse
 
@@ -147,7 +147,7 @@
             </x-slot>
         </x-ui.data-table>
 
-        <p class="mt-3 text-xs text-pa-tinta-tenue">
+        <p class="mt-3 text-xs text-pa-tinta-suave">
             Las sugerencias salen de la tabla de goleadores y de los goles en contra de cada equipo.
         </p>
     @endif

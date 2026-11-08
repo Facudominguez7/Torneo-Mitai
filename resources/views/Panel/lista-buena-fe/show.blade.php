@@ -14,7 +14,7 @@
 
     <div class="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
         <a href="{{ route('lista-buena-fe.index', ['idEdicion' => $EdicionSeleccionada->id]) }}"
-            class="mb-3 inline-flex items-center gap-1 rounded text-sm font-semibold text-brand-teal transition hover:text-brand-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/50">
+            class="mb-3 inline-flex items-center gap-1 rounded text-sm font-semibold text-brand-teal transition hover:text-pa-resaltado focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/50">
             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M12.78 4.22a.75.75 0 0 1 0 1.06L8.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06l-5.25-5.25a.75.75 0 0 1 0-1.06l5.25-5.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
             </svg>
@@ -121,14 +121,14 @@
                         <div>
                             <label for="dni_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">DNI del Jugador:</label>
                             <input type="text" name="dni_jugador" id="dni_jugador" required pattern="\d{7,8}"
-                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                                 placeholder="Ej: 12345678" autocomplete="off">
                             {{-- Indicador de estado de búsqueda --}}
                             <div id="dni_status" class="mt-1 hidden text-sm">
-                                <span id="dni_buscando" class="hidden text-brand-navy">
+                                <span id="dni_buscando" class="hidden text-pa-resaltado">
                                     Buscando...
                                 </span>
-                                <span id="dni_encontrado" class="hidden text-green-600">
+                                <span id="dni_encontrado" class="hidden text-pa-exito">
                                     <span id="dni_mensaje_encontrado"></span>
                                 </span>
                                 <span id="dni_no_encontrado" class="hidden text-pa-tinta-suave">
@@ -140,29 +140,29 @@
                         <div>
                             <label for="nombre_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Nombre:</label>
                             <input type="text" name="nombre_jugador" id="nombre_jugador" required
-                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                                 placeholder="Nombre del jugador">
                         </div>
 
                         <div>
                             <label for="apellido_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Apellido:</label>
                             <input type="text" name="apellido_jugador" id="apellido_jugador" required
-                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                                 placeholder="Apellido del jugador">
                         </div>
 
                         <div>
                             <label for="fecha_nacimiento" class="mb-1 block text-sm font-medium text-pa-tinta-media">Fecha de Nacimiento:</label>
                             <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" required
-                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30">
+                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30">
                         </div>
 
                         <div>
                             <label for="numero_camiseta" class="mb-1 block text-sm font-medium text-pa-tinta-media">
-                                Número de Camiseta: <span class="font-normal text-pa-tinta-tenue">(opcional)</span>
+                                Número de Camiseta: <span class="font-normal text-pa-tinta-suave">(opcional)</span>
                             </label>
                             <input type="number" name="numero_camiseta" id="numero_camiseta" min="0" max="999"
-                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                                 placeholder="Ej: 10">
                         </div>
 
@@ -264,7 +264,7 @@
 
                                         {{-- Outlined on purpose: the solid red is kept for the confirm button inside the dialog. --}}
                                         <button type="button"
-                                            class="js-dar-baja inline-flex items-center justify-center rounded-lg border border-red-200 bg-pa-superficie px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 max-md:flex-1 max-md:py-2.5"
+                                            class="js-dar-baja inline-flex items-center justify-center rounded-lg border border-red-200 bg-pa-superficie px-3 py-1.5 text-xs font-semibold text-pa-peligro transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 max-md:flex-1 max-md:py-2.5"
                                             data-action="{{ route('lista-buena-fe.dar-baja', $jugador->id) }}"
                                             data-nombre-completo="{{ $nombreCompleto }}"
                                             aria-label="Dar de baja a {{ $nombreCompleto }}">
@@ -395,36 +395,36 @@
                     <div>
                         <label for="editar_dni_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">DNI del Jugador:</label>
                         <input type="text" name="dni_jugador" id="editar_dni_jugador" required pattern="\d{7,8}"
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Ej: 12345678">
                     </div>
 
                     <div>
                         <label for="editar_nombre_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Nombre:</label>
                         <input type="text" name="nombre_jugador" id="editar_nombre_jugador" required
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Nombre del jugador">
                     </div>
 
                     <div>
                         <label for="editar_apellido_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Apellido:</label>
                         <input type="text" name="apellido_jugador" id="editar_apellido_jugador" required
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Apellido del jugador">
                     </div>
 
                     <div>
                         <label for="editar_fecha_nacimiento" class="mb-1 block text-sm font-medium text-pa-tinta-media">Fecha de Nacimiento:</label>
                         <input type="date" name="fecha_nacimiento" id="editar_fecha_nacimiento" required
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30">
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30">
                     </div>
 
                     <div class="md:col-span-2">
                         <label for="editar_numero_camiseta" class="mb-1 block text-sm font-medium text-pa-tinta-media">
-                            Número de Camiseta: <span class="font-normal text-pa-tinta-tenue">(opcional)</span>
+                            Número de Camiseta: <span class="font-normal text-pa-tinta-suave">(opcional)</span>
                         </label>
                         <input type="number" name="numero_camiseta" id="editar_numero_camiseta" min="0" max="999"
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Ej: 10">
                     </div>
 
@@ -460,10 +460,10 @@
 
                     <div>
                         <label for="motivo_baja" class="mb-1 block text-sm font-medium text-pa-tinta-media">
-                            Motivo <span class="font-normal text-pa-tinta-tenue">(opcional)</span>
+                            Motivo <span class="font-normal text-pa-tinta-suave">(opcional)</span>
                         </label>
                         <input type="text" name="motivo_baja" id="motivo_baja" maxlength="255" autocomplete="off"
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Ej: pase a otro club">
                     </div>
 

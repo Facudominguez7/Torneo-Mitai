@@ -69,7 +69,7 @@
                         'border-pa-linea bg-pa-superficie' => $posicion !== 1,
                     ])
                 >
-                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-gold/40 text-lg font-extrabold text-brand-navy">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-gold/40 text-lg font-extrabold text-pa-aviso-tinta">
                         {{ $posicion }}
                     </span>
                     <div class="min-w-0 flex-1">
@@ -77,7 +77,7 @@
                         <p class="truncate text-sm text-pa-tinta-suave">{{ $g->nombreEquipo }}</p>
                     </div>
                     <div class="flex flex-col items-end">
-                        <span class="text-2xl font-extrabold text-brand-navy">{{ $g->cantidadGoles }}</span>
+                        <span class="text-2xl font-extrabold text-pa-resaltado">{{ $g->cantidadGoles }}</span>
                         <span class="text-xs text-pa-tinta-suave">goles</span>
                     </div>
                 </article>
@@ -132,7 +132,7 @@
                     @if (empty($idCategoria))
                         <td>{{ $g->nombreCategoria }}</td>
                     @endif
-                    <td class="text-center font-extrabold text-brand-navy">{{ $g->cantidadGoles }}</td>
+                    <td class="text-center font-extrabold text-pa-resaltado">{{ $g->cantidadGoles }}</td>
                     <td>
                         <div class="flex flex-wrap items-center justify-center gap-2">
                             <x-ui.button href="{{ route('jugador.consulta', ['dni' => $g->dni_jugador]) }}" variant="secondary" size="sm">

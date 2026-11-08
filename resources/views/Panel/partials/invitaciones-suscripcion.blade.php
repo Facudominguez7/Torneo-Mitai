@@ -31,7 +31,7 @@
             @endphp
             <div class="min-w-0 rounded-lg border p-3 {{ $enAlerta ? 'border-yellow-300 bg-yellow-50' : 'border-pa-linea bg-pa-fila-bg' }}">
                 <dt class="break-words text-[11px] font-semibold uppercase tracking-wide text-pa-tinta-suave">{{ $tile['etiqueta'] }}</dt>
-                <dd class="mt-1 break-words text-2xl font-extrabold tabular-nums text-brand-navy" data-estadistica="{{ $tile['clave'] }}">{{ $tile['valor'] }}</dd>
+                <dd class="mt-1 break-words text-2xl font-extrabold tabular-nums text-pa-resaltado" data-estadistica="{{ $tile['clave'] }}">{{ $tile['valor'] }}</dd>
                 <p class="mt-1 text-[11px] leading-snug text-pa-tinta-suave">{{ $tile['detalle'] }}</p>
                 @if($enAlerta)
                     <x-ui.badge variant="warning" class="mt-2">Supera el {{ $limiteRebote }} % de Resend</x-ui.badge>

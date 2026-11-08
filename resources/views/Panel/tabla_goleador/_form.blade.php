@@ -22,14 +22,14 @@
     <div class="rounded-lg border border-pa-linea bg-pa-fila-bg p-4 text-sm text-pa-tinta-media">
         @if ($esEdicionGoleador)
             La información del jugador se va a actualizar en la
-            <span class="font-semibold text-brand-navy">{{ isset($CategoriaSeleccionada) ? $CategoriaSeleccionada->nombreCategoria : $idCategoria }}</span>
+            <span class="font-semibold text-pa-resaltado">{{ isset($CategoriaSeleccionada) ? $CategoriaSeleccionada->nombreCategoria : $idCategoria }}</span>
             de la
-            <span class="font-semibold text-brand-navy">{{ $EdicionSeleccionada->nombre }}</span>
+            <span class="font-semibold text-pa-resaltado">{{ $EdicionSeleccionada->nombre }}</span>
         @else
             El jugador se va a agregar en la
-            <span class="font-semibold text-brand-navy">{{ isset($CategoriaSeleccionada) ? $CategoriaSeleccionada->nombreCategoria : $idCategoria }}</span>
+            <span class="font-semibold text-pa-resaltado">{{ isset($CategoriaSeleccionada) ? $CategoriaSeleccionada->nombreCategoria : $idCategoria }}</span>
             de la
-            <span class="font-semibold text-brand-navy">{{ $EdicionSeleccionada->nombre }}</span>
+            <span class="font-semibold text-pa-resaltado">{{ $EdicionSeleccionada->nombre }}</span>
         @endif
     </div>
 

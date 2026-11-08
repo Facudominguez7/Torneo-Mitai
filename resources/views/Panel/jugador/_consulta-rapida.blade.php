@@ -1,6 +1,6 @@
 {{-- Fragmento del modal del buscador del header: misma información que Consulta de jugador. --}}
 @isset($edicionActual)
-    <p class="text-sm text-pa-tinta-cuerpo">Edición: <span class="font-semibold text-brand-navy">{{ $edicionActual->nombre }}</span></p>
+    <p class="text-sm text-pa-tinta-cuerpo">Edición: <span class="font-semibold text-pa-resaltado">{{ $edicionActual->nombre }}</span></p>
 @endisset
 
 @if ($error ?? null)

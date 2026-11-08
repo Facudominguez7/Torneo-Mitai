@@ -129,20 +129,20 @@
                     <div>
                         <h1 class="text-2xl font-bold text-pa-tinta sm:text-3xl">{{ $saludoDashboard }}, {{ $nombreUsuarioActivoDashboard }}</h1>
                         <p class="mt-1 text-sm text-pa-tinta-cuerpo">
-                            Edición activa: <span class="font-semibold text-brand-navy">{{ $EdicionSeleccionada?->nombre }}</span>
+                            Edición activa: <span class="font-semibold text-pa-resaltado">{{ $EdicionSeleccionada?->nombre }}</span>
                         </p>
                     </div>
                     <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-end">
                         <a href="{{ route('notificaciones.index', ['idEdicion' => $idEdicionContexto]) }}"
                             class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-xs font-semibold text-pa-tinta-media shadow-sm transition hover:bg-pa-fila-bg sm:text-sm">
-                            <svg class="h-4 w-4 text-brand-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="h-4 w-4 text-pa-resaltado" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                             </svg>
                             Notificaciones
                         </a>
                         <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto]) }}"
                             class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-xs font-semibold text-pa-tinta-media shadow-sm transition hover:bg-pa-fila-bg sm:text-sm">
-                            <svg class="h-4 w-4 text-brand-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="h-4 w-4 text-pa-resaltado" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             Partidos
@@ -158,7 +158,7 @@
                         {{-- Botón Imprimir Fixture (todos los partidos o por fecha) --}}
                         <button type="button" onclick="abrirModalFixtureImpresion('{{ route('admin.imprimir-fixture', ['idEdicion' => $idEdicionContexto ?? '']) }}')"
                             class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-xs font-semibold text-pa-tinta-media shadow-sm transition hover:bg-pa-fila-bg sm:text-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-brand-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-pa-resaltado" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
                             Imprimir Fixture
@@ -225,7 +225,7 @@
                                     Mostrando partidos de las {{ $horarioFiltroActivo }} hs
                                 </x-ui.filter-chip>
                                 <a href="{{ route('admin', $parametrosEdicionActual) }}"
-                                    class="rounded-md px-1 py-1 text-sm font-semibold text-brand-navy hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
+                                    class="rounded-md px-1 py-1 text-sm font-semibold text-pa-resaltado hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">
                                     Limpiar
                                 </a>
                             </div>
@@ -238,7 +238,7 @@
                     @else
                         @foreach ($gruposPorHorario as $horarioGrupo => $partidosGrupo)
                             <div class="mt-5" data-dashboard-horario="{{ $horarioGrupo }}">
-                                <h3 class="mb-3 flex items-center gap-2 text-xl font-extrabold text-brand-navy">
+                                <h3 class="mb-3 flex items-center gap-2 text-xl font-extrabold text-pa-resaltado">
                                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
@@ -283,7 +283,7 @@
                                                 @if ($resultadoCargado)
                                                     <div data-dashboard-centro class="whitespace-nowrap text-center text-2xl font-extrabold text-pa-tinta md:text-3xl">{{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}</div>
                                                 @else
-                                                    <div data-dashboard-centro class="text-center text-sm font-semibold text-pa-tinta-tenue md:text-lg">vs</div>
+                                                    <div data-dashboard-centro class="text-center text-sm font-semibold text-pa-tinta-suave md:text-lg">vs</div>
                                                 @endif
                                                 <div class="flex flex-col items-center gap-2">
                                                     <img src="{{ asset('fotos/equipos/' . $p->foto_visitante) }}" width="60" height="60" alt="Escudo {{ $p->nombre_visitante }}"
@@ -294,7 +294,7 @@
 
                                             <div class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-pa-tinta-cuerpo md:text-base">
                                                 @if ($horarioGrupo !== 'sin-horario')
-                                                    <span data-dashboard-hora class="text-lg font-bold text-brand-navy">{{ $horarioGrupo }} hs</span>
+                                                    <span data-dashboard-hora class="text-lg font-bold text-pa-resaltado">{{ $horarioGrupo }} hs</span>
                                                 @endif
                                                 @if ($p->horario_datetime)
                                                     <span class="font-medium">{{ \Carbon\Carbon::parse($p->horario_datetime)->format('d-m-Y') }}</span>
@@ -367,7 +367,7 @@
                     <div class="rounded-xl border border-pa-linea bg-pa-superficie p-5 lg:col-span-2">
                         <div class="mb-3 flex items-center justify-between">
                             <h2 class="text-base font-bold text-pa-tinta">Requiere atención</h2>
-                            <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto]) }}" class="text-sm font-semibold text-brand-navy hover:underline">
+                            <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto]) }}" class="text-sm font-semibold text-pa-resaltado hover:underline">
                                 Ver todos
                             </a>
                         </div>
@@ -381,7 +381,7 @@
                                             <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">{{ $pendiente['categoria'] }}</p>
                                             <p class="truncate text-sm font-medium text-pa-tinta">
                                                 {{ $pendiente['local'] }}
-                                                <span class="text-pa-tinta-tenue">{{ $pendiente['golesEquipoLocal'] ?? '-' }} - {{ $pendiente['golesEquipoVisitante'] ?? '-' }}</span>
+                                                <span class="text-pa-tinta-suave">{{ $pendiente['golesEquipoLocal'] ?? '-' }} - {{ $pendiente['golesEquipoVisitante'] ?? '-' }}</span>
                                                 {{ $pendiente['visitante'] }}
                                             </p>
                                         </div>
@@ -389,7 +389,7 @@
                                             <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $pendiente['estado']['clase'] }}">
                                                 {{ $pendiente['estado']['label'] }}
                                             </span>
-                                            <a href="{{ $pendiente['accionUrl'] }}" class="text-sm font-semibold text-brand-navy hover:underline">
+                                            <a href="{{ $pendiente['accionUrl'] }}" class="text-sm font-semibold text-pa-resaltado hover:underline">
                                                 {{ $pendiente['accionLabel'] }}
                                             </a>
                                         </div>
@@ -403,7 +403,7 @@
                         @if ($resumenDashboard['proximaFecha'])
                             <div data-dashboard-proxima-fecha class="rounded-xl bg-brand-navy p-5 text-white">
                                 <p class="text-xs font-semibold uppercase tracking-wide text-white/70">Próxima fecha</p>
-                                <span class="mt-2 inline-flex items-center rounded-full bg-brand-gold px-3 py-1 text-xs font-bold text-brand-navy">
+                                <span class="mt-2 inline-flex items-center rounded-full bg-brand-gold px-3 py-1 text-xs font-bold text-pa-aviso-tinta">
                                     {{ $resumenDashboard['proximaFecha']['nombre'] }}
                                 </span>
                                 <dl class="mt-3 space-y-1 text-sm text-white/90">
@@ -417,7 +417,7 @@
                                     @endif
                                 </dl>
                                 <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto, 'idFecha' => $resumenDashboard['proximaFecha']['id']]) }}"
-                                    class="mt-4 inline-flex h-10 w-full items-center justify-center rounded-lg bg-pa-superficie px-3 text-sm font-semibold text-brand-navy shadow-sm transition hover:bg-pa-fila-hover">
+                                    class="mt-4 inline-flex h-10 w-full items-center justify-center rounded-lg bg-pa-superficie px-3 text-sm font-semibold text-pa-resaltado shadow-sm transition hover:bg-pa-fila-hover">
                                     Ver fixture de la fecha
                                 </a>
                             </div>
@@ -426,7 +426,7 @@
                                 <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">Próxima fecha</p>
                                 <p class="mt-2 text-sm text-pa-tinta-cuerpo">No hay partidos programados por jugar.</p>
                                 <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto]) }}"
-                                    class="mt-4 inline-flex h-10 w-full items-center justify-center rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-sm font-semibold text-pa-tinta transition hover:bg-pa-fila-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
+                                    class="mt-4 inline-flex h-10 w-full items-center justify-center rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-sm font-semibold text-pa-tinta transition hover:bg-pa-fila-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">
                                     Ir a partidos
                                 </a>
                             </div>

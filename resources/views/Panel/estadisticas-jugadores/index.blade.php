@@ -26,7 +26,7 @@ Ordenados por partidos jugados (mayor a menor).
                 <p class="text-xs font-medium text-pa-tinta-suave">Menos de {{ $contadores['umbral'] }}</p>
             </div>
             <div class="min-w-[160px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
-                <span class="text-2xl font-bold text-emerald-600">{{ $contadores['umbral_o_mas'] }}</span>
+                <span class="text-2xl font-bold text-pa-exito">{{ $contadores['umbral_o_mas'] }}</span>
                 <p class="text-xs font-medium text-pa-tinta-suave">{{ $contadores['umbral'] }} o más</p>
             </div>
         </div>
@@ -97,7 +97,7 @@ Ordenados por partidos jugados (mayor a menor).
                     <label for="desde" class="mb-1 block text-sm font-medium text-pa-tinta-media">Participaciones mínimas</label>
                     <input type="number" name="desde" id="desde" value="{{ $desde }}" min="1" max="999"
                         step="1" inputmode="numeric"
-                        class="block w-full rounded-lg border-pa-campo-borde bg-pa-superficie px-4 py-2 text-sm text-pa-tinta-media shadow-sm placeholder:text-pa-tinta-tenue/60 focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30 focus-visible:ring-2" />
+                        class="block w-full rounded-lg border-pa-campo-borde bg-pa-superficie px-4 py-2 text-sm text-pa-tinta-media shadow-sm placeholder:text-pa-tinta-suave/60 focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30 focus-visible:ring-2" />
                 </div>
 
                 <div class="min-w-[16rem] flex-1">
@@ -134,7 +134,7 @@ Ordenados por partidos jugados (mayor a menor).
                     <td>
                         <div class="flex items-center gap-3">
                             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-navy/10">
-                                <span class="text-sm font-semibold text-brand-navy">
+                                <span class="text-sm font-semibold text-pa-resaltado">
                                     {{ strtoupper(substr($jugador->nombre, 0, 1) . substr($jugador->apellido, 0, 1)) }}
                                 </span>
                             </div>
@@ -155,33 +155,33 @@ Ordenados por partidos jugados (mayor a menor).
                                     </div>
                                 @endforeach
                                 @if ($jugador->equipos->count() > 3)
-                                    <p class="text-xs text-pa-tinta-tenue">+{{ $jugador->equipos->count() - 3 }} más...</p>
+                                    <p class="text-xs text-pa-tinta-suave">+{{ $jugador->equipos->count() - 3 }} más...</p>
                                 @endif
                             </div>
                         @else
-                            <span class="text-sm text-pa-tinta-tenue">Sin equipo</span>
+                            <span class="text-sm text-pa-tinta-suave">Sin equipo</span>
                         @endif
                     </td>
 
                     <td class="text-center">
                         <span @class([
                             'text-lg font-bold',
-                            'text-emerald-600' => $jugador->goles_calculados > 0,
-                            'text-pa-tinta-tenue' => !$jugador->goles_calculados,
+                            'text-pa-exito' => $jugador->goles_calculados > 0,
+                            'text-pa-tinta-suave' => !$jugador->goles_calculados,
                         ])>
                             {{ $jugador->goles_calculados ?? 0 }}
                         </span>
                     </td>
 
                     <td class="text-center bg-brand-navy/5">
-                        <span class="text-xl font-bold text-brand-navy">{{ $jugador->partidos_calculados }}</span>
+                        <span class="text-xl font-bold text-pa-resaltado">{{ $jugador->partidos_calculados }}</span>
                     </td>
 
                     <td class="text-center">
                         <span @class([
                             'text-lg font-bold',
-                            'text-red-600' => ($jugador->tarjetas_rojas_calculadas ?? 0) > 0,
-                            'text-pa-tinta-tenue' => !($jugador->tarjetas_rojas_calculadas ?? 0),
+                            'text-pa-peligro' => ($jugador->tarjetas_rojas_calculadas ?? 0) > 0,
+                            'text-pa-tinta-suave' => !($jugador->tarjetas_rojas_calculadas ?? 0),
                         ])>
                             {{ $jugador->tarjetas_rojas_calculadas ?? 0 }}
                         </span>
@@ -190,7 +190,7 @@ Ordenados por partidos jugados (mayor a menor).
                     <td class="text-center">
                         @if ($jugador->estadisticas_por_edicion && $jugador->estadisticas_por_edicion->isNotEmpty())
                             <button type="button" onclick="toggleDetalles('detalles-{{ $jugador->dni }}')"
-                                class="inline-flex items-center rounded-full border border-pa-campo-borde px-3 py-1.5 text-xs font-medium text-pa-tinta-media shadow-sm hover:bg-pa-fila-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/50">
+                                class="inline-flex items-center rounded-full border border-pa-campo-borde px-3 py-1.5 text-xs font-medium text-pa-tinta-media shadow-sm hover:bg-pa-fila-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/50">
                                 <svg class="mr-1 h-4 w-4 transition-transform" id="icon-{{ $jugador->dni }}"
                                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true">
                                     <path d="M201.4 374.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 306.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z" />
@@ -198,7 +198,7 @@ Ordenados por partidos jugados (mayor a menor).
                                 Por edición
                             </button>
                         @else
-                            <span class="text-xs text-pa-tinta-tenue">Sin datos</span>
+                            <span class="text-xs text-pa-tinta-suave">Sin datos</span>
                         @endif
                     </td>
                 </tr>
@@ -220,15 +220,15 @@ Ordenados por partidos jugados (mayor a menor).
                                             <div class="grid grid-cols-3 gap-2 text-center">
                                                 <div>
                                                     <p class="text-xs text-pa-tinta-suave">Goles</p>
-                                                    <p class="text-lg font-bold text-emerald-600">{{ $stats->goles }}</p>
+                                                    <p class="text-lg font-bold text-pa-exito">{{ $stats->goles }}</p>
                                                 </div>
                                                 <div>
                                                     <p class="text-xs text-pa-tinta-suave">Partidos</p>
-                                                    <p class="text-lg font-bold text-brand-navy">{{ $stats->partidos }}</p>
+                                                    <p class="text-lg font-bold text-pa-resaltado">{{ $stats->partidos }}</p>
                                                 </div>
                                                 <div>
                                                     <p class="text-xs text-pa-tinta-suave">T. Rojas</p>
-                                                    <p class="text-lg font-bold text-red-600">{{ $stats->tarjetas_rojas }}</p>
+                                                    <p class="text-lg font-bold text-pa-peligro">{{ $stats->tarjetas_rojas }}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -248,7 +248,7 @@ Ordenados por partidos jugados (mayor a menor).
                         Mostrando <span class="font-semibold">{{ $jugadoresData->firstItem() }}</span> -
                         <span class="font-semibold">{{ $jugadoresData->lastItem() }}</span> de
                         <span class="font-semibold">{{ $jugadoresData->total() }}</span> jugadores
-                        <span class="italic text-pa-tinta-tenue">· Ordenados por cantidad de partidos (mayor a menor)</span>
+                        <span class="italic text-pa-tinta-suave">· Ordenados por cantidad de partidos (mayor a menor)</span>
                     </p>
                     {{ $jugadoresData->appends(request()->except('page'))->links() }}
                 </div>

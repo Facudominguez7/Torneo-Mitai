@@ -50,7 +50,7 @@
                         <span class="block truncate font-semibold text-pa-tinta" title="{{ $nombreCompleto }}">{{ $nombreCompleto }}</span>
                         <span class="text-xs tabular-nums text-pa-tinta-suave">DNI {{ $dniVisible }} · Nac.&nbsp;{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('d/m/Y') }}</span>
                         <span class="text-xs font-semibold text-amber-700" data-player-repeated-note></span>
-                        <div class="mt-0.5 flex flex-wrap items-center gap-2 text-xs font-semibold text-pa-tinta-suave data-[player-save-state=conflict]:text-red-700 data-[player-save-state=error]:text-red-700 data-[player-save-state=ok]:text-brand-teal [&[hidden]]:hidden"
+                        <div class="mt-0.5 flex flex-wrap items-center gap-2 text-xs font-semibold text-pa-tinta-suave data-[player-save-state=conflict]:text-pa-peligro data-[player-save-state=error]:text-pa-peligro data-[player-save-state=ok]:text-brand-teal [&[hidden]]:hidden"
                             data-player-save-status="{{ $jugador->dni_jugador }}"
                             hidden>
                             <span data-player-save-message="{{ $jugador->dni_jugador }}"></span>

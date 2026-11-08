@@ -10,11 +10,11 @@
             {{-- Tabs de Estado --}}
             <div class="mb-4 flex flex-wrap gap-2 border-b border-pa-linea pb-2 sm:gap-0 sm:pb-0">
                 <button type="submit" name="estado" value="pendientes"
-                    class="flex-1 rounded-md px-4 py-2 text-sm font-medium sm:flex-none sm:rounded-none sm:px-6 sm:py-3 sm:text-base {{ ($estado ?? 'pendientes') === 'pendientes' ? 'bg-brand-navy/10 text-brand-navy sm:border-b-2 sm:border-brand-navy sm:bg-transparent' : 'text-pa-tinta-suave hover:text-pa-tinta-media' }}">
+                    class="flex-1 rounded-md px-4 py-2 text-sm font-medium sm:flex-none sm:rounded-none sm:px-6 sm:py-3 sm:text-base {{ ($estado ?? 'pendientes') === 'pendientes' ? 'bg-pa-resaltado/10 text-pa-resaltado sm:border-b-2 sm:border-pa-resaltado sm:bg-transparent' : 'text-pa-tinta-suave hover:text-pa-tinta-media' }}">
                     Pendientes
                 </button>
                 <button type="submit" name="estado" value="resueltos"
-                    class="flex-1 rounded-md px-4 py-2 text-sm font-medium sm:flex-none sm:rounded-none sm:px-6 sm:py-3 sm:text-base {{ ($estado ?? 'pendientes') === 'resueltos' ? 'bg-green-50 text-green-600 sm:border-b-2 sm:border-green-600 sm:bg-transparent' : 'text-pa-tinta-suave hover:text-pa-tinta-media' }}">
+                    class="flex-1 rounded-md px-4 py-2 text-sm font-medium sm:flex-none sm:rounded-none sm:px-6 sm:py-3 sm:text-base {{ ($estado ?? 'pendientes') === 'resueltos' ? 'bg-green-50 text-pa-exito sm:border-b-2 sm:border-green-600 sm:bg-transparent' : 'text-pa-tinta-suave hover:text-pa-tinta-media' }}">
                     Resueltos
                 </button>
             </div>
@@ -105,7 +105,7 @@
                                 <x-ui.badge variant="info">{{ $item->edicion->nombre }}</x-ui.badge>
                             </td>
                             <td>
-                                <div class="text-sm font-medium text-red-600">
+                                <div class="text-sm font-medium text-pa-peligro">
                                     {{ $item->motivo_conflicto ?? 'No especificado' }}
                                 </div>
                                 @if (($estado ?? 'pendientes') === 'resueltos' && $item->notas_resolucion)
@@ -131,12 +131,12 @@
                                         data-jugador-nombre="{{ $item->jugador->nombre }} {{ $item->jugador->apellido }}"
                                         data-motivo-conflicto="{{ $item->motivo_conflicto }}"
                                         onclick="openResolveModalFromButton(this)"
-                                        class="mb-2 inline-block text-green-600 hover:text-green-900 sm:mb-0 sm:mr-3">
+                                        class="mb-2 inline-block text-pa-exito hover:text-green-900 sm:mb-0 sm:mr-3">
                                         Resolver
                                     </button>
                                 @endif
                                 <a href="{{ route('lista-buena-fe.show', ['idEquipo' => $item->idEquipo, 'idEdicion' => $item->idEdicion]) }}"
-                                    class="text-brand-navy hover:underline">
+                                    class="text-pa-resaltado hover:underline">
                                     Ver Lista
                                 </a>
                             </td>
@@ -160,7 +160,7 @@
 
                 <div class="mb-4 rounded bg-yellow-50 p-3">
                     <p class="mb-1 text-sm text-pa-tinta-cuerpo">Motivo de la observación:</p>
-                    <p class="text-sm font-semibold text-red-600" id="modalMotivoConflicto"></p>
+                    <p class="text-sm font-semibold text-pa-peligro" id="modalMotivoConflicto"></p>
                 </div>
 
                 <form id="resolveForm" method="POST" action="">
@@ -175,7 +175,7 @@
                             id="notas_resolucion"
                             name="notas_resolucion"
                             rows="3"
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Agregar notas sobre la resolución del caso..."
                         ></textarea>
                     </div>

@@ -63,7 +63,7 @@
                     @endif
                 @else
                     <select name="idCategoria" id="idCategoria"
-                        class="w-full rounded-md border border-pa-linea bg-pa-superficie py-3 px-4 text-base font-medium text-pa-tinta-media outline-none focus:border-brand-navy focus:shadow-md">
+                        class="w-full rounded-md border border-pa-linea bg-pa-superficie py-3 px-4 text-base font-medium text-pa-tinta-media outline-none focus:border-pa-resaltado focus:shadow-md">
                         @foreach ($categorias as $categoria)
                             <option value="{{ $categoria->id }}"
                                 {{ $categoriaSeleccionada === (int) $categoria->id ? 'selected' : '' }}>
@@ -95,7 +95,7 @@
                             @endif
                         @else
                             <select name="idGrupo" id="idGrupo"
-                                class="w-full rounded-md border border-pa-linea bg-pa-superficie py-3 px-4 text-base font-medium text-pa-tinta-media outline-none focus:border-brand-navy focus:shadow-md">
+                                class="w-full rounded-md border border-pa-linea bg-pa-superficie py-3 px-4 text-base font-medium text-pa-tinta-media outline-none focus:border-pa-resaltado focus:shadow-md">
                                 @foreach ($grupos as $grupo)
                                     <option value="{{ $grupo->id }}" {{ (int) request('idGrupo') === (int) $grupo->id ? 'selected' : '' }}>
                                         {{ $grupo->nombre }}
@@ -125,7 +125,7 @@
                                         </div>
                                         <div class="rounded-lg bg-pa-superficie p-3 shadow-sm">
                                             <p class="text-xs text-pa-tinta-suave">Ya asignados</p>
-                                            <p class="text-2xl font-bold text-emerald-700" data-resumen="ya_asignados">{{ $resumenAsignacion['ya_asignados'] }}</p>
+                                            <p class="text-2xl font-bold text-pa-exito" data-resumen="ya_asignados">{{ $resumenAsignacion['ya_asignados'] }}</p>
                                         </div>
                                         <div class="rounded-lg bg-pa-superficie p-3 shadow-sm">
                                             <p class="text-xs text-pa-tinta-suave">Pendientes</p>
@@ -259,7 +259,7 @@
 
             const previewPendientes = document.getElementById('resumen-pendientes-preview');
             if (previewPendientes && Number.parseInt(data.pendientes ?? 0, 10) === 0) {
-                previewPendientes.innerHTML = '<p class="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">No quedan equipos pendientes en esta categoría.</p>';
+                previewPendientes.innerHTML = '<p class="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-xs font-semibold text-pa-exito">No quedan equipos pendientes en esta categoría.</p>';
             }
 
             if (botonAsignarPendientes && Number.parseInt(data.pendientes ?? 0, 10) === 0) {

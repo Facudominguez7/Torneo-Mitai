@@ -22,7 +22,7 @@
                     min="2000" max="2099" placeholder="Ej. 2020"
                     class="panel-form-input" />
                 @error('anio_desde')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
                 @enderror
             </div>
             <div>
@@ -32,7 +32,7 @@
                     min="2000" max="2099" placeholder="Ej. 2021"
                     class="panel-form-input" />
                 @error('anio_hasta')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
                 @enderror
             </div>
         </div>

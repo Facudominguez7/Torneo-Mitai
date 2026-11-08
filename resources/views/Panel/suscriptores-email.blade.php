@@ -36,7 +36,7 @@
             <div>
                 <h2 class="text-base font-bold text-pa-tinta">Resumen de la fecha</h2>
                 <p class="mt-1 text-sm text-pa-tinta-suave">Resultados de una fecha para los suscriptores que eligieron el resumen.</p>
-                <p class="mt-1 text-xs text-pa-tinta-tenue">Edición activa: {{ $resumenNombreEdicion }}</p>
+                <p class="mt-1 text-xs text-pa-tinta-suave">Edición activa: {{ $resumenNombreEdicion }}</p>
             </div>
 
             <div class="flex flex-col gap-2" id="resumen-fecha-controls">
@@ -69,7 +69,7 @@
             <div>
                 <h2 class="text-base font-bold text-pa-tinta">Próxima fecha</h2>
                 <p class="mt-1 text-sm text-pa-tinta-suave">Días, horarios y canchas de una fecha para los suscriptores que eligieron la próxima fecha.</p>
-                <p class="mt-1 text-xs text-pa-tinta-tenue">Edición activa: {{ $resumenNombreEdicion }}</p>
+                <p class="mt-1 text-xs text-pa-tinta-suave">Edición activa: {{ $resumenNombreEdicion }}</p>
             </div>
 
             <div class="flex flex-col gap-2" id="proxima-fecha-controls">
@@ -106,13 +106,13 @@
                 <div>
                     <label for="aviso-titulo" class="mb-1 block text-sm font-medium text-pa-tinta-media">Título</label>
                     <input type="text" id="aviso-titulo" maxlength="{{ \App\Http\Requests\Suscripcion\AvisoTorneoRequest::TITULO_MAXIMO }}"
-                        class="block w-full rounded-md border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm text-pa-tinta-media shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30">
+                        class="block w-full rounded-md border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30">
                 </div>
 
                 <div>
                     <label for="aviso-mensaje" class="mb-1 block text-sm font-medium text-pa-tinta-media">Mensaje</label>
                     <textarea id="aviso-mensaje" rows="4" maxlength="{{ \App\Http\Requests\Suscripcion\AvisoTorneoRequest::MENSAJE_MAXIMO }}"
-                        class="block w-full rounded-md border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm text-pa-tinta-media shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30"></textarea>
+                        class="block w-full rounded-md border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30"></textarea>
                 </div>
 
                 <x-ui.button id="btn-enviar-aviso-torneo" onclick="iniciarEnvioAvisoTorneo()" class="mt-1 w-full">
@@ -161,7 +161,7 @@
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm font-semibold text-pa-tinta">{{ $user->name }}</p>
                             <p class="truncate text-xs text-pa-tinta-suave">{{ $user->email }}</p>
-                            <p class="mt-1 text-[11px] text-pa-tinta-tenue">Registro: {{ $user->created_at->format('d/m/Y') }}</p>
+                            <p class="mt-1 text-[11px] text-pa-tinta-suave">Registro: {{ $user->created_at->format('d/m/Y') }}</p>
                         </div>
                     </div>
 
@@ -240,7 +240,7 @@
                                     <x-ui.button type="submit" variant="secondary" size="sm" title="Reenviar email de verificación">Reenviar verificación</x-ui.button>
                                 </form>
                             @else
-                                <span class="text-xs text-pa-tinta-tenue">-</span>
+                                <span class="text-xs text-pa-tinta-suave">-</span>
                             @endif
                         </td>
                     </tr>

@@ -61,7 +61,7 @@
                         @endforeach
                     </x-ui.select>
                     @error('idEquipoLocal')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -76,7 +76,7 @@
                         @endforeach
                     </x-ui.select>
                     @error('idEquipoVisitante')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -90,7 +90,7 @@
                         @endforeach
                     </x-ui.select>
                     @error('idFechas')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -102,7 +102,7 @@
                         class="panel-form-input"
                         value="{{ $horarioPorDefecto }}">
                     @error('horario_datetime')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -113,7 +113,7 @@
                     <input type="text" name="cancha" id="cancha" value="{{ old('cancha') }}"
                         class="panel-form-input" />
                     @error('cancha')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
                     @enderror
                 </div>
             </div>

@@ -194,7 +194,7 @@ function crearParticipacionesCincoPartidos(array $contexto, string $dni, int $ca
  */
 function partidosMostradosCincoPartidos(string $contenido, string $dni): ?int
 {
-    $patron = '/DNI: '.preg_quote($dni, '/').'.*?text-xl font-bold text-brand-navy">(\d+)</s';
+    $patron = '/DNI: '.preg_quote($dni, '/').'.*?text-xl font-bold text-pa-resaltado">(\d+)</s';
 
     if (! preg_match($patron, $contenido, $coincidencias)) {
         return null;
@@ -218,7 +218,7 @@ it('no cuenta al jugador que solo tiene cuatro participaciones reales', function
 
     expect($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-tinta">1<\/span>\s*<p[^>]*>Jugadores activos<\/p>/')
         ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 5<\/p>/')
-        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">0<\/span>\s*<p[^>]*>5 o más<\/p>/')
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-exito">0<\/span>\s*<p[^>]*>5 o más<\/p>/')
         ->and(partidosMostradosCincoPartidos($contenido, '41200001'))->toBe(4);
 
     $responseFiltrada = $this->actingAs($admin)->get(route('estadisticas-jugadores', [
@@ -245,7 +245,7 @@ it('cuenta al jugador con exactamente cinco participaciones y reemplaza las etiq
     $contenido = $response->getContent();
 
     expect($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">0<\/span>\s*<p[^>]*>Menos de 5<\/p>/')
-        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-exito">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
         ->and(partidosMostradosCincoPartidos($contenido, '41200010'))->toBe(5);
 
     $this->actingAs($admin)->get(route('estadisticas-jugadores', ['idEdicion' => $contexto['edicion']->id]))
@@ -274,7 +274,7 @@ it('cuenta al jugador con seis participaciones reales', function () {
     $response->assertOk();
     $contenido = $response->getContent();
 
-    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
+    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-exito">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
         ->and(partidosMostradosCincoPartidos($contenido, '41200020'))->toBe(6);
 });
 
@@ -301,7 +301,7 @@ it('no cuenta participaciones de un partido adjudicado por no vino', function ()
     $contenido = $response->getContent();
 
     expect(partidosMostradosCincoPartidos($contenido, '41200030'))->toBe(4)
-        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">0<\/span>\s*<p[^>]*>5 o más<\/p>/');
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-exito">0<\/span>\s*<p[^>]*>5 o más<\/p>/');
 
     $this->actingAs($admin)->get(route('estadisticas-jugadores', [
         'idEdicion' => $contexto['edicion']->id,
@@ -361,7 +361,7 @@ it('cuenta una instancia final solo cuando tiene los dos resultados cargados', f
     expect(partidosMostradosCincoPartidos($contenido, '41200050'))->toBe(5)
         ->and(partidosMostradosCincoPartidos($contenido, '41200051'))->toBe(4)
         ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 5<\/p>/')
-        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>5 o más<\/p>/');
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-exito">1<\/span>\s*<p[^>]*>5 o más<\/p>/');
 });
 
 it('no mezcla planillas de partidos e instancias finales que comparten id', function () {
@@ -455,7 +455,7 @@ it('aisla el conteo de participaciones por edicion', function () {
     $contenidoAnterior = $responseAnterior->getContent();
 
     expect(partidosMostradosCincoPartidos($contenidoAnterior, '41200070'))->toBe(2)
-        ->and($contenidoAnterior)->toMatch('/<span class="text-2xl font-bold text-emerald-600">0<\/span>\s*<p[^>]*>5 o más<\/p>/');
+        ->and($contenidoAnterior)->toMatch('/<span class="text-2xl font-bold text-pa-exito">0<\/span>\s*<p[^>]*>5 o más<\/p>/');
 });
 
 it('aplica el filtro de categoria en los contadores y en el listado', function () {
@@ -485,7 +485,7 @@ it('aplica el filtro de categoria en los contadores y en el listado', function (
     ]));
 
     $responseSinFiltro->assertOk();
-    expect($responseSinFiltro->getContent())->toMatch('/<span class="text-2xl font-bold text-emerald-600">2<\/span>\s*<p[^>]*>5 o más<\/p>/');
+    expect($responseSinFiltro->getContent())->toMatch('/<span class="text-2xl font-bold text-pa-exito">2<\/span>\s*<p[^>]*>5 o más<\/p>/');
 
     $responseFiltrada = $this->actingAs($admin)->get(route('estadisticas-jugadores', [
         'idEdicion' => $contexto['edicion']->id,
@@ -499,7 +499,7 @@ it('aplica el filtro de categoria en los contadores y en el listado', function (
     $contenidoFiltrado = $responseFiltrada->getContent();
 
     expect($contenidoFiltrado)->toMatch('/<span class="text-2xl font-bold text-pa-tinta">1<\/span>\s*<p[^>]*>Jugadores activos<\/p>/')
-        ->and($contenidoFiltrado)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
+        ->and($contenidoFiltrado)->toMatch('/<span class="text-2xl font-bold text-pa-exito">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
         ->and(partidosMostradosCincoPartidos($contenidoFiltrado, '41200080'))->toBe(5);
 });
 
@@ -569,7 +569,7 @@ it('filtra y cuenta con un umbral distinto al configurado', function () {
     // Los contadores siguen el umbral pedido, no el de configuración.
     expect($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-tinta">2<\/span>\s*<p[^>]*>Jugadores activos<\/p>/')
         ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 10<\/p>/')
-        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>10 o más<\/p>/')
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-exito">1<\/span>\s*<p[^>]*>10 o más<\/p>/')
         ->and($contenido)->toMatch('/de\s*<span class="font-semibold">1<\/span>\s*jugadores/')
         // El campo queda precargado con el filtro pedido.
         ->and($contenido)->toMatch('/name="desde"[^>]*value="10"/');
@@ -600,7 +600,7 @@ it('muestra a todos los jugadores con su cantidad cuando no hay umbral pedido', 
         ->and(partidosMostradosCincoPartidos($contenido, '41200211'))->toBe(2)
         // Sin filtro, los contadores usan el valor de configuración y el
         // campo numérico arranca vacío para listar a todos.
-        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-exito">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
         ->and($contenido)->toMatch('/name="desde"[^>]*value=""/')
         ->and($contenido)->toMatch('/name="desde"[^>]*min="1"/')
         ->and($contenido)->toMatch('/name="desde"[^>]*max="999"/')
@@ -627,7 +627,7 @@ it('ignora un umbral invalido sin romper el listado', function (string $desdeInv
     // umbral de configuración.
     expect(partidosMostradosCincoPartidos($contenido, '41200220'))->toBe(2)
         ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 5<\/p>/')
-        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">0<\/span>\s*<p[^>]*>5 o más<\/p>/');
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-exito">0<\/span>\s*<p[^>]*>5 o más<\/p>/');
 })->with([
     'texto' => ['abc'],
     'cero' => ['0'],
@@ -655,7 +655,7 @@ it('toma el umbral de configuracion para las etiquetas y los contadores', functi
     $contenido = $response->getContent();
 
     expect($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 3<\/p>/')
-        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>3 o más<\/p>/')
+        ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-exito">1<\/span>\s*<p[^>]*>3 o más<\/p>/')
         // El campo arranca vacío aunque las etiquetas usen el umbral configurado.
         ->and($contenido)->toMatch('/name="desde"[^>]*value=""/');
 });

@@ -95,7 +95,7 @@
                                             @if ($rank <= 2) data-destacado="clasifica" @endif
                                             @class([
                                                 'inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
-                                                'bg-brand-gold/40 text-brand-navy' => $rank <= 2,
+                                                'bg-brand-gold/40 text-pa-aviso-tinta' => $rank <= 2,
                                                 'bg-pa-fila-hover text-pa-tinta-cuerpo' => $rank > 2,
                                             ])
                                         >{{ $rank }}</span>
@@ -109,7 +109,7 @@
                                     <td class="text-center">{{ $fila->golesContra }}</td>
                                     <td class="text-center">{{ $fila->diferenciaGoles }}</td>
                                     <td class="text-center">{{ $fila->golesContraGeneral ?? '-' }}</td>
-                                    <td class="text-center font-extrabold text-brand-navy">{{ $fila->puntos }}</td>
+                                    <td class="text-center font-extrabold text-pa-resaltado">{{ $fila->puntos }}</td>
                                     <td class="whitespace-nowrap">
                                         <div class="flex flex-col items-stretch justify-center gap-2 lg:flex-row lg:items-center">
                                             <x-ui.button

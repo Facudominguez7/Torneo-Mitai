@@ -24,7 +24,7 @@
     </div>
 
     <article class="informe-hoja mx-auto mb-6 mt-3 max-w-[210mm] bg-pa-superficie px-4 py-5 shadow-sm sm:px-6">
-        <header class="grid items-end gap-4 border-b-2 border-brand-navy pb-4 sm:grid-cols-[1fr_auto]">
+        <header class="grid items-end gap-4 border-b-2 border-pa-resaltado pb-4 sm:grid-cols-[1fr_auto]">
             <div class="min-w-0">
                 <p class="text-xs font-bold uppercase tracking-[0.3em] text-brand-teal">Torneo Mitai · Cuenta de planillas</p>
                 <h1 class="mt-1 break-words text-2xl font-bold leading-tight">{{ $nombreEquipo }}</h1>
@@ -38,7 +38,7 @@
 
         <div class="mt-5 grid gap-5 md:grid-cols-[1.25fr_1fr] print:grid-cols-[1.25fr_1fr]">
             <section aria-labelledby="informe-debe">
-                <h2 id="informe-debe" class="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-red-700">Debe · {{ $planillas($debe->count()) }}</h2>
+                <h2 id="informe-debe" class="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-pa-peligro">Debe · {{ $planillas($debe->count()) }}</h2>
                 <div class="rounded-md border border-pa-linea">
                     @forelse ($debe as $planilla)
                         <div class="informe-fila informe-color flex justify-between gap-3 border-t border-pa-linea bg-red-50 px-3 py-2.5 first:border-t-0">
@@ -61,7 +61,7 @@
             </section>
 
             <section aria-labelledby="informe-al-dia">
-                <h2 id="informe-al-dia" class="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-green-700">Al día · {{ $planillas($al_dia->count()) }}</h2>
+                <h2 id="informe-al-dia" class="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-pa-exito">Al día · {{ $planillas($al_dia->count()) }}</h2>
                 <div class="rounded-md border border-pa-linea">
                     @forelse ($al_dia as $planilla)
                         <div class="informe-fila flex justify-between gap-3 border-t border-pa-linea px-3 py-2.5 first:border-t-0">

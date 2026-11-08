@@ -42,7 +42,7 @@
                         class="h-12 w-12 rounded-full object-cover" />
                     <span class="text-center font-semibold text-pa-tinta">{{ $partido->equipoLocal->nombre }}</span>
                 </div>
-                <div class="text-sm font-semibold text-pa-tinta-tenue">vs</div>
+                <div class="text-sm font-semibold text-pa-tinta-suave">vs</div>
                 <div class="flex flex-col items-center gap-2">
                     <img src="{{ asset('fotos/equipos/' . $partido->equipoVisitante->foto) }}" width="48" height="48" alt="Escudo {{ $partido->equipoVisitante->nombre }}"
                         onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';"
@@ -101,7 +101,7 @@
                     </label>
                     <input type="number" name="golesEquipoLocal" id="golesEquipoLocal" min="0"
                         value="{{ old('golesEquipoLocal', $partido->golesEquipoLocal) }}"
-                        class="w-full rounded-md border-pa-campo-borde text-center text-2xl font-bold text-pa-tinta shadow-sm focus:border-brand-navy focus:ring-brand-navy/30" />
+                        class="w-full rounded-md border-pa-campo-borde text-center text-2xl font-bold text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30" />
                 </div>
                 <div class="flex flex-col justify-end">
                     <label for="golesEquipoVisitante" class="mb-2 block text-center text-sm font-medium text-pa-tinta-media">
@@ -109,7 +109,7 @@
                     </label>
                     <input type="number" name="golesEquipoVisitante" id="golesEquipoVisitante" min="0"
                         value="{{ old('golesEquipoVisitante', $partido->golesEquipoVisitante) }}"
-                        class="w-full rounded-md border-pa-campo-borde text-center text-2xl font-bold text-pa-tinta shadow-sm focus:border-brand-navy focus:ring-brand-navy/30" />
+                        class="w-full rounded-md border-pa-campo-borde text-center text-2xl font-bold text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30" />
                 </div>
             </div>
             @if (isset($tipo) && $tipo === 'instancia_final')
@@ -129,7 +129,7 @@
                         </label>
                         <input type="number" name="penalesEquipoLocal" id="penalesEquipoLocal"
                             value="{{ old('penalesEquipoLocal', $partido->penalesEquipoLocal) }}"
-                            class="w-full rounded-md border-pa-campo-borde text-center text-lg font-semibold text-pa-tinta shadow-sm focus:border-brand-navy focus:ring-brand-navy/30" />
+                            class="w-full rounded-md border-pa-campo-borde text-center text-lg font-semibold text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30" />
                     </div>
                     <div>
                         <label for="penalesEquipoVisitante" class="mb-2 block text-center text-sm font-medium text-pa-tinta-media">
@@ -137,7 +137,7 @@
                         </label>
                         <input type="number" name="penalesEquipoVisitante" id="penalesEquipoVisitante"
                             value="{{ old('penalesEquipoVisitante', $partido->penalesEquipoVisitante) }}"
-                            class="w-full rounded-md border-pa-campo-borde text-center text-lg font-semibold text-pa-tinta shadow-sm focus:border-brand-navy focus:ring-brand-navy/30" />
+                            class="w-full rounded-md border-pa-campo-borde text-center text-lg font-semibold text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30" />
                     </div>
                 </div>
 

@@ -310,6 +310,8 @@
         --pa-tinta-suave: 107 114 128;
         --pa-tinta-tenue: 156 163 175;
         --pa-acento: 42 109 129;
+        --pa-exito: 5 150 105;
+        --pa-peligro: 220 38 38;
         --pa-resaltado: 14 75 94;
         --pa-aviso-fondo: 147 197 253;
         --pa-aviso-tinta: 17 24 39;
@@ -376,6 +378,8 @@
             --pa-tinta-suave: 255 255 255;
             --pa-tinta-tenue: 255 255 255;
             --pa-acento: 155 211 226;
+            --pa-peligro: 255 255 255;
+            --pa-exito: 255 255 255;
             --pa-resaltado: 155 211 226;
             --pa-aviso-fondo: 155 211 226;
             --pa-aviso-tinta: 8 47 59;
@@ -416,6 +420,8 @@
         --pa-tinta-suave: 107 114 128;
         --pa-tinta-tenue: 156 163 175;
         --pa-acento: 42 109 129;
+        --pa-peligro: 220 38 38;
+        --pa-exito: 5 150 105;
         --pa-resaltado: 14 75 94;
         --pa-aviso-fondo: 147 197 253;
         --pa-aviso-tinta: 17 24 39;
@@ -475,6 +481,8 @@
         --pa-tinta-suave: 255 255 255;
         --pa-tinta-tenue: 255 255 255;
         --pa-acento: 155 211 226;
+        --pa-peligro: 255 255 255;
+        --pa-exito: 255 255 255;
         --pa-resaltado: 155 211 226;
         --pa-aviso-fondo: 155 211 226;
         --pa-aviso-tinta: 8 47 59;
@@ -541,6 +549,8 @@
         --pa-tinta-suave: 107 114 128;
         --pa-tinta-tenue: 156 163 175;
         --pa-acento: 42 109 129;
+        --pa-peligro: 220 38 38;
+        --pa-exito: 5 150 105;
         --pa-resaltado: 14 75 94;
         --pa-aviso-fondo: 147 197 253;
         --pa-aviso-tinta: 17 24 39;
@@ -584,6 +594,8 @@
         --pa-tinta-suave: 107 114 128;
         --pa-tinta-tenue: 156 163 175;
         --pa-acento: 42 109 129;
+        --pa-peligro: 220 38 38;
+        --pa-exito: 5 150 105;
         --pa-resaltado: 14 75 94;
         --pa-aviso-fondo: 147 197 253;
         --pa-aviso-tinta: 17 24 39;

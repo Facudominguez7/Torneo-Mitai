@@ -11,7 +11,7 @@
             <p class="text-xs font-medium text-pa-tinta-suave">Instituciones</p>
         </div>
         <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
-            <span class="text-2xl font-bold text-emerald-600">{{ $institucionesConEquipos }}</span>
+            <span class="text-2xl font-bold text-pa-exito">{{ $institucionesConEquipos }}</span>
             <p class="text-xs font-medium text-pa-tinta-suave">Con equipos</p>
         </div>
         <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
@@ -36,22 +36,22 @@
 
     {{-- Crear Nueva Institución --}}
     <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
-        <h3 class="mb-3 font-semibold text-pa-tinta">
+        <h3 class="mb-3 font-semibold text-pa-aviso-tinta">
             Crear Nueva Institución
         </h3>
         <form action="{{ route('institucion.store') }}" method="POST" class="flex flex-wrap items-end gap-4">
             @csrf
             <div class="min-w-64 flex-1">
-                <label class="mb-1 block text-sm font-medium text-pa-tinta-media">Nombre de la institución:</label>
+                <label class="mb-1 block text-sm font-medium text-pa-aviso-tinta">Nombre de la institución:</label>
                 <input type="text" name="nombre" required placeholder="Ej: Escuela San José"
-                    class="w-full rounded-lg border-pa-campo-borde px-3 py-2 focus:ring-2 focus:ring-brand-navy/30">
+                    class="w-full rounded-lg border-pa-campo-borde px-3 py-2 focus:ring-2 focus:ring-pa-resaltado/30">
             </div>
             <x-ui.button type="submit" variant="primary">
                 Crear Institución
             </x-ui.button>
         </form>
         @error('nombre')
-            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-2 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 
@@ -90,7 +90,7 @@
                             <input type="hidden" name="equipo_id" value="{{ $equipo->id }}">
                             <select name="institucion_id"
                                 onchange="if(confirm('¿Vincular este equipo a la institución seleccionada?')) this.form.submit();"
-                                class="w-32 rounded border-pa-campo-borde bg-pa-superficie text-xs focus:border-brand-navy focus:ring-brand-navy/30">
+                                class="w-32 rounded border-pa-campo-borde bg-pa-superficie text-xs focus:border-pa-resaltado focus:ring-pa-resaltado/30">
                                 <option value="">Seleccionar...</option>
                                 @foreach ($instituciones as $inst)
                                     <option value="{{ $inst->id }}">
@@ -105,7 +105,7 @@
         </div>
     @else
         <div class="mt-6 rounded-xl border border-green-200 bg-green-50 p-4">
-            <p class="text-sm text-green-700">
+            <p class="text-sm text-pa-exito">
                 ¡Excelente! Todos los equipos tienen una institución asignada.
             </p>
         </div>
@@ -139,7 +139,7 @@
                                 @endif
                             </div>
                             <button type="button" onclick="toggleEdit(this.dataset.institucionId)" data-institucion-id="{{ $institucion->id }}"
-                                class="text-sm font-medium text-brand-navy hover:underline">
+                                class="text-sm font-medium text-pa-resaltado hover:underline">
                                 Editar
                             </button>
                         </div>
@@ -212,7 +212,7 @@
                                                     <input type="hidden" name="equipo_id" value="{{ $equipo->id }}">
                                                     <button type="submit"
                                                         onclick="return confirm('¿Desvincular este equipo de la institución?')"
-                                                        class="p-1 text-red-500 hover:text-red-700" title="Desvincular de institución">
+                                                        class="p-1 text-pa-peligro hover:text-pa-peligro" title="Desvincular de institución">
                                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                 d="M6 18L18 6M6 6l12 12"></path>

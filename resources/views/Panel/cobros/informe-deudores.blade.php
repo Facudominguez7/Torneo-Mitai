@@ -23,7 +23,7 @@
     </div>
 
     <article class="informe-hoja mx-auto mb-6 mt-3 max-w-[210mm] bg-pa-superficie px-4 py-5 shadow-sm sm:px-6">
-        <header class="grid items-end gap-4 border-b-2 border-brand-navy pb-4 sm:grid-cols-[1fr_auto]">
+        <header class="grid items-end gap-4 border-b-2 border-pa-resaltado pb-4 sm:grid-cols-[1fr_auto]">
             <div class="min-w-0">
                 <p class="text-xs font-bold uppercase tracking-[0.3em] text-brand-teal">Torneo Mitai · Deudores de planillas</p>
                 <h1 class="mt-1 break-words text-2xl font-bold leading-tight">{{ $EdicionSeleccionada->nombre }}</h1>
@@ -46,7 +46,7 @@
                                 <strong class="break-words text-base">{{ $deudor['equipo'] }}</strong>
                                 <span class="text-xs text-pa-tinta-suave">{{ collect([$deudor['categoria'], $planillas($deudor['cargos'])])->filter()->implode(' · ') }}</span>
                             </div>
-                            <strong class="shrink-0 text-base tabular-nums text-red-700">{{ $pesos($deudor['deuda_ars']) }}</strong>
+                            <strong class="shrink-0 text-base tabular-nums text-pa-peligro">{{ $pesos($deudor['deuda_ars']) }}</strong>
                         </div>
                         <ul class="mt-1.5 flex flex-col gap-0.5 text-pa-tinta-cuerpo">
                             @foreach ($deudor['planillas'] as $planilla)

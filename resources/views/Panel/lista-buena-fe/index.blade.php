@@ -69,7 +69,7 @@
                 <p class="text-xs font-medium text-pa-tinta-suave">Sin jugadores</p>
             </div>
             <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center {{ $totalExcedidos > 0 ? 'border-red-300' : '' }}">
-                <span class="text-2xl font-bold {{ $totalExcedidos > 0 ? 'text-red-600' : 'text-pa-tinta' }}">{{ $totalExcedidos }}</span>
+                <span class="text-2xl font-bold {{ $totalExcedidos > 0 ? 'text-pa-peligro' : 'text-pa-tinta' }}">{{ $totalExcedidos }}</span>
                 <p class="text-xs font-medium text-pa-tinta-suave">Excedidos</p>
             </div>
             <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
@@ -118,7 +118,7 @@
                     {{-- Dropdown: Impresión --}}
                     <div x-data="{ open: false }" class="relative">
                         <button type="button" @click="open = !open"
-                            class="flex h-10 items-center gap-2 rounded-lg bg-brand-navy px-4 text-sm font-semibold text-white shadow hover:bg-brand-navy/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40 whitespace-nowrap">
+                            class="flex h-10 items-center gap-2 rounded-lg bg-brand-navy px-4 text-sm font-semibold text-white shadow hover:bg-brand-navy/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40 whitespace-nowrap">
                             <span>Impresión</span>
                             <svg class="h-4 w-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -144,7 +144,7 @@
                                 <form data-print-fecha-form class="flex items-center gap-2">
                                     <select name="idFechaImpresion"
                                         id="idFechaImpresion"
-                                        class="h-10 min-w-0 flex-1 rounded-md border-pa-campo-borde text-sm shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                                        class="h-10 min-w-0 flex-1 rounded-md border-pa-campo-borde text-sm shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                                         @disabled($fechasEdicion->isEmpty())
                                         onchange="actualizarEstadoImpresionFecha(this)">
                                         <option value="">-- Seleccionar --</option>
@@ -214,9 +214,9 @@
                 <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Prioridad administrativa</p>
-                        <h2 class="text-lg font-bold text-pa-tinta">{{ $equiposSinJugadores }} {{ $equiposSinJugadores === 1 ? 'equipo' : 'equipos' }} sin jugadores cargados</h2>
+                        <h2 class="text-lg font-bold text-pa-aviso-tinta">{{ $equiposSinJugadores }} {{ $equiposSinJugadores === 1 ? 'equipo' : 'equipos' }} sin jugadores cargados</h2>
                     </div>
-                    <p class="text-sm text-pa-tinta-cuerpo md:text-right">
+                    <p class="text-sm text-pa-aviso-tinta md:text-right">
                         Se muestran primero para facilitar la carga inicial.
                     </p>
                 </div>
@@ -244,7 +244,7 @@
                         <div class="p-4">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
-                                    <p class="truncate text-xs font-semibold uppercase tracking-wide text-pa-tinta-tenue">
+                                    <p class="truncate text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">
                                         {{ $equipo->categoria->nombreCategoria }}
                                     </p>
                                     <h3 class="mt-1 truncate text-base font-semibold text-pa-tinta">{{ $equipo->equipo->nombre }}</h3>
@@ -274,7 +274,7 @@
                                 <p class="mt-1 text-xs text-pa-tinta-suave">{{ $totalJugadoresActivos }}/{{ $limiteJugadoresPorPlanilla }} jugadores</p>
                             </div>
                         </div>
-                        <div class="border-t border-pa-linea-suave bg-pa-fila-bg px-4 py-2 text-center text-xs font-semibold text-brand-navy group-hover:underline">
+                        <div class="border-t border-pa-linea-suave bg-pa-fila-bg px-4 py-2 text-center text-xs font-semibold text-pa-resaltado group-hover:underline">
                             Ver lista de buena fe
                         </div>
                     </a>
@@ -299,11 +299,11 @@
                                 {{ session('migration_result')['status'] == 'success' ? 'bg-green-100' : (session('migration_result')['status'] == 'warning' ? 'bg-yellow-100' : 'bg-red-100') }}
                                 sm:mx-0 sm:h-10 sm:w-10">
                                 @if (session('migration_result')['status'] == 'success')
-                                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <svg class="h-6 w-6 text-pa-exito" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                 @elseif (session('migration_result')['status'] == 'warning')
                                     <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                 @else
-                                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    <svg class="h-6 w-6 text-pa-peligro" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                 @endif
                             </div>
                             <div class="mt-3 w-full text-center sm:ml-4 sm:mt-0 sm:text-left">
@@ -316,8 +316,8 @@
                                     </p>
                                     @if (isset(session('migration_result')['errors']) && count(session('migration_result')['errors']) > 0)
                                         <div class="mt-3 max-h-40 overflow-y-auto rounded bg-red-50 p-2 text-left">
-                                            <p class="mb-1 text-xs font-bold text-red-700">Errores:</p>
-                                            <ul class="list-inside list-disc text-xs text-red-600">
+                                            <p class="mb-1 text-xs font-bold text-pa-peligro">Errores:</p>
+                                            <ul class="list-inside list-disc text-xs text-pa-peligro">
                                                 @foreach (session('migration_result')['errors'] as $error)
                                                     <li>{{ $error }}</li>
                                                 @endforeach

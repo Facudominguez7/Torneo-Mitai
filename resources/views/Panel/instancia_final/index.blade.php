@@ -63,7 +63,7 @@
                 @endif
                 <div class="flex items-center gap-2 rounded-lg border border-pa-linea bg-pa-fila-bg px-3 py-2">
                     <select id="selector-impresion-instancias"
-                        class="min-w-[200px] rounded-md border border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm font-medium text-pa-tinta-media shadow-sm outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/30">
+                        class="min-w-[200px] rounded-md border border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm font-medium text-pa-tinta-media shadow-sm outline-none focus:border-pa-resaltado focus:ring-2 focus:ring-pa-resaltado/30">
                         <option value="">Seleccionar opción</option>
                         <option value="fixture">Fixture</option>
                         <option value="arbitros">Planilla Árbitros</option>
@@ -162,7 +162,7 @@
             <p class="text-xs font-medium text-pa-tinta-suave">Partidos</p>
         </div>
         <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
-            <span class="text-2xl font-bold text-emerald-600">{{ $partidosJugados }}</span>
+            <span class="text-2xl font-bold text-pa-exito">{{ $partidosJugados }}</span>
             <p class="text-xs font-medium text-pa-tinta-suave">Jugados</p>
         </div>
         <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
