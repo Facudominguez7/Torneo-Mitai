@@ -6,7 +6,7 @@
 <body x-data="{ sidebarAbierto: false }" :class="{ 'overflow-hidden': sidebarAbierto }"
     @keydown.escape.window="sidebarAbierto = false"
     @resize.window="if (window.matchMedia('(min-width: 1024px)').matches) sidebarAbierto = false"
-    class="bg-gray-100 text-gray-900 font-sans">
+    class="bg-pa-fondo text-pa-tinta font-sans">
     @php
         /**
          * Contexto de edición activo para mantener la navegación consistente.
@@ -15,9 +15,9 @@
     @endphp
     <div id="sidebar-backdrop" x-show="sidebarAbierto" x-cloak x-transition.opacity
         @click="sidebarAbierto = false" aria-hidden="true"
-        class="fixed inset-0 z-30 bg-slate-900/50 lg:hidden"></div>
+        class="fixed inset-0 z-30 bg-pa-velo-menu/50 lg:hidden"></div>
     <aside id="sidebar-multi-level-sidebar"
-        class="fixed inset-y-0 left-0 z-40 flex w-80 -translate-x-full flex-col overflow-y-auto bg-white shadow-xl transition-transform duration-200 lg:w-64 lg:shadow-none lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-40 flex w-80 -translate-x-full flex-col overflow-y-auto bg-pa-superficie shadow-xl transition-transform duration-200 lg:w-64 lg:shadow-none lg:translate-x-0"
         :class="{ 'translate-x-0': sidebarAbierto, '-translate-x-full': !sidebarAbierto }"
         aria-label="Navegación del panel de administración">
         @include('Panel.partials.sidebar')
@@ -30,13 +30,13 @@
         $edicionActivaHeader = $EdicionSeleccionada ?? null;
     @endphp
     <header data-panel-edicion-header
-        class="z-30 flex w-full flex-col justify-center gap-2 border-b border-slate-200 bg-white/90 px-3 py-2 text-slate-700 shadow-sm backdrop-blur-sm sm:px-4 lg:ml-64 lg:h-16 lg:w-auto lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
+        class="z-30 flex w-full flex-col justify-center gap-2 border-b border-pa-linea-suave bg-pa-superficie/90 px-3 py-2 text-pa-tinta-media shadow-sm backdrop-blur-sm sm:px-4 lg:ml-64 lg:h-16 lg:w-auto lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
         <div data-panel-header-primary-row class="flex w-full min-w-0 items-center justify-between gap-2 lg:w-auto lg:flex-1">
             <div class="flex min-w-0 flex-1 items-center gap-2">
                 <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
                     aria-controls="sidebar-multi-level-sidebar" type="button" aria-label="Abrir menú"
                     :aria-expanded="sidebarAbierto.toString()" @click="sidebarAbierto = true"
-                    class="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg text-sm text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 lg:hidden">
+                    class="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg text-sm text-pa-tinta-cuerpo hover:bg-pa-control-fondo focus:outline-none focus:ring-2 focus:ring-pa-contorno-control lg:hidden">
                     <svg class="h-6 w-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
                         xmlns="http://www.w3.org/2000/svg">
                         <path clip-rule="evenodd" fill-rule="evenodd"
@@ -44,7 +44,7 @@
                         </path>
                     </svg>
                 </button>
-                <span class="whitespace-nowrap text-sm font-bold tracking-wide text-slate-800 sm:text-base">Mitaí Admin</span>
+                <span class="whitespace-nowrap text-sm font-bold tracking-wide text-pa-tinta sm:text-base">Mitaí Admin</span>
                 {{-- Buscador de jugador por DNI: sin JS hace el mismo POST que Consulta de jugador; con JS muestra el resultado en un modal. --}}
                 <form data-buscador-jugador data-url-rapida="{{ route('jugador.consulta-rapida') }}" action="{{ route('jugador.buscar') }}" method="POST" role="search"
                     class="ml-1 flex min-w-0 flex-1 items-center gap-1 sm:ml-3 lg:max-w-xs">
@@ -53,21 +53,26 @@
                     <label for="buscador-jugador-dni" class="sr-only">Buscar jugador por DNI</label>
                     <input id="buscador-jugador-dni" name="dni" type="text" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required
                         placeholder="DNI del jugador" title="Ingresá el DNI solo con números"
-                        class="h-10 w-full min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30">
+                        class="h-10 w-full min-w-0 flex-1 rounded-lg border border-pa-campo-borde bg-pa-campo-fondo px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30">
                     <button type="submit" aria-label="Buscar jugador"
-                        class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300">
+                        class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-pa-linea-suave bg-pa-control-fondo text-pa-tinta-media transition hover:bg-pa-linea-suave focus:outline-none focus:ring-2 focus:ring-pa-contorno-control">
                         <svg class="h-5 w-5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
                         </svg>
                     </button>
                 </form>
             </div>
+            <button type="button" id="btn-tema"
+                class="inline-flex h-11 min-w-[44px] flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-pa-linea-suave bg-pa-control-fondo px-3 text-xs font-semibold text-pa-tinta-media transition hover:bg-pa-linea-suave focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">
+                <svg id="icono-tema" class="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" aria-hidden="true"></svg>
+                <span class="sr-only">Tema:</span><span id="etiqueta-tema">Sistema</span>
+            </button>
         </div>
         <form data-panel-header-edition-row data-panel-edicion-form action="{{ route('admin') }}" method="GET"
             class="flex w-full min-w-0 items-center gap-2 lg:w-auto lg:flex-shrink-0">
-            <label for="panel-edicion-select" class="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-500">Edición</label>
+            <label for="panel-edicion-select" class="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">Edición</label>
             <select name="idEdicion" id="panel-edicion-select"
-                class="h-10 min-w-0 max-w-full flex-1 rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-brand-navy shadow-sm outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/40 lg:w-72 lg:flex-none">
+                class="h-10 min-w-0 max-w-full flex-1 rounded-lg border border-pa-campo-borde bg-pa-campo-fondo px-3 text-sm font-semibold text-pa-resaltado shadow-sm outline-none focus:border-pa-resaltado focus:ring-2 focus:ring-pa-resaltado/40 lg:w-72 lg:flex-none">
                 @if (! $edicionActivaHeader)
                     <option value="" selected>Sin edición seleccionada</option>
                 @endif
@@ -78,18 +83,18 @@
                 @endforeach
             </select>
             <button type="submit"
-                class="inline-flex h-10 flex-shrink-0 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:text-sm">
+                class="inline-flex h-10 flex-shrink-0 items-center rounded-lg border border-pa-linea-suave bg-pa-control-fondo px-3 text-xs font-semibold text-pa-tinta-media transition hover:bg-pa-linea-suave focus:outline-none focus:ring-2 focus:ring-pa-contorno-control sm:text-sm">
                 Cambiar
             </button>
         </form>
     </header>
     <style>#buscador-jugador-modal::backdrop { background: rgb(0 0 0 / .5); }</style>
     <dialog id="buscador-jugador-modal" aria-labelledby="buscador-jugador-titulo" style="width:calc(100% - 2rem);max-height:90vh"
-        class="m-auto max-w-5xl overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 p-0 text-gray-900">
-        <div class="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-5 py-3">
-            <h2 id="buscador-jugador-titulo" tabindex="-1" class="min-w-0 break-words text-lg font-bold text-gray-800 focus:outline-none">Consulta de jugador</h2>
+        class="m-auto max-w-5xl overflow-y-auto rounded-xl border border-pa-linea bg-pa-fila-bg p-0 text-pa-tinta">
+        <div class="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-pa-linea bg-pa-superficie px-5 py-3">
+            <h2 id="buscador-jugador-titulo" tabindex="-1" class="min-w-0 break-words text-lg font-bold text-pa-tinta focus:outline-none">Consulta de jugador</h2>
             <button type="button" data-buscador-jugador-cerrar
-                class="min-h-11 flex-shrink-0 rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">Cerrar</button>
+                class="min-h-11 flex-shrink-0 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-sm font-semibold text-pa-tinta-media hover:bg-pa-fila-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">Cerrar</button>
         </div>
         <div id="buscador-jugador-contenido" aria-live="polite" class="px-5 pb-5 pt-4"></div>
     </dialog>
@@ -467,8 +472,8 @@
             <section class="{{ $clasesSeccionPrincipal }} panel-admin-content">
                 @if (session('status'))
                     <div class="flex justify-center">
-                        <div id="status-message" class="flex w-full items-center rounded-xl bg-white p-4 shadow-lg sm:w-11/12 lg:w-1/2">
-                            <div class="flex h-10 w-10 items-center justify-center bg-blue-300 rounded-xl">
+                        <div id="status-message" class="flex w-full items-center rounded-xl bg-pa-superficie p-4 shadow-lg sm:w-11/12 lg:w-1/2">
+                            <div class="flex h-10 w-10 items-center justify-center bg-pa-aviso-fondo text-pa-aviso-tinta rounded-xl">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                     viewBox="0 0 512 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
                                     <path
@@ -477,7 +482,7 @@
                             </div>
                             <div class="ml-6">
                                 <div class="flex justify-center">
-                                    <p class="text-lg text-black font-semibold">{{ session('status') }}</p>
+                                    <p class="text-lg text-pa-tinta font-semibold">{{ session('status') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -498,15 +503,15 @@
     </div>
 
     <div id="fixture-impresion-modal" class="fixed inset-0 z-[80] hidden items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="fixture-impresion-modal-title">
-        <button type="button" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" aria-label="Cerrar modal de impresión de fixture" onclick="cerrarModalFixtureImpresion()"></button>
+        <button type="button" class="absolute inset-0 bg-pa-velo-modal/70 backdrop-blur-sm" aria-label="Cerrar modal de impresión de fixture" onclick="cerrarModalFixtureImpresion()"></button>
 
-        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/15 bg-white shadow-2xl">
-            <div class="bg-gradient-to-r from-blue-700 to-cyan-700 px-6 py-5 text-white">
+        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/15 bg-pa-superficie shadow-2xl">
+            <div class="bg-gradient-to-r from-pa-tablero-inicio to-pa-tablero-fin px-6 py-5 text-white">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-blue-100">Fixture</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-pa-tablero-leyenda">Fixture</p>
                         <h2 id="fixture-impresion-modal-title" class="mt-1 text-xl font-bold">Seleccionar fecha de impresión</h2>
-                        <p class="mt-1 text-sm text-blue-100">Elegí una jornada específica o imprimí todo el fixture.</p>
+                        <p class="mt-1 text-sm text-pa-tablero-leyenda">Elegí una jornada específica o imprimí todo el fixture.</p>
                     </div>
                     <button type="button" class="rounded-full bg-white/15 p-2 text-white transition hover:bg-white/25" aria-label="Cerrar modal" onclick="cerrarModalFixtureImpresion()">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -518,22 +523,22 @@
 
             <div class="space-y-5 px-6 py-6">
                 <div>
-                    <label for="fecha-fixture-impresion" class="mb-2 block text-sm font-semibold text-slate-700">Fecha a imprimir</label>
+                    <label for="fecha-fixture-impresion" class="mb-2 block text-sm font-semibold text-pa-tinta-media">Fecha a imprimir</label>
                     <select id="fecha-fixture-impresion"
-                        class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        class="w-full rounded-xl border border-pa-contorno-control bg-pa-campo-fondo px-4 py-3 text-sm font-semibold text-pa-tinta shadow-sm focus:border-pa-tablero-foco focus:outline-none focus:ring-2 focus:ring-pa-tablero-leyenda">
                         <option value="">Todas las fechas</option>
                         @foreach ($fechasFixtureImpresion ?? collect() as $fechaFixture)
                             <option value="{{ $fechaFixture->id }}">{{ $fechaFixture->nombre }}</option>
                         @endforeach
                     </select>
-                    <p class="mt-2 text-xs text-slate-500">Si elegís “Todas las fechas”, se imprime el fixture completo de la edición.</p>
+                    <p class="mt-2 text-xs text-pa-tinta-suave">Si elegís “Todas las fechas”, se imprime el fixture completo de la edición.</p>
                 </div>
 
                 <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                    <button type="button" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" onclick="cerrarModalFixtureImpresion()">
+                    <button type="button" class="rounded-xl border border-pa-contorno-control px-4 py-2 text-sm font-semibold text-pa-tinta-media transition hover:bg-pa-control-fondo" onclick="cerrarModalFixtureImpresion()">
                         Cancelar
                     </button>
-                    <button type="button" id="fixture-impresion-confirmar" class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-800" onclick="confirmarImpresionFixture()">
+                    <button type="button" id="fixture-impresion-confirmar" class="rounded-xl bg-pa-tablero-accion px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-pa-tablero-accion-hover" onclick="confirmarImpresionFixture()">
                         Imprimir fixture
                     </button>
                 </div>
@@ -726,7 +731,7 @@
 
                 titulo.textContent = `Consulta de jugador · DNI ${dni}`;
                 const cargando = document.createElement('p');
-                cargando.className = 'text-sm text-gray-600';
+                cargando.className = 'text-sm text-pa-tinta-cuerpo';
                 cargando.textContent = 'Buscando jugador…';
                 contenido.replaceChildren(cargando);
                 if (!modal.open) {

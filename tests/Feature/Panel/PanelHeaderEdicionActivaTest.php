@@ -224,9 +224,9 @@ it('usa una superficie blanca y discreta para el header del panel', function () 
     expect(preg_match('/<header[^>]*data-panel-edicion-header.*?<\/header>/s', $html, $header))->toBe(1);
 
     $bloqueHeader = $header[0];
-    expect($bloqueHeader)->toContain('bg-white/90');
+    expect($bloqueHeader)->toContain('bg-pa-superficie/90');
     expect($bloqueHeader)->toContain('backdrop-blur-sm');
-    expect($bloqueHeader)->toContain('border-slate-200');
+    expect($bloqueHeader)->toContain('border-pa-linea-suave');
     expect($bloqueHeader)->not->toContain('bg-slate-900');
     expect($bloqueHeader)->not->toContain('text-white');
 });
@@ -246,7 +246,7 @@ it('reemplaza el acento saturado por uno neutro y etiqueta la edición de forma 
     expect(preg_match('/<form[^>]*data-panel-edicion-form[^>]*>(.*?)<\/form>/s', $html, $matches))->toBe(1);
 
     $formulario = $matches[0];
-    expect($formulario)->toContain('bg-slate-100');
+    expect($formulario)->toContain('bg-pa-control-fondo');
     expect(preg_match('/<label[^>]*>Edición<\/label>/', $formulario))->toBe(1);
     expect($formulario)->not->toContain('sr-only');
 });

@@ -127,7 +127,7 @@ it('el body ya no usa el shell oscuro legacy', function () {
 
     expect($etiquetaBody)->not->toContain('color-primary')
         ->and($etiquetaBody)->not->toContain('Poppins')
-        ->and($etiquetaBody)->toContain('bg-gray-100');
+        ->and($etiquetaBody)->toContain('bg-pa-fondo');
 });
 
 it('conserva categoria y grupo actuales en el enlace a la tabla de posiciones', function () {
