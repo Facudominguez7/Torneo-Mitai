@@ -348,7 +348,7 @@
             </div>
         </div>
 
-        <div class="grid items-start gap-6 2xl:grid-cols-2 2xl:gap-8">
+        <div class="grid items-start gap-6 xl:grid-cols-2 xl:gap-8">
         <section class="min-w-0" aria-label="{{ $partido->equipoLocal->nombre }}">
         <!-- Equipo Local -->
         <h2 class="mb-2 flex items-center justify-center gap-3 text-xl font-semibold" data-equipo-titulo>
@@ -419,7 +419,7 @@
             </div>
         </form>
         </section>
-        <section class="min-w-0 border-t-2 border-gray-500 pt-4 2xl:border-t-0 2xl:pt-0" aria-label="{{ $partido->equipoVisitante->nombre }}">
+        <section class="min-w-0 border-t-2 border-gray-500 pt-4 xl:border-t-0 xl:pt-0" aria-label="{{ $partido->equipoVisitante->nombre }}">
 
         <!-- Equipo Visitante -->
         <h2 class="mb-2 flex items-center justify-center gap-3 text-xl font-semibold" data-equipo-titulo>
@@ -664,16 +664,19 @@
             };
 
             // Attendance counter and repeated shirt numbers (0 means no number yet).
+            // Only players with attendance marked take part of the repeated check:
+            // an absent player's number is not in use and must not flag anyone.
             const actualizarResumenEquipo = (scope) => {
                 const items = getScopeItems(scope);
                 const contador = document.querySelector(`[data-player-attendance-count="${scope}"]`);
-                const presentes = items.filter((item) => item.querySelector('input[name$="[asistencia]"]')?.checked).length;
+                const esPresente = (item) => item.querySelector('input[name$="[asistencia]"]')?.checked === true;
+                const presentes = items.filter(esPresente).length;
                 const cantidades = new Map();
 
                 items.forEach((item) => {
                     const numero = (item.querySelector('input[name$="[numero_camiseta]"]')?.value ?? '').trim();
 
-                    if (numero !== '' && Number(numero) !== 0) {
+                    if (esPresente(item) && numero !== '' && Number(numero) !== 0) {
                         cantidades.set(String(Number(numero)), (cantidades.get(String(Number(numero))) ?? 0) + 1);
                     }
                 });
@@ -682,7 +685,7 @@
                     const campoNumero = item.querySelector('input[name$="[numero_camiseta]"]');
                     const nota = item.querySelector('[data-player-repeated-note]');
                     const numero = String(Number((campoNumero?.value ?? '').trim()));
-                    const repetido = (campoNumero?.value ?? '').trim() !== '' && (cantidades.get(numero) ?? 0) > 1;
+                    const repetido = esPresente(item) && (campoNumero?.value ?? '').trim() !== '' && (cantidades.get(numero) ?? 0) > 1;
 
                     campoNumero?.toggleAttribute('data-numero-repetido', repetido);
 
