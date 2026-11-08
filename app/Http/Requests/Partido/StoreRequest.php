@@ -16,7 +16,9 @@ class StoreRequest extends FormRequest
         $isStore = $this->isMethod('post');
 
         return [
-            'idFechas' => 'required|exists:fechas,id',
+            'idFechas' => 'nullable|required_without:nombreFecha|exists:fechas,id',
+            // Fecha nueva escrita en el mismo alta: se crea para la edición elegida.
+            'nombreFecha' => $isStore ? 'nullable|required_without:idFechas|string|min:5|max:50' : 'nullable|string',
             'idEquipoLocal' => 'required|exists:equipos,id|different:idEquipoVisitante',
             'idEquipoVisitante' => 'required|exists:equipos,id|different:idEquipoLocal',
             // En creación son requeridos; en edición no se permiten
@@ -36,6 +38,10 @@ class StoreRequest extends FormRequest
     {
         return [
             'idEquipoLocal.different' => 'El equipo local debe ser distinto al equipo visitante.',
+            'idFechas.required_without' => 'Elegí una fecha o escribí el nombre de una fecha nueva.',
+            'nombreFecha.required_without' => 'Elegí una fecha o escribí el nombre de una fecha nueva.',
+            'nombreFecha.min' => 'El nombre de la fecha debe tener al menos 5 caracteres.',
+            'nombreFecha.max' => 'El nombre de la fecha no puede superar los 50 caracteres.',
             'idEquipoVisitante.different' => 'El equipo visitante debe ser distinto al equipo local.',
             'idGrupo.prohibited' => 'El grupo no puede ser modificado desde esta pantalla.',
             'idCategoria.prohibited' => 'La categoría no puede ser modificada desde esta pantalla.',

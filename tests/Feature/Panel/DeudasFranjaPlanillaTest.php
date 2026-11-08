@@ -343,3 +343,12 @@ it('informa al operario los jugadores que no se pudieron guardar', function (): 
         ->and($html)->toMatch('/data-player-retry-save="87654321"\s+hidden class="rounded-md/')
         ->and($html)->not->toContain('class="hidden rounded-md');
 });
+
+it('muestra los dos equipos lado a lado desde 1280 y no recién desde 1536', function (): void {
+    $html = $this->actingAs($this->admin)->get(urlPlanillaFranja($this->partido))->assertOk()->getContent();
+
+    // La vista doble tiene que entrar en 1366×768 y 1280×720, que son los
+    // tamaños de escritorio más usados: el corte es xl (1280), no 2xl (1536).
+    expect($html)->toContain('xl:grid-cols-2')
+        ->and($html)->not->toContain('2xl:grid-cols-2');
+});

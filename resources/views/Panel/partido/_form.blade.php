@@ -78,6 +78,25 @@
         @enderror
     </div>
 
+    @unless ($partido->exists)
+        <div>
+            <label for="nombreFecha" class="mb-1 block text-sm font-medium text-gray-700">
+                O creá una fecha nueva
+            </label>
+            <input type="text" name="nombreFecha" id="nombreFecha" maxlength="50"
+                class="panel-form-input"
+                placeholder="Por ejemplo: Fecha 5"
+                value="{{ old('nombreFecha') }}"
+                aria-describedby="ayuda-nombreFecha" />
+            <p id="ayuda-nombreFecha" class="mt-1 text-sm text-gray-600">
+                Escribí un nombre para crearla en esta edición y usarla en el partido. Si la dejás vacía, se usa la fecha elegida arriba.
+            </p>
+            @error('nombreFecha')
+                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+        </div>
+    @endunless
+
     <div>
         <label for="horario_datetime" class="mb-1 block text-sm font-medium text-gray-700">
             Horario
