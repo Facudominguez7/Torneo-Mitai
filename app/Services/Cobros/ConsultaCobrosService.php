@@ -237,8 +237,9 @@ class ConsultaCobrosService
         $eximidos = ExencionCobroPlanilla::query()->whereIn('cargo_id', $cargos->modelKeys())
             ->selectRaw('cargo_id, SUM(importe_ars) as total')->groupBy('cargo_id')->pluck('total', 'cargo_id');
         $ausentes = AusenciaCobroPlanilla::query()->vigentes()->whereIn('cargo_id', $cargos->modelKeys())->pluck('cargo_id')->flip();
+        $pagosCargo = $this->pagosPorCargo($cargos->modelKeys());
 
-        return $cargos->map(function (CargoPlanilla $cargo) use ($aplicados, $eximidos, $ausentes): array {
+        return $cargos->map(function (CargoPlanilla $cargo) use ($aplicados, $eximidos, $ausentes, $pagosCargo): array {
             $aplicado = (int) ($aplicados[$cargo->id] ?? 0);
             $eximido = (int) ($eximidos[$cargo->id] ?? 0);
             $ausente = $ausentes->has($cargo->id);
@@ -263,9 +264,46 @@ class ConsultaCobrosService
                 'fecha' => $this->diaConocido($fecha ? (string) $fecha : null) ? Carbon::parse($fecha)->format('Y-m-d H:i') : null,
                 'precio_ars' => $cargo->precio_original, 'aplicado_ars' => $aplicado,
                 'eximido_ars' => $eximido, 'deuda_ars' => $deuda,
+                'pagos' => $pagosCargo[(int) $cargo->id] ?? [],
                 'estado' => $ausente ? 'no_vino' : ($deuda > 0 ? ($aplicado > 0 ? 'parcial' : 'pendiente') : ($eximido > 0 ? 'exento' : 'pagado')),
             ];
         });
+    }
+
+    /**
+     * Recibos registrados de cada cargo con su marca de edición: un pago cuyo
+     * excedente ya cubrió otro cargo no se puede editar. Cada recibo lleva
+     * `aplicado_origen_ars`, el importe que hoy aplica a su propio cargo, para que
+     * la planilla anticipe la deuda resultante sin otra consulta. Se resuelve en
+     * dos consultas por lote para no provocar N+1 en la planilla.
+     *
+     * @param  array<int, int>  $cargos
+     * @return array<int, array<int, array{pago_id: int, importe_ars: int, medio: string, aplicado_origen_ars: int, editable: bool}>>
+     */
+    private function pagosPorCargo(array $cargos): array
+    {
+        if ($cargos === []) {
+            return [];
+        }
+        $pagos = PagoPlanilla::query()->whereIn('cargo_origen_id', $cargos)->orderBy('id')
+            ->get(['id', 'cargo_origen_id', 'importe_ars', 'medio']);
+        if ($pagos->isEmpty()) {
+            return [];
+        }
+        $aplicaciones = AplicacionPagoPlanilla::query()->whereIn('pago_id', $pagos->modelKeys())
+            ->get(['pago_id', 'cargo_id', 'importe_ars'])->groupBy('pago_id');
+
+        return $pagos->groupBy(fn (PagoPlanilla $pago): int => (int) $pago->cargo_origen_id)
+            ->map(fn (Collection $grupo): array => $grupo->map(function (PagoPlanilla $pago) use ($aplicaciones): array {
+                $propias = $aplicaciones->get($pago->id, collect());
+                $alOrigen = $propias->filter(fn (AplicacionPagoPlanilla $aplicacion): bool => (int) $aplicacion->cargo_id === (int) $pago->cargo_origen_id);
+
+                return [
+                    'pago_id' => (int) $pago->id, 'importe_ars' => (int) $pago->importe_ars, 'medio' => (string) $pago->medio,
+                    'aplicado_origen_ars' => (int) $alOrigen->sum('importe_ars'),
+                    'editable' => $propias->count() === $alOrigen->count(),
+                ];
+            })->all())->all();
     }
 
     public function resultadoPago(PagoPlanilla $pago): array

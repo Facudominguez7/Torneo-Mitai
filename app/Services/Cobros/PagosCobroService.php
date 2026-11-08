@@ -59,9 +59,10 @@ class PagosCobroService
                 // para que el reintento del pago que saldó el cargo devuelva el ingreso original.
                 $previo = PagoPlanilla::query()->where('clave_idempotencia', $clave)->lockForUpdate()->first();
                 if ($previo !== null) {
+                    $original = $this->valoresOriginalesDeRegistro($previo);
                     $coincide = (int) $previo->cargo_origen_id === (int) $cargo->id
-                        && (int) $previo->importe_ars === $importeArs
-                        && $previo->medio === $medio
+                        && $original['importe_ars'] === $importeArs
+                        && $original['medio'] === $medio
                         && (int) $previo->usuario_id === (int) $actorVigente->id;
                     if (! $coincide) {
                         throw ValidationException::withMessages(['clave_idempotencia' => ['La clave de idempotencia ya fue utilizada con otro pago.']]);
@@ -122,6 +123,29 @@ class PagosCobroService
 
             throw $excepcion;
         }
+    }
+
+    /**
+     * Importe y medio originales del recibo para la huella de idempotencia del
+     * registro: la primera edición guarda en su `valores_antes` el estado previo,
+     * que es el del registro. Sin ediciones, los valores vigentes son los originales.
+     * El reintento devuelve el pago por identidad aunque sus valores actuales ya
+     * difieran: el cliente debe mostrar el estado vigente, no los importes originales.
+     *
+     * @return array{importe_ars: int, medio: string}
+     */
+    private function valoresOriginalesDeRegistro(PagoPlanilla $pago): array
+    {
+        $primera = HistorialCobroPlanilla::query()
+            ->where('accion', 'editar_pago')
+            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(valores_antes, '$.\"pago_id\"')) = ?", [(string) (int) $pago->id])
+            ->orderBy('id')->lockForUpdate()->first();
+        $antes = $primera?->valores_antes;
+        if (is_array($antes) && is_int($antes['importe_ars'] ?? null) && is_string($antes['medio'] ?? null)) {
+            return ['importe_ars' => (int) $antes['importe_ars'], 'medio' => (string) $antes['medio']];
+        }
+
+        return ['importe_ars' => (int) $pago->importe_ars, 'medio' => (string) $pago->medio];
     }
 
     private function resolverActorAdmin(User $actor): User
