@@ -29,7 +29,7 @@
 
 @php
     $toneClasses = [
-        'panel' => 'rounded-lg border-gray-300 bg-white text-gray-700 placeholder:text-gray-400 focus:border-brand-navy focus:ring-brand-navy/30',
+        'panel' => 'rounded-lg border-pa-campo-borde bg-pa-superficie text-pa-tinta-media placeholder:text-pa-tinta-tenue focus:border-pa-resaltado focus:ring-pa-resaltado/30',
         'portal' => 'rounded-full border-white/20 bg-white/5 text-white placeholder:text-white/40 focus:border-brand-gold/60 focus:ring-brand-gold/40',
     ];
 
@@ -44,7 +44,7 @@
     ])->implode(' ');
 
     $resolvedId = $id ?? $name;
-    $labelClasses = $resolvedTone === 'portal' ? 'text-white' : 'text-gray-700';
+    $labelClasses = $resolvedTone === 'portal' ? 'text-white' : 'text-pa-tinta-media';
 @endphp
 
 <div>

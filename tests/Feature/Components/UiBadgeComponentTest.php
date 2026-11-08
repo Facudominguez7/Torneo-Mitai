@@ -23,7 +23,7 @@ it('renders as a span, a non-interactive status indicator', function () {
 
 it('maps each variant to token-based classes on the panel tone', function () {
     $expectations = [
-        'neutral' => 'bg-gray-100',
+        'neutral' => 'bg-pa-fila-hover text-pa-tinta-media',
         'success' => 'bg-green-100',
         'warning' => 'bg-yellow-100',
         'danger' => 'bg-red-100',
@@ -56,7 +56,7 @@ it('maps each variant to token-based classes on the portal tone', function () {
 it('falls back to the panel tone and neutral variant for an unknown tone or variant', function () {
     $html = renderUiBadge('variant="not-a-variant" tone="not-a-tone"');
 
-    expect($html)->toContain('bg-gray-100');
+    expect($html)->toContain('bg-pa-fila-hover text-pa-tinta-media');
 });
 
 it('always renders as a rounded pill regardless of tone', function () {
@@ -69,7 +69,7 @@ it('merges caller-supplied classes with the component classes instead of replaci
     $html = renderUiBadge('class="ml-2"');
 
     expect($html)->toContain('ml-2')
-        ->and($html)->toContain('bg-gray-100');
+        ->and($html)->toContain('bg-pa-fila-hover');
 });
 
 it('passes through arbitrary caller-supplied attributes via the attribute bag', function () {

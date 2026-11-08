@@ -12,7 +12,7 @@
         @media print { .no-imprimir { display: none; } table { font-size: 10pt; } th, td { padding: 6px !important; } }
     </style>
 </head>
-<body class="p-6">
+<body class="imprimible p-6">
     <div class="no-imprimir mb-4 flex flex-wrap gap-3">
         <button type="button" onclick="window.print()" class="min-h-11 rounded border border-gray-400 px-4 py-2">Imprimir / guardar PDF</button>
         <a href="{{ route('cobros.index', $filtros) }}" class="inline-flex min-h-11 items-center underline">Volver a los mismos filtros</a>

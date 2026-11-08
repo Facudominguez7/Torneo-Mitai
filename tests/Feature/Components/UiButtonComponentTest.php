@@ -39,8 +39,8 @@ it('renders as an anchor when href is passed', function () {
 
 it('maps each variant to token-based classes on the panel tone', function () {
     $expectations = [
-        'primary' => 'bg-brand-navy',
-        'secondary' => 'bg-brand-teal',
+        'primary' => 'bg-pa-resaltado',
+        'secondary' => 'bg-pa-acento',
         'danger' => 'bg-red-600',
         'success' => 'bg-emerald-600',
     ];
@@ -115,7 +115,7 @@ it('merges caller-supplied classes with the component classes instead of replaci
     $html = renderUiButton('class="mt-4 w-full"');
 
     expect($html)->toContain('mt-4 w-full')
-        ->and($html)->toContain('bg-brand-navy');
+        ->and($html)->toContain('bg-pa-resaltado');
 });
 
 it('passes through arbitrary caller-supplied attributes via the attribute bag', function () {
@@ -129,7 +129,17 @@ it('passes through arbitrary caller-supplied attributes via the attribute bag', 
 it('falls back to the panel tone and primary variant for an unknown tone or variant', function () {
     $html = renderUiButton('variant="not-a-variant" tone="not-a-tone"');
 
-    expect($html)->toContain('bg-brand-navy');
+    expect($html)->toContain('bg-pa-resaltado');
+});
+
+it('conserva en claro los colores de marca en los botones del panel', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+    preg_match('/^    :root \{\n(.*?)^    \}/ms', $css, $base);
+
+    expect($base[1] ?? '')->toContain('--pa-resaltado: 14 75 94;')
+        ->toContain('--pa-acento: 42 109 129;')
+        ->toContain('--brand-navy: 14 75 94;')
+        ->toContain('--brand-teal: 42 109 129;');
 });
 
 it('does not double-escape an href with several query parameters', function () {

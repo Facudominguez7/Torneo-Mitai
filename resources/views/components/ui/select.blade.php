@@ -27,7 +27,7 @@
 
 @php
     $toneClasses = [
-        'panel' => 'border-gray-300 rounded-md bg-white text-gray-700 focus:border-brand-navy focus:ring-brand-navy/30',
+        'panel' => 'border-pa-campo-borde rounded-md bg-pa-superficie text-pa-tinta-media focus:border-pa-resaltado focus:ring-pa-resaltado/30',
         'portal' => 'rounded-md border-white/20 bg-white/5 text-white focus:border-brand-gold/60 focus:ring-brand-gold/40',
     ];
 
@@ -46,7 +46,7 @@
 
 <div>
     @if ($label)
-        <label for="{{ $resolvedId }}" class="mb-1 block text-sm font-medium {{ $resolvedTone === 'portal' ? 'text-white' : 'text-gray-700' }}">
+        <label for="{{ $resolvedId }}" class="mb-1 block text-sm font-medium {{ $resolvedTone === 'portal' ? 'text-white' : 'text-pa-tinta-media' }}">
             {{ $label }}
         </label>
     @endif

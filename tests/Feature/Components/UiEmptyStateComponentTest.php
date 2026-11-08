@@ -55,8 +55,8 @@ it('lets a caller override the icon slot', function () {
 it('applies token-based classes on the panel tone', function () {
     $html = renderUiEmptyState('message="No hay resultados" tone="panel"');
 
-    expect($html)->toContain('border-gray-200')
-        ->and($html)->toContain('text-gray-500');
+    expect($html)->toContain('border-pa-linea')
+        ->and($html)->toContain('text-pa-tinta-suave');
 });
 
 it('applies token-based classes on the portal tone', function () {
@@ -69,7 +69,7 @@ it('applies token-based classes on the portal tone', function () {
 it('falls back to the panel tone for an unknown tone', function () {
     $html = renderUiEmptyState('message="No hay resultados" tone="not-a-tone"');
 
-    expect($html)->toContain('border-gray-200');
+    expect($html)->toContain('border-pa-linea');
 });
 
 it('is centered and uses a dashed border container regardless of tone', function () {

@@ -22,13 +22,13 @@
 --}}
 @props([])
 
-<div {{ $attributes->merge(['class' => 'mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-gray-200 bg-white']) }}>
-    <div class="divide-y divide-gray-100 [&>*]:p-6">
+<div {{ $attributes->merge(['class' => 'mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-pa-linea bg-pa-superficie']) }}>
+    <div class="divide-y divide-pa-linea-suave [&>*]:p-6">
         {{ $slot }}
     </div>
 
     @isset($actions)
-        <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+        <div class="flex flex-wrap items-center justify-end gap-3 border-t border-pa-linea bg-pa-fila-bg px-6 py-4">
             {{ $actions }}
         </div>
     @endisset

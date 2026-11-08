@@ -37,9 +37,9 @@
     'empty' => false,
 ])
 
-<div {{ $attributes->merge(['class' => 'rounded-xl border border-gray-200 bg-white overflow-hidden']) }}>
+<div {{ $attributes->merge(['class' => 'rounded-xl border border-pa-linea bg-pa-superficie overflow-hidden']) }}>
     @isset($filters)
-        <div class="border-b border-gray-200 px-5 py-4">
+        <div class="border-b border-pa-linea px-5 py-4">
             {{ $filters }}
         </div>
     @endisset
@@ -54,11 +54,11 @@
         </div>
     @else
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[42rem] text-left text-sm text-gray-700">
-                <thead class="bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-600 [&>tr>th]:px-5 [&>tr>th]:py-3">
+            <table class="w-full min-w-[42rem] text-left text-sm text-pa-tinta-media">
+                <thead class="bg-pa-fila-bg text-xs font-bold uppercase tracking-wide text-pa-tinta-cuerpo [&>tr>th]:px-5 [&>tr>th]:py-3">
                     {{ $head ?? '' }}
                 </thead>
-                <tbody class="divide-y divide-gray-100 [&>tr>td]:px-5 [&>tr>td]:py-3">
+                <tbody class="divide-y divide-pa-linea-suave [&>tr>td]:px-5 [&>tr>td]:py-3">
                     {{ $body ?? '' }}
                 </tbody>
             </table>
@@ -66,7 +66,7 @@
     @endif
 
     @if (isset($footer) && $footer->isNotEmpty())
-        <div class="border-t border-gray-200 px-5 py-4">
+        <div class="border-t border-pa-linea px-5 py-4">
             {{ $footer }}
         </div>
     @endif

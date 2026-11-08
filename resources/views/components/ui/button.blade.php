@@ -31,8 +31,8 @@
     // or Tailwind's default palette (red/emerald) — never a hardcoded hex.
     $variantsByTone = [
         'panel' => [
-            'primary' => 'bg-brand-navy text-white hover:bg-brand-navy/90 focus-visible:ring-brand-navy/50',
-            'secondary' => 'bg-brand-teal text-white hover:bg-brand-teal/90 focus-visible:ring-brand-teal/50',
+            'primary' => 'bg-pa-resaltado text-pa-form-tinta hover:bg-pa-resaltado/90 focus-visible:ring-pa-resaltado/50',
+            'secondary' => 'bg-pa-acento text-pa-form-tinta hover:bg-pa-acento/90 focus-visible:ring-pa-acento/50',
             'danger' => 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500/50',
             'success' => 'bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-500/50',
         ],
