@@ -14,7 +14,7 @@
 </head>
 <body class="imprimible p-6">
     <div class="no-imprimir mb-4 flex flex-wrap gap-3">
-        <button type="button" onclick="window.print()" class="min-h-11 rounded border border-gray-400 px-4 py-2">Imprimir / guardar PDF</button>
+        <button type="button" onclick="window.print()" class="min-h-11 rounded border border-pa-campo-borde px-4 py-2">Imprimir / guardar PDF</button>
         <a href="{{ route('cobros.index', $filtros) }}" class="inline-flex min-h-11 items-center underline">Volver a los mismos filtros</a>
     </div>
     <h1 class="text-2xl font-semibold">Cobros de planilla · {{ $EdicionSeleccionada?->nombre ?? 'Sin edición' }}</h1>

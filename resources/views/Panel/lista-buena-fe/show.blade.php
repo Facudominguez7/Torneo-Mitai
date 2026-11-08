@@ -9,7 +9,7 @@
         $busquedaServidor = filled($buscarDni ?? '');
 
         // Shared mobile-card label: each cell shows its column name above the value below md.
-        $etiquetaMovil = 'max-md:before:mb-0.5 max-md:before:block max-md:before:text-[11px] max-md:before:font-semibold max-md:before:uppercase max-md:before:tracking-wide max-md:before:text-gray-500 max-md:before:content-[attr(data-label)]';
+        $etiquetaMovil = 'max-md:before:mb-0.5 max-md:before:block max-md:before:text-[11px] max-md:before:font-semibold max-md:before:uppercase max-md:before:tracking-wide max-md:before:text-pa-tinta-suave max-md:before:content-[attr(data-label)]';
     @endphp
 
     <div class="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
@@ -40,9 +40,9 @@
                 {{ $cantidadActivos }}/{{ $limiteJugadoresPorPlanilla }} jugadores activos{{ $cupoCompleto && ! $excedeCupo ? ' · Lista completa' : '' }}
             </x-ui.badge>
             @if ($excedeCupo)
-                <span class="text-sm text-gray-500">Excede el tope por {{ $cantidadActivos - $limiteJugadoresPorPlanilla }}.</span>
+                <span class="text-sm text-pa-tinta-suave">Excede el tope por {{ $cantidadActivos - $limiteJugadoresPorPlanilla }}.</span>
             @elseif (! $cupoCompleto)
-                <span class="text-sm text-gray-500">{{ $lugaresLibres === 1 ? 'Queda 1 lugar' : "Quedan {$lugaresLibres} lugares" }}</span>
+                <span class="text-sm text-pa-tinta-suave">{{ $lugaresLibres === 1 ? 'Queda 1 lugar' : "Quedan {$lugaresLibres} lugares" }}</span>
             @endif
         </div>
 
@@ -104,10 +104,10 @@
 
         {{-- Formulario para Agregar Jugador --}}
         @if (! $cupoCompleto)
-            <div class="mt-6 rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+            <div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-4 sm:p-6">
                 <details>
                     <summary
-                        class="cursor-pointer rounded-md bg-gray-100 p-3 text-base font-medium text-gray-700 transition hover:bg-gray-200 sm:text-lg">
+                        class="cursor-pointer rounded-md bg-pa-fila-hover p-3 text-base font-medium text-pa-tinta-media transition hover:bg-pa-linea sm:text-lg">
                         Agregar jugador a la Lista de Buena Fe
                     </summary>
 
@@ -119,9 +119,9 @@
                         <input type="hidden" name="idCategoria" value="{{ $equipoSeleccionado->idCategoria }}">
 
                         <div>
-                            <label for="dni_jugador" class="mb-1 block text-sm font-medium text-gray-700">DNI del Jugador:</label>
+                            <label for="dni_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">DNI del Jugador:</label>
                             <input type="text" name="dni_jugador" id="dni_jugador" required pattern="\d{7,8}"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                                 placeholder="Ej: 12345678" autocomplete="off">
                             {{-- Indicador de estado de búsqueda --}}
                             <div id="dni_status" class="mt-1 hidden text-sm">
@@ -131,38 +131,38 @@
                                 <span id="dni_encontrado" class="hidden text-green-600">
                                     <span id="dni_mensaje_encontrado"></span>
                                 </span>
-                                <span id="dni_no_encontrado" class="hidden text-gray-500">
+                                <span id="dni_no_encontrado" class="hidden text-pa-tinta-suave">
                                     DNI no registrado - Complete los datos manualmente
                                 </span>
                             </div>
                         </div>
 
                         <div>
-                            <label for="nombre_jugador" class="mb-1 block text-sm font-medium text-gray-700">Nombre:</label>
+                            <label for="nombre_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Nombre:</label>
                             <input type="text" name="nombre_jugador" id="nombre_jugador" required
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                                 placeholder="Nombre del jugador">
                         </div>
 
                         <div>
-                            <label for="apellido_jugador" class="mb-1 block text-sm font-medium text-gray-700">Apellido:</label>
+                            <label for="apellido_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Apellido:</label>
                             <input type="text" name="apellido_jugador" id="apellido_jugador" required
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                                 placeholder="Apellido del jugador">
                         </div>
 
                         <div>
-                            <label for="fecha_nacimiento" class="mb-1 block text-sm font-medium text-gray-700">Fecha de Nacimiento:</label>
+                            <label for="fecha_nacimiento" class="mb-1 block text-sm font-medium text-pa-tinta-media">Fecha de Nacimiento:</label>
                             <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" required
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30">
+                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30">
                         </div>
 
                         <div>
-                            <label for="numero_camiseta" class="mb-1 block text-sm font-medium text-gray-700">
-                                Número de Camiseta: <span class="font-normal text-gray-400">(opcional)</span>
+                            <label for="numero_camiseta" class="mb-1 block text-sm font-medium text-pa-tinta-media">
+                                Número de Camiseta: <span class="font-normal text-pa-tinta-tenue">(opcional)</span>
                             </label>
                             <input type="number" name="numero_camiseta" id="numero_camiseta" min="0" max="999"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                                 placeholder="Ej: 10">
                         </div>
 
@@ -175,18 +175,18 @@
                 </details>
             </div>
         @else
-            <p class="mt-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                <span class="font-semibold text-gray-800">La lista está completa.</span>
+            <p class="mt-6 rounded-xl border border-pa-linea bg-pa-fila-bg px-4 py-3 text-sm text-pa-tinta-cuerpo">
+                <span class="font-semibold text-pa-tinta">La lista está completa.</span>
                 Para sumar a alguien, primero da de baja a un jugador.
             </p>
         @endif
 
         {{-- Jugadores activos --}}
-        <section class="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white" aria-labelledby="titulo-jugadores-activos">
-            <div class="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <section class="mt-6 overflow-hidden rounded-xl border border-pa-linea bg-pa-superficie" aria-labelledby="titulo-jugadores-activos">
+            <div class="flex flex-col gap-3 border-b border-pa-linea-suave px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div>
-                    <h2 id="titulo-jugadores-activos" class="text-lg font-semibold text-gray-800">Jugadores activos</h2>
-                    <p class="text-sm text-gray-500" data-filtro-resumen aria-live="polite">
+                    <h2 id="titulo-jugadores-activos" class="text-lg font-semibold text-pa-tinta">Jugadores activos</h2>
+                    <p class="text-sm text-pa-tinta-suave" data-filtro-resumen aria-live="polite">
                         @if ($busquedaServidor)
                             Resultados para el DNI {{ $buscarDni }} ·
                             <a href="{{ $rutaDetalle }}" class="font-semibold text-brand-teal underline-offset-2 hover:underline">Ver todos</a>
@@ -204,12 +204,12 @@
             </div>
 
             @if ($jugadoresActivos->isEmpty())
-                <div class="p-6 text-center text-gray-500">
+                <div class="p-6 text-center text-pa-tinta-suave">
                     {{ $busquedaServidor ? 'No hay jugadores activos que coincidan con el DNI buscado.' : 'No hay jugadores activos en la Lista de Buena Fe.' }}
                 </div>
             @else
-                <table class="block w-full text-left text-sm text-gray-700 md:table">
-                    <thead class="hidden bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-600 md:table-header-group [&>tr>th]:px-5 [&>tr>th]:py-3">
+                <table class="block w-full text-left text-sm text-pa-tinta-media md:table">
+                    <thead class="hidden bg-pa-fila-bg text-xs font-bold uppercase tracking-wide text-pa-tinta-cuerpo md:table-header-group [&>tr>th]:px-5 [&>tr>th]:py-3">
                         <tr>
                             <th scope="col">Jugador</th>
                             <th scope="col">Camiseta</th>
@@ -218,7 +218,7 @@
                             <th scope="col" class="text-right">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody class="block divide-y divide-gray-100 md:table-row-group">
+                    <tbody class="block divide-y divide-pa-linea-suave md:table-row-group">
                         @foreach ($jugadoresActivos as $jugador)
                             @php
                                 $nombreCompleto = trim(($jugador->jugador?->nombre ?? 'Sin nombre').' '.($jugador->jugador?->apellido ?? ''));
@@ -228,7 +228,7 @@
                                 class="grid grid-cols-3 gap-x-3 gap-y-3 px-4 py-4 md:table-row md:p-0 md:[&>td]:px-5 md:[&>td]:py-3 md:[&>td]:align-middle">
                                 <td data-celda="jugador" class="col-span-3">
                                     <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                        <span class="font-semibold text-gray-900">{{ $nombreCompleto }}</span>
+                                        <span class="font-semibold text-pa-tinta">{{ $nombreCompleto }}</span>
                                         @if ($jugador->estaSuspendido())
                                             <x-ui.badge variant="danger">Suspendido</x-ui.badge>
                                         @endif
@@ -236,7 +236,7 @@
                                             <x-ui.badge variant="warning">En revisión</x-ui.badge>
                                         @endif
                                     </div>
-                                    <div class="mt-0.5 text-xs tabular-nums text-gray-500">DNI {{ $jugador->dni_jugador }}</div>
+                                    <div class="mt-0.5 text-xs tabular-nums text-pa-tinta-suave">DNI {{ $jugador->dni_jugador }}</div>
                                 </td>
                                 <td data-label="Camiseta" class="tabular-nums {{ $etiquetaMovil }}">
                                     {{ ! is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '-' }}
@@ -264,7 +264,7 @@
 
                                         {{-- Outlined on purpose: the solid red is kept for the confirm button inside the dialog. --}}
                                         <button type="button"
-                                            class="js-dar-baja inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 max-md:flex-1 max-md:py-2.5"
+                                            class="js-dar-baja inline-flex items-center justify-center rounded-lg border border-red-200 bg-pa-superficie px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 max-md:flex-1 max-md:py-2.5"
                                             data-action="{{ route('lista-buena-fe.dar-baja', $jugador->id) }}"
                                             data-nombre-completo="{{ $nombreCompleto }}"
                                             aria-label="Dar de baja a {{ $nombreCompleto }}">
@@ -277,7 +277,7 @@
                     </tbody>
                 </table>
 
-                <p id="filtro-sin-resultados" class="hidden px-6 py-6 text-center text-sm text-gray-500">
+                <p id="filtro-sin-resultados" class="hidden px-6 py-6 text-center text-sm text-pa-tinta-suave">
                     Ningún jugador activo coincide con la búsqueda.
                 </p>
             @endif
@@ -285,15 +285,15 @@
 
         {{-- Historial de bajas --}}
         @if ($jugadoresInactivos->isNotEmpty())
-            <details id="historial-bajas" class="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <details id="historial-bajas" class="mt-6 overflow-hidden rounded-xl border border-pa-linea bg-pa-superficie">
                 <summary
-                    class="flex cursor-pointer items-center justify-between gap-3 bg-gray-50 px-4 py-3 text-gray-700 transition hover:bg-gray-100 sm:px-6">
+                    class="flex cursor-pointer items-center justify-between gap-3 bg-pa-fila-bg px-4 py-3 text-pa-tinta-media transition hover:bg-pa-fila-hover sm:px-6">
                     <span class="text-base font-semibold">Historial · Jugadores dados de baja</span>
                     <x-ui.badge data-contador-historial>{{ $jugadoresInactivos->count() }}</x-ui.badge>
                 </summary>
 
-                <table class="block w-full text-left text-sm text-gray-700 md:table">
-                    <thead class="hidden bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-600 md:table-header-group [&>tr>th]:px-5 [&>tr>th]:py-3">
+                <table class="block w-full text-left text-sm text-pa-tinta-media md:table">
+                    <thead class="hidden bg-pa-fila-bg text-xs font-bold uppercase tracking-wide text-pa-tinta-cuerpo md:table-header-group [&>tr>th]:px-5 [&>tr>th]:py-3">
                         <tr>
                             <th scope="col">Jugador</th>
                             <th scope="col">Camiseta</th>
@@ -303,17 +303,17 @@
                             <th scope="col" class="text-right">Acción</th>
                         </tr>
                     </thead>
-                    <tbody class="block divide-y divide-gray-100 border-t border-gray-100 md:table-row-group">
+                    <tbody class="block divide-y divide-pa-linea-suave border-t border-pa-linea-suave md:table-row-group">
                         @foreach ($jugadoresInactivos as $jugador)
                             @php
                                 $nombreCompleto = trim(($jugador->jugador?->nombre ?? 'Sin nombre').' '.($jugador->jugador?->apellido ?? ''));
                             @endphp
                             <tr data-filtro-fila="inactivo"
                                 data-buscar="{{ Str::lower(Str::ascii($jugador->dni_jugador.' '.$nombreCompleto)) }}"
-                                class="grid grid-cols-3 gap-x-3 gap-y-3 px-4 py-4 text-gray-600 md:table-row md:p-0 md:[&>td]:px-5 md:[&>td]:py-3 md:[&>td]:align-middle">
+                                class="grid grid-cols-3 gap-x-3 gap-y-3 px-4 py-4 text-pa-tinta-cuerpo md:table-row md:p-0 md:[&>td]:px-5 md:[&>td]:py-3 md:[&>td]:align-middle">
                                 <td class="col-span-3">
-                                    <div class="font-semibold text-gray-800">{{ $nombreCompleto }}</div>
-                                    <div class="mt-0.5 text-xs tabular-nums text-gray-500">DNI {{ $jugador->dni_jugador }}</div>
+                                    <div class="font-semibold text-pa-tinta">{{ $nombreCompleto }}</div>
+                                    <div class="mt-0.5 text-xs tabular-nums text-pa-tinta-suave">DNI {{ $jugador->dni_jugador }}</div>
                                 </td>
                                 <td data-label="Camiseta" class="tabular-nums {{ $etiquetaMovil }}">
                                     {{ ! is_null($jugador->numero_camiseta) ? $jugador->numero_camiseta : '-' }}
@@ -349,7 +349,7 @@
                                                 </x-ui.button>
                                             </form>
                                         @else
-                                            <span class="text-xs font-semibold text-gray-500 max-md:flex-1 max-md:text-center">Lista completa</span>
+                                            <span class="text-xs font-semibold text-pa-tinta-suave max-md:flex-1 max-md:text-center">Lista completa</span>
                                         @endif
                                     </div>
                                 </td>
@@ -358,7 +358,7 @@
                     </tbody>
                 </table>
 
-                <p id="historial-sin-resultados" class="hidden border-t border-gray-100 px-6 py-6 text-center text-sm text-gray-500">
+                <p id="historial-sin-resultados" class="hidden border-t border-pa-linea-suave px-6 py-6 text-center text-sm text-pa-tinta-suave">
                     Ninguna baja coincide con la búsqueda.
                 </p>
             </details>
@@ -372,17 +372,17 @@
 
         <div id="modal-editar-jugador" role="dialog" aria-modal="true" aria-labelledby="modal-editar-titulo"
             class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/70 p-4 backdrop-blur-sm">
-            <div class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
-                <div class="flex items-start justify-between border-b border-gray-200 px-5 py-4">
+            <div class="w-full max-w-3xl rounded-2xl bg-pa-superficie shadow-2xl">
+                <div class="flex items-start justify-between border-b border-pa-linea px-5 py-4">
                     <div>
-                        <h2 id="modal-editar-titulo" class="text-lg font-semibold text-gray-900">Editar jugador</h2>
-                        <p id="modal-editar-subtitulo" class="text-sm text-gray-500">
+                        <h2 id="modal-editar-titulo" class="text-lg font-semibold text-pa-tinta">Editar jugador</h2>
+                        <p id="modal-editar-subtitulo" class="text-sm text-pa-tinta-suave">
                             Corrige identidad y datos operativos sin salir de la Lista de Buena Fe.
                         </p>
                     </div>
 
                     <button type="button" id="cerrar-modal-editar" data-cerrar-modal
-                        class="rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+                        class="rounded-full p-2 text-pa-tinta-suave transition hover:bg-pa-fila-hover hover:text-pa-tinta-media"
                         aria-label="Cerrar modal de edición">
                         ✕
                     </button>
@@ -393,44 +393,44 @@
                     @method('PUT')
 
                     <div>
-                        <label for="editar_dni_jugador" class="mb-1 block text-sm font-medium text-gray-700">DNI del Jugador:</label>
+                        <label for="editar_dni_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">DNI del Jugador:</label>
                         <input type="text" name="dni_jugador" id="editar_dni_jugador" required pattern="\d{7,8}"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                             placeholder="Ej: 12345678">
                     </div>
 
                     <div>
-                        <label for="editar_nombre_jugador" class="mb-1 block text-sm font-medium text-gray-700">Nombre:</label>
+                        <label for="editar_nombre_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Nombre:</label>
                         <input type="text" name="nombre_jugador" id="editar_nombre_jugador" required
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                             placeholder="Nombre del jugador">
                     </div>
 
                     <div>
-                        <label for="editar_apellido_jugador" class="mb-1 block text-sm font-medium text-gray-700">Apellido:</label>
+                        <label for="editar_apellido_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Apellido:</label>
                         <input type="text" name="apellido_jugador" id="editar_apellido_jugador" required
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                             placeholder="Apellido del jugador">
                     </div>
 
                     <div>
-                        <label for="editar_fecha_nacimiento" class="mb-1 block text-sm font-medium text-gray-700">Fecha de Nacimiento:</label>
+                        <label for="editar_fecha_nacimiento" class="mb-1 block text-sm font-medium text-pa-tinta-media">Fecha de Nacimiento:</label>
                         <input type="date" name="fecha_nacimiento" id="editar_fecha_nacimiento" required
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30">
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30">
                     </div>
 
                     <div class="md:col-span-2">
-                        <label for="editar_numero_camiseta" class="mb-1 block text-sm font-medium text-gray-700">
-                            Número de Camiseta: <span class="font-normal text-gray-400">(opcional)</span>
+                        <label for="editar_numero_camiseta" class="mb-1 block text-sm font-medium text-pa-tinta-media">
+                            Número de Camiseta: <span class="font-normal text-pa-tinta-tenue">(opcional)</span>
                         </label>
                         <input type="number" name="numero_camiseta" id="editar_numero_camiseta" min="0" max="999"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                             placeholder="Ej: 10">
                     </div>
 
                     <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end md:col-span-2">
                         <button type="button" id="cancelar-edicion" data-cerrar-modal
-                            class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+                            class="rounded-md border border-pa-campo-borde px-4 py-2 text-sm font-medium text-pa-tinta-media transition hover:bg-pa-fila-bg">
                             Cancelar
                         </button>
                         <x-ui.button type="submit" variant="primary">
@@ -444,32 +444,32 @@
         <div id="modal-baja-jugador" role="dialog" aria-modal="true" aria-labelledby="modal-baja-titulo"
             aria-describedby="modal-baja-descripcion"
             class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/70 p-4 backdrop-blur-sm">
-            <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+            <div class="w-full max-w-md rounded-2xl bg-pa-superficie shadow-2xl">
                 <form method="POST" id="formBajaJugador" class="flex flex-col gap-4 p-5">
                     @csrf
                     @method('PUT')
 
                     <div>
-                        <h2 id="modal-baja-titulo" class="text-lg font-semibold text-gray-900">
+                        <h2 id="modal-baja-titulo" class="text-lg font-semibold text-pa-tinta">
                             Dar de baja a <span data-baja-nombre></span>
                         </h2>
-                        <p id="modal-baja-descripcion" class="mt-1 text-sm text-gray-500">
+                        <p id="modal-baja-descripcion" class="mt-1 text-sm text-pa-tinta-suave">
                             Pasa al historial y libera su lugar en la lista. Podés reactivarlo mientras haya cupo.
                         </p>
                     </div>
 
                     <div>
-                        <label for="motivo_baja" class="mb-1 block text-sm font-medium text-gray-700">
-                            Motivo <span class="font-normal text-gray-400">(opcional)</span>
+                        <label for="motivo_baja" class="mb-1 block text-sm font-medium text-pa-tinta-media">
+                            Motivo <span class="font-normal text-pa-tinta-tenue">(opcional)</span>
                         </label>
                         <input type="text" name="motivo_baja" id="motivo_baja" maxlength="255" autocomplete="off"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                             placeholder="Ej: pase a otro club">
                     </div>
 
                     <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <button type="button" data-cerrar-modal
-                            class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+                            class="rounded-md border border-pa-campo-borde px-4 py-2 text-sm font-medium text-pa-tinta-media transition hover:bg-pa-fila-bg">
                             Cancelar
                         </button>
                         <x-ui.button type="submit" variant="danger">
@@ -922,7 +922,7 @@
                 if (valor !== null && typeof valor !== 'undefined' && valor !== '') {
                     input.value = valor;
                     input.classList.add('bg-green-50', 'border-green-300');
-                    input.classList.remove('bg-white');
+                    input.classList.remove('bg-pa-superficie');
                 }
             }
 
@@ -931,7 +931,7 @@
              */
             function removerEstiloAutocompletado(input) {
                 input.classList.remove('bg-green-50', 'border-green-300');
-                input.classList.add('bg-white');
+                input.classList.add('bg-pa-superficie');
             }
 
             /**

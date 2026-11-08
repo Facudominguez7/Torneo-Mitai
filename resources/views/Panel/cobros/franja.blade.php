@@ -6,7 +6,7 @@
         return rtrim($momento->isoFormat('ddd'), '.').' '.$momento->format('d/m');
     };
 @endphp
-<div class="grid md:grid-cols-2 md:divide-x divide-y divide-gray-200 md:divide-y-0" data-cobros-grilla data-firma="{{ hash('sha256', $deudasPlanilla->toJson().$cobrosPlanilla->toJson().json_encode($equiposInciertos).($configuracionCobros?->activado_at ?? '')) }}">
+<div class="grid md:grid-cols-2 md:divide-x divide-y divide-pa-linea md:divide-y-0" data-cobros-grilla data-firma="{{ hash('sha256', $deudasPlanilla->toJson().$cobrosPlanilla->toJson().json_encode($equiposInciertos).($configuracionCobros?->activado_at ?? '')) }}">
     @foreach ([[$partido->idEquipoLocal, $partido->equipoLocal->nombre, 'Local'], [$partido->idEquipoVisitante, $partido->equipoVisitante->nombre, 'Visitante']] as [$equipoId, $nombre, $condicion])
         @php
             $deudasEquipo = $deudasPlanilla->where('idEquipo', $equipoId)->values();
@@ -16,24 +16,24 @@
         @endphp
         <div class="grid min-w-0 content-start gap-2 px-6 py-3" x-data="{ seleccion: '{{ $deudasEquipo->first()['id'] ?? '' }}' }" data-equipo-franja="{{ $equipoId }}">
             <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <h3 class="text-base font-bold text-gray-900">{{ $nombre }} <span class="text-sm font-medium text-gray-500">{{ $condicion }}</span></h3>
+                <h3 class="text-base font-bold text-pa-tinta">{{ $nombre }} <span class="text-sm font-medium text-pa-tinta-suave">{{ $condicion }}</span></h3>
                 @if ($deudasEquipo->isNotEmpty())
-                    <strong class="whitespace-nowrap font-normal tabular-nums"><b class="font-bold text-red-700">Debe {{ $formatoArs((int) $deudasEquipo->sum('deuda_ars')) }}</b> <small class="text-sm text-gray-500">en {{ $deudasEquipo->count() }} {{ $deudasEquipo->count() === 1 ? 'planilla' : 'planillas' }}</small></strong>
+                    <strong class="whitespace-nowrap font-normal tabular-nums"><b class="font-bold text-red-700">Debe {{ $formatoArs((int) $deudasEquipo->sum('deuda_ars')) }}</b> <small class="text-sm text-pa-tinta-suave">en {{ $deudasEquipo->count() }} {{ $deudasEquipo->count() === 1 ? 'planilla' : 'planillas' }}</small></strong>
                 @elseif ($incierto)
-                    <strong class="whitespace-nowrap font-semibold text-gray-700">Saldo indeterminado</strong>
+                    <strong class="whitespace-nowrap font-semibold text-pa-tinta-media">Saldo indeterminado</strong>
                 @else
                     <strong class="whitespace-nowrap font-semibold text-green-700">Al día</strong>
                 @endif
             </div>
             @if ($deudasEquipo->isNotEmpty() && $incierto)
-                <p class="text-sm text-gray-600">Saldo adicional indeterminado por fecha no disponible.</p>
+                <p class="text-sm text-pa-tinta-cuerpo">Saldo adicional indeterminado por fecha no disponible.</p>
             @endif
             @if ($deudasEquipo->isEmpty())
-                <p class="text-sm text-gray-500">{{ $incierto ? 'No se puede calcular la deuda: el partido no tiene fecha.' : 'No debe planillas de esta edición.' }}</p>
+                <p class="text-sm text-pa-tinta-suave">{{ $incierto ? 'No se puede calcular la deuda: el partido no tiene fecha.' : 'No debe planillas de esta edición.' }}</p>
             @else
-                <label for="deuda-equipo-{{ $equipoId }}" class="text-sm font-semibold text-gray-700">Planilla adeudada</label>
+                <label for="deuda-equipo-{{ $equipoId }}" class="text-sm font-semibold text-pa-tinta-media">Planilla adeudada</label>
                 <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                    <select id="deuda-equipo-{{ $equipoId }}" data-deuda-selector x-model="seleccion" class="min-h-10 w-full min-w-0 rounded-md border-gray-300 text-sm">
+                    <select id="deuda-equipo-{{ $equipoId }}" data-deuda-selector x-model="seleccion" class="min-h-10 w-full min-w-0 rounded-md border-pa-campo-borde text-sm">
                         @foreach ($deudasEquipo as $deuda)
                             <option value="{{ $deuda['id'] }}">{{ collect([$deuda['fecha_nombre'], $diaCorto($deuda['fecha']), $deuda['sin_partido'] ? 'Deuda manual' : 'vs '.$deuda['oponente'], $formatoArs($deuda['deuda_ars'])])->filter()->implode(' · ') }}</option>
                         @endforeach
@@ -53,10 +53,10 @@
                             @if ($puedeCobrar)
                                 <div class="flex flex-wrap gap-2">
                                     <button type="button" data-cobro="pago" data-cargo="{{ json_encode($deuda) }}" class="min-h-10 whitespace-nowrap rounded-md bg-brand-navy px-3.5 text-sm font-semibold text-white hover:bg-brand-navy-deep">Registrar pago</button>
-                                    <button type="button" data-cobro="exencion" data-cargo="{{ json_encode($deuda) }}" class="min-h-10 whitespace-nowrap rounded-md border border-gray-300 px-3.5 text-sm">Marcar exento</button>
+                                    <button type="button" data-cobro="exencion" data-cargo="{{ json_encode($deuda) }}" class="min-h-10 whitespace-nowrap rounded-md border border-pa-campo-borde px-3.5 text-sm">Marcar exento</button>
                                 </div>
                             @endif
-                            <p class="text-sm text-gray-500 sm:col-span-2">{{ $detalle }}</p>
+                            <p class="text-sm text-pa-tinta-suave sm:col-span-2">{{ $detalle }}</p>
                             @if ($puedeCobrar)
                                 @include('Panel.cobros.pagos-cargo', ['cargo' => $deuda])
                             @endif
@@ -65,7 +65,7 @@
                 </div>
             @endif
             @if (auth()->user()->isAdmin() && $cargoActual && $cargoActual['deuda_ars'] === 0)
-                <p class="text-sm text-gray-600">Planilla actual: {{ match ($cargoActual['estado']) { 'pagado' => 'Pagada', 'exento' => 'Exenta', 'no_vino' => 'No vino', default => 'Sin deuda' } }}</p>
+                <p class="text-sm text-pa-tinta-cuerpo">Planilla actual: {{ match ($cargoActual['estado']) { 'pagado' => 'Pagada', 'exento' => 'Exenta', 'no_vino' => 'No vino', default => 'Sin deuda' } }}</p>
             @endif
             @if ($puedeCobrar && $cargoActual)
                 @if (! $deudasEquipo->contains('id', $cargoActual['id']))
@@ -73,15 +73,15 @@
                 @endif
                 @if ($cargoActual['deuda_ars'] > 0 && ! $deudasEquipo->contains('id', $cargoActual['id']))
                     <div class="flex flex-wrap gap-2" data-planilla-cobro="{{ $cargoActual['id'] }}" data-deuda="{{ $cargoActual['deuda_ars'] }}" data-estado="{{ $cargoActual['estado'] }}" data-pagos="{{ collect($cargoActual['pagos'] ?? [])->map(fn (array $pago): string => $pago['pago_id'].':'.$pago['importe_ars'].':'.$pago['medio'].':'.(int) $pago['editable'])->implode('|') }}">
-                        <span class="w-full text-sm text-gray-600">Cobro del partido actual</span>
+                        <span class="w-full text-sm text-pa-tinta-cuerpo">Cobro del partido actual</span>
                         <button type="button" data-cobro="pago" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md bg-brand-navy px-3.5 text-sm font-semibold text-white hover:bg-brand-navy-deep">Registrar pago</button>
-                        <button type="button" data-cobro="exencion" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md border border-gray-300 px-3.5 text-sm">Marcar exento</button>
+                        <button type="button" data-cobro="exencion" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md border border-pa-campo-borde px-3.5 text-sm">Marcar exento</button>
                     </div>
                 @endif
                 @if ($cargoActual['aplicado_ars'] === 0 && in_array($cargoActual['estado'], ['pendiente', 'exento'], true))
-                    <div><button type="button" data-cobro="no_vino" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md border border-gray-300 px-3.5 text-sm">No vino</button></div>
+                    <div><button type="button" data-cobro="no_vino" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md border border-pa-campo-borde px-3.5 text-sm">No vino</button></div>
                 @elseif ($cargoActual['estado'] === 'no_vino')
-                    <div><button type="button" data-cobro="deshacer_no_vino" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md border border-gray-300 px-3.5 text-sm">Deshacer no vino</button></div>
+                    <div><button type="button" data-cobro="deshacer_no_vino" data-cargo="{{ json_encode($cargoActual) }}" class="min-h-10 rounded-md border border-pa-campo-borde px-3.5 text-sm">Deshacer no vino</button></div>
                 @endif
             @endif
         </div>

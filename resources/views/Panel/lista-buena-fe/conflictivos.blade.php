@@ -5,16 +5,16 @@
         subtitle="Detecta duplicados y conflictos administrativos entre equipos." />
 
     {{-- Filtros y Búsqueda --}}
-    <div class="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+    <div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-6">
         <form method="GET" action="{{ route('lista-buena-fe.conflictivos') }}" class="space-y-4">
             {{-- Tabs de Estado --}}
-            <div class="mb-4 flex flex-wrap gap-2 border-b border-gray-200 pb-2 sm:gap-0 sm:pb-0">
+            <div class="mb-4 flex flex-wrap gap-2 border-b border-pa-linea pb-2 sm:gap-0 sm:pb-0">
                 <button type="submit" name="estado" value="pendientes"
-                    class="flex-1 rounded-md px-4 py-2 text-sm font-medium sm:flex-none sm:rounded-none sm:px-6 sm:py-3 sm:text-base {{ ($estado ?? 'pendientes') === 'pendientes' ? 'bg-brand-navy/10 text-brand-navy sm:border-b-2 sm:border-brand-navy sm:bg-transparent' : 'text-gray-500 hover:text-gray-700' }}">
+                    class="flex-1 rounded-md px-4 py-2 text-sm font-medium sm:flex-none sm:rounded-none sm:px-6 sm:py-3 sm:text-base {{ ($estado ?? 'pendientes') === 'pendientes' ? 'bg-brand-navy/10 text-brand-navy sm:border-b-2 sm:border-brand-navy sm:bg-transparent' : 'text-pa-tinta-suave hover:text-pa-tinta-media' }}">
                     Pendientes
                 </button>
                 <button type="submit" name="estado" value="resueltos"
-                    class="flex-1 rounded-md px-4 py-2 text-sm font-medium sm:flex-none sm:rounded-none sm:px-6 sm:py-3 sm:text-base {{ ($estado ?? 'pendientes') === 'resueltos' ? 'bg-green-50 text-green-600 sm:border-b-2 sm:border-green-600 sm:bg-transparent' : 'text-gray-500 hover:text-gray-700' }}">
+                    class="flex-1 rounded-md px-4 py-2 text-sm font-medium sm:flex-none sm:rounded-none sm:px-6 sm:py-3 sm:text-base {{ ($estado ?? 'pendientes') === 'resueltos' ? 'bg-green-50 text-green-600 sm:border-b-2 sm:border-green-600 sm:bg-transparent' : 'text-pa-tinta-suave hover:text-pa-tinta-media' }}">
                     Resueltos
                 </button>
             </div>
@@ -56,9 +56,9 @@
     </div>
 
     {{-- Tabla de Resultados --}}
-    <div class="mt-6 rounded-xl border border-gray-200 bg-white">
-        <div class="border-b border-gray-200 p-6">
-            <p class="text-gray-600">
+    <div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie">
+        <div class="border-b border-pa-linea p-6">
+            <p class="text-pa-tinta-cuerpo">
                 @if (($estado ?? 'pendientes') === 'resueltos')
                     Histórico de casos que han sido resueltos.
                 @else
@@ -92,14 +92,14 @@
                     @foreach ($jugadores as $item)
                         <tr>
                             <td>
-                                <div class="text-sm font-medium text-gray-900">
+                                <div class="text-sm font-medium text-pa-tinta">
                                     {{ $item->jugador->nombre }} {{ $item->jugador->apellido }}
                                 </div>
-                                <div class="text-sm text-gray-500">DNI: {{ $item->dni_jugador }}</div>
+                                <div class="text-sm text-pa-tinta-suave">DNI: {{ $item->dni_jugador }}</div>
                             </td>
                             <td>
-                                <div class="text-sm text-gray-900">{{ $item->equipo->nombre }}</div>
-                                <div class="text-sm text-gray-500">{{ $item->categoria->nombreCategoria }}</div>
+                                <div class="text-sm text-pa-tinta">{{ $item->equipo->nombre }}</div>
+                                <div class="text-sm text-pa-tinta-suave">{{ $item->categoria->nombreCategoria }}</div>
                             </td>
                             <td>
                                 <x-ui.badge variant="info">{{ $item->edicion->nombre }}</x-ui.badge>
@@ -109,18 +109,18 @@
                                     {{ $item->motivo_conflicto ?? 'No especificado' }}
                                 </div>
                                 @if (($estado ?? 'pendientes') === 'resueltos' && $item->notas_resolucion)
-                                    <div class="mt-1 text-xs text-gray-500">
+                                    <div class="mt-1 text-xs text-pa-tinta-suave">
                                         <strong>Notas:</strong> {{ $item->notas_resolucion }}
                                     </div>
                                 @endif
                             </td>
                             @if (($estado ?? 'pendientes') === 'resueltos')
-                                <td class="text-sm text-gray-500">{{ $item->resuelto_por ?? '-' }}</td>
-                                <td class="text-sm text-gray-500">
+                                <td class="text-sm text-pa-tinta-suave">{{ $item->resuelto_por ?? '-' }}</td>
+                                <td class="text-sm text-pa-tinta-suave">
                                     {{ $item->fecha_resolucion ? $item->fecha_resolucion->format('d/m/Y H:i') : '-' }}
                                 </td>
                             @else
-                                <td class="text-sm text-gray-500">
+                                <td class="text-sm text-pa-tinta-suave">
                                     {{ $item->created_at ? $item->created_at->format('d/m/Y H:i') : '-' }}
                                 </td>
                             @endif
@@ -149,17 +149,17 @@
 
     {{-- Modal para Resolver Conflicto --}}
     <div id="resolveModal" class="fixed inset-0 z-50 hidden h-full w-full overflow-y-auto bg-gray-600/50">
-        <div class="relative top-20 mx-auto w-full max-w-md rounded-md border bg-white p-5 shadow-lg">
+        <div class="relative top-20 mx-auto w-full max-w-md rounded-md border bg-pa-superficie p-5 shadow-lg">
             <div class="mt-3">
-                <h3 class="mb-4 text-lg font-medium leading-6 text-gray-900">Resolver Caso</h3>
+                <h3 class="mb-4 text-lg font-medium leading-6 text-pa-tinta">Resolver Caso</h3>
 
-                <div class="mb-4 rounded bg-gray-50 p-3">
-                    <p class="mb-1 text-sm text-gray-600">Jugador:</p>
+                <div class="mb-4 rounded bg-pa-fila-bg p-3">
+                    <p class="mb-1 text-sm text-pa-tinta-cuerpo">Jugador:</p>
                     <p class="text-sm font-semibold" id="modalJugadorNombre"></p>
                 </div>
 
                 <div class="mb-4 rounded bg-yellow-50 p-3">
-                    <p class="mb-1 text-sm text-gray-600">Motivo de la observación:</p>
+                    <p class="mb-1 text-sm text-pa-tinta-cuerpo">Motivo de la observación:</p>
                     <p class="text-sm font-semibold text-red-600" id="modalMotivoConflicto"></p>
                 </div>
 
@@ -168,14 +168,14 @@
                     @method('PUT')
 
                     <div class="mb-4">
-                        <label for="notas_resolucion" class="mb-2 block text-sm font-medium text-gray-700">
+                        <label for="notas_resolucion" class="mb-2 block text-sm font-medium text-pa-tinta-media">
                             Notas de resolución (opcional)
                         </label>
                         <textarea
                             id="notas_resolucion"
                             name="notas_resolucion"
                             rows="3"
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
+                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-brand-navy focus:ring-brand-navy/30"
                             placeholder="Agregar notas sobre la resolución del caso..."
                         ></textarea>
                     </div>
