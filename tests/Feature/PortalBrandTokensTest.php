@@ -117,7 +117,12 @@ it('renderiza el selector de vallas con el estilo claro del panel y conserva la 
             throw new RuntimeException('No se encontró el selector de vallas.');
         }
 
-        expect($selector->getAttribute('class'))->toContain('text-gray-700')
+        // El selector usa el tono panel de x-ui.select. Con los tokens de tema,
+        // en claro es el mismo gris de siempre (pa-tinta-media = slate-700,
+        // equivalente al gray-700 anterior) y en oscuro sigue el tema (navy con
+        // texto blanco, verificado en vallas-oscuro.png); sin estilo inline en
+        // las options, que fue el defecto histórico.
+        expect($selector->getAttribute('class'))->toContain('text-pa-tinta-media')
             ->and($selector->getAttribute('style'))->not->toContain('color-scheme: dark');
 
         $opcionesEquipo = $xpath->query('//select[@id="selectValla"]/option[@value="'.$equipo->id.'"]');
