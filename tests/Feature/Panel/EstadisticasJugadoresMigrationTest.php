@@ -164,7 +164,7 @@ it('muestra las tarjetas kpi que ya calcula el controlador con los valores reale
 
     // Cada valor atado a su propia etiqueta con una regex, no solo la
     // presencia de la etiqueta estática.
-    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-gray-900">3<\/span>\s*<p[^>]*>Jugadores activos<\/p>/');
+    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-tinta">3<\/span>\s*<p[^>]*>Jugadores activos<\/p>/');
     expect($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 5<\/p>/');
     expect($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">2<\/span>\s*<p[^>]*>5 o más<\/p>/');
 });

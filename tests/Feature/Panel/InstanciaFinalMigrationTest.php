@@ -183,9 +183,9 @@ it('muestra las tarjetas estadisticas con los conteos correctos', function () {
     $response->assertOk();
     $html = $response->getContent();
 
-    expect($html)->toMatch('/text-gray-900">\s*2\s*<\/span>\s*<p class="text-xs font-medium text-gray-500">Partidos/s')
-        ->and($html)->toMatch('/text-emerald-600">\s*1\s*<\/span>\s*<p class="text-xs font-medium text-gray-500">Jugados/s')
-        ->and($html)->toMatch('/text-amber-600">\s*1\s*<\/span>\s*<p class="text-xs font-medium text-gray-500">Pendientes/s');
+    expect($html)->toMatch('/text-pa-tinta">\s*2\s*<\/span>\s*<p class="text-xs font-medium text-pa-tinta-suave">Partidos/s')
+        ->and($html)->toMatch('/text-emerald-600">\s*1\s*<\/span>\s*<p class="text-xs font-medium text-pa-tinta-suave">Jugados/s')
+        ->and($html)->toMatch('/text-amber-600">\s*1\s*<\/span>\s*<p class="text-xs font-medium text-pa-tinta-suave">Pendientes/s');
 });
 
 it('agrupa las tarjetas por categoria, copa y fase en ese orden', function () {
@@ -343,7 +343,7 @@ it('renderiza el formulario de alta con x-ui.form-card y todos los campos', func
     ]));
 
     $response->assertOk()
-        ->assertSee('text-gray-700', false)
+        ->assertSee('text-pa-tinta-media', false)
         ->assertSee('Crear partido')
         ->assertSee('id="idEquipoLocal"', false)
         ->assertSee('id="idEquipoVisitante"', false)

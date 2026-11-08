@@ -136,7 +136,7 @@ it('migra el card legacy del formulario de tabla_goleador al estilo claro del pa
         ]
     );
 
-    expect($html)->toContain('rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700')
+    expect($html)->toContain('rounded-lg border border-pa-linea bg-pa-fila-bg p-4 text-sm text-pa-tinta-media')
         ->and($html)->not->toContain('bg-gray-800 text-white')
         ->and($html)->not->toMatch('/class="card[\s"]/');
 });

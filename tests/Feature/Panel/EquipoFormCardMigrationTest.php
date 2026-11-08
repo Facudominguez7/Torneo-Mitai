@@ -42,7 +42,7 @@ it('mantiene el input de logo y el select de categoría en el alta de equipo', f
     $response->assertOk()
         ->assertSee('name="idCategoria"', false)
         ->assertSee('Sub 14')
-        ->assertSee('focus:border-brand-navy', false);
+        ->assertSee('focus:border-pa-resaltado', false);
 });
 
 it('sigue permitiendo crear un equipo con el mismo contrato de datos', function () {

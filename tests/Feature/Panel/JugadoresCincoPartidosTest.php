@@ -216,7 +216,7 @@ it('no cuenta al jugador que solo tiene cuatro participaciones reales', function
     $response->assertOk();
     $contenido = $response->getContent();
 
-    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-gray-900">1<\/span>\s*<p[^>]*>Jugadores activos<\/p>/')
+    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-tinta">1<\/span>\s*<p[^>]*>Jugadores activos<\/p>/')
         ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 5<\/p>/')
         ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">0<\/span>\s*<p[^>]*>5 o más<\/p>/')
         ->and(partidosMostradosCincoPartidos($contenido, '41200001'))->toBe(4);
@@ -498,7 +498,7 @@ it('aplica el filtro de categoria en los contadores y en el listado', function (
 
     $contenidoFiltrado = $responseFiltrada->getContent();
 
-    expect($contenidoFiltrado)->toMatch('/<span class="text-2xl font-bold text-gray-900">1<\/span>\s*<p[^>]*>Jugadores activos<\/p>/')
+    expect($contenidoFiltrado)->toMatch('/<span class="text-2xl font-bold text-pa-tinta">1<\/span>\s*<p[^>]*>Jugadores activos<\/p>/')
         ->and($contenidoFiltrado)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>5 o más<\/p>/')
         ->and(partidosMostradosCincoPartidos($contenidoFiltrado, '41200080'))->toBe(5);
 });
@@ -567,7 +567,7 @@ it('filtra y cuenta con un umbral distinto al configurado', function () {
     $contenido = $response->getContent();
 
     // Los contadores siguen el umbral pedido, no el de configuración.
-    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-gray-900">2<\/span>\s*<p[^>]*>Jugadores activos<\/p>/')
+    expect($contenido)->toMatch('/<span class="text-2xl font-bold text-pa-tinta">2<\/span>\s*<p[^>]*>Jugadores activos<\/p>/')
         ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-amber-600">1<\/span>\s*<p[^>]*>Menos de 10<\/p>/')
         ->and($contenido)->toMatch('/<span class="text-2xl font-bold text-emerald-600">1<\/span>\s*<p[^>]*>10 o más<\/p>/')
         ->and($contenido)->toMatch('/de\s*<span class="font-semibold">1<\/span>\s*jugadores/')
