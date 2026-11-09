@@ -316,8 +316,8 @@
 
                                     <template x-for="(filaArbitral, indice) in filas" :key="indice">
                                         <div class="grid grid-cols-2 gap-2">
-                                            <input type="number" :name="`reportes[${indice}][numero_camiseta]`" x-model="filaArbitral.numero_camiseta" min="0" max="999" class="h-10 rounded-md border-pa-campo-borde text-sm" placeholder="Ej: 10">
-                                            <input type="number" :name="`reportes[${indice}][goles_reportados]`" x-model="filaArbitral.goles_reportados" min="0" max="99" class="h-10 rounded-md border-pa-campo-borde text-sm" placeholder="Ej: 2">
+                                            <input type="number" :name="`reportes[${indice}][numero_camiseta]`" x-model="filaArbitral.numero_camiseta" min="0" max="999" class="h-10 rounded-md border-pa-campo-borde text-sm bg-pa-campo-fondo" placeholder="Ej: 10">
+                                            <input type="number" :name="`reportes[${indice}][goles_reportados]`" x-model="filaArbitral.goles_reportados" min="0" max="99" class="h-10 rounded-md border-pa-campo-borde text-sm bg-pa-campo-fondo" placeholder="Ej: 2">
                                         </div>
                                     </template>
                                 </div>
@@ -381,7 +381,7 @@
             <div class="relative">
                 <svg class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-pa-tinta-suave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
                 <input type="search" id="buscar-jugador-local" data-player-search-input="local" placeholder="DNI sin puntos o nombre" autocomplete="off"
-                    class="block h-12 w-full rounded-lg border-pa-campo-borde pl-10 text-lg font-semibold text-pa-tinta placeholder:font-medium placeholder:text-pa-tinta-suave focus:border-pa-acento focus:ring-pa-acento">
+                    class="block h-12 w-full rounded-lg border-pa-campo-borde pl-10 text-lg font-semibold text-pa-tinta placeholder:font-medium placeholder:text-pa-tinta-suave focus:border-pa-acento focus:ring-pa-acento bg-pa-campo-fondo">
             </div>
             <p class="min-h-[1.25rem] text-sm text-pa-tinta-cuerpo data-[tono=error]:font-semibold data-[tono=error]:text-pa-peligro data-[tono=ok]:font-semibold data-[tono=ok]:text-pa-acento" data-player-search-eco="local" aria-live="polite">Enter marca la asistencia del jugador encontrado y pasa a su número.</p>
         </div>
@@ -452,7 +452,7 @@
             <div class="relative">
                 <svg class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-pa-tinta-suave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
                 <input type="search" id="buscar-jugador-visitante" data-player-search-input="visitante" placeholder="DNI sin puntos o nombre" autocomplete="off"
-                    class="block h-12 w-full rounded-lg border-pa-campo-borde pl-10 text-lg font-semibold text-pa-tinta placeholder:font-medium placeholder:text-pa-tinta-suave focus:border-pa-acento focus:ring-pa-acento">
+                    class="block h-12 w-full rounded-lg border-pa-campo-borde pl-10 text-lg font-semibold text-pa-tinta placeholder:font-medium placeholder:text-pa-tinta-suave focus:border-pa-acento focus:ring-pa-acento bg-pa-campo-fondo">
             </div>
             <p class="min-h-[1.25rem] text-sm text-pa-tinta-cuerpo data-[tono=error]:font-semibold data-[tono=error]:text-pa-peligro data-[tono=ok]:font-semibold data-[tono=ok]:text-pa-acento" data-player-search-eco="visitante" aria-live="polite">Enter marca la asistencia del jugador encontrado y pasa a su número.</p>
         </div>

@@ -134,11 +134,11 @@
                         <div class="mt-3 space-y-3">
                             <div>
                                 <label for="nombre" class="mb-1 block text-sm font-medium text-pa-tinta-media">Nombre</label>
-                                <input type="text" name="nombre" id="nombre" value="{{ old('nombre') }}" class="panel-form-input" :disabled="origen !== 'nuevo'">
+                                <input type="text" name="nombre" id="nombre" value="{{ old('nombre') }}" class="panel-form-input text-pa-tinta" :disabled="origen !== 'nuevo'">
                             </div>
                             <div>
                                 <label for="foto" class="mb-1 block text-sm font-medium text-pa-tinta-media">Escudo (opcional)</label>
-                                <input type="file" name="foto" id="foto" accept="image/png,image/jpeg,image/webp" class="panel-form-input" :disabled="origen !== 'nuevo'">
+                                <input type="file" name="foto" id="foto" accept="image/png,image/jpeg,image/webp" class="panel-form-input text-pa-tinta" :disabled="origen !== 'nuevo'">
                             </div>
                         </div>
                     </div>
@@ -152,7 +152,7 @@
 
                         <div class="mt-3" x-show="origen === 'otra_edicion'" x-cloak>
                             <label for="buscar-otra-edicion" class="mb-1 block text-sm font-medium text-pa-tinta-media">Buscar por nombre</label>
-                            <input type="search" id="buscar-otra-edicion" autocomplete="off" class="panel-form-input"
+                            <input type="search" id="buscar-otra-edicion" autocomplete="off" class="panel-form-input text-pa-tinta"
                                 placeholder="Escribí al menos 2 letras" x-model="otra.q" @input="otra.buscar()" :disabled="origen !== 'otra_edicion'">
                             <p class="mt-2 text-sm text-pa-tinta-suave" x-show="otra.buscando" x-cloak>Buscando...</p>
                             <p class="mt-2 text-sm text-pa-peligro" x-show="otra.error" x-cloak>No se pudo buscar. Probá de nuevo.</p>

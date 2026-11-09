@@ -32,7 +32,7 @@
                         <div class="flex flex-wrap gap-2">
                             <input type="search" id="buscar-equipo" name="buscar" value="{{ $buscar }}" x-model="q" @keydown.enter="elegirUnico($event)"
                                 placeholder="Nombre del equipo" autocomplete="off" autofocus
-                                class="min-h-11 min-w-0 flex-1 rounded-md border-pa-campo-borde focus:border-pa-acento focus:ring-pa-acento">
+                                class="min-h-11 min-w-0 flex-1 rounded-md border-pa-campo-borde focus:border-pa-acento focus:ring-pa-acento bg-pa-campo-fondo text-pa-tinta">
                             <button class="min-h-11 rounded-md border border-pa-campo-borde px-4 font-semibold text-pa-tinta-media">Buscar</button>
                         </div>
                         <ul x-ref="lista" class="max-h-80 divide-y divide-pa-linea-suave overflow-y-auto rounded-md empty:hidden">

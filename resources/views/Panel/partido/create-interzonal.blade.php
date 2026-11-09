@@ -111,7 +111,7 @@
                         Cancha
                     </label>
                     <input type="text" name="cancha" id="cancha" value="{{ old('cancha') }}"
-                        class="panel-form-input" />
+                        class="panel-form-input text-pa-tinta" />
                     @error('cancha')
                         <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
                     @enderror

@@ -44,7 +44,7 @@
             <div class="min-w-64 flex-1">
                 <label class="mb-1 block text-sm font-medium text-pa-aviso-tinta">Nombre de la institución:</label>
                 <input type="text" name="nombre" required placeholder="Ej: Escuela San José"
-                    class="w-full rounded-lg border-pa-campo-borde px-3 py-2 focus:ring-2 focus:ring-pa-resaltado/30">
+                    class="w-full rounded-lg border-pa-campo-borde px-3 py-2 focus:ring-2 focus:ring-pa-resaltado/30 bg-pa-campo-fondo text-pa-tinta">
             </div>
             <x-ui.button type="submit" variant="primary">
                 Crear Institución

@@ -23,7 +23,7 @@
             <div class="min-w-0">
                 <label for="cobros-deudores-buscar" class="block text-sm font-medium text-pa-tinta-media">Buscar equipo</label>
                 <input id="cobros-deudores-buscar" type="search" data-cobros-deudores-buscar autocomplete="off" maxlength="150"
-                    class="mt-1 min-h-11 w-full rounded-md border-pa-campo-borde text-sm focus:border-pa-acento focus:ring-pa-acento">
+                    class="mt-1 min-h-11 w-full rounded-md border-pa-campo-borde text-sm focus:border-pa-acento focus:ring-pa-acento bg-pa-campo-fondo">
             </div>
             <div class="min-w-0">
                 <label for="cobros-deudores-categoria" class="block text-sm font-medium text-pa-tinta-media">Categoría</label>

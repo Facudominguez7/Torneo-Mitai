@@ -84,7 +84,7 @@
                 O creá una fecha nueva
             </label>
             <input type="text" name="nombreFecha" id="nombreFecha" maxlength="50"
-                class="panel-form-input"
+                class="panel-form-input text-pa-tinta"
                 placeholder="Por ejemplo: Fecha 5"
                 value="{{ old('nombreFecha') }}"
                 aria-describedby="ayuda-nombreFecha" />

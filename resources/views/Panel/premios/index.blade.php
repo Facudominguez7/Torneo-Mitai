@@ -125,7 +125,7 @@
                                             </label>
                                             <input type="text" id="nombre_arquero_{{ $categoria['idCategoria'] }}" name="nombre"
                                                 required maxlength="50" placeholder="Nombre del arquero"
-                                                class="block w-full rounded-md border-pa-campo-borde py-2 px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30">
+                                                class="block w-full rounded-md border-pa-campo-borde py-2 px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30 bg-pa-campo-fondo">
                                             <x-ui.button type="submit" variant="success" size="sm">
                                                 Guardar
                                             </x-ui.button>

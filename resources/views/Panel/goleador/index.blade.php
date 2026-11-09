@@ -95,7 +95,7 @@
                                 <form action="{{ route('goleador.destroy', $g) }}" method="post">
                                     @method('DELETE')
                                     @csrf
-                                    <input type="number" id="idEdicion" name="idEdicion" class="hidden"
+                                    <input type="number" id="idEdicion" name="idEdicion" class="hidden bg-pa-campo-fondo text-pa-tinta"
                                         value="{{ $g->idEdicion }}">
                                     <x-ui.button type="submit" variant="danger">Eliminar</x-ui.button>
                                 </form>

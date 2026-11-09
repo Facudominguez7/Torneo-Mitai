@@ -121,7 +121,7 @@
                         <div>
                             <label for="dni_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">DNI del Jugador:</label>
                             <input type="text" name="dni_jugador" id="dni_jugador" required pattern="\d{7,8}"
-                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
+                                class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                                 placeholder="Ej: 12345678" autocomplete="off">
                             {{-- Indicador de estado de búsqueda --}}
                             <div id="dni_status" class="mt-1 hidden text-sm">
@@ -140,21 +140,21 @@
                         <div>
                             <label for="nombre_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Nombre:</label>
                             <input type="text" name="nombre_jugador" id="nombre_jugador" required
-                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
+                                class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                                 placeholder="Nombre del jugador">
                         </div>
 
                         <div>
                             <label for="apellido_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Apellido:</label>
                             <input type="text" name="apellido_jugador" id="apellido_jugador" required
-                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
+                                class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                                 placeholder="Apellido del jugador">
                         </div>
 
                         <div>
                             <label for="fecha_nacimiento" class="mb-1 block text-sm font-medium text-pa-tinta-media">Fecha de Nacimiento:</label>
                             <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" required
-                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30">
+                                class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30">
                         </div>
 
                         <div>
@@ -162,7 +162,7 @@
                                 Número de Camiseta: <span class="font-normal text-pa-tinta-suave">(opcional)</span>
                             </label>
                             <input type="number" name="numero_camiseta" id="numero_camiseta" min="0" max="999"
-                                class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
+                                class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                                 placeholder="Ej: 10">
                         </div>
 
@@ -395,28 +395,28 @@
                     <div>
                         <label for="editar_dni_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">DNI del Jugador:</label>
                         <input type="text" name="dni_jugador" id="editar_dni_jugador" required pattern="\d{7,8}"
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
+                            class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Ej: 12345678">
                     </div>
 
                     <div>
                         <label for="editar_nombre_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Nombre:</label>
                         <input type="text" name="nombre_jugador" id="editar_nombre_jugador" required
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
+                            class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Nombre del jugador">
                     </div>
 
                     <div>
                         <label for="editar_apellido_jugador" class="mb-1 block text-sm font-medium text-pa-tinta-media">Apellido:</label>
                         <input type="text" name="apellido_jugador" id="editar_apellido_jugador" required
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
+                            class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Apellido del jugador">
                     </div>
 
                     <div>
                         <label for="editar_fecha_nacimiento" class="mb-1 block text-sm font-medium text-pa-tinta-media">Fecha de Nacimiento:</label>
                         <input type="date" name="fecha_nacimiento" id="editar_fecha_nacimiento" required
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30">
+                            class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30">
                     </div>
 
                     <div class="md:col-span-2">
@@ -424,7 +424,7 @@
                             Número de Camiseta: <span class="font-normal text-pa-tinta-suave">(opcional)</span>
                         </label>
                         <input type="number" name="numero_camiseta" id="editar_numero_camiseta" min="0" max="999"
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
+                            class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Ej: 10">
                     </div>
 
@@ -463,7 +463,7 @@
                             Motivo <span class="font-normal text-pa-tinta-suave">(opcional)</span>
                         </label>
                         <input type="text" name="motivo_baja" id="motivo_baja" maxlength="255" autocomplete="off"
-                            class="w-full rounded-md border-pa-campo-borde shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
+                            class="w-full rounded-md border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
                             placeholder="Ej: pase a otro club">
                     </div>
 

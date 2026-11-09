@@ -24,6 +24,6 @@
         <label for="foto" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Agregar Logo
         </label>
-        <input type="file" id="foto" name="foto" class="panel-form-input">
+        <input type="file" id="foto" name="foto" class="panel-form-input text-pa-tinta">
     </div>
 </div>

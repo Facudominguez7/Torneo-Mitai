@@ -42,7 +42,7 @@
         </label>
         <input type="text" name="nombre" id="nombre" value="{{ $nombreJugadorMostrar }}"
             {{ $esEdicionGoleador ? 'readonly' : '' }}
-            class="panel-form-input">
+            class="panel-form-input text-pa-tinta">
         @if ($esEdicionGoleador)
             <p class="mt-1 text-xs text-pa-tinta-suave">
                 El nombre se obtiene desde el jugador asociado por DNI en la tabla de goleadores.

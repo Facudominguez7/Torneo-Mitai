@@ -15,12 +15,12 @@
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                     <label for="cobros-efectivo" class="block text-sm font-medium">Efectivo</label>
-                    <input id="cobros-efectivo" name="importe_efectivo_ars" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" class="mt-1 min-h-11 w-full rounded border-pa-campo-borde" aria-describedby="error-importe_efectivo_ars cobros-total">
+                    <input id="cobros-efectivo" name="importe_efectivo_ars" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" class="mt-1 min-h-11 w-full rounded border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta" aria-describedby="error-importe_efectivo_ars cobros-total">
                     <p id="error-importe_efectivo_ars" data-error="importe_efectivo_ars" class="text-sm text-pa-peligro"></p>
                 </div>
                 <div>
                     <label for="cobros-mercado-pago" class="block text-sm font-medium">Mercado Pago</label>
-                    <input id="cobros-mercado-pago" name="importe_mercado_pago_ars" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" class="mt-1 min-h-11 w-full rounded border-pa-campo-borde" aria-describedby="error-importe_mercado_pago_ars cobros-total">
+                    <input id="cobros-mercado-pago" name="importe_mercado_pago_ars" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" class="mt-1 min-h-11 w-full rounded border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta" aria-describedby="error-importe_mercado_pago_ars cobros-total">
                     <p id="error-importe_mercado_pago_ars" data-error="importe_mercado_pago_ars" class="text-sm text-pa-peligro"></p>
                 </div>
             </div>
@@ -32,7 +32,7 @@
             <p class="text-sm text-pa-tinta-cuerpo">Se corrige este mismo pago: no se anula ni se crea otro. Conserva la fecha de recepción y quién lo registró.</p>
             <div>
                 <label for="cobros-editar-importe" class="block text-sm font-medium">Importe en pesos</label>
-                <input id="cobros-editar-importe" name="importe_ars" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" class="mt-1 min-h-11 w-full rounded border-pa-campo-borde" aria-describedby="ayuda-importe_ars error-importe_ars cobros-editar-aviso">
+                <input id="cobros-editar-importe" name="importe_ars" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" class="mt-1 min-h-11 w-full rounded border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta" aria-describedby="ayuda-importe_ars error-importe_ars cobros-editar-aviso">
                 <p id="ayuda-importe_ars" class="mt-1 text-sm text-pa-tinta-cuerpo">Solo números, sin puntos ni decimales.</p>
                 <p id="error-importe_ars" data-error="importe_ars" class="text-sm text-pa-peligro"></p>
             </div>
