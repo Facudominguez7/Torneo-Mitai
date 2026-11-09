@@ -21,10 +21,10 @@
 @php
     $toneClasses = [
         'panel' => [
-            'border' => 'border-gray-200',
-            'icon' => 'text-gray-300',
-            'message' => 'text-gray-500',
-            'description' => 'text-gray-400',
+            'border' => 'border-pa-linea',
+            'icon' => 'text-pa-campo-borde',
+            'message' => 'text-pa-tinta-suave',
+            'description' => 'text-pa-tinta-suave',
         ],
         'portal' => [
             'border' => 'border-white/20',

@@ -27,8 +27,8 @@ it('renders the card shell classes', function () {
     $html = renderUiDataTable();
 
     expect($html)->toContain('rounded-xl')
-        ->and($html)->toContain('border-gray-200')
-        ->and($html)->toContain('bg-white')
+        ->and($html)->toContain('border-pa-linea')
+        ->and($html)->toContain('bg-pa-superficie')
         ->and($html)->toContain('overflow-hidden');
 });
 
@@ -67,10 +67,10 @@ it('renders the head and body slots inside a real table', function () {
 it('applies the header row style tokens', function () {
     $html = renderUiDataTable();
 
-    expect($html)->toContain('bg-gray-50')
+    expect($html)->toContain('bg-pa-fila-bg')
         ->and($html)->toContain('uppercase')
         ->and($html)->toContain('tracking-wide')
-        ->and($html)->toContain('text-gray-600');
+        ->and($html)->toContain('text-pa-tinta-cuerpo');
 });
 
 it('renders the default x-ui.empty-state when :empty is true and no custom emptyState slot is given', function () {
@@ -127,5 +127,5 @@ it('passes through arbitrary caller-supplied attributes via the attribute bag', 
 it('omits the footer area when the footer slot only contains whitespace', function () {
     $html = renderUiDataTable('', "<x-slot name=\"footer\">\n    \n</x-slot>");
 
-    expect($html)->not->toContain('border-t border-gray-200 px-5 py-4');
+    expect($html)->not->toContain('border-t border-pa-linea px-5 py-4');
 });

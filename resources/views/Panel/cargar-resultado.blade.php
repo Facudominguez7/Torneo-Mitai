@@ -17,7 +17,7 @@
     <x-ui.page-header title="Cargar resultado" />
 
     <div class="mb-4">
-        <a href="{{ $rutaRegreso }}" class="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-100">
+        <a href="{{ $rutaRegreso }}" class="inline-flex items-center gap-2 rounded-md bg-pa-superficie px-3 py-2 text-sm font-semibold text-pa-tinta-media shadow hover:bg-pa-fila-hover">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -25,7 +25,7 @@
         </a>
     </div>
 
-    <div class="mx-auto w-full max-w-2xl overflow-hidden rounded-xl border border-gray-200 bg-white p-6">
+    <div class="mx-auto w-full max-w-2xl overflow-hidden rounded-xl border border-pa-linea bg-pa-superficie p-6">
         <div class="mb-4 flex flex-wrap items-center justify-center gap-2">
             @if ($esInstanciaFinal)
                 <x-ui.badge variant="warning">Modo instancia final</x-ui.badge>
@@ -40,18 +40,18 @@
                     <img src="{{ asset('fotos/equipos/' . $partido->equipoLocal->foto) }}" width="48" height="48" alt="Escudo {{ $partido->equipoLocal->nombre }}"
                         onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';"
                         class="h-12 w-12 rounded-full object-cover" />
-                    <span class="text-center font-semibold text-gray-900">{{ $partido->equipoLocal->nombre }}</span>
+                    <span class="text-center font-semibold text-pa-tinta">{{ $partido->equipoLocal->nombre }}</span>
                 </div>
-                <div class="text-sm font-semibold text-gray-400">vs</div>
+                <div class="text-sm font-semibold text-pa-tinta-suave">vs</div>
                 <div class="flex flex-col items-center gap-2">
                     <img src="{{ asset('fotos/equipos/' . $partido->equipoVisitante->foto) }}" width="48" height="48" alt="Escudo {{ $partido->equipoVisitante->nombre }}"
                         onerror="this.onerror=null;this.src='{{ asset('fotos/Logo_Mitai_SinFondo.png') }}';"
                         class="h-12 w-12 rounded-full object-cover" />
-                    <span class="text-center font-semibold text-gray-900">{{ $partido->equipoVisitante->nombre }}</span>
+                    <span class="text-center font-semibold text-pa-tinta">{{ $partido->equipoVisitante->nombre }}</span>
                 </div>
             </div>
 
-            <div class="mb-6 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
+            <div class="mb-6 flex flex-wrap items-center justify-center gap-6 text-sm text-pa-tinta-suave">
                 <span class="inline-flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12zm0-10a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H7a1 1 0 110-2h3V7a1 1 0 011-1z" />
@@ -65,7 +65,7 @@
                     Cancha {{ $partido->cancha }}
                 </span>
                 @if ($esInstanciaFinal)
-                    <span class="text-lg font-bold text-gray-900">
+                    <span class="text-lg font-bold text-pa-tinta">
                         Penales: {{ $partido->penalesEquipoLocal ?? '-' }} - {{ $partido->penalesEquipoVisitante ?? '-' }}
                     </span>
                 @endif
@@ -74,16 +74,16 @@
 
         @if (isset($partidoIda) && $partidoIda)
             <div class="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-5 py-4">
-                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-500">Resultado IDA</p>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-pa-tinta">Resultado IDA</p>
                 <div class="flex items-center justify-between gap-4">
-                    <span class="font-medium text-gray-800">{{ $partidoIda->equipoLocal->nombre }}</span>
-                    <span class="text-2xl font-bold text-blue-700">
+                    <span class="font-medium text-pa-tinta">{{ $partidoIda->equipoLocal->nombre }}</span>
+                    <span class="text-2xl font-bold text-pa-tinta">
                         {{ $partidoIda->golesEquipoLocal }} - {{ $partidoIda->golesEquipoVisitante }}
                     </span>
-                    <span class="font-medium text-gray-800">{{ $partidoIda->equipoVisitante->nombre }}</span>
+                    <span class="font-medium text-pa-tinta">{{ $partidoIda->equipoVisitante->nombre }}</span>
                 </div>
                 @if ($partidoIda->penalesEquipoLocal !== null && $partidoIda->penalesEquipoVisitante !== null)
-                    <p class="mt-1 text-center text-xs text-blue-400">
+                    <p class="mt-1 text-center text-xs text-pa-tinta">
                         Penales: {{ $partidoIda->penalesEquipoLocal }} - {{ $partidoIda->penalesEquipoVisitante }}
                     </p>
                 @endif
@@ -96,25 +96,25 @@
             @csrf
             <div class="mb-6 grid grid-cols-2 gap-4">
                 <div class="flex flex-col justify-end">
-                    <label for="golesEquipoLocal" class="mb-2 block text-center text-sm font-medium text-gray-700">
-                        Goles de <span class="font-semibold text-gray-900">{{ $partido->equipoLocal->nombre }}</span>
+                    <label for="golesEquipoLocal" class="mb-2 block text-center text-sm font-medium text-pa-tinta-media">
+                        Goles de <span class="font-semibold text-pa-tinta">{{ $partido->equipoLocal->nombre }}</span>
                     </label>
                     <input type="number" name="golesEquipoLocal" id="golesEquipoLocal" min="0"
                         value="{{ old('golesEquipoLocal', $partido->golesEquipoLocal) }}"
-                        class="w-full rounded-md border-gray-300 text-center text-2xl font-bold text-gray-900 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30" />
+                        class="w-full rounded-md border-pa-campo-borde text-center text-2xl font-bold text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30" />
                 </div>
                 <div class="flex flex-col justify-end">
-                    <label for="golesEquipoVisitante" class="mb-2 block text-center text-sm font-medium text-gray-700">
-                        Goles de <span class="font-semibold text-gray-900">{{ $partido->equipoVisitante->nombre }}</span>
+                    <label for="golesEquipoVisitante" class="mb-2 block text-center text-sm font-medium text-pa-tinta-media">
+                        Goles de <span class="font-semibold text-pa-tinta">{{ $partido->equipoVisitante->nombre }}</span>
                     </label>
                     <input type="number" name="golesEquipoVisitante" id="golesEquipoVisitante" min="0"
                         value="{{ old('golesEquipoVisitante', $partido->golesEquipoVisitante) }}"
-                        class="w-full rounded-md border-gray-300 text-center text-2xl font-bold text-gray-900 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30" />
+                        class="w-full rounded-md border-pa-campo-borde text-center text-2xl font-bold text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30" />
                 </div>
             </div>
             @if (isset($tipo) && $tipo === 'instancia_final')
                 <div class="mb-6">
-                    <label for="resultadoGlobal" class="mb-2 block text-sm font-medium text-gray-700">
+                    <label for="resultadoGlobal" class="mb-2 block text-sm font-medium text-pa-tinta-media">
                         Resultado global
                     </label>
                     <input type="text" name="resultadoGlobal" id="resultadoGlobal"
@@ -124,20 +124,20 @@
                 </div>
                 <div id="containerPenales" class="mb-6 grid grid-cols-2 gap-4" style="display: none;">
                     <div>
-                        <label for="penalesEquipoLocal" class="mb-2 block text-center text-sm font-medium text-gray-700">
-                            Penales de <span class="font-semibold text-gray-900">{{ $partido->equipoLocal->nombre }}</span>
+                        <label for="penalesEquipoLocal" class="mb-2 block text-center text-sm font-medium text-pa-tinta-media">
+                            Penales de <span class="font-semibold text-pa-tinta">{{ $partido->equipoLocal->nombre }}</span>
                         </label>
                         <input type="number" name="penalesEquipoLocal" id="penalesEquipoLocal"
                             value="{{ old('penalesEquipoLocal', $partido->penalesEquipoLocal) }}"
-                            class="w-full rounded-md border-gray-300 text-center text-lg font-semibold text-gray-900 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30" />
+                            class="w-full rounded-md border-pa-campo-borde text-center text-lg font-semibold text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30" />
                     </div>
                     <div>
-                        <label for="penalesEquipoVisitante" class="mb-2 block text-center text-sm font-medium text-gray-700">
-                            Penales de <span class="font-semibold text-gray-900">{{ $partido->equipoVisitante->nombre }}</span>
+                        <label for="penalesEquipoVisitante" class="mb-2 block text-center text-sm font-medium text-pa-tinta-media">
+                            Penales de <span class="font-semibold text-pa-tinta">{{ $partido->equipoVisitante->nombre }}</span>
                         </label>
                         <input type="number" name="penalesEquipoVisitante" id="penalesEquipoVisitante"
                             value="{{ old('penalesEquipoVisitante', $partido->penalesEquipoVisitante) }}"
-                            class="w-full rounded-md border-gray-300 text-center text-lg font-semibold text-gray-900 shadow-sm focus:border-brand-navy focus:ring-brand-navy/30" />
+                            class="w-full rounded-md border-pa-campo-borde text-center text-lg font-semibold text-pa-tinta shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30" />
                     </div>
                 </div>
 

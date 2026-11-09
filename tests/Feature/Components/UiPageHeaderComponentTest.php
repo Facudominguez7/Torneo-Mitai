@@ -49,7 +49,7 @@ it('renders no actions wrapper markup when the actions slot is not used', functi
 it('applies token-based classes on the panel tone', function () {
     $html = renderUiPageHeader('title="Equipos" tone="panel"');
 
-    expect($html)->toContain('text-gray-800');
+    expect($html)->toContain('text-pa-tinta');
 });
 
 it('applies token-based classes on the portal tone', function () {
@@ -61,7 +61,7 @@ it('applies token-based classes on the portal tone', function () {
 it('falls back to the panel tone for an unknown tone', function () {
     $html = renderUiPageHeader('title="Equipos" tone="not-a-tone"');
 
-    expect($html)->toContain('text-gray-800');
+    expect($html)->toContain('text-pa-tinta');
 });
 
 it('merges caller-supplied classes with the component classes instead of replacing them', function () {

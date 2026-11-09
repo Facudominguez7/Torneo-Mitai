@@ -7,11 +7,11 @@
     <title>Deudas de planilla · Mitaí</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-gray-100 text-gray-900">
+<body class="bg-pa-fila-hover text-pa-tinta">
     <main class="mx-auto max-w-5xl p-4 sm:p-6">
         <h1 class="text-2xl font-semibold">Deudas de planilla</h1>
-        <p class="mt-1 text-sm text-gray-600">Partido {{ $partido->id }}</p>
-        <section class="mt-4 border border-gray-200 bg-white lg:sticky lg:top-0" aria-label="Estado de deudas de los equipos">
+        <p class="mt-1 text-sm text-pa-tinta-cuerpo">Partido {{ $partido->id }}</p>
+        <section class="mt-4 border border-pa-linea bg-pa-superficie lg:sticky lg:top-0" aria-label="Estado de deudas de los equipos">
             <div data-cobros-seccion aria-live="polite"
                 data-url="{{ route('planilla.deudas', ['idEdicion' => $partido->idEdicion, 'tipoPartido' => $tipoPartido, 'partidoId' => $partido->id]) }}">
                 @include('Panel.cobros.franja')

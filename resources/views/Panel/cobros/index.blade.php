@@ -5,11 +5,11 @@
     @if (! $EdicionSeleccionada)
         <x-ui.empty-state class="mt-6" message="Seleccioná una edición" description="Elegí una edición en la barra superior para consultar sus cobros." />
     @else
-        <section class="mt-4 rounded-lg border border-gray-200 bg-white p-4" aria-label="Configuración global">
+        <section class="mt-4 rounded-lg border border-pa-linea bg-pa-superficie p-4" aria-label="Configuración global">
             <h2 class="font-semibold">Configuración global · {{ $configuracion?->activado_at ? 'Cobros activados' : 'Cobros sin activar' }}</h2>
             <p class="mt-2 text-sm">Tarifa vigente: $ {{ number_format($configuracion?->tarifa_ars ?? 0, 0, ',', '.') }} ARS. Aplica a altas futuras; no cambia deuda histórica.</p>
             <div class="mt-3 flex flex-wrap gap-3">
-                <button type="button" data-cobro="tarifa" class="min-h-11 rounded border border-gray-300 px-4 py-2">Cambiar tarifa global</button>
+                <button type="button" data-cobro="tarifa" class="min-h-11 rounded border border-pa-campo-borde px-4 py-2">Cambiar tarifa global</button>
                 @unless ($configuracion?->activado_at)<button type="button" data-cobro="activar" class="min-h-11 rounded bg-blue-900 px-4 py-2 text-white">Activar cobros…</button>@endunless
             </div>
         </section>

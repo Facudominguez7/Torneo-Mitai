@@ -2,11 +2,11 @@
 <div class="space-y-5">
     @if (isset($listaGoleadores) && $listaGoleadores->count() > 0)
         <div>
-            <label for="selectGoleador" class="mb-1 block text-sm font-medium text-gray-700">
+            <label for="selectGoleador" class="mb-1 block text-sm font-medium text-pa-tinta-media">
                 Seleccionar de la tabla de goleadores (ordenados por goles)
             </label>
             <select id="selectGoleador" name="selectGoleador"
-                class="block w-full rounded-md border-gray-300 py-2 px-3 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30"
+                class="block w-full rounded-md border-pa-campo-borde py-2 px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30 bg-pa-campo-fondo"
                 onchange="if(this.value) { document.getElementById('nombre').value = this.selectedOptions[0].dataset.nombre; document.getElementById('idEquipo').value = this.selectedOptions[0].dataset.equipo; }">
                 <option value="">-- Seleccionar jugador --</option>
                 @foreach ($listaGoleadores as $g)
@@ -24,11 +24,11 @@
     @endif
 
     <div>
-        <label for="nombre" class="mb-1 block text-sm font-medium text-gray-700">
+        <label for="nombre" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Nombre del jugador
         </label>
         <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $goleador->nombre) }}"
-            class="block w-full rounded-md border-gray-300 py-2 px-3 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30" />
+            class="block w-full rounded-md border-pa-campo-borde py-2 px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30" />
     </div>
 
     @if (!isset($listaGoleadores) || $listaGoleadores->count() == 0)

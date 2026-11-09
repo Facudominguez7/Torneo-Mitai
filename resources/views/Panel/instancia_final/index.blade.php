@@ -61,9 +61,9 @@
                         Agregar en esta categoría
                     </x-ui.button>
                 @endif
-                <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                <div class="flex items-center gap-2 rounded-lg border border-pa-linea bg-pa-fila-bg px-3 py-2">
                     <select id="selector-impresion-instancias"
-                        class="min-w-[200px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/30">
+                        class="min-w-[200px] rounded-md border border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm font-medium text-pa-tinta-media shadow-sm outline-none focus:border-pa-resaltado focus:ring-2 focus:ring-pa-resaltado/30">
                         <option value="">Seleccionar opción</option>
                         <option value="fixture">Fixture</option>
                         <option value="arbitros">Planilla Árbitros</option>
@@ -82,7 +82,7 @@
 
     {{-- Los filtros y chips leen la edición seleccionada, igual que en main. --}}
     @if (isset($EdicionSeleccionada))
-    <div class="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+    <div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-5">
         <div class="flex flex-wrap items-end gap-3">
             @if ($categorias->count() > 0)
                 <div class="w-full md:w-56">
@@ -157,17 +157,17 @@
     @endif
 
     <div class="mt-6 flex flex-wrap justify-center gap-4">
-        <div class="min-w-[140px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
-            <span class="text-2xl font-bold text-gray-900">{{ $totalPartidos }}</span>
-            <p class="text-xs font-medium text-gray-500">Partidos</p>
+        <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
+            <span class="text-2xl font-bold text-pa-tinta">{{ $totalPartidos }}</span>
+            <p class="text-xs font-medium text-pa-tinta-suave">Partidos</p>
         </div>
-        <div class="min-w-[140px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
-            <span class="text-2xl font-bold text-emerald-600">{{ $partidosJugados }}</span>
-            <p class="text-xs font-medium text-gray-500">Jugados</p>
+        <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
+            <span class="text-2xl font-bold text-pa-exito">{{ $partidosJugados }}</span>
+            <p class="text-xs font-medium text-pa-tinta-suave">Jugados</p>
         </div>
-        <div class="min-w-[140px] rounded-lg border border-gray-200 bg-white px-6 py-4 text-center">
+        <div class="min-w-[140px] rounded-lg border border-pa-linea bg-pa-superficie px-6 py-4 text-center">
             <span class="text-2xl font-bold text-amber-600">{{ $partidosPendientes }}</span>
-            <p class="text-xs font-medium text-gray-500">Pendientes</p>
+            <p class="text-xs font-medium text-pa-tinta-suave">Pendientes</p>
         </div>
     </div>
 
@@ -186,7 +186,7 @@
         @foreach ($cuadro as $nombreCategoriaGrupo => $copasEnCategoria)
             <section class="mt-8">
                 @if ($mostrarEncabezadoCategoria)
-                    <h2 class="mb-3 text-xl font-bold text-gray-800">{{ $nombreCategoriaGrupo }}</h2>
+                    <h2 class="mb-3 text-xl font-bold text-pa-tinta">{{ $nombreCategoriaGrupo }}</h2>
                 @endif
 
                 @foreach ($copasEnCategoria as $nombreCopaGrupo => $fasesEnCopa)
@@ -197,7 +197,7 @@
                             </h3>
                         @else
                             {{-- Sin encabezado, estas rondas parecían parte de la copa anterior. --}}
-                            <h3 class="mb-3 inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700">
+                            <h3 class="mb-3 inline-flex items-center rounded-full bg-pa-fila-hover px-3 py-1 text-sm font-semibold text-pa-tinta-media">
                                 Sin copa
                             </h3>
                         @endif
@@ -207,7 +207,7 @@
                             class="flex flex-col gap-4 lg:grid lg:grid-flow-col lg:auto-cols-[17rem] lg:items-start lg:overflow-x-auto lg:pb-2">
                             @foreach ($fasesEnCopa as $nombreFaseGrupo => $partidosDeFase)
                                 <div>
-                                    <h4 class="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">{{ $nombreFaseGrupo }}</h4>
+                                    <h4 class="mb-2 text-sm font-semibold uppercase tracking-wide text-pa-tinta-suave">{{ $nombreFaseGrupo }}</h4>
                                     <div class="space-y-4">
                                         @foreach ($partidosDeFase as $p)
                                             @include('Panel.instancia_final._card', ['p' => $p])

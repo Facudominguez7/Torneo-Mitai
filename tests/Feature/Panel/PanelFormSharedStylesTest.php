@@ -91,7 +91,7 @@ it('renderiza categoria/create con el boton de envio de x-ui.button (T3: form-ca
     $response = $this->actingAs($admin)->get(route('categoria.create', ['idEdicion' => $edicion->id]));
 
     $response->assertOk();
-    $response->assertSee('bg-brand-navy', false);
+    $response->assertSee('bg-pa-resaltado', false);
     $response->assertSee('>Agregar<', false);
     $response->assertDontSee('#6A64F1', false);
 });
@@ -122,12 +122,11 @@ it('compila panel-form-input y panel-form-submit a reglas CSS reales con los tok
     array_map('unlink', glob($probeDir.'/*'));
     rmdir($probeDir);
 
-    // #e0e0e0 = rgb(224 224 224), #6A64F1 = rgb(106 100 241) — Tailwind
-    // compiles named colors to their decimal RGB channels, not the hex
-    // literal, so this is the real proof the tokens resolve to the exact
-    // original values rather than reading the config as text.
+    // Los valores claros de pa-form-borde (#e0e0e0) y pa-form-acento (#6A64F1)
+    // se fijan en PanelTemaOscuroTest; acá se prueba que las clases compartidas
+    // consumen esos tokens y no hex sueltos, que es lo que compila Tailwind.
     expect($css)->toContain('.panel-form-input')
         ->and($css)->toContain('.panel-form-submit')
-        ->and($css)->toContain('rgb(224 224 224')
-        ->and($css)->toContain('rgb(106 100 241');
+        ->and($css)->toContain('var(--pa-form-borde)')
+        ->and($css)->toContain('var(--pa-form-acento');
 });

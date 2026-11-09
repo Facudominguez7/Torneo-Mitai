@@ -281,7 +281,7 @@ it('renderiza la barra compacta fija de deudas y deja la franja en el flujo norm
 
     expect($html)->toContain('data-franja-resumen-ancla')
         ->and($html)->toMatch('/class="sticky top-0 z-30 -mx-6 hidden h-0 lg:block" data-franja-resumen-ancla/')
-        ->and($html)->toMatch('/<section class="-mx-6 mb-6 border-y border-gray-200 bg-white" aria-labelledby="cobro-planilla-titulo" data-franja-deudas>/')
+        ->and($html)->toMatch('/<section class="-mx-6 mb-6 border-y border-pa-linea bg-pa-superficie" aria-labelledby="cobro-planilla-titulo" data-franja-deudas>/')
         ->and($html)->toContain('overflow-x-clip')
         ->and($html)->not->toContain('min-h-screen w-full flex-col overflow-x-hidden');
 });

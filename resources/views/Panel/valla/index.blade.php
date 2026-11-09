@@ -20,23 +20,23 @@
             <thead>
                 <tr>
                     <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
+                        class="p-3 font-bold uppercase bg-pa-linea text-pa-tinta-cuerpo border border-pa-campo-borde hidden lg:table-cell">
                         Id
                     </th>
                     <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
+                        class="p-3 font-bold uppercase bg-pa-linea text-pa-tinta-cuerpo border border-pa-campo-borde hidden lg:table-cell">
                         Nombre
                     </th>
                     <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
+                        class="p-3 font-bold uppercase bg-pa-linea text-pa-tinta-cuerpo border border-pa-campo-borde hidden lg:table-cell">
                         Equipo
                     </th>
                     <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
+                        class="p-3 font-bold uppercase bg-pa-linea text-pa-tinta-cuerpo border border-pa-campo-borde hidden lg:table-cell">
                         Categoria
                     </th>
                     <th
-                        class="p-3 font-bold uppercase bg-gray-200 text-gray-600 border border-gray-300 hidden lg:table-cell">
+                        class="p-3 font-bold uppercase bg-pa-linea text-pa-tinta-cuerpo border border-pa-campo-borde hidden lg:table-cell">
                         Accion
                     </th>
                 </tr>
@@ -44,46 +44,46 @@
             <tbody>
                 @if ($vallas->isempty())
                     <tr
-                        class="bg-white lg:hover:bg-gray-100 flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
+                        class="bg-pa-superficie lg:hover:bg-pa-fila-hover flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
                         <td colspan="5"
-                            class="w-full lg:w-auto p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                            class="w-full lg:w-auto p-3 text-pa-tinta text-center border border-b block lg:table-cell relative lg:static">
                             No existen registros
                         </td>
                     </tr>
                 @endif
                 @foreach ($vallas as $v)
                     <tr
-                        class="bg-white lg:hover:bg-gray-100 flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
+                        class="bg-pa-superficie lg:hover:bg-pa-fila-hover flex lg:table-row flex-row lg:flex-row flex-wrap lg:flex-no-wrap mb-10 lg:mb-0">
                         <td
-                            class="w-full lg:w-auto p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                            class="w-full lg:w-auto p-3 text-pa-tinta text-center border border-b block lg:table-cell relative lg:static">
                             <span
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Id
                             </span>
                             {{ $v->id }}
                         </td>
                         <td
-                            class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                            class="w-full lg:w-1/3 p-3 text-pa-tinta text-center border border-b block lg:table-cell relative lg:static">
                             <span
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Nombre
                             </span>
                             {{ $v->nombre }}
                         </td>
                         <td
-                            class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                            class="w-full lg:w-1/3 p-3 text-pa-tinta text-center border border-b block lg:table-cell relative lg:static">
                             <span
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">nombre
                             </span>
                             {{ $v->equipo->nombre }}
                         </td>
                         <td
-                            class="w-full lg:w-1/3 p-3 text-gray-800 text-center border border-b block lg:table-cell relative lg:static">
+                            class="w-full lg:w-1/3 p-3 text-pa-tinta text-center border border-b block lg:table-cell relative lg:static">
                             <span
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Categoria
                             </span>
                             {{ $v->categoria->nombreCategoria }}
                         </td>
                         <td
-                            class="w-full lg:w-full p-3 text-gray-800 text-center border border-b  block lg:table-cell relative lg:static">
+                            class="w-full lg:w-full p-3 text-pa-tinta text-center border border-b  block lg:table-cell relative lg:static">
                             <span
                                 class="lg:hidden absolute top-0 left-0 bg-blue-200 px-2 py-1 text-xs font-bold uppercase">Accion
                             </span>
@@ -95,7 +95,7 @@
                                 <form action="{{ route('valla.destroy', $v) }}" method="post">
                                     @method('DELETE')
                                     @csrf
-                                    <input type="number" id="idEdicion" name="idEdicion" class="hidden"
+                                    <input type="number" id="idEdicion" name="idEdicion" class="hidden bg-pa-campo-fondo text-pa-tinta"
                                         value="{{ $v->idEdicion }}">
                                     <x-ui.button type="submit" variant="danger">Eliminar</x-ui.button>
                                 </form>

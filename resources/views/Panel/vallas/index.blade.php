@@ -65,19 +65,19 @@
                     <tr data-posicion="{{ $posicion }}">
                         <td>
                             @if ($posicion === 1)
-                                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-gold/40 text-xs font-extrabold text-brand-navy">
+                                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-gold/40 text-xs font-extrabold text-pa-aviso-tinta">
                                     1
                                 </span>
                             @else
-                                <span class="font-semibold text-gray-500">{{ $posicion }}</span>
+                                <span class="font-semibold text-pa-tinta-suave">{{ $posicion }}</span>
                             @endif
                         </td>
                         <td class="font-semibold">{{ $equipoEdicion->equipo->nombre ?? 'Equipo sin nombre' }}</td>
                         @if (empty($idCategoria))
                             <td>{{ $equipoEdicion->categoria->nombreCategoria ?? '' }}</td>
                         @endif
-                        <td class="text-center font-extrabold text-brand-navy">{{ $equipoEdicion->golesContra }}</td>
-                        <td class="{{ $arquero ? 'text-gray-800' : 'text-gray-400' }}">
+                        <td class="text-center font-extrabold text-pa-resaltado">{{ $equipoEdicion->golesContra }}</td>
+                        <td class="{{ $arquero ? 'text-pa-tinta' : 'text-pa-tinta-suave' }}">
                             {{ $arquero->nombre ?? 'Sin definir' }}
                         </td>
                     </tr>

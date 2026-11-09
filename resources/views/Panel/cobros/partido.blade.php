@@ -15,22 +15,22 @@
                 default => ['danger', 'Debe $ '.$deudaCobro],
             };
         @endphp
-        <div class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-gray-200 p-3" data-planilla-cobro="{{ $cargoCobro['id'] }}" data-deuda="{{ $cargoCobro['deuda_ars'] }}" data-estado="{{ $cargoCobro['estado'] }}" data-pagos="{{ $pagosCobro }}">
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-pa-linea p-3" data-planilla-cobro="{{ $cargoCobro['id'] }}" data-deuda="{{ $cargoCobro['deuda_ars'] }}" data-estado="{{ $cargoCobro['estado'] }}" data-pagos="{{ $pagosCobro }}">
             <div class="min-w-0 space-y-1">
-                <p class="break-words font-semibold text-gray-900">{{ $nombreEquipoCobro }} <span class="text-sm font-normal text-gray-500">({{ $condicionCobro }})</span></p>
+                <p class="break-words font-semibold text-pa-tinta">{{ $nombreEquipoCobro }} <span class="text-sm font-normal text-pa-tinta-suave">({{ $condicionCobro }})</span></p>
                 <x-ui.badge :variant="$cobroVariant">{{ $cobroLabel }}</x-ui.badge>
             </div>
             @include('Panel.cobros.pagos-cargo', ['cargo' => $cargoCobro])
             @if ($cargoCobro['deuda_ars'] > 0 && $configuracionCobros?->activado_at)
                 <div class="flex flex-wrap gap-2">
                     <button type="button" data-cobro="pago" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded bg-blue-900 px-4 py-2 text-sm font-medium text-white">Registrar pago</button>
-                    <button type="button" data-cobro="exencion" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700">Marcar exento</button>
+                    <button type="button" data-cobro="exencion" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded border border-pa-campo-borde px-4 py-2 text-sm font-medium text-pa-tinta-media">Marcar exento</button>
                 </div>
             @endif
             @if ($configuracionCobros?->activado_at && $cargoCobro['aplicado_ars'] === 0 && in_array($cargoCobro['estado'], ['pendiente', 'exento'], true))
-                <button type="button" data-cobro="no_vino" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700">No vino</button>
+                <button type="button" data-cobro="no_vino" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded border border-pa-campo-borde px-4 py-2 text-sm font-medium text-pa-tinta-media">No vino</button>
             @elseif ($cargoCobro['estado'] === 'no_vino' && $configuracionCobros?->activado_at)
-                <button type="button" data-cobro="deshacer_no_vino" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700">Deshacer no vino</button>
+                <button type="button" data-cobro="deshacer_no_vino" data-cargo="{{ json_encode($cargoCobro) }}" class="min-h-11 rounded border border-pa-campo-borde px-4 py-2 text-sm font-medium text-pa-tinta-media">Deshacer no vino</button>
             @endif
         </div>
     @endforeach

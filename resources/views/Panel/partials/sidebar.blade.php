@@ -181,17 +181,17 @@
     }
 @endphp
 
-<div class="flex h-[72px] shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4">
+<div class="flex h-[72px] shrink-0 items-center justify-between gap-3 border-b border-pa-linea px-4">
     <a href="{{ route('admin', $parametrosEdicionActual) }}" class="flex min-w-0 items-center gap-3">
         <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" alt="" class="h-10 w-10 shrink-0 rounded-full object-contain">
         <span class="min-w-0">
-            <span class="block truncate text-sm font-bold text-gray-900">Torneos Mita'í</span>
-            <span class="block truncate text-xs text-gray-600">Panel de administración</span>
+            <span class="block truncate text-sm font-bold text-pa-tinta">Torneos Mita'í</span>
+            <span class="block truncate text-xs text-pa-tinta-cuerpo">Panel de administración</span>
         </span>
     </a>
     <button type="button" @click="sidebarAbierto = false"
         aria-label="Cerrar menú"
-        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40 lg:hidden">
+        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-pa-tinta-suave hover:bg-pa-fila-hover hover:text-pa-tinta-media focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40 lg:hidden">
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -205,14 +205,14 @@
                 x-data="{ open: $el.dataset.grupoAbierto === 'true' }">
                 <button type="button" @click="open = !open" :aria-expanded="open.toString()"
                     aria-controls="grupo-nav-{{ $grupoNav['id'] }}"
-                    class="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
+                    class="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-pa-tinta-suave hover:text-pa-tinta-media focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">
                     <span>{{ $grupoNav['label'] }}</span>
                     <span class="flex items-center gap-1.5">
                         <span x-show="!open" @if ($grupoNav['abierto']) x-cloak @endif
-                            class="rounded-full bg-gray-200 px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-gray-600">
+                            class="rounded-full bg-pa-linea px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-pa-tinta-cuerpo">
                             {{ count($grupoNav['items']) }}
                         </span>
-                        <svg class="h-3 w-3 shrink-0 text-gray-400 transition-transform duration-150" :class="{ '-rotate-90': !open }"
+                        <svg class="h-3 w-3 shrink-0 text-pa-tinta-suave transition-transform duration-150" :class="{ '-rotate-90': !open }"
                             fill="none" viewBox="0 0 10 6" aria-hidden="true">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
                         </svg>
@@ -224,7 +224,7 @@
                         <li>
                             <a href="{{ $item['route'] }}" @click="sidebarAbierto = false"
                                 @if ($item['activo']) aria-current="page" @endif
-                                class="flex h-9 items-center rounded-lg px-3 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40 {{ $item['activo'] ? 'bg-brand-navy/10 font-semibold text-brand-navy' : 'text-gray-700 hover:bg-gray-100' }}">
+                                class="flex h-9 items-center rounded-lg px-3 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40 {{ $item['activo'] ? 'bg-pa-resaltado/10 font-semibold text-pa-resaltado' : 'text-pa-tinta-media hover:bg-pa-fila-hover' }}">
                                 {{ $item['label'] }}
                             </a>
                         </li>
@@ -235,23 +235,23 @@
     </div>
 </nav>
 
-<div class="shrink-0 border-t border-gray-200 px-4 py-4">
+<div class="shrink-0 border-t border-pa-linea px-4 py-4">
     <div class="flex items-center gap-3">
         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-teal text-sm font-bold text-white">
             {{ Str::of(auth()->user()->name ?? 'A')->substr(0, 1)->upper() }}
         </span>
         <span class="min-w-0">
-            <span class="block truncate text-sm font-semibold text-gray-900">{{ auth()->user()->name ?? 'Administrador' }}</span>
-            <span class="block truncate text-xs text-gray-500">Administrador</span>
+            <span class="block truncate text-sm font-semibold text-pa-tinta">{{ auth()->user()->name ?? 'Administrador' }}</span>
+            <span class="block truncate text-xs text-pa-tinta-suave">Administrador</span>
         </span>
     </div>
     <div class="mt-3 flex items-center justify-between gap-2">
-        <a href="{{ route('home') }}" class="text-xs font-semibold text-gray-500 hover:text-brand-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
+        <a href="{{ route('home') }}" class="text-xs font-semibold text-pa-tinta-suave hover:text-pa-resaltado focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">
             Inicio
         </a>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="text-xs font-semibold text-gray-500 hover:text-brand-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
+            <button type="submit" class="text-xs font-semibold text-pa-tinta-suave hover:text-pa-resaltado focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">
                 Cerrar sesión
             </button>
         </form>

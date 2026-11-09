@@ -31,15 +31,15 @@
             <x-slot name="body">
                 @foreach ($categorias as $categoria)
                     <tr class="align-top">
-                        <td class="font-bold text-gray-800">{{ $categoria['nombreCategoria'] }}</td>
+                        <td class="font-bold text-pa-tinta">{{ $categoria['nombreCategoria'] }}</td>
 
                         <td>
                             <div class="space-y-2">
                                 @forelse ($categoria['goleador']['guardados'] as $goleador)
                                     <div class="flex items-center justify-between gap-2">
                                         <div>
-                                            <p class="font-semibold text-gray-800">{{ $goleador->nombre }}</p>
-                                            <p class="text-xs text-gray-500">{{ $goleador->equipo->nombre ?? 'Equipo sin nombre' }}</p>
+                                            <p class="font-semibold text-pa-tinta">{{ $goleador->nombre }}</p>
+                                            <p class="text-xs text-pa-tinta-suave">{{ $goleador->equipo->nombre ?? 'Equipo sin nombre' }}</p>
                                         </div>
                                         <div class="flex shrink-0 items-center gap-2">
                                             <x-ui.button href="{{ route('goleador.edit', $goleador) }}" variant="secondary" size="sm">
@@ -73,7 +73,7 @@
                                             </x-ui.button>
                                         </form>
                                     @else
-                                        <p class="text-sm text-gray-400">Sin sugerencia disponible todavía</p>
+                                        <p class="text-sm text-pa-tinta-suave">Sin sugerencia disponible todavía</p>
                                     @endif
                                 @endforelse
 
@@ -90,8 +90,8 @@
                                 @forelse ($categoria['valla']['guardados'] as $valla)
                                     <div class="flex items-center justify-between gap-2">
                                         <div>
-                                            <p class="font-semibold text-gray-800">{{ $valla->nombre }}</p>
-                                            <p class="text-xs text-gray-500">{{ $valla->equipo->nombre ?? 'Equipo sin nombre' }}</p>
+                                            <p class="font-semibold text-pa-tinta">{{ $valla->nombre }}</p>
+                                            <p class="text-xs text-pa-tinta-suave">{{ $valla->equipo->nombre ?? 'Equipo sin nombre' }}</p>
                                         </div>
                                         <div class="flex shrink-0 items-center gap-2">
                                             <x-ui.button href="{{ route('valla.edit', $valla) }}" variant="secondary" size="sm">
@@ -120,18 +120,18 @@
                                                     </option>
                                                 @endforeach
                                             </x-ui.select>
-                                            <label for="nombre_arquero_{{ $categoria['idCategoria'] }}" class="mb-1 mt-2 block text-xs font-medium text-gray-700">
+                                            <label for="nombre_arquero_{{ $categoria['idCategoria'] }}" class="mb-1 mt-2 block text-xs font-medium text-pa-tinta-media">
                                                 Arquero
                                             </label>
                                             <input type="text" id="nombre_arquero_{{ $categoria['idCategoria'] }}" name="nombre"
                                                 required maxlength="50" placeholder="Nombre del arquero"
-                                                class="block w-full rounded-md border-gray-300 py-2 px-3 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30">
+                                                class="block w-full rounded-md border-pa-campo-borde py-2 px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30 bg-pa-campo-fondo">
                                             <x-ui.button type="submit" variant="success" size="sm">
                                                 Guardar
                                             </x-ui.button>
                                         </form>
                                     @else
-                                        <p class="text-sm text-gray-400">Sin sugerencia disponible todavía</p>
+                                        <p class="text-sm text-pa-tinta-suave">Sin sugerencia disponible todavía</p>
                                     @endif
                                 @endforelse
 
@@ -147,7 +147,7 @@
             </x-slot>
         </x-ui.data-table>
 
-        <p class="mt-3 text-xs text-gray-400">
+        <p class="mt-3 text-xs text-pa-tinta-suave">
             Las sugerencias salen de la tabla de goleadores y de los goles en contra de cada equipo.
         </p>
     @endif

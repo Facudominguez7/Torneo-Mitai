@@ -6,8 +6,8 @@
 
 <div class="space-y-5">
     <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">Edición</label>
-        <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-700">
+        <label class="mb-1 block text-sm font-medium text-pa-tinta-media">Edición</label>
+        <div class="rounded-lg border border-pa-linea bg-pa-fila-bg px-4 py-2 text-sm text-pa-tinta-media">
             {{ $EdicionSeleccionada?->nombre ?? 'Sin edición seleccionada' }}
         </div>
     </div>
@@ -32,35 +32,35 @@
 
     <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Puntos</label>
+            <label class="mb-1 block text-sm font-medium text-pa-tinta-media">Puntos</label>
             <input type="number" name="puntos" value="{{ old('puntos', $tablaPosicion->puntos ?? 0) }}" class="panel-form-input">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">GF</label>
+            <label class="mb-1 block text-sm font-medium text-pa-tinta-media">GF</label>
             <input type="number" name="golesFavor" value="{{ old('golesFavor', $tablaPosicion->golesFavor ?? 0) }}" class="panel-form-input">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">GC</label>
+            <label class="mb-1 block text-sm font-medium text-pa-tinta-media">GC</label>
             <input type="number" name="golesContra" value="{{ old('golesContra', $tablaPosicion->golesContra ?? 0) }}" class="panel-form-input">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">DG</label>
+            <label class="mb-1 block text-sm font-medium text-pa-tinta-media">DG</label>
             <input type="number" name="diferenciaGoles" value="{{ old('diferenciaGoles', $tablaPosicion->diferenciaGoles ?? 0) }}" class="panel-form-input">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Jugado</label>
+            <label class="mb-1 block text-sm font-medium text-pa-tinta-media">Jugado</label>
             <input type="number" name="jugado" value="{{ old('jugado', $tablaPosicion->jugado ?? 0) }}" class="panel-form-input">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Ganado</label>
+            <label class="mb-1 block text-sm font-medium text-pa-tinta-media">Ganado</label>
             <input type="number" name="ganado" value="{{ old('ganado', $tablaPosicion->ganado ?? 0) }}" class="panel-form-input">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Perdido</label>
+            <label class="mb-1 block text-sm font-medium text-pa-tinta-media">Perdido</label>
             <input type="number" name="perdido" value="{{ old('perdido', $tablaPosicion->perdido ?? 0) }}" class="panel-form-input">
         </div>
         <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">Empatado</label>
+            <label class="mb-1 block text-sm font-medium text-pa-tinta-media">Empatado</label>
             <input type="number" name="empatado" value="{{ old('empatado', $tablaPosicion->empatado ?? 0) }}" class="panel-form-input">
         </div>
     </div>

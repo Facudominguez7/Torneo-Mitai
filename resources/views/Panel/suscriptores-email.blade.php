@@ -32,11 +32,11 @@
 
     <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         {{-- Resumen de la fecha --}}
-        <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
+        <article class="flex flex-col gap-3 rounded-xl border border-pa-linea bg-pa-superficie p-4">
             <div>
-                <h2 class="text-base font-bold text-gray-800">Resumen de la fecha</h2>
-                <p class="mt-1 text-sm text-gray-500">Resultados de una fecha para los suscriptores que eligieron el resumen.</p>
-                <p class="mt-1 text-xs text-gray-400">Edición activa: {{ $resumenNombreEdicion }}</p>
+                <h2 class="text-base font-bold text-pa-tinta">Resumen de la fecha</h2>
+                <p class="mt-1 text-sm text-pa-tinta-suave">Resultados de una fecha para los suscriptores que eligieron el resumen.</p>
+                <p class="mt-1 text-xs text-pa-tinta-suave">Edición activa: {{ $resumenNombreEdicion }}</p>
             </div>
 
             <div class="flex flex-col gap-2" id="resumen-fecha-controls">
@@ -65,11 +65,11 @@
         </article>
 
         {{-- Próxima fecha --}}
-        <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
+        <article class="flex flex-col gap-3 rounded-xl border border-pa-linea bg-pa-superficie p-4">
             <div>
-                <h2 class="text-base font-bold text-gray-800">Próxima fecha</h2>
-                <p class="mt-1 text-sm text-gray-500">Días, horarios y canchas de una fecha para los suscriptores que eligieron la próxima fecha.</p>
-                <p class="mt-1 text-xs text-gray-400">Edición activa: {{ $resumenNombreEdicion }}</p>
+                <h2 class="text-base font-bold text-pa-tinta">Próxima fecha</h2>
+                <p class="mt-1 text-sm text-pa-tinta-suave">Días, horarios y canchas de una fecha para los suscriptores que eligieron la próxima fecha.</p>
+                <p class="mt-1 text-xs text-pa-tinta-suave">Edición activa: {{ $resumenNombreEdicion }}</p>
             </div>
 
             <div class="flex flex-col gap-2" id="proxima-fecha-controls">
@@ -94,25 +94,25 @@
         </article>
 
         {{-- Aviso del torneo --}}
-        <article class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
+        <article class="flex flex-col gap-3 rounded-xl border border-pa-linea bg-pa-superficie p-4">
             <div>
-                <h2 class="text-base font-bold text-gray-800">Aviso del torneo</h2>
-                <p class="mt-1 text-sm text-gray-500">Un mensaje propio (suspensiones, cambios de cancha, novedades) para los suscriptores que eligieron los avisos.</p>
+                <h2 class="text-base font-bold text-pa-tinta">Aviso del torneo</h2>
+                <p class="mt-1 text-sm text-pa-tinta-suave">Un mensaje propio (suspensiones, cambios de cancha, novedades) para los suscriptores que eligieron los avisos.</p>
             </div>
 
             <div class="flex flex-col gap-2" id="aviso-torneo-controls">
                 <input type="hidden" id="aviso-idEnvio" value="{{ \Illuminate\Support\Str::uuid() }}">
 
                 <div>
-                    <label for="aviso-titulo" class="mb-1 block text-sm font-medium text-gray-700">Título</label>
+                    <label for="aviso-titulo" class="mb-1 block text-sm font-medium text-pa-tinta-media">Título</label>
                     <input type="text" id="aviso-titulo" maxlength="{{ \App\Http\Requests\Suscripcion\AvisoTorneoRequest::TITULO_MAXIMO }}"
-                        class="block w-full rounded-md border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30">
+                        class="block w-full rounded-md border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30">
                 </div>
 
                 <div>
-                    <label for="aviso-mensaje" class="mb-1 block text-sm font-medium text-gray-700">Mensaje</label>
+                    <label for="aviso-mensaje" class="mb-1 block text-sm font-medium text-pa-tinta-media">Mensaje</label>
                     <textarea id="aviso-mensaje" rows="4" maxlength="{{ \App\Http\Requests\Suscripcion\AvisoTorneoRequest::MENSAJE_MAXIMO }}"
-                        class="block w-full rounded-md border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30"></textarea>
+                        class="block w-full rounded-md border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30"></textarea>
                 </div>
 
                 <x-ui.button id="btn-enviar-aviso-torneo" onclick="iniciarEnvioAvisoTorneo()" class="mt-1 w-full">
@@ -123,7 +123,7 @@
     </div>
 
     {{-- Filtros --}}
-    <form method="GET" action="{{ route('notificaciones.index') }}" class="mt-6 rounded-xl border border-gray-200 bg-white p-4">
+    <form method="GET" action="{{ route('notificaciones.index') }}" class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-4">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
             <x-ui.search id="search" name="search" label="Buscar" placeholder="Nombre o email" :value="request('search')" />
 
@@ -151,7 +151,7 @@
     @else
         <div class="mt-6 space-y-3 md:hidden">
             @foreach($usuarios as $user)
-                <article class="rounded-xl border border-gray-200 bg-white p-3">
+                <article class="rounded-xl border border-pa-linea bg-pa-superficie p-3">
                     <div class="flex items-start gap-3">
                         @if($user->google_avatar)
                             <img class="h-10 w-10 shrink-0 rounded-full" src="{{ $user->google_avatar }}" alt="">
@@ -159,9 +159,9 @@
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-teal text-sm font-extrabold text-white" aria-hidden="true">{{ $iniciales($user->name) }}</span>
                         @endif
                         <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-semibold text-gray-900">{{ $user->name }}</p>
-                            <p class="truncate text-xs text-gray-500">{{ $user->email }}</p>
-                            <p class="mt-1 text-[11px] text-gray-400">Registro: {{ $user->created_at->format('d/m/Y') }}</p>
+                            <p class="truncate text-sm font-semibold text-pa-tinta">{{ $user->name }}</p>
+                            <p class="truncate text-xs text-pa-tinta-suave">{{ $user->email }}</p>
+                            <p class="mt-1 text-[11px] text-pa-tinta-suave">Registro: {{ $user->created_at->format('d/m/Y') }}</p>
                         </div>
                     </div>
 
@@ -177,7 +177,7 @@
                             <x-ui.badge variant="neutral">De baja</x-ui.badge>
                         @endif
                     </div>
-                    <p class="mt-2 text-xs text-gray-500">Último envío: {{ $user->last_notification_at ? $user->last_notification_at->format('d/m/Y H:i') : '-' }}</p>
+                    <p class="mt-2 text-xs text-pa-tinta-suave">Último envío: {{ $user->last_notification_at ? $user->last_notification_at->format('d/m/Y H:i') : '-' }}</p>
 
                     @if(!$user->hasVerifiedEmail())
                         <form action="{{ route('notificaciones.reenviar-verificacion', $user->id) }}" method="POST" class="mt-3">
@@ -211,8 +211,8 @@
                                     <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-teal text-xs font-extrabold text-white" aria-hidden="true">{{ $iniciales($user->name) }}</span>
                                 @endif
                                 <div class="min-w-0">
-                                    <p class="font-semibold text-gray-900">{{ $user->name }}</p>
-                                    <p class="text-xs text-gray-500">{{ $user->email }}</p>
+                                    <p class="font-semibold text-pa-tinta">{{ $user->name }}</p>
+                                    <p class="text-xs text-pa-tinta-suave">{{ $user->email }}</p>
                                 </div>
                             </div>
                         </td>
@@ -230,7 +230,7 @@
                                 <x-ui.badge variant="neutral">De baja</x-ui.badge>
                             @endif
                         </td>
-                        <td class="whitespace-nowrap text-gray-500">
+                        <td class="whitespace-nowrap text-pa-tinta-suave">
                             {{ $user->last_notification_at ? $user->last_notification_at->format('d/m/Y H:i') : '-' }}
                         </td>
                         <td class="text-right">
@@ -240,7 +240,7 @@
                                     <x-ui.button type="submit" variant="secondary" size="sm" title="Reenviar email de verificación">Reenviar verificación</x-ui.button>
                                 </form>
                             @else
-                                <span class="text-xs text-gray-400">-</span>
+                                <span class="text-xs text-pa-tinta-suave">-</span>
                             @endif
                         </td>
                     </tr>

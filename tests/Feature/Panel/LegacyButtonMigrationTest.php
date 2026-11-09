@@ -27,10 +27,11 @@ it('renderiza editar, detalle y eliminar de categorias con x-ui.button', functio
     $response->assertOk();
 
     // Editar -> variant success (bg-emerald-600), Detalle -> variant primary
-    // (bg-brand-navy), Eliminar -> variant danger (bg-red-600). None of the
-    // legacy .btn/.btn-editar/.btn-detalle/.btn-eliminar classes remain.
+    // (bg-pa-resaltado, cuyo valor claro es brand-navy), Eliminar -> variant
+    // danger (bg-red-600). None of the legacy .btn/.btn-editar/.btn-detalle/
+    // .btn-eliminar classes remain.
     $response->assertSee('bg-emerald-600', false);
-    $response->assertSee('bg-brand-navy', false);
+    $response->assertSee('bg-pa-resaltado', false);
     $response->assertSee('bg-red-600', false);
     $response->assertDontSee('btn-editar', false);
     $response->assertDontSee('btn-detalle', false);
@@ -135,7 +136,7 @@ it('migra el card legacy del formulario de tabla_goleador al estilo claro del pa
         ]
     );
 
-    expect($html)->toContain('rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700')
+    expect($html)->toContain('rounded-lg border border-pa-linea bg-pa-fila-bg p-4 text-sm text-pa-tinta-media')
         ->and($html)->not->toContain('bg-gray-800 text-white')
         ->and($html)->not->toMatch('/class="card[\s"]/');
 });

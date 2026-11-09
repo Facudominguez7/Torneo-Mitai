@@ -28,7 +28,7 @@
             </div>
         @endif
 
-        <div class="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+        <div class="mt-6 rounded-xl border border-pa-linea bg-pa-superficie p-5">
             <form action="{{ route('tabla_posicion.index') }}" method="GET" class="flex flex-wrap items-end gap-3">
                 <input type="hidden" name="idEdicion" value="{{ $idEdicion }}">
                 <input type="hidden" name="idCategoria" value="{{ $idCategoria }}">
@@ -66,7 +66,7 @@
                 @endphp
 
                 <div>
-                    <h2 class="mb-2 text-base font-bold text-gray-800">{{ $nombreGrupo }}</h2>
+                    <h2 class="mb-2 text-base font-bold text-pa-tinta">{{ $nombreGrupo }}</h2>
 
                     <x-ui.data-table>
                         <x-slot name="head">
@@ -95,8 +95,8 @@
                                             @if ($rank <= 2) data-destacado="clasifica" @endif
                                             @class([
                                                 'inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
-                                                'bg-brand-gold/40 text-brand-navy' => $rank <= 2,
-                                                'bg-gray-100 text-gray-600' => $rank > 2,
+                                                'bg-brand-gold/40 text-pa-aviso-tinta' => $rank <= 2,
+                                                'bg-pa-fila-hover text-pa-tinta-cuerpo' => $rank > 2,
                                             ])
                                         >{{ $rank }}</span>
                                     </td>
@@ -109,7 +109,7 @@
                                     <td class="text-center">{{ $fila->golesContra }}</td>
                                     <td class="text-center">{{ $fila->diferenciaGoles }}</td>
                                     <td class="text-center">{{ $fila->golesContraGeneral ?? '-' }}</td>
-                                    <td class="text-center font-extrabold text-brand-navy">{{ $fila->puntos }}</td>
+                                    <td class="text-center font-extrabold text-pa-resaltado">{{ $fila->puntos }}</td>
                                     <td class="whitespace-nowrap">
                                         <div class="flex flex-col items-stretch justify-center gap-2 lg:flex-row lg:items-center">
                                             <x-ui.button

@@ -21,8 +21,8 @@
 @php
     $toneClasses = [
         'panel' => [
-            'title' => 'text-2xl font-bold text-gray-800',
-            'subtitle' => 'text-sm text-gray-500',
+            'title' => 'text-2xl font-bold text-pa-tinta',
+            'subtitle' => 'text-sm text-pa-tinta-suave',
         ],
         'portal' => [
             'title' => 'text-3xl font-bold text-white',

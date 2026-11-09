@@ -51,22 +51,23 @@ it('marks the active state with aria-current and active-specific classes on the 
     $html = renderUiFilterChip(':active="true" tone="panel"');
 
     expect($html)->toContain('aria-current="page"')
-        ->and($html)->toContain('bg-brand-navy')
-        ->and($html)->toContain('text-white');
+        ->and($html)->toContain('bg-pa-resaltado')
+        ->and($html)->toContain('text-pa-form-tinta');
 });
 
 it('renders the inactive classes on the panel tone by default', function () {
     $html = renderUiFilterChip('tone="panel"');
 
     expect($html)->not->toContain('aria-current')
-        ->and($html)->toContain('bg-gray-100')
-        ->and($html)->toContain('text-gray-700');
+        ->and($html)->toContain('bg-pa-fila-hover')
+        ->and($html)->toContain('text-pa-tinta-media')
+        ->and($html)->toContain('hover:bg-pa-linea-suave');
 });
 
 it('falls back to the panel tone for an unknown tone', function () {
     $html = renderUiFilterChip('tone="not-a-tone"');
 
-    expect($html)->toContain('bg-gray-100');
+    expect($html)->toContain('bg-pa-fila-hover');
 });
 
 it('always renders as a rounded pill with a visible focus state regardless of tone or state', function () {

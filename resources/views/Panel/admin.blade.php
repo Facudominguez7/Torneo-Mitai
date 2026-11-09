@@ -6,7 +6,7 @@
 <body x-data="{ sidebarAbierto: false }" :class="{ 'overflow-hidden': sidebarAbierto }"
     @keydown.escape.window="sidebarAbierto = false"
     @resize.window="if (window.matchMedia('(min-width: 1024px)').matches) sidebarAbierto = false"
-    class="bg-gray-100 text-gray-900 font-sans">
+    class="bg-pa-fondo text-pa-tinta font-sans">
     @php
         /**
          * Contexto de edición activo para mantener la navegación consistente.
@@ -15,9 +15,9 @@
     @endphp
     <div id="sidebar-backdrop" x-show="sidebarAbierto" x-cloak x-transition.opacity
         @click="sidebarAbierto = false" aria-hidden="true"
-        class="fixed inset-0 z-30 bg-slate-900/50 lg:hidden"></div>
+        class="fixed inset-0 z-30 bg-pa-velo-menu/50 lg:hidden"></div>
     <aside id="sidebar-multi-level-sidebar"
-        class="fixed inset-y-0 left-0 z-40 flex w-80 -translate-x-full flex-col overflow-y-auto bg-white shadow-xl transition-transform duration-200 lg:w-64 lg:shadow-none lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-40 flex w-80 -translate-x-full flex-col overflow-y-auto bg-pa-superficie shadow-xl transition-transform duration-200 lg:w-64 lg:shadow-none lg:translate-x-0"
         :class="{ 'translate-x-0': sidebarAbierto, '-translate-x-full': !sidebarAbierto }"
         aria-label="Navegación del panel de administración">
         @include('Panel.partials.sidebar')
@@ -30,13 +30,13 @@
         $edicionActivaHeader = $EdicionSeleccionada ?? null;
     @endphp
     <header data-panel-edicion-header
-        class="z-30 flex w-full flex-col justify-center gap-2 border-b border-slate-200 bg-white/90 px-3 py-2 text-slate-700 shadow-sm backdrop-blur-sm sm:px-4 lg:ml-64 lg:h-16 lg:w-auto lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
+        class="z-30 flex w-full flex-col justify-center gap-2 border-b border-pa-linea-suave bg-pa-superficie/90 px-3 py-2 text-pa-tinta-media shadow-sm backdrop-blur-sm sm:px-4 lg:ml-64 lg:h-16 lg:w-auto lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
         <div data-panel-header-primary-row class="flex w-full min-w-0 items-center justify-between gap-2 lg:w-auto lg:flex-1">
             <div class="flex min-w-0 flex-1 items-center gap-2">
                 <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
                     aria-controls="sidebar-multi-level-sidebar" type="button" aria-label="Abrir menú"
                     :aria-expanded="sidebarAbierto.toString()" @click="sidebarAbierto = true"
-                    class="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg text-sm text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300 lg:hidden">
+                    class="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg text-sm text-pa-tinta-cuerpo hover:bg-pa-control-fondo focus:outline-none focus:ring-2 focus:ring-pa-contorno-control lg:hidden">
                     <svg class="h-6 w-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
                         xmlns="http://www.w3.org/2000/svg">
                         <path clip-rule="evenodd" fill-rule="evenodd"
@@ -44,7 +44,7 @@
                         </path>
                     </svg>
                 </button>
-                <span class="whitespace-nowrap text-sm font-bold tracking-wide text-slate-800 sm:text-base">Mitaí Admin</span>
+                <span class="whitespace-nowrap text-sm font-bold tracking-wide text-pa-tinta sm:text-base">Mitaí Admin</span>
                 {{-- Buscador de jugador por DNI: sin JS hace el mismo POST que Consulta de jugador; con JS muestra el resultado en un modal. --}}
                 <form data-buscador-jugador data-url-rapida="{{ route('jugador.consulta-rapida') }}" action="{{ route('jugador.buscar') }}" method="POST" role="search"
                     class="ml-1 flex min-w-0 flex-1 items-center gap-1 sm:ml-3 lg:max-w-xs">
@@ -53,21 +53,26 @@
                     <label for="buscador-jugador-dni" class="sr-only">Buscar jugador por DNI</label>
                     <input id="buscador-jugador-dni" name="dni" type="text" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required
                         placeholder="DNI del jugador" title="Ingresá el DNI solo con números"
-                        class="h-10 w-full min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30">
+                        class="h-10 w-full min-w-0 flex-1 rounded-lg border border-pa-campo-borde bg-pa-campo-fondo px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30">
                     <button type="submit" aria-label="Buscar jugador"
-                        class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300">
+                        class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-pa-linea-suave bg-pa-control-fondo text-pa-tinta-media transition hover:bg-pa-linea-suave focus:outline-none focus:ring-2 focus:ring-pa-contorno-control">
                         <svg class="h-5 w-5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
                         </svg>
                     </button>
                 </form>
             </div>
+            <button type="button" id="btn-tema"
+                class="inline-flex h-11 min-w-[44px] flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-pa-linea-suave bg-pa-control-fondo px-3 text-xs font-semibold text-pa-tinta-media transition hover:bg-pa-linea-suave focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">
+                <svg id="icono-tema" class="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" aria-hidden="true"></svg>
+                <span class="sr-only">Tema:</span><span id="etiqueta-tema">Sistema</span>
+            </button>
         </div>
         <form data-panel-header-edition-row data-panel-edicion-form action="{{ route('admin') }}" method="GET"
             class="flex w-full min-w-0 items-center gap-2 lg:w-auto lg:flex-shrink-0">
-            <label for="panel-edicion-select" class="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-500">Edición</label>
+            <label for="panel-edicion-select" class="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">Edición</label>
             <select name="idEdicion" id="panel-edicion-select"
-                class="h-10 min-w-0 max-w-full flex-1 rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-brand-navy shadow-sm outline-none focus:border-brand-navy focus:ring-2 focus:ring-brand-navy/40 lg:w-72 lg:flex-none">
+                class="h-10 min-w-0 max-w-full flex-1 rounded-lg border border-pa-campo-borde bg-pa-campo-fondo px-3 text-sm font-semibold text-pa-resaltado shadow-sm outline-none focus:border-pa-resaltado focus:ring-2 focus:ring-pa-resaltado/40 lg:w-72 lg:flex-none">
                 @if (! $edicionActivaHeader)
                     <option value="" selected>Sin edición seleccionada</option>
                 @endif
@@ -78,18 +83,18 @@
                 @endforeach
             </select>
             <button type="submit"
-                class="inline-flex h-10 flex-shrink-0 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:text-sm">
+                class="inline-flex h-10 flex-shrink-0 items-center rounded-lg border border-pa-linea-suave bg-pa-control-fondo px-3 text-xs font-semibold text-pa-tinta-media transition hover:bg-pa-linea-suave focus:outline-none focus:ring-2 focus:ring-pa-contorno-control sm:text-sm">
                 Cambiar
             </button>
         </form>
     </header>
     <style>#buscador-jugador-modal::backdrop { background: rgb(0 0 0 / .5); }</style>
     <dialog id="buscador-jugador-modal" aria-labelledby="buscador-jugador-titulo" style="width:calc(100% - 2rem);max-height:90vh"
-        class="m-auto max-w-5xl overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 p-0 text-gray-900">
-        <div class="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-5 py-3">
-            <h2 id="buscador-jugador-titulo" tabindex="-1" class="min-w-0 break-words text-lg font-bold text-gray-800 focus:outline-none">Consulta de jugador</h2>
+        class="m-auto max-w-5xl overflow-y-auto rounded-xl border border-pa-linea bg-pa-fila-bg p-0 text-pa-tinta">
+        <div class="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-pa-linea bg-pa-superficie px-5 py-3">
+            <h2 id="buscador-jugador-titulo" tabindex="-1" class="min-w-0 break-words text-lg font-bold text-pa-tinta focus:outline-none">Consulta de jugador</h2>
             <button type="button" data-buscador-jugador-cerrar
-                class="min-h-11 flex-shrink-0 rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">Cerrar</button>
+                class="min-h-11 flex-shrink-0 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-sm font-semibold text-pa-tinta-media hover:bg-pa-fila-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">Cerrar</button>
         </div>
         <div id="buscador-jugador-contenido" aria-live="polite" class="px-5 pb-5 pt-4"></div>
     </dialog>
@@ -100,9 +105,9 @@
         @endphp
         @if (Route::is('admin'))
             @if (! $resumenDashboard)
-                <div class="mx-3 my-6 rounded-xl border border-gray-200 bg-white p-8 text-center sm:mx-4">
-                    <h1 class="text-lg font-bold text-gray-900">Seleccioná una edición para ver el resumen del panel.</h1>
-                    <p class="mt-2 text-sm text-gray-600">
+                <div class="mx-3 my-6 rounded-xl border border-pa-linea bg-pa-superficie p-8 text-center sm:mx-4">
+                    <h1 class="text-lg font-bold text-pa-tinta">Seleccioná una edición para ver el resumen del panel.</h1>
+                    <p class="mt-2 text-sm text-pa-tinta-cuerpo">
                         Elegí una edición en el selector de arriba para ver los KPIs, los partidos que requieren atención y la próxima fecha.
                     </p>
                 </div>
@@ -122,38 +127,38 @@
                 {{-- Encabezado: saludo + edición activa + acciones secundarias --}}
                 <div class="mb-4 flex flex-col gap-3 px-3 sm:px-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ $saludoDashboard }}, {{ $nombreUsuarioActivoDashboard }}</h1>
-                        <p class="mt-1 text-sm text-gray-600">
-                            Edición activa: <span class="font-semibold text-brand-navy">{{ $EdicionSeleccionada?->nombre }}</span>
+                        <h1 class="text-2xl font-bold text-pa-tinta sm:text-3xl">{{ $saludoDashboard }}, {{ $nombreUsuarioActivoDashboard }}</h1>
+                        <p class="mt-1 text-sm text-pa-tinta-cuerpo">
+                            Edición activa: <span class="font-semibold text-pa-resaltado">{{ $EdicionSeleccionada?->nombre }}</span>
                         </p>
                     </div>
                     <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-end">
                         <a href="{{ route('notificaciones.index', ['idEdicion' => $idEdicionContexto]) }}"
-                            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 sm:text-sm">
-                            <svg class="h-4 w-4 text-brand-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-xs font-semibold text-pa-tinta-media shadow-sm transition hover:bg-pa-fila-bg sm:text-sm">
+                            <svg class="h-4 w-4 text-pa-resaltado" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                             </svg>
                             Notificaciones
                         </a>
                         <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto]) }}"
-                            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 sm:text-sm">
-                            <svg class="h-4 w-4 text-brand-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-xs font-semibold text-pa-tinta-media shadow-sm transition hover:bg-pa-fila-bg sm:text-sm">
+                            <svg class="h-4 w-4 text-pa-resaltado" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             Partidos
                         </a>
                         {{-- Botón Imprimir Tabla de Posiciones (todas las categorías y grupos) --}}
                         <button type="button" onclick="imprimirEnIframe('{{ route('admin.imprimir-tabla-posiciones', ['idEdicion' => $idEdicionContexto ?? '']) }}')"
-                            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 sm:text-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-xs font-semibold text-pa-tinta-media shadow-sm transition hover:bg-pa-fila-bg sm:text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-pa-acento" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
                             Imprimir Tablas de Posiciones
                         </button>
                         {{-- Botón Imprimir Fixture (todos los partidos o por fecha) --}}
                         <button type="button" onclick="abrirModalFixtureImpresion('{{ route('admin.imprimir-fixture', ['idEdicion' => $idEdicionContexto ?? '']) }}')"
-                            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 sm:text-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-brand-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-xs font-semibold text-pa-tinta-media shadow-sm transition hover:bg-pa-fila-bg sm:text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-pa-resaltado" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
                             Imprimir Fixture
@@ -186,11 +191,11 @@
                     $horarioFiltroActivo = request('horario');
                 @endphp
                 <section class="mb-4 px-3 sm:px-4" aria-labelledby="titulo-partidos-edicion">
-                    <div class="rounded-xl border border-gray-200 bg-white p-5">
+                    <div class="rounded-xl border border-pa-linea bg-pa-superficie p-5">
                         <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                             <div>
-                                <h2 id="titulo-partidos-edicion" class="text-lg font-bold text-gray-900">Todos los partidos de la edición</h2>
-                                <p class="mt-1 text-sm text-gray-600">
+                                <h2 id="titulo-partidos-edicion" class="text-lg font-bold text-pa-tinta">Todos los partidos de la edición</h2>
+                                <p class="mt-1 text-sm text-pa-tinta-cuerpo">
                                     {{ $partidosPlanos->count() }} {{ $partidosPlanos->count() === 1 ? 'partido' : 'partidos' }} de la última fecha
                                 </p>
                             </div>
@@ -220,7 +225,7 @@
                                     Mostrando partidos de las {{ $horarioFiltroActivo }} hs
                                 </x-ui.filter-chip>
                                 <a href="{{ route('admin', $parametrosEdicionActual) }}"
-                                    class="rounded-md px-1 py-1 text-sm font-semibold text-brand-navy hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
+                                    class="rounded-md px-1 py-1 text-sm font-semibold text-pa-resaltado hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">
                                     Limpiar
                                 </a>
                             </div>
@@ -233,7 +238,7 @@
                     @else
                         @foreach ($gruposPorHorario as $horarioGrupo => $partidosGrupo)
                             <div class="mt-5" data-dashboard-horario="{{ $horarioGrupo }}">
-                                <h3 class="mb-3 flex items-center gap-2 text-xl font-extrabold text-brand-navy">
+                                <h3 class="mb-3 flex items-center gap-2 text-xl font-extrabold text-pa-resaltado">
                                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
@@ -261,8 +266,8 @@
                                                 $estadoGolesVariant = 'warning';
                                             }
                                         @endphp
-                                        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm" data-dashboard-partido="{{ $p->id }}">
-                                            <div class="flex flex-wrap items-center justify-center gap-2 text-center text-sm font-semibold uppercase tracking-wide text-gray-500">
+                                        <div class="rounded-xl border border-pa-linea bg-pa-superficie p-5 shadow-sm" data-dashboard-partido="{{ $p->id }}">
+                                            <div class="flex flex-wrap items-center justify-center gap-2 text-center text-sm font-semibold uppercase tracking-wide text-pa-tinta-suave">
                                                 {{ $p->nombre_fecha }}
                                             </div>
                                             <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
@@ -273,23 +278,23 @@
                                                 <div class="flex flex-col items-center gap-2">
                                                     <img src="{{ asset('fotos/equipos/' . $p->foto_local) }}" width="60" height="60" alt="Escudo {{ $p->nombre_local }}"
                                                         class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
-                                                    <div class="text-center text-base font-bold leading-tight text-gray-900 md:text-xl">{{ $p->nombre_local }}</div>
+                                                    <div class="text-center text-base font-bold leading-tight text-pa-tinta md:text-xl">{{ $p->nombre_local }}</div>
                                                 </div>
                                                 @if ($resultadoCargado)
-                                                    <div data-dashboard-centro class="whitespace-nowrap text-center text-2xl font-extrabold text-gray-900 md:text-3xl">{{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}</div>
+                                                    <div data-dashboard-centro class="whitespace-nowrap text-center text-2xl font-extrabold text-pa-tinta md:text-3xl">{{ $p->golesEquipoLocal }} - {{ $p->golesEquipoVisitante }}</div>
                                                 @else
-                                                    <div data-dashboard-centro class="text-center text-sm font-semibold text-gray-400 md:text-lg">vs</div>
+                                                    <div data-dashboard-centro class="text-center text-sm font-semibold text-pa-tinta-suave md:text-lg">vs</div>
                                                 @endif
                                                 <div class="flex flex-col items-center gap-2">
                                                     <img src="{{ asset('fotos/equipos/' . $p->foto_visitante) }}" width="60" height="60" alt="Escudo {{ $p->nombre_visitante }}"
                                                         class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
-                                                    <div class="text-center text-base font-bold leading-tight text-gray-900 md:text-xl">{{ $p->nombre_visitante }}</div>
+                                                    <div class="text-center text-base font-bold leading-tight text-pa-tinta md:text-xl">{{ $p->nombre_visitante }}</div>
                                                 </div>
                                             </div>
 
-                                            <div class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-gray-600 md:text-base">
+                                            <div class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-pa-tinta-cuerpo md:text-base">
                                                 @if ($horarioGrupo !== 'sin-horario')
-                                                    <span data-dashboard-hora class="text-lg font-bold text-brand-navy">{{ $horarioGrupo }} hs</span>
+                                                    <span data-dashboard-hora class="text-lg font-bold text-pa-resaltado">{{ $horarioGrupo }} hs</span>
                                                 @endif
                                                 @if ($p->horario_datetime)
                                                     <span class="font-medium">{{ \Carbon\Carbon::parse($p->horario_datetime)->format('d-m-Y') }}</span>
@@ -359,24 +364,24 @@
 
                 {{-- Requiere atención + Próxima fecha / Jugadores por categoría --}}
                 <div class="mb-4 grid grid-cols-1 gap-3 px-3 sm:px-4 lg:grid-cols-3">
-                    <div class="rounded-xl border border-gray-200 bg-white p-5 lg:col-span-2">
+                    <div class="rounded-xl border border-pa-linea bg-pa-superficie p-5 lg:col-span-2">
                         <div class="mb-3 flex items-center justify-between">
-                            <h2 class="text-base font-bold text-gray-900">Requiere atención</h2>
-                            <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto]) }}" class="text-sm font-semibold text-brand-navy hover:underline">
+                            <h2 class="text-base font-bold text-pa-tinta">Requiere atención</h2>
+                            <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto]) }}" class="text-sm font-semibold text-pa-resaltado hover:underline">
                                 Ver todos
                             </a>
                         </div>
                         @if ($resumenDashboard['partidosPendientes']->isEmpty())
-                            <p class="text-sm text-gray-600">No hay partidos pendientes de atención en la última fecha.</p>
+                            <p class="text-sm text-pa-tinta-cuerpo">No hay partidos pendientes de atención en la última fecha.</p>
                         @else
-                            <ul class="divide-y divide-gray-100">
+                            <ul class="divide-y divide-pa-linea-suave">
                                 @foreach ($resumenDashboard['partidosPendientes'] as $pendiente)
                                     <li class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div class="min-w-0">
-                                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ $pendiente['categoria'] }}</p>
-                                            <p class="truncate text-sm font-medium text-gray-900">
+                                            <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">{{ $pendiente['categoria'] }}</p>
+                                            <p class="truncate text-sm font-medium text-pa-tinta">
                                                 {{ $pendiente['local'] }}
-                                                <span class="text-gray-400">{{ $pendiente['golesEquipoLocal'] ?? '-' }} - {{ $pendiente['golesEquipoVisitante'] ?? '-' }}</span>
+                                                <span class="text-pa-tinta-suave">{{ $pendiente['golesEquipoLocal'] ?? '-' }} - {{ $pendiente['golesEquipoVisitante'] ?? '-' }}</span>
                                                 {{ $pendiente['visitante'] }}
                                             </p>
                                         </div>
@@ -384,7 +389,7 @@
                                             <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $pendiente['estado']['clase'] }}">
                                                 {{ $pendiente['estado']['label'] }}
                                             </span>
-                                            <a href="{{ $pendiente['accionUrl'] }}" class="text-sm font-semibold text-brand-navy hover:underline">
+                                            <a href="{{ $pendiente['accionUrl'] }}" class="text-sm font-semibold text-pa-resaltado hover:underline">
                                                 {{ $pendiente['accionLabel'] }}
                                             </a>
                                         </div>
@@ -398,7 +403,7 @@
                         @if ($resumenDashboard['proximaFecha'])
                             <div data-dashboard-proxima-fecha class="rounded-xl bg-brand-navy p-5 text-white">
                                 <p class="text-xs font-semibold uppercase tracking-wide text-white/70">Próxima fecha</p>
-                                <span class="mt-2 inline-flex items-center rounded-full bg-brand-gold px-3 py-1 text-xs font-bold text-brand-navy">
+                                <span class="mt-2 inline-flex items-center rounded-full bg-brand-gold px-3 py-1 text-xs font-bold text-pa-aviso-tinta">
                                     {{ $resumenDashboard['proximaFecha']['nombre'] }}
                                 </span>
                                 <dl class="mt-3 space-y-1 text-sm text-white/90">
@@ -412,34 +417,34 @@
                                     @endif
                                 </dl>
                                 <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto, 'idFecha' => $resumenDashboard['proximaFecha']['id']]) }}"
-                                    class="mt-4 inline-flex h-10 w-full items-center justify-center rounded-lg bg-white px-3 text-sm font-semibold text-brand-navy shadow-sm transition hover:bg-gray-100">
+                                    class="mt-4 inline-flex h-10 w-full items-center justify-center rounded-lg bg-pa-superficie px-3 text-sm font-semibold text-pa-resaltado shadow-sm transition hover:bg-pa-fila-hover">
                                     Ver fixture de la fecha
                                 </a>
                             </div>
                         @else
-                            <div class="rounded-xl border border-dashed border-gray-300 bg-white p-5">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Próxima fecha</p>
-                                <p class="mt-2 text-sm text-gray-600">No hay partidos programados por jugar.</p>
+                            <div class="rounded-xl border border-dashed border-pa-campo-borde bg-pa-superficie p-5">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta-suave">Próxima fecha</p>
+                                <p class="mt-2 text-sm text-pa-tinta-cuerpo">No hay partidos programados por jugar.</p>
                                 <a href="{{ route('partido.index', ['idEdicion' => $idEdicionContexto]) }}"
-                                    class="mt-4 inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy/40">
+                                    class="mt-4 inline-flex h-10 w-full items-center justify-center rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-sm font-semibold text-pa-tinta transition hover:bg-pa-fila-bg focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">
                                     Ir a partidos
                                 </a>
                             </div>
                         @endif
 
-                        <div class="rounded-xl border border-gray-200 bg-white p-5">
-                            <h2 class="text-sm font-bold text-gray-900">Jugadores por categoría</h2>
+                        <div class="rounded-xl border border-pa-linea bg-pa-superficie p-5">
+                            <h2 class="text-sm font-bold text-pa-tinta">Jugadores por categoría</h2>
                             @if (empty($jugadoresPorCategoriaResumen))
-                                <p class="mt-2 text-sm text-gray-600">Sin datos de planillas en la última fecha.</p>
+                                <p class="mt-2 text-sm text-pa-tinta-cuerpo">Sin datos de planillas en la última fecha.</p>
                             @else
                                 <div class="mt-3 space-y-2">
                                     @foreach ($jugadoresPorCategoriaResumen as $categoriaJugadoresResumen)
                                         <div>
-                                            <div class="mb-1 flex justify-between text-xs font-medium text-gray-600">
+                                            <div class="mb-1 flex justify-between text-xs font-medium text-pa-tinta-cuerpo">
                                                 <span>{{ $categoriaJugadoresResumen['categoria'] }}</span>
                                                 <span>{{ $categoriaJugadoresResumen['total_jugadores'] }}</span>
                                             </div>
-                                            <div class="h-1.5 w-full rounded-full bg-gray-100">
+                                            <div class="h-1.5 w-full rounded-full bg-pa-fila-hover">
                                                 <div class="h-1.5 rounded-full bg-brand-teal" style="width: {{ max(6, (int) round($categoriaJugadoresResumen['total_jugadores'] / $maxJugadoresCategoriaResumen * 100)) }}%"></div>
                                             </div>
                                         </div>
@@ -467,8 +472,8 @@
             <section class="{{ $clasesSeccionPrincipal }} panel-admin-content">
                 @if (session('status'))
                     <div class="flex justify-center">
-                        <div id="status-message" class="flex w-full items-center rounded-xl bg-white p-4 shadow-lg sm:w-11/12 lg:w-1/2">
-                            <div class="flex h-10 w-10 items-center justify-center bg-blue-300 rounded-xl">
+                        <div id="status-message" class="flex w-full items-center rounded-xl bg-pa-superficie p-4 shadow-lg sm:w-11/12 lg:w-1/2">
+                            <div class="flex h-10 w-10 items-center justify-center bg-pa-aviso-fondo text-pa-aviso-tinta rounded-xl">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                     viewBox="0 0 512 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
                                     <path
@@ -477,7 +482,7 @@
                             </div>
                             <div class="ml-6">
                                 <div class="flex justify-center">
-                                    <p class="text-lg text-black font-semibold">{{ session('status') }}</p>
+                                    <p class="text-lg text-pa-tinta font-semibold">{{ session('status') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -498,15 +503,15 @@
     </div>
 
     <div id="fixture-impresion-modal" class="fixed inset-0 z-[80] hidden items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="fixture-impresion-modal-title">
-        <button type="button" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" aria-label="Cerrar modal de impresión de fixture" onclick="cerrarModalFixtureImpresion()"></button>
+        <button type="button" class="absolute inset-0 bg-pa-velo-modal/70 backdrop-blur-sm" aria-label="Cerrar modal de impresión de fixture" onclick="cerrarModalFixtureImpresion()"></button>
 
-        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/15 bg-white shadow-2xl">
-            <div class="bg-gradient-to-r from-blue-700 to-cyan-700 px-6 py-5 text-white">
+        <div class="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/15 bg-pa-superficie shadow-2xl">
+            <div class="bg-gradient-to-r from-pa-tablero-inicio to-pa-tablero-fin px-6 py-5 text-white">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-blue-100">Fixture</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-pa-tablero-leyenda">Fixture</p>
                         <h2 id="fixture-impresion-modal-title" class="mt-1 text-xl font-bold">Seleccionar fecha de impresión</h2>
-                        <p class="mt-1 text-sm text-blue-100">Elegí una jornada específica o imprimí todo el fixture.</p>
+                        <p class="mt-1 text-sm text-pa-tablero-leyenda">Elegí una jornada específica o imprimí todo el fixture.</p>
                     </div>
                     <button type="button" class="rounded-full bg-white/15 p-2 text-white transition hover:bg-white/25" aria-label="Cerrar modal" onclick="cerrarModalFixtureImpresion()">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -518,22 +523,22 @@
 
             <div class="space-y-5 px-6 py-6">
                 <div>
-                    <label for="fecha-fixture-impresion" class="mb-2 block text-sm font-semibold text-slate-700">Fecha a imprimir</label>
+                    <label for="fecha-fixture-impresion" class="mb-2 block text-sm font-semibold text-pa-tinta-media">Fecha a imprimir</label>
                     <select id="fecha-fixture-impresion"
-                        class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        class="w-full rounded-xl border border-pa-contorno-control bg-pa-campo-fondo px-4 py-3 text-sm font-semibold text-pa-tinta shadow-sm focus:border-pa-tablero-foco focus:outline-none focus:ring-2 focus:ring-pa-tablero-leyenda">
                         <option value="">Todas las fechas</option>
                         @foreach ($fechasFixtureImpresion ?? collect() as $fechaFixture)
                             <option value="{{ $fechaFixture->id }}">{{ $fechaFixture->nombre }}</option>
                         @endforeach
                     </select>
-                    <p class="mt-2 text-xs text-slate-500">Si elegís “Todas las fechas”, se imprime el fixture completo de la edición.</p>
+                    <p class="mt-2 text-xs text-pa-tinta-suave">Si elegís “Todas las fechas”, se imprime el fixture completo de la edición.</p>
                 </div>
 
                 <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                    <button type="button" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" onclick="cerrarModalFixtureImpresion()">
+                    <button type="button" class="rounded-xl border border-pa-contorno-control px-4 py-2 text-sm font-semibold text-pa-tinta-media transition hover:bg-pa-control-fondo" onclick="cerrarModalFixtureImpresion()">
                         Cancelar
                     </button>
-                    <button type="button" id="fixture-impresion-confirmar" class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-800" onclick="confirmarImpresionFixture()">
+                    <button type="button" id="fixture-impresion-confirmar" class="rounded-xl bg-pa-tablero-accion px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-pa-tablero-accion-hover" onclick="confirmarImpresionFixture()">
                         Imprimir fixture
                     </button>
                 </div>
@@ -726,7 +731,7 @@
 
                 titulo.textContent = `Consulta de jugador · DNI ${dni}`;
                 const cargando = document.createElement('p');
-                cargando.className = 'text-sm text-gray-600';
+                cargando.className = 'text-sm text-pa-tinta-cuerpo';
                 cargando.textContent = 'Buscando jugador…';
                 contenido.replaceChildren(cargando);
                 if (!modal.open) {

@@ -52,11 +52,11 @@ it('renderiza filtros y acciones del listado de equipos con componentes x-ui', f
     // x-ui.search: real <input type="search"> with the panel tone treatment,
     // not the legacy plain gray input.
     $response->assertSee('type="search"', false);
-    $response->assertSee('focus:border-brand-navy', false);
+    $response->assertSee('focus:border-pa-resaltado', false);
 
     // x-ui.select wraps the categoria <option> list with the same brand-navy
     // focus treatment.
-    $response->assertSee('focus:border-brand-navy focus:ring-brand-navy/30', false);
+    $response->assertSee('focus:border-pa-resaltado focus:ring-pa-resaltado/30', false);
     $response->assertSee('Sub 15');
 
     // x-ui.button variants: success (Editar), primary (Detalle), danger
@@ -80,5 +80,5 @@ it('renderiza el estado vacio con x-ui.empty-state cuando no hay equipos', funct
 
     $response->assertOk()
         ->assertSee('No existen registros')
-        ->assertSee('border-dashed border-gray-200', false);
+        ->assertSee('border-dashed border-pa-linea', false);
 });

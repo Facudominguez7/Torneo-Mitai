@@ -6,13 +6,13 @@
 
     <x-ui.form-card class="mt-6">
         <div>
-            <label for="buscarEquipoGlobal" class="mb-1 block text-sm font-medium text-gray-700">Buscar equipo (todas las ediciones)</label>
+            <label for="buscarEquipoGlobal" class="mb-1 block text-sm font-medium text-pa-tinta-media">Buscar equipo (todas las ediciones)</label>
             <div class="relative">
                 <input id="buscarEquipoGlobal" type="text" placeholder="Escribe el nombre del equipo..." autocomplete="off"
-                       class="block w-full rounded-md border-gray-300 bg-white py-2 px-3 text-sm text-gray-700 shadow-sm focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/30" />
-                <div id="resultadoBusqueda" class="absolute inset-x-0 z-10 mt-1 hidden max-h-72 divide-y divide-gray-100 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg"></div>
+                       class="block w-full rounded-md border-pa-campo-borde bg-pa-superficie py-2 px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30" />
+                <div id="resultadoBusqueda" class="absolute inset-x-0 z-10 mt-1 hidden max-h-72 divide-y divide-pa-linea-suave overflow-auto rounded-md border border-pa-linea bg-pa-superficie shadow-lg"></div>
             </div>
-            <p class="mt-1 text-xs text-gray-500">Sugerencias ordenadas por edición (más reciente primero). Al elegir un equipo se completan la edición y la categoría de origen.</p>
+            <p class="mt-1 text-xs text-pa-tinta-suave">Sugerencias ordenadas por edición (más reciente primero). Al elegir un equipo se completan la edición y la categoría de origen.</p>
         </div>
 
         <form action="{{ route($tipo . '.create') }}" method="GET" id="formSeleccion" class="space-y-5">
@@ -59,8 +59,8 @@
                     const row = document.createElement('button');
                     row.type = 'button';
                     row.className = 'w-full text-left px-3 py-2 hover:bg-brand-teal/10 focus:bg-brand-teal/10 focus:outline-none';
-                    row.innerHTML = `<div class="font-medium text-gray-900">${it.nombreEquipo}</div>
-                                     <div class="text-xs text-gray-600">Edición: ${it.nombreEdicion} (ID ${it.idEdicion}) • Categoría: ${it.nombreCategoria}</div>`;
+                    row.innerHTML = `<div class="font-medium text-pa-tinta">${it.nombreEquipo}</div>
+                                     <div class="text-xs text-pa-tinta-cuerpo">Edición: ${it.nombreEdicion} (ID ${it.idEdicion}) • Categoría: ${it.nombreCategoria}</div>`;
                     row.addEventListener('click', () => {
                         // Completar selects con la edición y categoría origen
                         edicionSelect.value = it.idEdicion;

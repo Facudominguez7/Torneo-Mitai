@@ -45,7 +45,7 @@ it('falls back to aria-label when no label prop is given, so the control is neve
 it('applies token-based classes on the panel tone', function () {
     $html = renderUiSearch('tone="panel" label="Buscar" name="q"');
 
-    expect($html)->toContain('border-gray-300')
+    expect($html)->toContain('border-pa-campo-borde')
         ->and($html)->toContain('rounded-lg');
 });
 
@@ -60,7 +60,7 @@ it('applies token-based pill classes on the portal tone', function () {
 it('falls back to the panel tone for an unknown tone', function () {
     $html = renderUiSearch('tone="not-a-tone" label="Buscar" name="q"');
 
-    expect($html)->toContain('border-gray-300');
+    expect($html)->toContain('border-pa-campo-borde');
 });
 
 it('always exposes a focus-visible ring class regardless of tone', function () {
@@ -75,7 +75,7 @@ it('merges caller-supplied classes with the component classes instead of replaci
     $html = renderUiSearch('class="w-64" label="Buscar" name="q"');
 
     expect($html)->toContain('w-64')
-        ->and($html)->toContain('border-gray-300');
+        ->and($html)->toContain('border-pa-campo-borde');
 });
 
 it('passes through arbitrary caller-supplied attributes via the attribute bag', function () {

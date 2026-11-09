@@ -27,10 +27,10 @@
 @endif
 
 @error('idGrupo')
-    <p class="mb-2 text-sm text-red-600">{{ $message }}</p>
+    <p class="mb-2 text-sm text-pa-peligro">{{ $message }}</p>
 @enderror
 @error('idCategoria')
-    <p class="mb-2 text-sm text-red-600">{{ $message }}</p>
+    <p class="mb-2 text-sm text-pa-peligro">{{ $message }}</p>
 @enderror
 
 <div class="space-y-5">
@@ -45,7 +45,7 @@
             @endforeach
         </x-ui.select>
         @error('idEquipoLocal')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 
@@ -60,7 +60,7 @@
             @endforeach
         </x-ui.select>
         @error('idEquipoVisitante')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 
@@ -74,49 +74,49 @@
             @endforeach
         </x-ui.select>
         @error('idFechas')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 
     @unless ($partido->exists)
         <div>
-            <label for="nombreFecha" class="mb-1 block text-sm font-medium text-gray-700">
+            <label for="nombreFecha" class="mb-1 block text-sm font-medium text-pa-tinta-media">
                 O creá una fecha nueva
             </label>
             <input type="text" name="nombreFecha" id="nombreFecha" maxlength="50"
-                class="panel-form-input"
+                class="panel-form-input text-pa-tinta"
                 placeholder="Por ejemplo: Fecha 5"
                 value="{{ old('nombreFecha') }}"
                 aria-describedby="ayuda-nombreFecha" />
-            <p id="ayuda-nombreFecha" class="mt-1 text-sm text-gray-600">
+            <p id="ayuda-nombreFecha" class="mt-1 text-sm text-pa-tinta-cuerpo">
                 Escribí un nombre para crearla en esta edición y usarla en el partido. Si la dejás vacía, se usa la fecha elegida arriba.
             </p>
             @error('nombreFecha')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
             @enderror
         </div>
     @endunless
 
     <div>
-        <label for="horario_datetime" class="mb-1 block text-sm font-medium text-gray-700">
+        <label for="horario_datetime" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Horario
         </label>
         <input type="datetime-local" name="horario_datetime" id="horario_datetime"
             class="panel-form-input"
             value="{{ $horarioPorDefecto }}">
         @error('horario_datetime')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 
     <div>
-        <label for="cancha" class="mb-1 block text-sm font-medium text-gray-700">
+        <label for="cancha" class="mb-1 block text-sm font-medium text-pa-tinta-media">
             Cancha
         </label>
         <input type="text" name="cancha" id="cancha" value="{{ old('cancha', $partido->cancha) }}"
             class="panel-form-input" />
         @error('cancha')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-pa-peligro">{{ $message }}</p>
         @enderror
     </div>
 </div>

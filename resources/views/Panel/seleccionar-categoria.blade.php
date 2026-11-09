@@ -29,15 +29,15 @@
 
     <div class="mx-auto w-full max-w-2xl px-4 py-4">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h1 class="text-2xl font-bold text-gray-800">Seleccionar contexto</h1>
+            <h1 class="text-2xl font-bold text-pa-tinta">Seleccionar contexto</h1>
             <a href="{{ route($rutaIndice, $parametrosVolver) }}"
-                class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow hover:bg-gray-100">
+                class="rounded-md bg-pa-superficie px-3 py-2 text-sm font-semibold text-pa-tinta-media shadow hover:bg-pa-fila-hover">
                 Volver al listado
             </a>
         </div>
 
-        <div class="mb-5 rounded-lg bg-white p-4 shadow-md">
-            <label for="idCategoria" class="mb-3 block text-base font-medium text-gray-800">
+        <div class="mb-5 rounded-lg bg-pa-superficie p-4 shadow-md">
+            <label for="idCategoria" class="mb-3 block text-base font-medium text-pa-tinta">
                 Selecciona la categoría
             </label>
 
@@ -63,7 +63,7 @@
                     @endif
                 @else
                     <select name="idCategoria" id="idCategoria"
-                        class="w-full rounded-md border border-gray-200 bg-white py-3 px-4 text-base font-medium text-gray-700 outline-none focus:border-brand-navy focus:shadow-md">
+                        class="w-full rounded-md border border-pa-linea bg-pa-superficie py-3 px-4 text-base font-medium text-pa-tinta-media outline-none focus:border-pa-resaltado focus:shadow-md">
                         @foreach ($categorias as $categoria)
                             <option value="{{ $categoria->id }}"
                                 {{ $categoriaSeleccionada === (int) $categoria->id ? 'selected' : '' }}>
@@ -95,7 +95,7 @@
                             @endif
                         @else
                             <select name="idGrupo" id="idGrupo"
-                                class="w-full rounded-md border border-gray-200 bg-white py-3 px-4 text-base font-medium text-gray-700 outline-none focus:border-brand-navy focus:shadow-md">
+                                class="w-full rounded-md border border-pa-linea bg-pa-superficie py-3 px-4 text-base font-medium text-pa-tinta-media outline-none focus:border-pa-resaltado focus:shadow-md">
                                 @foreach ($grupos as $grupo)
                                     <option value="{{ $grupo->id }}" {{ (int) request('idGrupo') === (int) $grupo->id ? 'selected' : '' }}>
                                         {{ $grupo->nombre }}
@@ -107,8 +107,8 @@
                                 <div id="card-asignacion-masiva" class="mt-4 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 via-cyan-50 to-white p-4 shadow-sm">
                                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
-                                            <p class="text-xs font-semibold uppercase tracking-wide text-blue-800">Asignacion automatica</p>
-                                            <h2 class="text-lg font-bold text-gray-900">Distribuir equipos pendientes en 1 click</h2>
+                                            <p class="text-xs font-semibold uppercase tracking-wide text-pa-tinta">Asignacion automatica</p>
+                                            <h2 class="text-lg font-bold text-pa-tinta">Distribuir equipos pendientes en 1 click</h2>
                                         </div>
                                         <button type="button" id="btn-asignar-pendientes"
                                             data-endpoint="{{ route('equipogrupo.asignar-pendientes') }}"
@@ -119,28 +119,28 @@
                                     </div>
 
                                     <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                        <div class="rounded-lg bg-white p-3 shadow-sm">
-                                            <p class="text-xs text-gray-500">Total equipos</p>
-                                            <p class="text-2xl font-bold text-gray-900" data-resumen="total_equipos">{{ $resumenAsignacion['total_equipos'] }}</p>
+                                        <div class="rounded-lg bg-pa-superficie p-3 shadow-sm">
+                                            <p class="text-xs text-pa-tinta-suave">Total equipos</p>
+                                            <p class="text-2xl font-bold text-pa-tinta" data-resumen="total_equipos">{{ $resumenAsignacion['total_equipos'] }}</p>
                                         </div>
-                                        <div class="rounded-lg bg-white p-3 shadow-sm">
-                                            <p class="text-xs text-gray-500">Ya asignados</p>
-                                            <p class="text-2xl font-bold text-emerald-700" data-resumen="ya_asignados">{{ $resumenAsignacion['ya_asignados'] }}</p>
+                                        <div class="rounded-lg bg-pa-superficie p-3 shadow-sm">
+                                            <p class="text-xs text-pa-tinta-suave">Ya asignados</p>
+                                            <p class="text-2xl font-bold text-pa-exito" data-resumen="ya_asignados">{{ $resumenAsignacion['ya_asignados'] }}</p>
                                         </div>
-                                        <div class="rounded-lg bg-white p-3 shadow-sm">
-                                            <p class="text-xs text-gray-500">Pendientes</p>
+                                        <div class="rounded-lg bg-pa-superficie p-3 shadow-sm">
+                                            <p class="text-xs text-pa-tinta-suave">Pendientes</p>
                                             <p class="text-2xl font-bold text-amber-700" data-resumen="pendientes">{{ $resumenAsignacion['pendientes'] }}</p>
                                         </div>
                                     </div>
 
-                                    <div class="mt-4 rounded-lg border border-blue-100 bg-white p-3">
-                                        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-700">Distribucion actual por grupo</p>
+                                    <div class="mt-4 rounded-lg border border-blue-100 bg-pa-superficie p-3">
+                                        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-pa-tinta">Distribucion actual por grupo</p>
                                         <div class="space-y-2">
                                             @foreach ($resumenAsignacion['grupos'] as $grupoResumen)
-                                                <div class="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2" data-grupo-id="{{ $grupoResumen['id'] }}">
-                                                    <span class="text-sm font-medium text-gray-800">{{ $grupoResumen['nombre'] }}</span>
+                                                <div class="flex items-center justify-between rounded-md bg-pa-fila-bg px-3 py-2" data-grupo-id="{{ $grupoResumen['id'] }}">
+                                                    <span class="text-sm font-medium text-pa-tinta">{{ $grupoResumen['nombre'] }}</span>
                                                     <div class="flex items-center gap-2">
-                                                        <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-bold text-blue-800" data-grupo-total>{{ $grupoResumen['equipos_actuales'] }}</span>
+                                                        <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-bold text-pa-aviso-tinta" data-grupo-total>{{ $grupoResumen['equipos_actuales'] }}</span>
                                                         <span class="hidden rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800" data-grupo-nuevos></span>
                                                     </div>
                                                 </div>
@@ -164,7 +164,7 @@
                     @endif
 
                     @if ($tipo === 'partido' && $categoriaSeleccionada)
-                        <div class="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                        <div class="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-pa-aviso-tinta">
                             Atajo: también podés crear un interzonal sin seleccionar grupo.
                             <a href="{{ route('partido.create-interzonal', ['idEdicion' => $EdicionSeleccionada->id ?? request('idEdicion'), 'idCategoria' => $categoriaSeleccionada]) }}"
                                 class="ml-1 font-semibold underline">
@@ -259,7 +259,7 @@
 
             const previewPendientes = document.getElementById('resumen-pendientes-preview');
             if (previewPendientes && Number.parseInt(data.pendientes ?? 0, 10) === 0) {
-                previewPendientes.innerHTML = '<p class="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-xs font-semibold text-emerald-700">No quedan equipos pendientes en esta categoría.</p>';
+                previewPendientes.innerHTML = '<p class="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-xs font-semibold text-pa-exito">No quedan equipos pendientes en esta categoría.</p>';
             }
 
             if (botonAsignarPendientes && Number.parseInt(data.pendientes ?? 0, 10) === 0) {

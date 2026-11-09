@@ -27,8 +27,8 @@ it('renders the card shell classes', function () {
 
     expect($html)->toContain('max-w-3xl')
         ->and($html)->toContain('rounded-xl')
-        ->and($html)->toContain('bg-white')
-        ->and($html)->toContain('border-gray-200');
+        ->and($html)->toContain('bg-pa-superficie')
+        ->and($html)->toContain('border-pa-linea');
 });
 
 it('separates direct sections with a border instead of margins', function () {
@@ -37,12 +37,12 @@ it('separates direct sections with a border instead of margins', function () {
     expect($html)->toContain('divide-y');
 });
 
-it('renders the actions slot inside a bg-gray-50 footer bar', function () {
+it('renders the actions slot inside a bg-pa-fila-bg footer bar', function () {
     $slots = '<x-slot name="actions"><button data-testid="guardar">Guardar</button></x-slot>';
     $html = renderUiFormCard('', $slots);
 
     expect($html)->toContain('data-testid="guardar"')
-        ->and($html)->toContain('bg-gray-50');
+        ->and($html)->toContain('bg-pa-fila-bg');
 });
 
 it('right-aligns the actions bar', function () {
@@ -55,7 +55,7 @@ it('right-aligns the actions bar', function () {
 it('renders no footer bar markup when the actions slot is not used', function () {
     $html = renderUiFormCard();
 
-    expect($html)->not->toContain('bg-gray-50');
+    expect($html)->not->toContain('bg-pa-fila-bg');
 });
 
 it('merges caller-supplied classes with the component classes instead of replacing them', function () {

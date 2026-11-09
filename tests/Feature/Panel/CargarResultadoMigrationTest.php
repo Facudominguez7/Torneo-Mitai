@@ -127,6 +127,6 @@ it('mantiene el formulario dentro de una tarjeta blanca sin labels blancos', fun
     ]));
 
     $response->assertOk()
-        ->assertSee('rounded-xl border border-gray-200 bg-white', false)
+        ->assertSee('rounded-xl border border-pa-linea bg-pa-superficie', false)
         ->assertDontSee('block text-base font-medium text-white', false);
 });

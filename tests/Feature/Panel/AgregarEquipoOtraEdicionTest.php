@@ -93,9 +93,9 @@ it('seleccionar edicion muestra labels legibles sobre el fondo claro del panel',
         ->assertOk()
         ->getContent();
 
-    expect($html)->toContain('for="buscarEquipoGlobal" class="mb-1 block text-sm font-medium text-gray-700"')
-        ->toContain('for="edicionfiltro" class="mb-1 block text-sm font-medium text-gray-700"')
-        ->toContain('for="idCategoria" class="mb-1 block text-sm font-medium text-gray-700"')
+    expect($html)->toContain('for="buscarEquipoGlobal" class="mb-1 block text-sm font-medium text-pa-tinta-media"')
+        ->toContain('for="edicionfiltro" class="mb-1 block text-sm font-medium text-pa-tinta-media"')
+        ->toContain('for="idCategoria" class="mb-1 block text-sm font-medium text-pa-tinta-media"')
         ->toContain(e("Edición destino: Edicion Mita'i Legible (ID {$edicion->id})"))
         ->not->toContain('&amp;#039;')
         ->not->toContain('indigo-')
@@ -110,8 +110,8 @@ it('el alta de equipo de otra edicion muestra labels legibles y el boton con la 
         ->assertOk()
         ->getContent();
 
-    expect($html)->toContain('for="idEquipo" class="mb-1 block text-sm font-medium text-gray-700"')
-        ->toContain('bg-brand-navy text-white')
+    expect($html)->toContain('for="idEquipo" class="mb-1 block text-sm font-medium text-pa-tinta-media"')
+        ->toContain('bg-pa-resaltado text-pa-form-tinta')
         ->not->toContain('indigo-')
         ->not->toContain('panel-form-submit')
         ->not->toContain('font-medium text-white">');
