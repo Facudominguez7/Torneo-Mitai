@@ -14,7 +14,7 @@
 
     <div class="mx-auto w-full max-w-5xl px-3 py-4 sm:px-4 sm:py-6">
         <a href="{{ route('lista-buena-fe.index', ['idEdicion' => $EdicionSeleccionada->id]) }}"
-            class="mb-3 inline-flex items-center gap-1 rounded text-sm font-semibold text-brand-teal transition hover:text-pa-resaltado focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/50">
+            class="mb-3 inline-flex items-center gap-1 rounded text-sm font-semibold text-pa-acento transition hover:text-pa-resaltado focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-acento/50">
             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M12.78 4.22a.75.75 0 0 1 0 1.06L8.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06l-5.25-5.25a.75.75 0 0 1 0-1.06l5.25-5.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
             </svg>
@@ -189,7 +189,7 @@
                     <p class="text-sm text-pa-tinta-suave" data-filtro-resumen aria-live="polite">
                         @if ($busquedaServidor)
                             Resultados para el DNI {{ $buscarDni }} ·
-                            <a href="{{ $rutaDetalle }}" class="font-semibold text-brand-teal underline-offset-2 hover:underline">Ver todos</a>
+                            <a href="{{ $rutaDetalle }}" class="font-semibold text-pa-acento underline-offset-2 hover:underline">Ver todos</a>
                         @endif
                     </p>
                 </div>

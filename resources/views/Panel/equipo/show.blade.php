@@ -142,7 +142,7 @@
                                     <x-ui.badge :variant="$variantesResultado[$fila['resultado']]" data-resultado="{{ $fila['resultado'] }}">{{ $fila['resultado'] }}</x-ui.badge>
                                 </td>
                                 <td class="text-right">
-                                    <a href="{{ $urlPlanilla($fila) }}" class="whitespace-nowrap text-sm font-semibold text-brand-teal hover:underline">Ver planilla</a>
+                                    <a href="{{ $urlPlanilla($fila) }}" class="whitespace-nowrap text-sm font-semibold text-pa-acento hover:underline">Ver planilla</a>
                                 </td>
                             </tr>
                         @endforeach
@@ -171,7 +171,7 @@
                             @if ($fila['penalesFavor'] !== null)
                                 <p class="mt-1 text-xs text-pa-tinta-suave" data-penales>Penales {{ $fila['penalesFavor'] }} - {{ $fila['penalesContra'] }}</p>
                             @endif
-                            <a href="{{ $urlPlanilla($fila) }}" class="mt-2 inline-block text-sm font-semibold text-brand-teal hover:underline">Ver planilla</a>
+                            <a href="{{ $urlPlanilla($fila) }}" class="mt-2 inline-block text-sm font-semibold text-pa-acento hover:underline">Ver planilla</a>
                         </li>
                     @endforeach
                 </ul>

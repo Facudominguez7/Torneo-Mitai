@@ -23,12 +23,12 @@
             <div class="min-w-0">
                 <label for="cobros-deudores-buscar" class="block text-sm font-medium text-pa-tinta-media">Buscar equipo</label>
                 <input id="cobros-deudores-buscar" type="search" data-cobros-deudores-buscar autocomplete="off" maxlength="150"
-                    class="mt-1 min-h-11 w-full rounded-md border-pa-campo-borde text-sm focus:border-brand-teal focus:ring-brand-teal">
+                    class="mt-1 min-h-11 w-full rounded-md border-pa-campo-borde text-sm focus:border-pa-acento focus:ring-pa-acento">
             </div>
             <div class="min-w-0">
                 <label for="cobros-deudores-categoria" class="block text-sm font-medium text-pa-tinta-media">Categoría</label>
                 <select id="cobros-deudores-categoria" data-cobros-deudores-categoria
-                    class="mt-1 min-h-11 w-full rounded-md border-pa-campo-borde text-sm focus:border-brand-teal focus:ring-brand-teal">
+                    class="mt-1 min-h-11 w-full rounded-md border-pa-campo-borde text-sm focus:border-pa-acento focus:ring-pa-acento">
                     <option value="">Todas</option>
                     @foreach ($categoriasDeudores as $categoria)
                         <option value="{{ $categoria }}">{{ $categoria }}</option>
@@ -73,7 +73,7 @@
                         <a data-cobros-informe="{{ $deudor['idEquipo'] }}" target="_blank" rel="noopener"
                             href="{{ route('cobros.informe-equipo', ['idEdicion' => $EdicionSeleccionada->id, 'idEquipo' => $deudor['idEquipo']]) }}"
                             aria-label="Ver informe de {{ $deudor['equipo'] }} (se abre en otra pestaña)"
-                            class="inline-flex min-h-11 items-center justify-center rounded-md border border-pa-campo-borde px-3 py-2 text-sm font-semibold text-pa-resaltado hover:border-brand-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40 focus-visible:ring-offset-2">Ver informe</a>
+                            class="inline-flex min-h-11 items-center justify-center rounded-md border border-pa-campo-borde px-3 py-2 text-sm font-semibold text-pa-resaltado hover:border-pa-acento focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40 focus-visible:ring-offset-2">Ver informe</a>
                     </div>
                 </li>
             @endforeach

@@ -105,7 +105,7 @@
         </div>
     @else
         <div class="mt-6 rounded-xl border border-green-200 bg-green-50 p-4">
-            <p class="text-sm text-pa-exito">
+            <p class="text-sm text-pa-aviso-tinta">
                 ¡Excelente! Todos los equipos tienen una institución asignada.
             </p>
         </div>

@@ -250,7 +250,7 @@
                                     @endif
                                 </span>
                             </div>
-                            <span class="inline-flex items-center gap-2 text-sm font-semibold text-brand-teal">
+                            <span class="inline-flex items-center gap-2 text-sm font-semibold text-pa-acento">
                                 <span>Ver detalle arbitral</span>
                                 <svg class="h-4 w-4 transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -264,12 +264,12 @@
                                     @php
                                         $estadoReporte = $estadoPorReporte[(int) ($reporteArbitral['id'] ?? 0)] ?? ['label' => 'Ignorado', 'clase' => 'text-pa-tinta-suave'];
                                         if ($reporteArbitral['es_inconsistencia']) {
-                                            $estadoReporte = ['label' => 'Inconsistencia', 'clase' => 'text-pa-peligro'];
+                                            $estadoReporte = ['label' => 'Inconsistencia', 'clase' => 'text-pa-aviso-tinta'];
                                         }
                                     @endphp
                                     <div class="rounded-md border px-3 py-2 {{ $reporteArbitral['es_inconsistencia'] ? 'border-red-200 bg-red-50' : 'border-pa-linea bg-pa-superficie' }}">
                                         <div class="flex flex-wrap items-center justify-between gap-2">
-                                            <div class="text-sm font-semibold text-pa-tinta">
+                                            <div class="text-sm font-semibold {{ $reporteArbitral['es_inconsistencia'] ? 'text-pa-aviso-tinta' : 'text-pa-tinta' }}">
                                                 Camiseta {{ $reporteArbitral['numero_camiseta'] ?? '-' }} · {{ $reporteArbitral['goles_reportados'] }} gol(es)
                                             </div>
                                             <span class="text-xs font-semibold {{ $estadoReporte['clase'] }}">
@@ -282,7 +282,7 @@
                                         @endif
 
                                         @if ($reporteArbitral['es_inconsistencia'])
-                                            <p class="mt-1 text-sm text-pa-peligro">{{ $reporteArbitral['motivo_inconsistencia'] }}</p>
+                                            <p class="mt-1 text-sm text-pa-aviso-tinta">{{ $reporteArbitral['motivo_inconsistencia'] }}</p>
                                         @endif
                                     </div>
                                 @empty
@@ -381,9 +381,9 @@
             <div class="relative">
                 <svg class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-pa-tinta-suave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
                 <input type="search" id="buscar-jugador-local" data-player-search-input="local" placeholder="DNI sin puntos o nombre" autocomplete="off"
-                    class="block h-12 w-full rounded-lg border-pa-campo-borde pl-10 text-lg font-semibold text-pa-tinta placeholder:font-medium placeholder:text-pa-tinta-suave focus:border-brand-teal focus:ring-brand-teal">
+                    class="block h-12 w-full rounded-lg border-pa-campo-borde pl-10 text-lg font-semibold text-pa-tinta placeholder:font-medium placeholder:text-pa-tinta-suave focus:border-pa-acento focus:ring-pa-acento">
             </div>
-            <p class="min-h-[1.25rem] text-sm text-pa-tinta-cuerpo data-[tono=error]:font-semibold data-[tono=error]:text-pa-peligro data-[tono=ok]:font-semibold data-[tono=ok]:text-brand-teal" data-player-search-eco="local" aria-live="polite">Enter marca la asistencia del jugador encontrado y pasa a su número.</p>
+            <p class="min-h-[1.25rem] text-sm text-pa-tinta-cuerpo data-[tono=error]:font-semibold data-[tono=error]:text-pa-peligro data-[tono=ok]:font-semibold data-[tono=ok]:text-pa-acento" data-player-search-eco="local" aria-live="polite">Enter marca la asistencia del jugador encontrado y pasa a su número.</p>
         </div>
     <form action="{{ route('planilla.actualizarJugadores') }}" method="POST" data-player-scope="local" data-player-autosave-endpoint="{{ route('planilla.actualizarJugadores') }}">
             @csrf
@@ -452,9 +452,9 @@
             <div class="relative">
                 <svg class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-pa-tinta-suave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
                 <input type="search" id="buscar-jugador-visitante" data-player-search-input="visitante" placeholder="DNI sin puntos o nombre" autocomplete="off"
-                    class="block h-12 w-full rounded-lg border-pa-campo-borde pl-10 text-lg font-semibold text-pa-tinta placeholder:font-medium placeholder:text-pa-tinta-suave focus:border-brand-teal focus:ring-brand-teal">
+                    class="block h-12 w-full rounded-lg border-pa-campo-borde pl-10 text-lg font-semibold text-pa-tinta placeholder:font-medium placeholder:text-pa-tinta-suave focus:border-pa-acento focus:ring-pa-acento">
             </div>
-            <p class="min-h-[1.25rem] text-sm text-pa-tinta-cuerpo data-[tono=error]:font-semibold data-[tono=error]:text-pa-peligro data-[tono=ok]:font-semibold data-[tono=ok]:text-brand-teal" data-player-search-eco="visitante" aria-live="polite">Enter marca la asistencia del jugador encontrado y pasa a su número.</p>
+            <p class="min-h-[1.25rem] text-sm text-pa-tinta-cuerpo data-[tono=error]:font-semibold data-[tono=error]:text-pa-peligro data-[tono=ok]:font-semibold data-[tono=ok]:text-pa-acento" data-player-search-eco="visitante" aria-live="polite">Enter marca la asistencia del jugador encontrado y pasa a su número.</p>
         </div>
     <form action="{{ route('planilla.actualizarJugadores') }}" method="POST" data-player-scope="visitante" data-player-autosave-endpoint="{{ route('planilla.actualizarJugadores') }}">
             @csrf
@@ -695,7 +695,7 @@
                 });
 
                 if (contador) {
-                    contador.innerHTML = `<b class="font-bold text-brand-teal">${presentes}</b> de ${items.length} con asistencia`;
+                    contador.innerHTML = `<b class="font-bold text-pa-acento">${presentes}</b> de ${items.length} con asistencia`;
                 }
             };
 

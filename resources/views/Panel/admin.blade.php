@@ -150,7 +150,7 @@
                         {{-- Botón Imprimir Tabla de Posiciones (todas las categorías y grupos) --}}
                         <button type="button" onclick="imprimirEnIframe('{{ route('admin.imprimir-tabla-posiciones', ['idEdicion' => $idEdicionContexto ?? '']) }}')"
                             class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-xs font-semibold text-pa-tinta-media shadow-sm transition hover:bg-pa-fila-bg sm:text-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-pa-acento" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
                             Imprimir Tablas de Posiciones

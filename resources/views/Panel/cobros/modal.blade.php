@@ -39,8 +39,8 @@
             <fieldset>
                 <legend class="text-sm font-medium">Medio de pago</legend>
                 <div class="mt-1 flex flex-wrap gap-4">
-                    <label class="flex min-h-11 items-center gap-2 text-sm"><input id="cobros-editar-efectivo" name="medio" type="radio" value="efectivo" class="border-pa-campo-borde text-pa-resaltado focus:ring-brand-teal">Efectivo</label>
-                    <label class="flex min-h-11 items-center gap-2 text-sm"><input id="cobros-editar-mercado-pago" name="medio" type="radio" value="mercado_pago" class="border-pa-campo-borde text-pa-resaltado focus:ring-brand-teal">Mercado Pago</label>
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input id="cobros-editar-efectivo" name="medio" type="radio" value="efectivo" class="border-pa-campo-borde text-pa-resaltado focus:ring-pa-acento">Efectivo</label>
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input id="cobros-editar-mercado-pago" name="medio" type="radio" value="mercado_pago" class="border-pa-campo-borde text-pa-resaltado focus:ring-pa-acento">Mercado Pago</label>
                 </div>
                 <p id="error-medio" data-error="medio" class="text-sm text-pa-peligro"></p>
             </fieldset>

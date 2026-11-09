@@ -38,7 +38,7 @@
                     <td class="px-2 py-1.5 max-sm:row-span-2 max-sm:p-0">
                         <input type="number" name="{{ $campo }}[numero_camiseta]" value="{{ $jugador->numero_camiseta }}"
                             min="0" inputmode="numeric" aria-label="Número de camiseta de {{ $nombreCompleto }}" onfocus="this.select()"
-                            class="mx-auto block h-11 w-16 rounded-md border-pa-campo-borde px-1 text-center text-lg font-bold tabular-nums text-pa-tinta [appearance:textfield] focus:border-brand-teal focus:ring-brand-teal data-[numero-repetido]:border-amber-500 data-[numero-repetido]:bg-amber-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none">
+                            class="mx-auto block h-11 w-16 rounded-md border-pa-campo-borde px-1 text-center text-lg font-bold tabular-nums text-pa-tinta [appearance:textfield] focus:border-pa-acento focus:ring-pa-acento data-[numero-repetido]:border-amber-500 data-[numero-repetido]:bg-amber-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none">
                     </td>
                     <th scope="row" class="min-w-0 px-3 py-1.5 text-left font-normal max-sm:col-span-2 max-sm:p-0">
                         <input type="hidden" name="{{ $campo }}[nombre]" value="{{ $jugador->nombre }}">
@@ -50,7 +50,7 @@
                         <span class="block truncate font-semibold text-pa-tinta" title="{{ $nombreCompleto }}">{{ $nombreCompleto }}</span>
                         <span class="text-xs tabular-nums text-pa-tinta-suave">DNI {{ $dniVisible }} · Nac.&nbsp;{{ \Carbon\Carbon::parse($jugador->fecha_nacimiento)->format('d/m/Y') }}</span>
                         <span class="text-xs font-semibold text-amber-700" data-player-repeated-note></span>
-                        <div class="mt-0.5 flex flex-wrap items-center gap-2 text-xs font-semibold text-pa-tinta-suave data-[player-save-state=conflict]:text-pa-peligro data-[player-save-state=error]:text-pa-peligro data-[player-save-state=ok]:text-brand-teal [&[hidden]]:hidden"
+                        <div class="mt-0.5 flex flex-wrap items-center gap-2 text-xs font-semibold text-pa-tinta-suave data-[player-save-state=conflict]:text-pa-peligro data-[player-save-state=error]:text-pa-peligro data-[player-save-state=ok]:text-pa-acento [&[hidden]]:hidden"
                             data-player-save-status="{{ $jugador->dni_jugador }}"
                             hidden>
                             <span data-player-save-message="{{ $jugador->dni_jugador }}"></span>
@@ -68,7 +68,7 @@
                         <span class="text-xs font-semibold text-pa-tinta-suave sm:hidden" aria-hidden="true">Goles</span>
                         <input type="number" name="{{ $campo }}[goles]" value="{{ $jugador->goles }}"
                             min="0" inputmode="numeric" aria-label="Goles de {{ $nombreCompleto }}" onfocus="this.select()"
-                            class="mx-auto block h-11 w-16 rounded-md border-pa-campo-borde px-1 text-center tabular-nums text-pa-tinta [appearance:textfield] focus:border-brand-teal focus:ring-brand-teal max-sm:mx-0 max-sm:h-10 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none">
+                            class="mx-auto block h-11 w-16 rounded-md border-pa-campo-borde px-1 text-center tabular-nums text-pa-tinta [appearance:textfield] focus:border-pa-acento focus:ring-pa-acento max-sm:mx-0 max-sm:h-10 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none">
                     </td>
                     <td class="px-2 py-1.5 has-[:checked]:bg-red-50 max-sm:p-0 max-sm:pt-1">
                         <label class="flex min-h-[3rem] cursor-pointer items-center justify-center gap-2 max-sm:min-h-10 max-sm:justify-end">

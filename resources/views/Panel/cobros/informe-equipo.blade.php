@@ -19,19 +19,19 @@
 </head>
 <body class="imprimible bg-pa-fila-hover font-sans text-sm text-pa-tinta print:bg-pa-superficie">
     <div class="no-imprimir mx-auto mt-4 flex max-w-[210mm] flex-wrap gap-3 px-4">
-        <button type="button" onclick="window.print()" class="min-h-11 rounded-lg bg-brand-navy px-4 py-2 font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal">Imprimir / guardar PDF</button>
+        <button type="button" onclick="window.print()" class="min-h-11 rounded-lg bg-brand-navy px-4 py-2 font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-acento">Imprimir / guardar PDF</button>
         <a href="{{ route('cobros.index', ['idEdicion' => $EdicionSeleccionada->id]) }}" class="inline-flex min-h-11 items-center rounded-lg border border-pa-campo-borde bg-pa-superficie px-4 py-2 font-semibold text-pa-tinta-media">‹ Volver a cobros</a>
     </div>
 
     <article class="informe-hoja mx-auto mb-6 mt-3 max-w-[210mm] bg-pa-superficie px-4 py-5 shadow-sm sm:px-6">
         <header class="grid items-end gap-4 border-b-2 border-pa-resaltado pb-4 sm:grid-cols-[1fr_auto]">
             <div class="min-w-0">
-                <p class="text-xs font-bold uppercase tracking-[0.3em] text-brand-teal">Torneo Mitai · Cuenta de planillas</p>
+                <p class="text-xs font-bold uppercase tracking-[0.3em] text-pa-acento">Torneo Mitai · Cuenta de planillas</p>
                 <h1 class="mt-1 break-words text-2xl font-bold leading-tight">{{ $nombreEquipo }}</h1>
                 <p class="text-pa-tinta-suave">{{ collect([$nombreCategoria, $EdicionSeleccionada->nombre, 'Emitido '.now()->format('d/m/Y')])->filter()->implode(' · ') }}</p>
             </div>
             <div class="informe-color rounded-md border-l-[6px] border-brand-gold bg-brand-navy px-4 py-2.5 text-white sm:text-right">
-                <span class="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal-light">Saldo a pagar</span>
+                <span class="text-xs font-bold uppercase tracking-[0.14em] text-pa-acento-light">Saldo a pagar</span>
                 <strong class="block text-3xl leading-tight tabular-nums">{{ $pesos($saldo_ars) }}</strong>
             </div>
         </header>
