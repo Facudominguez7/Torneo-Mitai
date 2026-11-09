@@ -108,6 +108,8 @@ export default {
           'tinta-suave': 'rgb(var(--pa-tinta-suave) / <alpha-value>)',
           'tinta-tenue': 'rgb(var(--pa-tinta-tenue) / <alpha-value>)',
           acento: 'rgb(var(--pa-acento) / <alpha-value>)',
+          exito: 'rgb(var(--pa-exito) / <alpha-value>)',
+          peligro: 'rgb(var(--pa-peligro) / <alpha-value>)',
           resaltado: 'rgb(var(--pa-resaltado) / <alpha-value>)',
           'aviso-fondo': 'rgb(var(--pa-aviso-fondo) / <alpha-value>)',
           'aviso-tinta': 'rgb(var(--pa-aviso-tinta) / <alpha-value>)',
