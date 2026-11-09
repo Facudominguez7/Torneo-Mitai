@@ -6,7 +6,8 @@ Próxima fecha
 Estos son los partidos programados:
 
 @foreach($proximaFecha['partidos'] ?? [] as $partido)
-@php($metadatos = array_filter([$partido['horario'] ?? null, $partido['cancha'] ?? null, $partido['grupo'] ?? null]))
+@php($categoriaPartido = empty($proximaFecha['categoria_nombre']) ? ($partido['categoria'] ?? null) : null)
+@php($metadatos = array_filter([$partido['horario'] ?? null, $partido['cancha'] ?? null, $partido['grupo'] ?? null, $categoriaPartido]))
 - {!! $partido['equipo_local'] ?? 'Local' !!} vs {!! $partido['equipo_visitante'] ?? 'Visitante' !!}@if($metadatos !== []) ({!! implode(' | ', $metadatos) !!})@endif
 
 @endforeach
