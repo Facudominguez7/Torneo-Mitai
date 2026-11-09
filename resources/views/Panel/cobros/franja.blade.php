@@ -33,7 +33,7 @@
             @else
                 <label for="deuda-equipo-{{ $equipoId }}" class="text-sm font-semibold text-pa-tinta-media">Planilla adeudada</label>
                 <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                    <select id="deuda-equipo-{{ $equipoId }}" data-deuda-selector x-model="seleccion" class="min-h-10 w-full min-w-0 rounded-md border-pa-campo-borde text-sm">
+                    <select id="deuda-equipo-{{ $equipoId }}" data-deuda-selector x-model="seleccion" class="min-h-10 w-full min-w-0 rounded-md border-pa-campo-borde text-sm bg-pa-campo-fondo">
                         @foreach ($deudasEquipo as $deuda)
                             <option value="{{ $deuda['id'] }}">{{ collect([$deuda['fecha_nombre'], $diaCorto($deuda['fecha']), $deuda['sin_partido'] ? 'Deuda manual' : 'vs '.$deuda['oponente'], $formatoArs($deuda['deuda_ars'])])->filter()->implode(' · ') }}</option>
                         @endforeach

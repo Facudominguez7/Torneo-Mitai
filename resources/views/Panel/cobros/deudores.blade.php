@@ -28,7 +28,7 @@
             <div class="min-w-0">
                 <label for="cobros-deudores-categoria" class="block text-sm font-medium text-pa-tinta-media">Categoría</label>
                 <select id="cobros-deudores-categoria" data-cobros-deudores-categoria
-                    class="mt-1 min-h-11 w-full rounded-md border-pa-campo-borde text-sm focus:border-pa-acento focus:ring-pa-acento">
+                    class="mt-1 min-h-11 w-full rounded-md border-pa-campo-borde text-sm focus:border-pa-acento focus:ring-pa-acento bg-pa-campo-fondo">
                     <option value="">Todas</option>
                     @foreach ($categoriasDeudores as $categoria)
                         <option value="{{ $categoria }}">{{ $categoria }}</option>

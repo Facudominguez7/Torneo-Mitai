@@ -144,7 +144,7 @@
                                 <form data-print-fecha-form class="flex items-center gap-2">
                                     <select name="idFechaImpresion"
                                         id="idFechaImpresion"
-                                        class="h-10 min-w-0 flex-1 rounded-md border-pa-campo-borde text-sm shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30"
+                                        class="h-10 min-w-0 flex-1 rounded-md border-pa-campo-borde text-sm shadow-sm focus:border-pa-resaltado focus:ring-pa-resaltado/30 bg-pa-campo-fondo"
                                         @disabled($fechasEdicion->isEmpty())
                                         onchange="actualizarEstadoImpresionFecha(this)">
                                         <option value="">-- Seleccionar --</option>
