@@ -33,6 +33,21 @@ export default {
       fontFamily: {
         sans: ['Barlow', ...defaultTheme.fontFamily.sans],
       },
+      keyframes: {
+        // Login button liquid metal (always on; motion-safe only):
+        // the chrome rim rotates and a sheen crosses the face every few seconds.
+        'metal-girar': {
+          to: { transform: 'rotate(360deg)' },
+        },
+        'metal-brillo': {
+          '0%, 55%': { transform: 'translateX(-150%) skewX(-12deg)' },
+          '100%': { transform: 'translateX(300%) skewX(-12deg)' },
+        },
+      },
+      animation: {
+        'metal-girar': 'metal-girar 4s linear infinite',
+        'metal-brillo': 'metal-brillo 4.5s ease-in-out infinite',
+      },
       colors: {
         // `primary`/`secondary`/`brand.*` are wired to the channel-only
         // `--brand-*` variables (resources/css/app.css) using the
