@@ -47,16 +47,10 @@
         </div>
 
         <div
-            class="{{ $navPublica ? 'nav-compactable' : '[.nav-compacta_&]:hidden' }} flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap">
-            <button type="button" id="btn-tema" class="toggle-tema" role="switch"
-                aria-checked="false" aria-label="Cambiar entre tema claro y oscuro">
-                <span class="toggle-tema__pista" aria-hidden="true">
-                    <span class="toggle-tema__perilla">
-                        <svg id="icono-tema" class="toggle-tema__icono" viewBox="0 0 14 14" fill="none"></svg>
-                    </span>
-                </span>
-            </button>
+            class="{{ $navPublica ? 'nav-compactable' : '[.nav-compacta_&]:hidden' }} flex w-full flex-wrap items-center gap-3 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap">
 
+            {{-- Botón de sesión/panel centrado en el espacio libre; el toggle queda a la derecha. --}}
+            <div class="flex flex-1 items-center justify-center gap-3 sm:flex-none sm:gap-4 whitespace-nowrap">
             @auth
                 @if (Auth::user()->rol === 'admin')
                     <a href="{{ route('admin', ['idEdicion' => optional($edicionActiva)->id]) }}"
@@ -127,6 +121,16 @@
                     <i class="fa-solid fa-arrow-right text-xs"></i>
                 </a>
             @endauth
+            </div>
+
+            <button type="button" id="btn-tema" class="toggle-tema" role="switch"
+                aria-checked="false" aria-label="Cambiar entre tema claro y oscuro">
+                <span class="toggle-tema__pista" aria-hidden="true">
+                    <span class="toggle-tema__perilla">
+                        <svg id="icono-tema" class="toggle-tema__icono" viewBox="0 0 14 14" fill="none"></svg>
+                    </span>
+                </span>
+            </button>
         </div>
     </div>
 

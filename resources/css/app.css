@@ -1146,8 +1146,10 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
     }
 
     .tm-home #nav-principal > div:first-of-type > div:last-child {
-        width: auto;
-        margin-left: auto;
+        /* La fila de auth llena el ancho entre la marca y el borde: el botón
+           de sesión queda centrado en el espacio libre y el toggle a la
+           derecha (pedido del dueño). */
+        flex: 1 1 auto;
         flex-wrap: nowrap;
         gap: .5rem;
     }
