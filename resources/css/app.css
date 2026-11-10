@@ -292,6 +292,7 @@
         --tm-panel-brillo: rgba(14, 75, 94, .03);
         --tm-campo-fondo: 8 47 59;
         --tm-campo-tinta: 255 255 255;
+        --tm-metal-borde: conic-gradient(from 0deg, #1f2d38, #c9d3dc, #3d4f5c, rgb(var(--brand-gold)), #e6ecf1, #2a3a46, #8a9aa8, #1f2d38);
         --tm-velo: 255 255 255;
         --tm-brillo: rgba(255, 191, 0, .28);
         --tm-marca-agua: .08;
@@ -396,6 +397,7 @@
         --tm-panel-brillo: rgba(14, 75, 94, .03);
         --tm-campo-fondo: 8 47 59;
         --tm-campo-tinta: 255 255 255;
+        --tm-metal-borde: conic-gradient(from 0deg, #1f2d38, #c9d3dc, #3d4f5c, rgb(var(--brand-gold)), #e6ecf1, #2a3a46, #8a9aa8, #1f2d38);
         --tm-velo: 255 255 255;
         --tm-brillo: rgba(255, 191, 0, .28);
         --tm-marca-agua: .08;
@@ -458,6 +460,7 @@
         --tm-panel-brillo: rgba(255, 255, 255, .10);
         --tm-campo-fondo: 255 255 255;
         --tm-campo-tinta: 18 38 63;
+        --tm-metal-borde: conic-gradient(from 0deg, rgb(var(--brand-gold)), #2a6d81, #fff3c4, #5c7a89, rgb(var(--brand-gold)), #0e4b5e, #9bd3e2, rgb(var(--brand-gold)));
         --tm-velo: 8 47 59;
         --tm-brillo: rgba(255, 255, 255, .16);
         --tm-marca-agua: .17;

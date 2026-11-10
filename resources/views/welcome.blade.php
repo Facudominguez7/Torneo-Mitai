@@ -152,7 +152,12 @@
             <section id="seguir-equipo-bloque" data-id-edicion="{{ $edicionActual->id }}" class="relative mx-auto max-w-3xl px-4 pb-16 sm:px-6">
                 <div id="seguir-equipo-selector" class="tm-anim-in tm-d2 relative z-50 mx-auto mt-8 max-w-2xl text-left">
                     <label for="seguir-equipo-buscador" class="sr-only">Buscar tu equipo</label>
-                    <div class="tm-campo flex items-center gap-3 rounded-[22px] bg-tema-campo-fondo px-5 py-4 text-tema-campo-tinta shadow-[0_30px_70px_-30px_rgba(255,204,51,0.35)] transition-transform duration-300">
+                    {{-- Metal líquido: el borde cromado gira mientras el buscador espera; se detiene al enfocar o escribir. --}}
+                    <div class="tm-campo group relative isolate overflow-hidden rounded-[25px] p-[3px] shadow-[0_30px_70px_-30px_rgba(255,204,51,0.35)] transition-transform duration-300">
+                    <span aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
+                        <span class="aspect-square w-[150%] shrink-0 blur-[1px] motion-safe:animate-metal-girar group-focus-within:[animation-play-state:paused] group-has-[input:not(:placeholder-shown)]:[animation-play-state:paused] [background:var(--tm-metal-borde)]"></span>
+                    </span>
+                    <div class="flex items-center gap-3 rounded-[22px] bg-tema-campo-fondo px-5 py-4 text-tema-campo-tinta">
                         <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" class="flex-shrink-0 text-brand-teal">
                             <circle cx="9.5" cy="9.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/>
                             <path d="M14.5 14.5L19 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
@@ -162,6 +167,7 @@
                             aria-describedby="seguir-equipo-sin-resultados" aria-expanded="false"
                             class="w-full flex-1 border-0 bg-transparent p-0 text-base font-semibold text-tema-campo-tinta shadow-none placeholder:text-tema-campo-placeholder focus:border-transparent focus:ring-0 sm:text-lg">
                         <kbd class="hidden rounded-md border border-[var(--tm-campo-borde)] px-2 py-1 font-mono text-[11px] font-bold sm:block">Enter</kbd>
+                    </div>
                     </div>
                     <ul id="seguir-equipo-lista" role="listbox" aria-label="Equipos que coinciden"
                         class="absolute inset-x-0 top-full z-50 mt-2 hidden overflow-hidden rounded-2xl border border-black/10 bg-white text-slate-900 shadow-2xl">
