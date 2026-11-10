@@ -34,16 +34,19 @@ export default {
         sans: ['Barlow', ...defaultTheme.fontFamily.sans],
       },
       keyframes: {
-        // Metal líquido del botón de sesión: masa cromada que fluye y se
-        // deforma detrás del texto (solo hover; motion-reduce la apaga).
-        'metal-fluir': {
-          '0%': { transform: 'translateX(-55%) rotate(8deg) scale(1.1)', 'border-radius': '42% 58% 55% 45% / 55% 45% 58% 42%' },
-          '50%': { transform: 'translateX(0) rotate(-5deg) scale(1.3)', 'border-radius': '58% 42% 45% 55% / 45% 58% 42% 55%' },
-          '100%': { transform: 'translateX(55%) rotate(8deg) scale(1.1)', 'border-radius': '45% 55% 60% 40% / 50% 50% 55% 45%' },
+        // Login button liquid metal (always on; motion-safe only):
+        // the chrome rim rotates and a sheen crosses the face every few seconds.
+        'metal-girar': {
+          to: { transform: 'rotate(360deg)' },
+        },
+        'metal-brillo': {
+          '0%, 55%': { transform: 'translateX(-150%) skewX(-12deg)' },
+          '100%': { transform: 'translateX(300%) skewX(-12deg)' },
         },
       },
       animation: {
-        'metal-fluir': 'metal-fluir 1.8s ease-in-out infinite',
+        'metal-girar': 'metal-girar 4s linear infinite',
+        'metal-brillo': 'metal-brillo 4.5s ease-in-out infinite',
       },
       colors: {
         // `primary`/`secondary`/`brand.*` are wired to the channel-only
