@@ -37,7 +37,7 @@
     ];
 @endphp
 
-<nav class="tabbar-movil sticky bottom-0 z-30 flex items-center justify-around border-t border-tema-linea/15 bg-tema-fondo pb-[calc(10px+env(safe-area-inset-bottom))] pt-2.5 sm:hidden"
+<nav class="tabbar-movil sticky bottom-0 z-30 flex items-center justify-around border-t border-tema-linea/15 bg-tema-fondo pb-[calc(10px+env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-2.5 sm:hidden"
     aria-label="Navegación inferior">
     @foreach ($pestanas as $pestana)
         <a href="{{ route($pestana['ruta'], $pestana['ruta'] === 'home' ? [] : $parametrosEdicion) }}"
