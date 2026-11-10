@@ -241,7 +241,7 @@
         display: none !important;
     }
 
-    /* Panel: claro por defecto, con overrides por sistema o data-tema. */
+    /* Panel: claro por defecto, override manual por data-tema (toggle binario). */
     :root {
         --color-primary: rgb(14, 75, 94);
         --color-secondary: rgb(42, 109, 129);
@@ -271,32 +271,31 @@
         --brand-teal-light: 155 211 226;
 
         /*
-         * Tema dual de la home "Tu equipo primero" (artboard 06):
-         * tokens semánticos en canales RGB (compatibles con <alpha-value>),
-         * oscuro por defecto. El tema claro entra por prefers-color-scheme
-         * y el atributo data-tema en <html> permite el override manual
-         * (sistema → claro → oscuro) desde el botón de la navegación.
+         * Tema dual público (artboard 06): tokens semánticos en canales RGB
+         * (compatibles con <alpha-value>), claro por defecto. El toggle
+         * binario escribe data-tema en <html> (claro ⇄ oscuro); ya no hay
+         * detección del sistema.
          */
-        --tm-fondo: 8 47 59;
-        --tm-tinta: 255 255 255;
-        --tm-dim: 235 244 248;
-        --tm-linea: 255 255 255;
-        --tm-fila: 255 255 255;
-        --tm-superficie: 0 0 0;
-        --tm-superficie-bg: rgba(0, 0, 0, .35);
-        --tm-fila-bg: rgba(255, 255, 255, .06);
-        --tm-fila-hover-bg: rgba(255, 255, 255, .12);
-        --tm-campo-borde: rgba(18, 38, 63, .3);
-        --tm-acento: 155 211 226;
-        --tm-panel-borde: 255 204 51;
-        --tm-panel-bg: rgba(255, 255, 255, .06);
-        --tm-panel-brillo: rgba(255, 255, 255, .10);
-        --tm-campo-fondo: 255 255 255;
-        --tm-campo-tinta: 18 38 63;
-        --tm-velo: 8 47 59;
-        --tm-brillo: rgba(255, 255, 255, .16);
-        --tm-marca-agua: .17;
-        --tm-sombra-panel: none;
+        --tm-fondo: 255 255 255;
+        --tm-tinta: 8 47 59;
+        --tm-dim: 8 47 59;
+        --tm-linea: 8 47 59;
+        --tm-fila: 14 75 94;
+        --tm-superficie: 14 75 94;
+        --tm-superficie-bg: rgba(14, 75, 94, .055);
+        --tm-fila-bg: rgba(14, 75, 94, .05);
+        --tm-fila-hover-bg: rgba(14, 75, 94, .09);
+        --tm-campo-borde: rgba(255, 255, 255, .4);
+        --tm-acento: 42 109 129;
+        --tm-panel-borde: 8 47 59;
+        --tm-panel-bg: #FFFFFF;
+        --tm-panel-brillo: rgba(14, 75, 94, .03);
+        --tm-campo-fondo: 8 47 59;
+        --tm-campo-tinta: 255 255 255;
+        --tm-velo: 255 255 255;
+        --tm-brillo: rgba(255, 191, 0, .28);
+        --tm-marca-agua: .08;
+        --tm-sombra-panel: 5px 5px 0 rgba(8, 47, 59, .1);
 
         --pa-fondo: 243 244 246;
         color-scheme: light;
@@ -339,77 +338,11 @@
         --pa-velo-modal: 2 6 23;
     }
 
-    @media (prefers-color-scheme: light) {
-        :root:not([data-tema="oscuro"]) {
-            --tm-fondo: 255 255 255;
-            --tm-tinta: 8 47 59;
-            --tm-dim: 8 47 59;
-            --tm-linea: 8 47 59;
-            --tm-fila: 14 75 94;
-            --tm-superficie: 14 75 94;
-            --tm-superficie-bg: rgba(14, 75, 94, .055);
-            --tm-fila-bg: rgba(14, 75, 94, .05);
-            --tm-fila-hover-bg: rgba(14, 75, 94, .09);
-            --tm-campo-borde: rgba(255, 255, 255, .4);
-            --tm-acento: 42 109 129;
-            --tm-panel-borde: 8 47 59;
-            --tm-panel-bg: #FFFFFF;
-        --tm-panel-brillo: rgba(14, 75, 94, .03);
-            --tm-campo-fondo: 8 47 59;
-            --tm-campo-tinta: 255 255 255;
-            --tm-velo: 255 255 255;
-            --tm-brillo: rgba(255, 191, 0, .28);
-            --tm-marca-agua: .08;
-            --tm-sombra-panel: 5px 5px 0 rgba(8, 47, 59, .1);
-        }
-    }
 
-    @media (prefers-color-scheme: dark) {
-        :root:not([data-tema="claro"]) {
-            --pa-fondo: 8 47 59;
-        color-scheme: dark;
-            --pa-superficie: 14 75 94;
-            --pa-elevada: 14 75 94;
-            --pa-campo-fondo: 8 47 59;
-            --pa-control-fondo: 8 47 59;
-            --pa-tinta: 255 255 255;
-            --pa-tinta-media: 255 255 255;
-            --pa-tinta-cuerpo: 255 255 255;
-            --pa-tinta-suave: 255 255 255;
-            --pa-tinta-tenue: 255 255 255;
-            --pa-acento: 155 211 226;
-            --pa-peligro: 255 255 255;
-            --pa-exito: 255 255 255;
-            --pa-resaltado: 155 211 226;
-            --pa-aviso-fondo: 155 211 226;
-            --pa-aviso-tinta: 8 47 59;
-            --pa-form-borde: 155 211 226;
-            --pa-form-acento: 155 211 226;
-            --pa-form-tinta: 8 47 59;
-            --pa-tablero-inicio: 14 75 94;
-            --pa-tablero-fin: 8 47 59;
-            --pa-tablero-leyenda: 226 232 240;
-            --pa-tablero-foco: 155 211 226;
-            --pa-tablero-accion: 42 109 129;
-            --pa-tablero-accion-hover: 8 47 59;
-            --pa-linea: 255 255 255;
-            --pa-linea-alfa: .14;
-            --pa-linea-suave: 255 255 255;
-            --pa-linea-suave-alfa: .10;
-            --pa-campo-borde: 255 255 255;
-            --pa-campo-borde-alfa: .22;
-            --pa-contorno-control: 155 211 226;
-            --pa-fila-bg: 255 255 255;
-            --pa-fila-bg-alfa: .06;
-            --pa-fila-hover: 255 255 255;
-            --pa-fila-hover-alfa: .12;
-            --pa-velo-menu: 8 47 59;
-            --pa-velo-modal: 8 47 59;
-        }
-    }
 
     :root[data-tema="claro"] {
         --pa-fondo: 243 244 246;
+        color-scheme: light;
         --pa-superficie: 255 255 255;
         --pa-elevada: 255 255 255;
         --pa-campo-fondo: 255 255 255;
@@ -471,6 +404,7 @@
 
     :root[data-tema="oscuro"] {
         --pa-fondo: 8 47 59;
+        color-scheme: dark;
         --pa-superficie: 14 75 94;
         --pa-elevada: 14 75 94;
         --pa-campo-fondo: 8 47 59;
@@ -529,6 +463,94 @@
         --tm-marca-agua: .17;
         --tm-sombra-panel: none;
     }
+
+/*
+ * Toggle de tema estilo "glass" (inspirado en glass-light-toggle de
+ * experiments.thisiswhitespace.com): pista píldora y perilla de vidrio
+ * que corre de izquierda (luna, halo azul) a derecha (sol, halo ámbar).
+ * Binario claro ⇄ oscuro; el estado viene de data-tema en <html>.
+ */
+.toggle-tema {
+    --tg-ancho: 58px;
+    --tg-alto: 30px;
+    --tg-perilla: 24px;
+    --tg-recorrido: calc(var(--tg-ancho) - var(--tg-perilla) - 6px);
+    display: inline-flex;
+    border: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.toggle-tema:focus-visible {
+    outline: 2px solid rgb(var(--pa-resaltado));
+    outline-offset: 3px;
+}
+
+.toggle-tema__pista {
+    position: relative;
+    display: block;
+    width: var(--tg-ancho);
+    height: var(--tg-alto);
+    border-radius: 9999px;
+    background: rgb(var(--pa-campo-fondo));
+    border: 1px solid rgb(var(--pa-campo-borde) / var(--pa-campo-borde-alfa, 1));
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / .12);
+    transition: background .25s ease;
+}
+
+.toggle-tema__perilla {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    display: grid;
+    place-items: center;
+    width: var(--tg-perilla);
+    height: var(--tg-perilla);
+    border-radius: 10px;
+    /* Vidrio: brillo superior, sombra propia y halo del lado activo. */
+    background: linear-gradient(160deg, rgb(255 255 255 / .85), rgb(255 255 255 / .55));
+    border: 1px solid rgb(255 255 255 / .7);
+    color: rgb(8 47 59);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / .8);
+    transform: translateX(var(--tg-recorrido));
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+/* Sol a la derecha (claro): halo ámbar sobre la sombra base. */
+.toggle-tema__perilla {
+    box-shadow:
+        0 1px 2px rgb(0 0 0 / .18),
+        0 0 14px 2px rgb(255 170 30 / .45),
+        inset 0 1px 0 rgb(255 255 255 / .8);
+}
+
+/* Luna a la izquierda (oscuro): perilla gris glass y halo azul. */
+html[data-tema="oscuro"] .toggle-tema__perilla {
+    transform: translateX(0);
+    background: linear-gradient(160deg, rgb(255 255 255 / .30), rgb(255 255 255 / .10));
+    border-color: rgb(255 255 255 / .45);
+    color: rgb(255 255 255);
+    box-shadow:
+        0 1px 2px rgb(0 0 0 / .35),
+        0 0 16px 3px rgb(120 150 255 / .50),
+        inset 0 1px 0 rgb(255 255 255 / .45);
+}
+
+.toggle-tema__icono {
+    display: block;
+    width: 13px;
+    height: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toggle-tema__pista,
+    .toggle-tema__perilla {
+        transition: none;
+    }
+}
 
 /*
  * Impresiones del panel: siempre en tema claro, en ambos temas y también en
@@ -917,10 +939,8 @@
     color: #997300;
 }
 
-@media (prefers-color-scheme: light) {
-    :root:not([data-tema="oscuro"]) .tabbar-movil a[aria-current="page"] {
-        color: #997300;
-    }
+:root:not([data-tema="oscuro"]) .tabbar-movil a[aria-current="page"] {
+    color: #997300;
 }
 
 :root[data-tema="claro"] .tm-forma .g {
@@ -935,18 +955,16 @@
     color: #B32222;
 }
 
-@media (prefers-color-scheme: light) {
-    :root:not([data-tema="oscuro"]) .tm-forma .g {
-        color: #0E7A38;
-    }
+:root:not([data-tema="oscuro"]) .tm-forma .g {
+    color: #0E7A38;
+}
 
-    :root:not([data-tema="oscuro"]) .tm-forma .e {
-        color: #8A6A00;
-    }
+:root:not([data-tema="oscuro"]) .tm-forma .e {
+    color: #8A6A00;
+}
 
-    :root:not([data-tema="oscuro"]) .tm-forma .p {
-        color: #B32222;
-    }
+:root:not([data-tema="oscuro"]) .tm-forma .p {
+    color: #B32222;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1085,18 +1103,16 @@
     color: #997300;
 }
 
-@media (prefers-color-scheme: light) {
-    :root:not([data-tema="oscuro"]) .tm-home #nav-principal a[aria-current="page"],
-    :root:not([data-tema="oscuro"]) .fixture-tablero #nav-principal a[aria-current="page"] {
-        border-bottom-color: #997300;
-    }
+:root:not([data-tema="oscuro"]) .tm-home #nav-principal a[aria-current="page"],
+:root:not([data-tema="oscuro"]) .fixture-tablero #nav-principal a[aria-current="page"] {
+    border-bottom-color: #997300;
+}
 
-    :root:not([data-tema="oscuro"]) .tm-home #nav-principal a:hover:not([class*="bg-gradient"]):not([class*="bg-gradient"] *),
-    :root:not([data-tema="oscuro"]) .fixture-tablero #nav-principal a:hover:not([class*="bg-gradient"]):not([class*="bg-gradient"] *),
-    :root:not([data-tema="oscuro"]) .tm-home #nav-principal button:hover:not([class*="bg-gradient"] *),
-    :root:not([data-tema="oscuro"]) .fixture-tablero #nav-principal button:hover:not([class*="bg-gradient"] *) {
-        color: #997300;
-    }
+:root:not([data-tema="oscuro"]) .tm-home #nav-principal a:hover:not([class*="bg-gradient"]):not([class*="bg-gradient"] *),
+:root:not([data-tema="oscuro"]) .fixture-tablero #nav-principal a:hover:not([class*="bg-gradient"]):not([class*="bg-gradient"] *),
+:root:not([data-tema="oscuro"]) .tm-home #nav-principal button:hover:not([class*="bg-gradient"] *),
+:root:not([data-tema="oscuro"]) .fixture-tablero #nav-principal button:hover:not([class*="bg-gradient"] *) {
+    color: #997300;
 }
 
 /*
@@ -1157,10 +1173,8 @@
     color: rgb(var(--tm-acento));
 }
 
-@media (prefers-color-scheme: light) {
-    :root:not([data-tema="oscuro"]) .tm-home .text-brand-teal-light {
-        color: rgb(var(--tm-acento));
-    }
+:root:not([data-tema="oscuro"]) .tm-home .text-brand-teal-light {
+    color: rgb(var(--tm-acento));
 }
 
 /*
@@ -1222,10 +1236,8 @@
     --fx-destacado: #997300;
 }
 
-@media (prefers-color-scheme: light) {
-    :root:not([data-tema="oscuro"]) .fixture-tablero {
-        --fx-destacado: #997300;
-    }
+:root:not([data-tema="oscuro"]) .fixture-tablero {
+    --fx-destacado: #997300;
 }
 
 .fixture-tablero > .relative > .absolute {
@@ -1490,10 +1502,8 @@
     background: rgb(255 255 255 / .20);
 }
 
-@media (prefers-color-scheme: light) {
-    :root:not([data-tema="oscuro"]) .fixture-tablero .tarjeta-compacta {
-        background: rgb(255 255 255 / .20);
-    }
+:root:not([data-tema="oscuro"]) .fixture-tablero .tarjeta-compacta {
+    background: rgb(255 255 255 / .20);
 }
 
 .fixture-tablero .tarjeta-compacta--interzonal {
@@ -2090,9 +2100,7 @@
 .acceso-formulario { --tm-tinta: var(--brand-navy-deep); --tm-dim: var(--brand-navy-deep); --tm-linea: var(--brand-navy-deep); --tm-acento: var(--brand-teal); --tm-superficie-bg: rgb(var(--brand-navy) / .055); }
 /* Avisos de la suscripción: el error tiñe las opciones como el campo tiñe su línea. El rojo sigue al tema; el panel de acceso usa siempre el claro. */
 .suscripcion-avisos { --suscripcion-error-claro: 180 35 24; --suscripcion-error: 252 165 165; }
-@media (prefers-color-scheme: light) {
-    :root:not([data-tema="oscuro"]) .suscripcion-avisos { --suscripcion-error: var(--suscripcion-error-claro); }
-}
+:root:not([data-tema="oscuro"]) .suscripcion-avisos { --suscripcion-error: var(--suscripcion-error-claro); }
 :root[data-tema="claro"] .suscripcion-avisos, .acceso-formulario .suscripcion-avisos { --suscripcion-error: var(--suscripcion-error-claro); }
 .suscripcion-avisos[data-invalido] label { border-color: rgb(var(--suscripcion-error) / .75); }
 .suscripcion-avisos .acceso-error { color: rgb(var(--suscripcion-error)); }
@@ -2275,9 +2283,7 @@
 /* Perfil, diseño "Reglamento": reutiliza la cabecera, el índice y el tema dual de las páginas legales.
    Los campos y botones son los del acceso (x-acceso.*). */
 .perfil { --perfil-error: 252 165 165; }
-@media (prefers-color-scheme: light) {
-    :root:not([data-tema="oscuro"]) .perfil { --perfil-error: 180 35 24; }
-}
+:root:not([data-tema="oscuro"]) .perfil { --perfil-error: 180 35 24; }
 :root[data-tema="claro"] .perfil { --perfil-error: 180 35 24; }
 
 .perfil-cabecera { display: flex; align-items: center; gap: 1rem; padding-bottom: 1.5rem; }

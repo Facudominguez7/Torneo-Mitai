@@ -48,10 +48,13 @@
 
         <div
             class="{{ $navPublica ? 'nav-compactable' : '[.nav-compacta_&]:hidden' }} flex w-full flex-wrap items-center justify-center gap-3 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap">
-            <button type="button" id="btn-tema" aria-label="Cambiar tema"
-                class="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 transition hover:border-yellow-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40">
-                <svg id="icono-tema" class="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" aria-hidden="true"></svg>
-                <span id="etiqueta-tema">Sistema</span>
+            <button type="button" id="btn-tema" class="toggle-tema" role="switch"
+                aria-checked="false" aria-label="Cambiar entre tema claro y oscuro">
+                <span class="toggle-tema__pista" aria-hidden="true">
+                    <span class="toggle-tema__perilla">
+                        <svg id="icono-tema" class="toggle-tema__icono" viewBox="0 0 14 14" fill="none"></svg>
+                    </span>
+                </span>
             </button>
 
             @auth

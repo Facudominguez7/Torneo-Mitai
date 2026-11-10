@@ -125,9 +125,10 @@ describe('home: buscador protagonista y tema dual (artboard 06)', function () {
         expect($html)->toContain('id="seguir-equipo-lista"');
         expect($html)->toContain('id="seguir-equipo-datos"');
         expect($html)->toContain('hidden overflow-hidden rounded-2xl');
-        // Override manual de tema en la navegación compartida.
+        // Override manual de tema en la navegación compartida: toggle binario glass.
         expect($html)->toContain('id="btn-tema"');
-        expect($html)->toContain('Cambiar tema');
+        expect($html)->toContain('Cambiar entre tema claro y oscuro');
+        expect($html)->toContain('toggle-tema__perilla');
     });
 
     it('expone fotos de equipos directos y heredados en los datos del buscador', function () {

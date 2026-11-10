@@ -4,6 +4,21 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- Tema binario claro ⇄ oscuro: data-tema temprano evita el flash del tema contrario. Claro por defecto; ya no hay detección del sistema. --}}
+    <script>
+        (function () {
+            var tema = 'claro';
+            try {
+                if (localStorage.getItem('mitai_tema') === 'oscuro') {
+                    tema = 'oscuro';
+                }
+            } catch (e) {
+                // Sin almacenamiento disponible: queda el tema claro.
+            }
+            document.documentElement.setAttribute('data-tema', tema);
+        })();
+    </script>
+
     {{-- Preconnect para recursos externos (mejora LCP/FCP) --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

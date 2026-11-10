@@ -62,10 +62,13 @@
                     </button>
                 </form>
             </div>
-            <button type="button" id="btn-tema"
-                class="inline-flex h-11 min-w-[44px] flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-pa-linea-suave bg-pa-control-fondo px-3 text-xs font-semibold text-pa-tinta-media transition hover:bg-pa-linea-suave focus:outline-none focus-visible:ring-2 focus-visible:ring-pa-resaltado/40">
-                <svg id="icono-tema" class="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" aria-hidden="true"></svg>
-                <span class="sr-only">Tema:</span><span id="etiqueta-tema">Sistema</span>
+            <button type="button" id="btn-tema" class="toggle-tema" role="switch"
+                aria-checked="false" aria-label="Cambiar entre tema claro y oscuro">
+                <span class="toggle-tema__pista" aria-hidden="true">
+                    <span class="toggle-tema__perilla">
+                        <svg id="icono-tema" class="toggle-tema__icono" viewBox="0 0 14 14" fill="none"></svg>
+                    </span>
+                </span>
             </button>
         </div>
         <form data-panel-header-edition-row data-panel-edicion-form action="{{ route('admin') }}" method="GET"
