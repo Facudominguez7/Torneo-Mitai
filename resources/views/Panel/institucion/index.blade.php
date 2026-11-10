@@ -151,7 +151,7 @@
                                 @csrf
                                 @method('PUT')
                                 <input type="text" name="nombre" value="{{ $institucion->nombre }}"
-                                    class="flex-1 rounded-lg border-pa-campo-borde px-3 py-1" required>
+                                    class="flex-1 rounded-lg border-pa-campo-borde bg-pa-campo-fondo px-3 py-1 text-pa-tinta" required>
                                 <x-ui.button type="submit" size="sm" variant="primary">
                                     Guardar
                                 </x-ui.button>

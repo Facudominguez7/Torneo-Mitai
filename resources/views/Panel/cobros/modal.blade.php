@@ -57,7 +57,7 @@
         </div>
         <div data-campo="tarifa_ars" hidden>
             <label for="cobros-tarifa" class="block font-medium">Tarifa global (ARS enteros)</label>
-            <input id="cobros-tarifa" name="tarifa_ars" type="text" inputmode="numeric" pattern="[0-9]+" value="{{ $configuracion?->tarifa_ars }}" class="mt-1 min-h-11 w-full rounded border-pa-campo-borde" aria-describedby="error-tarifa_ars">
+            <input id="cobros-tarifa" name="tarifa_ars" type="text" inputmode="numeric" pattern="[0-9]+" value="{{ $configuracion?->tarifa_ars }}" class="mt-1 min-h-11 w-full rounded border-pa-campo-borde bg-pa-campo-fondo text-pa-tinta" aria-describedby="error-tarifa_ars">
             <p id="error-tarifa_ars" data-error="tarifa_ars" class="text-sm text-pa-peligro"></p>
         </div>
         <div data-campo="confirmar" hidden>

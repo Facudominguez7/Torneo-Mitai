@@ -25,7 +25,7 @@
             Nombre del arquero
         </label>
         <input type="text" name="nombre" id="nombre" value="{{ old('nombre', $valla->nombre) }}"
-            class="block w-full rounded-md border-pa-campo-borde py-2 px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30" />
+            class="block w-full rounded-md border-pa-campo-borde py-2 px-3 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30 bg-pa-campo-fondo" />
     </div>
 
     @if (!isset($listaEquiposVallas) || $listaEquiposVallas->count() == 0)
