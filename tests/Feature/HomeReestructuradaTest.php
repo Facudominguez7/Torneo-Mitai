@@ -129,6 +129,9 @@ describe('home: buscador protagonista y tema dual (artboard 06)', function () {
         expect($html)->toContain('id="btn-tema"');
         expect($html)->toContain('Cambiar entre tema claro y oscuro');
         expect($html)->toContain('toggle-tema__perilla');
+        // Metal líquido del botón de sesión: blob cromado solo en hover y apagable.
+        expect($html)->toContain('animate-metal-fluir');
+        expect($html)->toContain('motion-reduce:group-hover:opacity-40');
     });
 
     it('expone fotos de equipos directos y heredados en los datos del buscador', function () {
