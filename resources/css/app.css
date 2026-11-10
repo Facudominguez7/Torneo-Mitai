@@ -442,26 +442,26 @@
         --pa-fila-hover-alfa: .12;
         --pa-velo-menu: 8 47 59;
         --pa-velo-modal: 8 47 59;
-        --tm-fondo: 255 255 255;
-        --tm-tinta: 8 47 59;
-        --tm-dim: 8 47 59;
-        --tm-linea: 8 47 59;
-        --tm-fila: 14 75 94;
-        --tm-superficie: 14 75 94;
-        --tm-superficie-bg: rgba(14, 75, 94, .055);
-        --tm-fila-bg: rgba(14, 75, 94, .05);
-        --tm-fila-hover-bg: rgba(14, 75, 94, .09);
-        --tm-campo-borde: rgba(255, 255, 255, .4);
-        --tm-acento: 42 109 129;
-        --tm-panel-borde: 8 47 59;
-        --tm-panel-bg: #FFFFFF;
-        --tm-panel-brillo: rgba(14, 75, 94, .03);
-        --tm-campo-fondo: 8 47 59;
-        --tm-campo-tinta: 255 255 255;
-        --tm-velo: 255 255 255;
-        --tm-brillo: rgba(255, 191, 0, .28);
-        --tm-marca-agua: .08;
-        --tm-sombra-panel: 5px 5px 0 rgba(8, 47, 59, .1);
+        --tm-fondo: 8 47 59;
+        --tm-tinta: 255 255 255;
+        --tm-dim: 235 244 248;
+        --tm-linea: 255 255 255;
+        --tm-fila: 255 255 255;
+        --tm-superficie: 0 0 0;
+        --tm-superficie-bg: rgba(0, 0, 0, .35);
+        --tm-fila-bg: rgba(255, 255, 255, .06);
+        --tm-fila-hover-bg: rgba(255, 255, 255, .12);
+        --tm-campo-borde: rgba(18, 38, 63, .3);
+        --tm-acento: 155 211 226;
+        --tm-panel-borde: 255 204 51;
+        --tm-panel-bg: rgba(255, 255, 255, .06);
+        --tm-panel-brillo: rgba(255, 255, 255, .10);
+        --tm-campo-fondo: 255 255 255;
+        --tm-campo-tinta: 18 38 63;
+        --tm-velo: 8 47 59;
+        --tm-brillo: rgba(255, 255, 255, .16);
+        --tm-marca-agua: .17;
+        --tm-sombra-panel: none;
     }
 
 /*
