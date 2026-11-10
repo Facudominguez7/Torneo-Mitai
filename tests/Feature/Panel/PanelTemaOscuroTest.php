@@ -22,23 +22,34 @@ function bloqueTokensTemaPanel(string $css, string $patron): string
     return $bloques[0];
 }
 
-it('renderiza el panel con el tema del sistema y sin script de tema en linea', function () {
+it('renderiza el panel con data-tema temprano y sin script de tema en linea', function () {
     $admin = User::factory()->create(['rol' => 'admin', 'email_verified_at' => now()]);
     $html = $this->actingAs($admin)->get(route('admin'))->assertOk()->getContent();
     $documento = documentoTemaOscuroPanel($html);
     $raiz = $documento->getElementsByTagName('html')->item(0);
 
+    // El tema ya no lo detecta el sistema: head.blade.php fija data-tema
+    // temprano (claro por defecto) para evitar el flash del tema contrario.
     expect($raiz)->not->toBeNull()
         ->and($raiz->hasAttribute('data-tema'))->toBeFalse();
 
+    $temprano = false;
     foreach ($documento->getElementsByTagName('script') as $script) {
-        if (! $script->hasAttribute('src')) {
+        if ($script->hasAttribute('src')) {
+            continue;
+        }
+        if (str_contains($script->textContent, 'mitai_tema')) {
+            $temprano = true;
+            expect($script->textContent)->toMatch('/data-tema/')
+                ->not->toMatch('/prefers-color-scheme|btn-tema/');
+        } else {
             expect($script->textContent)->not->toMatch('/mitai_tema|data-tema|btn-tema|prefers-color-scheme/');
         }
     }
+    expect($temprano)->toBeTrue();
 });
 
-it('incluye un boton de tema accesible con los ids del tema compartido', function () {
+it('incluye un toggle de tema binario accesible con los ids del tema compartido', function () {
     $admin = User::factory()->create(['rol' => 'admin', 'email_verified_at' => now()]);
     $html = $this->actingAs($admin)->get(route('admin'))->assertOk()->getContent();
     $documento = documentoTemaOscuroPanel($html);
@@ -47,25 +58,23 @@ it('incluye un boton de tema accesible con los ids del tema compartido', functio
     expect($boton)->not->toBeNull()
         ->and($boton->tagName)->toBe('button')
         ->and($boton->getAttribute('type'))->toBe('button')
-        ->and($boton->hasAttribute('aria-label'))->toBeFalse()
-        ->and($boton->getAttribute('class'))->toMatch('/(?:^|\s)(?:(?:min-)?h-11|min-h-\[44px\])(?:\s|$)/')
-        ->and($boton->getAttribute('class'))->toMatch('/(?:^|\s)(?:(?:min-)?w-11|min-w-\[44px\])(?:\s|$)/');
+        ->and($boton->getAttribute('class'))->toContain('toggle-tema')
+        ->and($boton->getAttribute('role'))->toBe('switch')
+        ->and($boton->getAttribute('aria-checked'))->toBe('false')
+        ->and($boton->getAttribute('aria-label'))->toBe('Cambiar entre tema claro y oscuro');
 
     $xpath = new DOMXPath($documento);
     $iconos = $xpath->query('.//*[@id="icono-tema"]', $boton);
-    $etiquetas = $xpath->query('.//*[@id="etiqueta-tema"]', $boton);
-    $prefijos = $xpath->query('.//*[@id="etiqueta-tema"]/preceding-sibling::*[1][self::span[contains(concat(" ", normalize-space(@class), " "), " sr-only ") and normalize-space(.)="Tema:"]]', $boton);
 
     expect($iconos->length)->toBe(1)
-        ->and($etiquetas->length)->toBe(1)
-        ->and($prefijos->length)->toBe(1)
-        ->and(trim($etiquetas->item(0)->textContent))->toBe('Sistema')
-        ->and($etiquetas->item(0)->getAttribute('class'))->not->toContain('hidden');
-
-    expect(file_get_contents(resource_path('js/app.js')))->toContain("import './tema';");
+        ->and($xpath->query('.//*[@id="etiqueta-tema"]', $boton)->length)->toBe(0)
+        ->and($boton->textContent)->not->toContain('Sistema')
+        ->and(file_get_contents(resource_path('js/app.js')))->toContain("import './tema';")
+        ->and(file_get_contents(resource_path('js/tema.js')))->not->toContain("'sistema'")
+        ->and(file_get_contents(resource_path('js/tema.js')))->toContain("estados = ['claro', 'oscuro']");
 });
 
-it('declara todos los tokens del panel con sus valores exactos en los cuatro estados', function () {
+it('declara todos los tokens del panel con sus valores exactos en los tres estados', function () {
     $css = file_get_contents(resource_path('css/app.css'));
     $claro = [
         'fondo' => '243 244 246',
@@ -149,7 +158,6 @@ it('declara todos los tokens del panel con sus valores exactos en los cuatro est
     ];
     $estados = [
         ['~:root\s*\{([^{}]*)\}~s', $claro],
-        ['~@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root:not\(\[data-tema="claro"\]\)\s*\{([^{}]*)\}~s', $oscuro],
         ['~:root\[data-tema="claro"\]\s*\{([^{}]*)\}~s', $claro],
         ['~:root\[data-tema="oscuro"\]\s*\{([^{}]*)\}~s', $oscuro],
     ];
@@ -190,15 +198,14 @@ it('elimina los tokens retirados y el prefijo anterior del tablero', function ()
 
 it('deja todas las letras en blanco en oscuro y conserva la escala en claro', function () {
     $css = file_get_contents(resource_path('css/app.css'));
+    $nombres = ['tinta', 'tinta-media', 'tinta-cuerpo', 'tinta-suave', 'tinta-tenue'];
     $oscuros = [
-        '~@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root:not\(\[data-tema="claro"\]\)\s*\{([^{}]*)\}~s',
         '~:root\[data-tema="oscuro"\]\s*\{([^{}]*)\}~s',
     ];
     $claros = [
         '~:root\s*\{([^{}]*)\}~s',
         '~:root\[data-tema="claro"\]\s*\{([^{}]*)\}~s',
     ];
-    $nombres = ['tinta', 'tinta-media', 'tinta-cuerpo', 'tinta-suave', 'tinta-tenue'];
 
     // Decisión del dueño: en oscuro no hay tonos apagados, todas las letras son blancas.
     foreach ($oscuros as $patron) {
