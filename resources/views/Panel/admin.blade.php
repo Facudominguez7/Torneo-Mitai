@@ -17,7 +17,7 @@
         @click="sidebarAbierto = false" aria-hidden="true"
         class="fixed inset-0 z-30 bg-pa-velo-menu/50 lg:hidden"></div>
     <aside id="sidebar-multi-level-sidebar"
-        class="fixed inset-y-0 left-0 z-40 flex w-80 -translate-x-full flex-col overflow-y-auto bg-pa-superficie shadow-xl transition-transform duration-200 lg:w-64 lg:shadow-none lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-40 flex w-80 -translate-x-full flex-col overflow-y-auto bg-pa-superficie pt-[env(safe-area-inset-top)] shadow-xl transition-transform duration-200 lg:w-64 lg:shadow-none lg:translate-x-0"
         :class="{ 'translate-x-0': sidebarAbierto, '-translate-x-full': !sidebarAbierto }"
         aria-label="Navegación del panel de administración">
         @include('Panel.partials.sidebar')
@@ -30,7 +30,7 @@
         $edicionActivaHeader = $EdicionSeleccionada ?? null;
     @endphp
     <header data-panel-edicion-header
-        class="z-30 flex w-full flex-col justify-center gap-2 border-b border-pa-linea-suave bg-pa-superficie/90 px-3 py-2 text-pa-tinta-media shadow-sm backdrop-blur-sm sm:px-4 lg:ml-64 lg:h-16 lg:w-auto lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
+        class="z-30 flex w-full flex-col justify-center gap-2 border-b border-pa-linea-suave bg-pa-superficie/90 px-3 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 text-pa-tinta-media shadow-sm backdrop-blur-sm sm:px-4 lg:ml-64 lg:h-16 lg:w-auto lg:flex-row lg:items-center lg:gap-5 lg:px-6 lg:py-0">
         <div data-panel-header-primary-row class="flex w-full min-w-0 items-center justify-between gap-2 lg:w-auto lg:flex-1">
             <div class="flex min-w-0 flex-1 items-center gap-2">
                 <button data-drawer-target="sidebar-multi-level-sidebar" data-drawer-toggle="sidebar-multi-level-sidebar"
