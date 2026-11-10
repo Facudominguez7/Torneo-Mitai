@@ -119,7 +119,7 @@
                     class="relative isolate inline-flex overflow-hidden rounded-full p-[1.5px] shadow-[0_12px_28px_-18px_rgba(var(--brand-navy)_/_0.7)] transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/50">
                     {{-- Metal líquido ambiental: el borde cromado fluye siempre, sin hover. --}}
                     <span aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
-                        <span class="aspect-square w-[250%] shrink-0 blur-[1px] motion-safe:animate-metal-girar [background:conic-gradient(from_0deg,#8a99a8,#f8fafc,#b9c8d6,rgb(var(--brand-gold)),#eef2f7,#7d8d9c,#dfe6ee,#8a99a8)]"></span>
+                        <span class="aspect-square w-[250%] shrink-0 blur-[1px] motion-safe:animate-metal-girar [background:var(--tm-metal-borde)]"></span>
                     </span>
                     <span class="relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-navy via-brand-teal to-brand-navy px-5 py-2 text-sm font-semibold text-white">
                         <span aria-hidden="true"

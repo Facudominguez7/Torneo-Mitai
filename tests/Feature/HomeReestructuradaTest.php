@@ -121,6 +121,16 @@ describe('home: buscador protagonista y tema dual (artboard 06)', function () {
 
         // Desplegable cerrado por defecto: la lista existe pero arranca oculta.
         expect($html)->toContain('id="seguir-equipo-buscador"');
+        // Buscador: borde de metal líquido que gira solo mientras espera (vacío y sin foco).
+        expect($html)->toContain('motion-safe:animate-metal-girar');
+        expect($html)->toContain('group-focus-within:[animation-play-state:paused]');
+        expect($html)->toContain('group-has-[input:not(:placeholder-shown)]:[animation-play-state:paused]');
+        // El cromo del buscador depende del tema: acero oscuro en claro, plata brillante en oscuro.
+        expect(substr_count($html, '[background:var(--tm-metal-borde)]'))->toBe(2);
+        $css = file_get_contents(resource_path('css/app.css'));
+        expect(substr_count($css, '--tm-metal-borde:'))->toBe(3);
+        expect($css)->toMatch('/:root\[data-tema="claro"\][^}]*--tm-metal-borde: conic-gradient\(from 0deg, #1f2d38/s');
+        expect($css)->toMatch('/:root\[data-tema="oscuro"\][^}]*--tm-metal-borde: conic-gradient\(from 0deg, rgb\(var\(--brand-gold\)\), #2a6d81/s');
         expect($html)->toContain('Buscá tu equipo, ej: River Plate');
         expect($html)->toContain('id="seguir-equipo-lista"');
         expect($html)->toContain('id="seguir-equipo-datos"');
