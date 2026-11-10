@@ -16,7 +16,7 @@
     @endphp
 
     <div
-        class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 lg:gap-6 lg:px-8 {{ $navPublica ? 'nav-fila' : '[.nav-compacta_&]:py-2' }}">
+        class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:pt-4 lg:gap-6 lg:px-8 {{ $navPublica ? 'nav-fila' : '[.nav-compacta_&]:py-2' }}">
         @php
             $edicionActiva = $EdicionSeleccionada ?? $ultimaEdicion ?? null;
         @endphp

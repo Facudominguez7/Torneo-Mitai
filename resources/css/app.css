@@ -1132,6 +1132,8 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
         justify-content: space-between;
         gap: .5rem;
         padding: .5rem 1rem;
+        /* viewport-fit=cover: el contenido entra en el área del notch/isla. */
+        padding-top: calc(.5rem + env(safe-area-inset-top));
     }
 
     /* La edición vigente se lee en el kicker del hero: en la barra móvil
