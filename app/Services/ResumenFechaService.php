@@ -38,7 +38,8 @@ class ResumenFechaService
             return null;
         }
 
-        $idCategoriaFinal = $idCategoria ?: (int) $fecha->idCategoria;
+        // Sin categoría ("Todas las categorías") entran todas, aunque la fecha tenga una propia.
+        $idCategoriaFinal = ($idCategoria ?? 0) > 0 ? (int) $idCategoria : 0;
 
         $consulta = Partido::query()
             ->with(['equipoLocal:id,nombre,foto', 'equipoVisitante:id,nombre,foto', 'grupo:id,nombre', 'categoria:id,nombreCategoria'])

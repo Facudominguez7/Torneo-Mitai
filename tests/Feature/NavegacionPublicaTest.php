@@ -193,3 +193,18 @@ it('ancla a la derecha el menu de la cuenta para que no desborde en el celular',
     // del botón y, con el botón angosto del celular, se sale de la pantalla.
     expect($nav)->toMatch('/<div x-show="open"[^>]*class="absolute[^"]*\bend-0\b/');
 });
+
+it('en el celular la barra es opaca y no desenfoca lo que pasa por debajo', function () {
+    crearEdicionDePrueba('Edicion Barra Opaca');
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    // With viewport-fit=cover the bar runs under the iOS status bar; a translucent bar with
+    // backdrop-filter renders the whole header hazy in the installed app.
+    $nav = navPublica($this->get(route('home'))->getContent());
+    preg_match('/<nav[^>]*id="nav-principal"[^>]*class="([^"]*)"/', $nav, $clases);
+    $clases = explode(' ', $clases[1] ?? '');
+
+    expect($clases)->toContain('bg-brand-navy-deep', 'sm:bg-black/40', 'sm:backdrop-blur')
+        ->not->toContain('bg-black/40', 'backdrop-blur')
+        ->and($css)->toContain(".tm-home #nav-principal,\n    .fixture-tablero #nav-principal {\n        background-color: rgb(var(--tm-fondo));");
+});

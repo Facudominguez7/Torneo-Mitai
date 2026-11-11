@@ -2,7 +2,7 @@
     <x-marca-agua-portal />
 @endif
 <div id="nav-centinela" class="h-px" aria-hidden="true"></div>
-<nav aria-label="Navegación principal" id="nav-principal" class="sticky top-0 z-50 border-b border-white/10 bg-black/40 backdrop-blur">
+<nav aria-label="Navegación principal" id="nav-principal" class="sticky top-0 z-50 border-b border-white/10 bg-brand-navy-deep sm:bg-black/40 sm:backdrop-blur">
         @php
             $navPublica = request()->routeIs('home', 'campeones', 'subcampeones', 'goleadores', 'vallas', 'fixture', 'tabla-posiciones', 'tabla-goleadores', 'tabla-vallas', 'instancias-finales', 'terminos', 'privacidad');
             $navInlineSecciones = ! (auth()->check() && (Auth::user()->rol ?? '') === 'admin');

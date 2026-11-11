@@ -100,7 +100,7 @@ it('registra el envio en la auditoria y lo deja en cola sin llamar a resend', fu
     Suscriptor::factory()->activo()->count(2)->create(['recibe_resumen_fecha' => true]);
     $admin = adminEnvioResumen();
 
-    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])
+    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id, 'idCategoria' => $categoria->id])
         ->assertAccepted()
         ->assertJson([
             'success' => true,
@@ -125,9 +125,9 @@ it('registra el envio en la auditoria y lo deja en cola sin llamar a resend', fu
 it('el job crea el broadcast como borrador, guarda su id y recien despues lo manda', function (): void {
     Queue::fake();
     $historial = resendFalso([respuestaResend(['id' => 'broadcast-1']), respuestaResend(['id' => 'broadcast-1'])]);
-    ['fecha' => $fecha] = fechaConResultados();
+    ['fecha' => $fecha, 'categoria' => $categoria] = fechaConResultados();
     Suscriptor::factory()->activo()->create(['recibe_resumen_fecha' => true]);
-    enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id])->assertAccepted();
+    enviarResumenASuscriptores($this, null, ['idFecha' => $fecha->id, 'idCategoria' => $categoria->id])->assertAccepted();
 
     procesarEnvio($envio = EnvioSuscriptores::query()->sole())->assertNotReleased();
 
@@ -369,7 +369,7 @@ it('el conteo informa si el resumen ya se envio, para no volver a ofrecerlo', fu
     ]);
 
     $this->actingAs(adminEnvioResumen())
-        ->getJson(route('notificaciones.resumen-fecha.contar', ['idFecha' => $fecha->id]))
+        ->getJson(route('notificaciones.resumen-fecha.contar', ['idFecha' => $fecha->id, 'idCategoria' => $fecha->idCategoria]))
         ->assertOk()
         ->assertJson(['envio' => ['estado' => 'enviado', 'destinatarios' => 7, 'enviado_at' => '30/10/2026 21:15']]);
 });
@@ -401,3 +401,48 @@ it('el canal del envio depende del entorno: resend en produccion y el mailer en 
     'produccion' => [true, CanalBroadcastResend::class],
     'local con mailhog' => [false, CanalMailerLocal::class],
 ]);
+
+it('con todas las categorias resume los partidos de todas, no solo los de la categoria de la fecha', function (): void {
+    Queue::fake();
+    // The fecha created from a partido form keeps that partido's categoria; "Todas las categorías"
+    // must still include the results of every other categoria.
+    ['fecha' => $fecha, 'categoria' => $categoria] = fechaConResultados();
+    $otraCategoria = Categoria::create(['idEdicion' => $fecha->idEdicion, 'nombreCategoria' => 'Sub 14']);
+    $otroGrupo = Grupo::create(['idCategoria' => $otraCategoria->id, 'idEdicion' => $fecha->idEdicion, 'nombre' => 'B']);
+    $teros = Equipo::create(['idCategoria' => $otraCategoria->id, 'idEdicion' => $fecha->idEdicion, 'nombre' => 'Teros', 'foto' => 't.png']);
+    $condores = Equipo::create(['idCategoria' => $otraCategoria->id, 'idEdicion' => $fecha->idEdicion, 'nombre' => 'Cóndores', 'foto' => 'c.png']);
+
+    Partido::create([
+        'idCategoria' => $otraCategoria->id,
+        'idFechas' => $fecha->id,
+        'idEquipoLocal' => $teros->id,
+        'idEquipoVisitante' => $condores->id,
+        'idGrupo' => $otroGrupo->id,
+        'idEdicion' => $fecha->idEdicion,
+        'golesEquipoLocal' => 2,
+        'golesEquipoVisitante' => 2,
+        'horario_datetime' => now()->subDay()->format('Y-m-d H:i:s'),
+        'cancha' => 2,
+        'jugado' => 1,
+    ]);
+
+    Suscriptor::factory()->activo()->create(['recibe_resumen_fecha' => true]);
+    $admin = adminEnvioResumen();
+
+    $this->actingAs($admin)
+        ->getJson(route('notificaciones.resumen-fecha.contar', ['idFecha' => $fecha->id]))
+        ->assertOk()
+        ->assertJson(['success' => true, 'partidos_count' => 2, 'categoria_nombre' => null]);
+
+    $this->actingAs($admin)
+        ->getJson(route('notificaciones.resumen-fecha.contar', ['idFecha' => $fecha->id, 'idCategoria' => $categoria->id]))
+        ->assertOk()
+        ->assertJson(['success' => true, 'partidos_count' => 1, 'categoria_nombre' => 'Sub 12']);
+
+    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])->assertAccepted();
+
+    expect(EnvioSuscriptores::query()->sole()->only(['clave', 'idCategoria']))->toBe([
+        'clave' => "resumen_fecha:{$fecha->id}:todas",
+        'idCategoria' => null,
+    ]);
+});
