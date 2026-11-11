@@ -7,7 +7,8 @@ Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10
 ## Resumen con todas las categorías y header de la app instalada (rama `fix/resumen-categorias-header-pwa`, 2026-11-11)
 
 - El resumen de la fecha con «Todas las categorías» ya no filtra por la categoría que guarda la fecha (las fechas creadas desde el alta de partido la tienen); queda igual que la próxima fecha. La clave de envío pasa a `resumen_fecha:{id}:todas`, así que un resumen ya enviado con «Todas» se puede enviar una vez más.
-- En móvil el header público es opaco y sin `backdrop-blur`: con `viewport-fit=cover` pasa por debajo de la barra de estado translúcida de iOS y se veía difuminado en la app instalada. En escritorio no cambia.
+- En móvil el header público es opaco y sin `backdrop-blur`. Esto no resolvió el difuminado de la app instalada (PR #240).
+- Causa real (rama `fix/ios-barra-estado`): desde iOS 26.1, `apple-mobile-web-app-status-bar-style="black-translucent"` hace que iOS desenfoque la parte de arriba de la app instalada, y el CSS no lo puede quitar. Se pasó a `default` (barra opaca) y `tema.js` sincroniza `theme-color` con el token del tema (`--tm-fondo` en el sitio público, `--pa-fondo` en el panel). iOS guarda el estilo al instalar: para ver el cambio hay que borrar la app de la pantalla de inicio y volver a agregarla.
 - WebKit de Playwright está instalado en el toolbox externo (sin sudo; ver Engram). Ni Chrome ni WebKit de Linux reproducen el difuminado: se confirma en el iPhone.
 
 ## Alta con fecha nueva y planilla (rama `fix/partido-fecha-y-planilla`, 2026-11-08)
