@@ -2,18 +2,23 @@
     <x-marca-agua-portal />
 @endif
 <div id="nav-centinela" class="h-px" aria-hidden="true"></div>
-<nav aria-label="Navegación principal" id="nav-principal" class="sticky top-0 z-50 border-b border-white/10 bg-brand-navy-deep sm:bg-black/40 sm:backdrop-blur">
-        @php
-            $navPublica = request()->routeIs('home', 'campeones', 'subcampeones', 'goleadores', 'vallas', 'fixture', 'tabla-posiciones', 'tabla-goleadores', 'tabla-vallas', 'instancias-finales', 'terminos', 'privacidad');
-            $navInlineSecciones = ! (auth()->check() && (Auth::user()->rol ?? '') === 'admin');
-            $itemsSeccion = [
-            ['label' => 'Inicio', 'ruta' => 'home', 'patterns' => ['home']],
-            ['label' => 'Partidos', 'ruta' => 'fixture', 'patterns' => ['fixture']],
-            ['label' => 'Posiciones', 'ruta' => 'tabla-posiciones', 'patterns' => ['tabla-posiciones']],
-            ['label' => 'Goleadores', 'ruta' => 'tabla-goleadores', 'patterns' => ['tabla-goleadores']],
-            ['label' => 'Finales', 'ruta' => 'instancias-finales', 'patterns' => ['instancias-finales']],
-        ];
-    @endphp
+@php
+    $navPublica = request()->routeIs('home', 'campeones', 'subcampeones', 'goleadores', 'vallas', 'fixture', 'tabla-posiciones', 'tabla-goleadores', 'tabla-vallas', 'instancias-finales', 'terminos', 'privacidad');
+    $navInlineSecciones = ! (auth()->check() && (Auth::user()->rol ?? '') === 'admin');
+    $itemsSeccion = [
+        ['label' => 'Inicio', 'ruta' => 'home', 'patterns' => ['home']],
+        ['label' => 'Partidos', 'ruta' => 'fixture', 'patterns' => ['fixture']],
+        ['label' => 'Posiciones', 'ruta' => 'tabla-posiciones', 'patterns' => ['tabla-posiciones']],
+        ['label' => 'Goleadores', 'ruta' => 'tabla-goleadores', 'patterns' => ['tabla-goleadores']],
+        ['label' => 'Finales', 'ruta' => 'instancias-finales', 'patterns' => ['instancias-finales']],
+    ];
+@endphp
+{{-- Public pages: the bar condenses into a floating capsule on scroll (no hamburger; sections stay in the tab bar). --}}
+<nav aria-label="Navegación principal" id="nav-principal"
+    class="sticky top-0 z-50 {{ $navPublica ? 'nav-publica' : 'border-b border-white/10 bg-brand-navy-deep sm:bg-black/40 sm:backdrop-blur' }}">
+    @if ($navPublica)
+    <div class="nav-capsula">
+    @endif
 
     <div
         class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:pt-4 lg:gap-6 lg:px-8 {{ $navPublica ? 'nav-fila' : '[.nav-compacta_&]:py-2' }}">
@@ -25,9 +30,9 @@
             $homeUrl = optional($edicionActiva)->id ? route('home', ['idEdicion' => $edicionActiva->id]) : route('home');
         @endphp
         <a href="{{ $homeUrl }}"
-            class="{{ $navPublica ? 'nav-compactable' : '[.nav-compacta_&]:hidden' }} flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg text-white {{ $navPublica ? '' : 'transition' }} hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40 sm:self-auto">
+            class="{{ $navPublica ? '' : '[.nav-compacta_&]:hidden' }} flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg text-white {{ $navPublica ? '' : 'transition' }} hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/40 sm:self-auto">
             <img src="{{ asset('fotos/Logo_Mitai_SinFondo.png') }}" class="h-10 w-10 brand-anim" alt="MITAI Logo">
-            <div class="flex flex-col text-center sm:text-left">
+            <div class="{{ $navPublica ? 'nav-rotulo' : '' }} flex flex-col text-center sm:text-left">
                 <span class="text-sm font-semibold uppercase tracking-[0.3em] text-white/60">Torneo Mitai</span>
                 <span
                     class="text-lg font-bold text-white">{{ optional($edicionActiva)->nombre ?? 'Edición vigente' }}</span>
@@ -47,7 +52,7 @@
         </div>
 
         <div
-            class="{{ $navPublica ? 'nav-compactable' : '[.nav-compacta_&]:hidden' }} flex w-full flex-wrap items-center gap-3 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap">
+            class="{{ $navPublica ? '' : '[.nav-compacta_&]:hidden' }} flex w-full flex-wrap items-center gap-3 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-4 shrink-0 whitespace-nowrap">
 
             {{-- Botón de sesión/panel centrado en el espacio libre; el toggle queda a la derecha. --}}
             <div class="flex flex-1 items-center justify-center gap-3 sm:flex-none sm:gap-4 whitespace-nowrap">
@@ -154,6 +159,9 @@
             </a>
         @endforeach
     </div>
+    @if ($navPublica)
+    </div>
+    @endif
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var fila = document.getElementById('nav-secciones-mobile');
@@ -170,30 +178,16 @@
             const barra = document.getElementById('nav-principal');
             const centinela = document.getElementById('nav-centinela');
             @if ($navPublica)
-            const bloques = barra.querySelectorAll('.nav-compactable');
-            const movil = window.matchMedia('(max-width: 639px)');
-            let compacta = false;
-            let centinelaVisible = true;
+            let condensada = false;
 
+            // Hysteresis: condense past 40px, expand only back near the top, so small scrolls do not toggle it.
             function actualizar() {
-                if (window.scrollY > 120) compacta = true;
-                if (window.scrollY <= 2) compacta = false;
-                barra.classList.toggle('nav-compacta', movil.matches ? !centinelaVisible : compacta);
-                bloques.forEach(function (bloque) {
-                    const oculto = !movil.matches && compacta;
-                    if (oculto && bloque.contains(document.activeElement)) document.activeElement.blur();
-                    bloque.inert = oculto;
-                });
+                if (!condensada && window.scrollY > 40) condensada = true;
+                if (condensada && window.scrollY < 8) condensada = false;
+                barra.classList.toggle('nav-condensada', condensada);
             }
 
-            if ('IntersectionObserver' in window) {
-                new IntersectionObserver(function (entrada) {
-                    centinelaVisible = entrada[0].isIntersecting;
-                    if (movil.matches) actualizar();
-                }).observe(centinela);
-            }
             window.addEventListener('scroll', actualizar, { passive: true });
-            window.addEventListener('resize', actualizar);
             actualizar();
             @else
             if (!barra || !centinela || !('IntersectionObserver' in window)) return;
