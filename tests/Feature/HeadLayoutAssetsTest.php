@@ -124,3 +124,14 @@ it('carga SweetAlert2 y admin JS en Panel admin sin welcome ni service worker', 
         ->and($html)->not->toMatch('/<link rel="preload"[^>]*fondo_en_cancha\.webp/')
         ->and($html)->not->toContain("serviceWorker.register('/sw.js'");
 });
+
+it('usa la barra de estado opaca de ios para que el sistema no difumine el header', function () {
+    // Since iOS 26.1 a Home Screen app with black-translucent gets a system blur over the top of
+    // the page that CSS cannot remove; the default style draws an opaque bar tinted by theme-color.
+    $html = $this->get(route('home'))->getContent();
+    $tema = file_get_contents(resource_path('js/tema.js'));
+
+    expect($html)->toContain('<meta name="apple-mobile-web-app-status-bar-style" content="default">')
+        ->not->toContain('black-translucent')
+        ->and($tema)->toContain('meta[name="theme-color"]');
+});
