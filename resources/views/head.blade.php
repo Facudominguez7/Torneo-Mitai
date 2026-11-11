@@ -34,7 +34,8 @@
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1a365d">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    {{-- Opaque bar tinted by theme-color: since iOS 26.1, black-translucent makes the system blur the top of the installed app. --}}
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Torneo Mitai">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Torneo Mitai">

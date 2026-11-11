@@ -22,6 +22,19 @@
         if (icono) {
             icono.innerHTML = estado === 'claro' ? ICONO_SOL : ICONO_LUNA;
         }
+        sincronizarColorBarra();
+    }
+
+    // The opaque iOS status bar (and the Android toolbar) takes theme-color: it follows the
+    // active theme's background so it does not show as a band of another color above the header.
+    // Reads the theme token, not the computed background, which is still mid-transition here.
+    function sincronizarColorBarra() {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        const token = document.getElementById('nav-principal') ? '--tm-fondo' : '--pa-fondo';
+        const fondo = getComputedStyle(root).getPropertyValue(token).trim();
+        if (meta && fondo) {
+            meta.setAttribute('content', `rgb(${fondo})`);
+        }
     }
 
     // La elección sobrevive recargas; sin estado guardado (o con localStorage
