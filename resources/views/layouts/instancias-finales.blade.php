@@ -112,7 +112,8 @@
             const filtros = document.querySelector('.finales-filtros');
             const formulario = document.getElementById('finales-form');
             const barra = document.querySelector('.finales-barra');
-            const navegacion = document.getElementById('nav-principal');
+            // The floating capsule, not the <nav>: its box includes the transform that lowers it.
+            const navegacion = document.querySelector('#nav-principal .nav-capsula') ?? document.getElementById('nav-principal');
             const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)');
             let animacion = null;
 

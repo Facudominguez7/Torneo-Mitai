@@ -159,7 +159,8 @@
 
             const compacta = document.getElementById('goleadores-compacto');
             const sentinel = document.getElementById('goleadores-filtros-sentinel');
-            const navegacion = document.getElementById('nav-principal');
+            // The floating capsule, not the <nav>: its box includes the transform that lowers it.
+            const navegacion = document.querySelector('#nav-principal .nav-capsula') ?? document.getElementById('nav-principal');
             const movil = window.matchMedia('(max-width: 639px)');
             const controlesCompactos = [...compacta.querySelectorAll('[aria-controls]')].map(function (boton) {
                 const nombre = boton.getAttribute('aria-controls').replace('goleadores-panel-', '');

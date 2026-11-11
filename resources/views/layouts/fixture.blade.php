@@ -329,7 +329,8 @@
         const compacta = document.getElementById('fixture-compacto');
         const filtros = document.querySelector('.fixture-filtros');
         const sentinel = document.getElementById('fixture-filtros-sentinel');
-        const navegacion = document.getElementById('nav-principal');
+        // The floating capsule, not the <nav>: its box includes the transform that lowers it.
+        const navegacion = document.querySelector('#nav-principal .nav-capsula') ?? document.getElementById('nav-principal');
         const estructura = document.querySelector('.fixture-estructura');
         const botonesCompactos = compacta.querySelector('.fixture-compacto-botones');
         const origen = document.getElementById('fixture-buscador-origen');

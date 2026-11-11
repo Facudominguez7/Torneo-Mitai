@@ -4,6 +4,12 @@ Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como par
 
 Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24; alta con fecha nueva y planilla al 2026-11-08. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
 
+## Navbar pública que se condensa en cápsula (rama `feat/navbar-condense`, 2026-11-11)
+
+- Port del patrón "condense" de Prestige a Blade y CSS (el proyecto no usa React). Al bajar más de 40 px, la barra pública pasa a ser una cápsula flotante `.nav-capsula`: más angosta, redondeada, con borde y sombra, y desplazada hacia abajo. Vuelve a expandirse por debajo de 8 px. La altura no cambia y la animación respeta el movimiento reducido. En el celular es opaca, sin desenfoque y sin hamburguesa; las secciones siguen en la barra inferior. Se quitó la compactación anterior, que ocultaba bloques.
+- Las barras fijas de fixture, goleadores y finales se ubican debajo de la cápsula y no del `<nav>`, porque el `transform` no cambia el rectángulo del `<nav>`.
+- Tailscale: el 8000 de la tailnet choca con el puerto que publica Docker; usar la entrada del 8001. Para verla desde otro dispositivo hay que frenar Vite.
+
 ## Resumen con todas las categorías y header de la app instalada (rama `fix/resumen-categorias-header-pwa`, 2026-11-11)
 
 - El resumen de la fecha con «Todas las categorías» ya no filtra por la categoría que guarda la fecha (las fechas creadas desde el alta de partido la tienen); queda igual que la próxima fecha. La clave de envío pasa a `resumen_fecha:{id}:todas`, así que un resumen ya enviado con «Todas» se puede enviar una vez más.

@@ -1035,22 +1035,63 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
     }
 }
 
-@media (min-width: 640px) {
-    .nav-compactable { max-width: 48rem; max-height: 5rem; opacity: 1; }
-    .nav-compacta .nav-compactable { max-width: 0; max-height: 0; opacity: 0; overflow: clip; pointer-events: none; }
-    .nav-fila { overflow-anchor: none; }
-    @media (prefers-reduced-motion: no-preference) {
-        .nav-compactable { transition: max-width .3s ease, max-height .3s ease, opacity .2s ease; }
-        .nav-fila { transition: padding .3s ease, gap .3s ease; }
-    }
-    .nav-compacta .nav-fila { padding-top: .5rem; padding-bottom: .5rem; }
+/*
+ * Public header, "condense" pattern: on scroll the bar becomes a floating capsule (narrower,
+ * rounded, bordered, lowered). Only transform, width, radius and colors change, never the
+ * height, so the sticky bar does not push the content. Sections stay in the bottom tab bar.
+ */
+.nav-capsula {
+    --nav-fondo: var(--brand-navy-deep);
+    --nav-linea: 255 255 255;
+    max-width: 100%;
+    margin-inline: auto;
+    border: 1px solid transparent;
+    border-bottom-color: rgb(var(--nav-linea) / .14);
+    border-radius: 0;
+    background-color: rgb(var(--nav-fondo) / .94);
+    box-shadow: none;
+    overflow-anchor: none;
 }
+.tm-home .nav-capsula,
+.fixture-tablero .nav-capsula {
+    --nav-fondo: var(--tm-fondo);
+    --nav-linea: var(--tm-linea);
+}
+.nav-rotulo { max-width: 16rem; overflow: hidden; }
+.nav-condensada .nav-capsula {
+    max-width: min(60rem, calc(100% - 2rem));
+    transform: translateY(.75rem);
+    border-color: rgb(var(--nav-linea) / .16);
+    border-radius: 1rem;
+    background-color: rgb(var(--nav-fondo) / .8);
+    box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 12px 32px -16px rgb(var(--brand-navy-deep) / .45);
+    backdrop-filter: blur(24px);
+}
+:root[data-tema="oscuro"] .nav-condensada .nav-capsula {
+    box-shadow: 0 1px 2px rgb(0 0 0 / .2), 0 12px 32px -16px rgb(0 0 0 / .8);
+}
+.nav-condensada .nav-rotulo { max-width: 0; opacity: 0; }
+
+/* On the phone the bar stays opaque and without backdrop-filter (decision of PR #240). */
 @media (max-width: 639px) {
-    .nav-compacta .nav-compactable { display: none; }
-    .nav-compacta .nav-fila { padding-top: .5rem; padding-bottom: .5rem; }
+    .nav-capsula {
+        background-color: rgb(var(--nav-fondo));
+        backdrop-filter: none;
+    }
+    .nav-condensada .nav-capsula {
+        max-width: calc(100% - 1.5rem);
+        transform: translateY(.5rem);
+        background-color: rgb(var(--nav-fondo));
+        backdrop-filter: none;
+    }
 }
-@media (prefers-reduced-motion: reduce) {
-    .nav-compactable, .nav-fila { transition: none; }
+@media (prefers-reduced-motion: no-preference) {
+    .nav-capsula {
+        transition-property: max-width, transform, border-color, border-radius, background-color, box-shadow;
+        transition-duration: .5s;
+        transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-rotulo { transition: max-width .5s cubic-bezier(0.16, 1, 0.3, 1), opacity .3s ease; }
 }
 
 /*
@@ -1064,21 +1105,6 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
  * En claro el enlace activo y sus hovers usan el oro oscuro (#997300) que ya
  * usa la tab bar, porque el dorado de marca no contrasta sobre blanco.
  */
-.tm-home #nav-principal,
-.fixture-tablero #nav-principal {
-    background-color: rgb(var(--tm-fondo) / .94);
-    border-bottom-color: rgb(var(--tm-linea) / .14);
-}
-
-/* En el celular la barra pasa por debajo de la barra de estado de iOS (viewport-fit=cover):
-   translúcida y con backdrop-filter, la app instalada la mostraba difuminada. */
-@media (max-width: 639px) {
-    .tm-home #nav-principal,
-    .fixture-tablero #nav-principal {
-        background-color: rgb(var(--tm-fondo));
-    }
-}
-
 .tm-home #nav-principal [class*="text-white"]:not([class*="bg-gradient"]):not([class*="text-white/"]):not([class*="bg-gradient"] *),
 .fixture-tablero #nav-principal [class*="text-white"]:not([class*="bg-gradient"]):not([class*="text-white/"]):not([class*="bg-gradient"] *) {
     color: rgb(var(--tm-tinta));
@@ -1138,7 +1164,7 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
         display: none;
     }
 
-    .tm-home #nav-principal > div:first-of-type {
+    .nav-publica .nav-fila {
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
@@ -1150,16 +1176,16 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
 
     /* La edición vigente se lee en el kicker del hero: en la barra móvil
        alcanza con el isotipo. */
-    .tm-home #nav-principal > div:first-of-type > a:first-child > div {
+    .nav-publica .nav-fila > a:first-child > div {
         display: none;
     }
 
-    .tm-home #nav-principal > div:first-of-type > a:first-child img {
+    .nav-publica .nav-fila > a:first-child img {
         width: 2rem;
         height: 2rem;
     }
 
-    .tm-home #nav-principal > div:first-of-type > div:last-child {
+    .nav-publica .nav-fila > div:last-child {
         /* La fila de auth llena el ancho entre la marca y el borde: el botón
            de sesión queda centrado en el espacio libre y el toggle a la
            derecha (pedido del dueño). */
@@ -1168,16 +1194,8 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
         gap: .5rem;
     }
 
-    .tm-home #nav-principal #etiqueta-tema {
+    .nav-publica #etiqueta-tema {
         display: none;
-    }
-
-    /* Sin la fila de secciones, compactar la barra la dejaría vacía al
-       scrollear. En móvil se mantiene la fila de marca y CTA, como el
-       artboard 07, y solo se recorta el alto. */
-    .tm-home #nav-principal.nav-compacta > div:first-of-type > a:first-child,
-    .tm-home #nav-principal.nav-compacta > div:first-of-type > div:last-child {
-        display: flex;
     }
 }
 
@@ -1705,11 +1723,6 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
 @media (max-width: 639px) {
     .fixture-tablero #nav-principal {
         position: relative;
-    }
-
-    .fixture-tablero #nav-principal.nav-compacta > div:first-of-type > a:first-child,
-    .fixture-tablero #nav-principal.nav-compacta > div:first-of-type > div:last-child {
-        display: flex;
     }
 
     .fixture-estructura {

@@ -194,17 +194,22 @@ it('ancla a la derecha el menu de la cuenta para que no desborde en el celular',
     expect($nav)->toMatch('/<div x-show="open"[^>]*class="absolute[^"]*\bend-0\b/');
 });
 
-it('en el celular la barra es opaca y no desenfoca lo que pasa por debajo', function () {
+it('en el celular la capsula es opaca y no desenfoca lo que pasa por debajo', function () {
     crearEdicionDePrueba('Edicion Barra Opaca');
     $css = file_get_contents(resource_path('css/app.css'));
 
-    // With viewport-fit=cover the bar runs under the iOS status bar; a translucent bar with
-    // backdrop-filter renders the whole header hazy in the installed app.
+    // The phone keeps an opaque bar without backdrop-filter; the frosted capsule is for 640px and up.
     $nav = navPublica($this->get(route('home'))->getContent());
     preg_match('/<nav[^>]*id="nav-principal"[^>]*class="([^"]*)"/', $nav, $clases);
-    $clases = explode(' ', $clases[1] ?? '');
 
-    expect($clases)->toContain('bg-brand-navy-deep', 'sm:bg-black/40', 'sm:backdrop-blur')
-        ->not->toContain('bg-black/40', 'backdrop-blur')
-        ->and($css)->toContain(".tm-home #nav-principal,\n    .fixture-tablero #nav-principal {\n        background-color: rgb(var(--tm-fondo));");
+    expect($clases[1] ?? '')->not->toContain('backdrop-blur')
+        ->and($css)->toContain("@media (max-width: 639px) {\n    .nav-capsula {\n        background-color: rgb(var(--nav-fondo));\n        backdrop-filter: none;");
+});
+
+it('la capsula no cambia de alto al condensarse para no mover el contenido', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+    preg_match('/\.nav-condensada \.nav-capsula \{([^}]*)\}/', $css, $condensada);
+
+    expect($condensada[1] ?? '')->toContain('transform: translateY(.75rem)', 'max-width', 'border-radius')
+        ->not->toContain('padding-top', 'height');
 });
