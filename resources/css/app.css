@@ -1070,6 +1070,15 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
     border-bottom-color: rgb(var(--tm-linea) / .14);
 }
 
+/* En el celular la barra pasa por debajo de la barra de estado de iOS (viewport-fit=cover):
+   translúcida y con backdrop-filter, la app instalada la mostraba difuminada. */
+@media (max-width: 639px) {
+    .tm-home #nav-principal,
+    .fixture-tablero #nav-principal {
+        background-color: rgb(var(--tm-fondo));
+    }
+}
+
 .tm-home #nav-principal [class*="text-white"]:not([class*="bg-gradient"]):not([class*="text-white/"]):not([class*="bg-gradient"] *),
 .fixture-tablero #nav-principal [class*="text-white"]:not([class*="bg-gradient"]):not([class*="text-white/"]):not([class*="bg-gradient"] *) {
     color: rgb(var(--tm-tinta));
