@@ -166,6 +166,15 @@
                             </svg>
                             Imprimir Fixture
                         </button>
+                        {{-- Planilla única de árbitros: partidos regulares e instancias finales pendientes --}}
+                        <button type="button" data-imprimir-planilla-arbitros
+                            onclick="imprimirEnIframe('{{ route('admin.imprimir-planilla-arbitros', array_filter(['idEdicion' => $idEdicionContexto ?? '', 'horario' => request('horario')])) }}')"
+                            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-pa-campo-borde bg-pa-superficie px-3 text-xs font-semibold text-pa-tinta-media shadow-sm transition hover:bg-pa-fila-bg sm:text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-pa-resaltado" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            Imprimir Planilla de Árbitros
+                        </button>
                     </div>
                 </div>
 
@@ -191,6 +200,11 @@
 
                         return 'sin-horario';
                     })->sortKeys();
+                    $instanciasFinales = $instanciasFinales ?? collect();
+                    $finalesPorHorario = $instanciasFinales->groupBy(
+                        fn ($f) => $f->horario ? \Carbon\Carbon::parse($f->horario)->format('H:i') : 'sin-horario'
+                    );
+                    $horariosDashboard = $gruposPorHorario->keys()->merge($finalesPorHorario->keys())->unique()->sort()->values();
                     $horarioFiltroActivo = request('horario');
                 @endphp
                 <section class="mb-4 px-3 sm:px-4" aria-labelledby="titulo-partidos-edicion">
@@ -200,6 +214,9 @@
                                 <h2 id="titulo-partidos-edicion" class="text-lg font-bold text-pa-tinta">Todos los partidos de la edición</h2>
                                 <p class="mt-1 text-sm text-pa-tinta-cuerpo">
                                     {{ $partidosPlanos->count() }} {{ $partidosPlanos->count() === 1 ? 'partido' : 'partidos' }} de la última fecha
+                                    @if ($instanciasFinales->isNotEmpty())
+                                        · {{ $instanciasFinales->count() }} de instancias finales
+                                    @endif
                                 </p>
                             </div>
                             <form action="{{ route('admin', $parametrosEdicionActual) }}" method="GET"
@@ -235,11 +252,15 @@
                         @endif
                     </div>
 
-                    @if ($partidosPlanos->isEmpty())
+                    @if ($partidosPlanos->isEmpty() && $instanciasFinales->isEmpty())
                         <x-ui.empty-state class="mt-4" message="No hay partidos para mostrar"
                             description="{{ $horarioFiltroActivo ? 'Probá con otro horario o limpiá el filtro.' : 'Cuando se carguen partidos en la última fecha aparecerán acá.' }}" />
                     @else
-                        @foreach ($gruposPorHorario as $horarioGrupo => $partidosGrupo)
+                        @foreach ($horariosDashboard as $horarioGrupo)
+                            @php
+                                $partidosGrupo = $gruposPorHorario->get($horarioGrupo, collect());
+                                $finalesGrupo = $finalesPorHorario->get($horarioGrupo, collect());
+                            @endphp
                             <div class="mt-5" data-dashboard-horario="{{ $horarioGrupo }}">
                                 <h3 class="mb-3 flex items-center gap-2 text-xl font-extrabold text-pa-resaltado">
                                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -354,6 +375,97 @@
                                             <div class="mt-4 flex justify-center">
                                                 <x-ui.button size="sm" variant="secondary"
                                                     href="{{ route('planilla.show', ['partidoId' => $p->id, 'idEdicion' => $idEdicionContexto, 'tipoPartido' => 'partido', 'horario' => $horarioString ?? 0, 'origen' => 'admin', 'horario_filtro' => $horarioString]) }}">
+                                                    Planillas
+                                                </x-ui.button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                    @foreach ($finalesGrupo as $f)
+                                        @php
+                                            $resultadoFinalCargado = $f->golesEquipoLocal !== null && $f->golesEquipoVisitante !== null;
+                                            $hayPenales = $f->penalesEquipoLocal !== null && $f->penalesEquipoVisitante !== null;
+                                            [$estadoFinalLabel, $estadoFinalVariant] = match (true) {
+                                                $f->goles_confirmados_at !== null => ['Goles confirmados', 'success'],
+                                                $resultadoFinalCargado => ['Goles pendientes de carga', 'warning'],
+                                                default => [null, null],
+                                            };
+                                            $cobrosFinal = collect([
+                                                ['equipo' => $f->nombre_local, 'condicion' => 'Local', 'cargo' => ($cobrosPorFinal ?? collect())->get($f->id.'-'.$f->idEquipoLocal)],
+                                                ['equipo' => $f->nombre_visitante, 'condicion' => 'Visitante', 'cargo' => ($cobrosPorFinal ?? collect())->get($f->id.'-'.$f->idEquipoVisitante)],
+                                            ])->filter(fn (array $cobro): bool => $cobro['cargo'] !== null);
+                                        @endphp
+                                        <div class="rounded-xl border border-pa-linea bg-pa-superficie p-5 shadow-sm" data-dashboard-final="{{ $f->id }}">
+                                            <div class="flex flex-wrap items-center justify-center gap-2 text-center text-sm font-semibold uppercase tracking-wide text-pa-tinta-suave">
+                                                {{ collect([$f->nombre_copa, $f->nombre_fase])->filter()->implode(' · ') }}
+                                            </div>
+                                            <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+                                                <x-ui.badge variant="info">{{ $f->nombre_categoria }}</x-ui.badge>
+                                                <x-ui.badge variant="neutral">Instancia final</x-ui.badge>
+                                            </div>
+
+                                            <div class="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                                                <div class="flex flex-col items-center gap-2">
+                                                    <img src="{{ asset('fotos/equipos/' . $f->foto_local) }}" width="60" height="60" alt="Escudo {{ $f->nombre_local }}"
+                                                        class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
+                                                    <div class="text-center text-base font-bold leading-tight text-pa-tinta md:text-xl">{{ $f->nombre_local }}</div>
+                                                </div>
+                                                @if ($resultadoFinalCargado)
+                                                    <div data-dashboard-centro class="whitespace-nowrap text-center text-2xl font-extrabold text-pa-tinta md:text-3xl">
+                                                        {{ $f->golesEquipoLocal }} - {{ $f->golesEquipoVisitante }}
+                                                        @if ($hayPenales)
+                                                            <div class="text-xs font-semibold text-pa-tinta-suave md:text-sm">Penales {{ $f->penalesEquipoLocal }} - {{ $f->penalesEquipoVisitante }}</div>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <div data-dashboard-centro class="text-center text-sm font-semibold text-pa-tinta-suave md:text-lg">vs</div>
+                                                @endif
+                                                <div class="flex flex-col items-center gap-2">
+                                                    <img src="{{ asset('fotos/equipos/' . $f->foto_visitante) }}" width="60" height="60" alt="Escudo {{ $f->nombre_visitante }}"
+                                                        class="h-14 w-14 rounded-full object-cover md:h-[60px] md:w-[60px]" />
+                                                    <div class="text-center text-base font-bold leading-tight text-pa-tinta md:text-xl">{{ $f->nombre_visitante }}</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-pa-tinta-cuerpo md:text-base">
+                                                @if ($horarioGrupo !== 'sin-horario')
+                                                    <span data-dashboard-hora class="text-lg font-bold text-pa-resaltado">{{ $horarioGrupo }} hs</span>
+                                                @endif
+                                                @if ($f->horario)
+                                                    <span class="font-medium">{{ \Carbon\Carbon::parse($f->horario)->format('d-m-Y') }}</span>
+                                                @endif
+                                                <span class="font-medium">Cancha {{ $f->cancha }}</span>
+                                            </div>
+
+                                            @if ($estadoFinalLabel)
+                                                <div class="mt-3 flex justify-center">
+                                                    <x-ui.badge :variant="$estadoFinalVariant">{{ $estadoFinalLabel }}</x-ui.badge>
+                                                </div>
+                                            @endif
+
+                                            @if ($cobrosFinal->isNotEmpty())
+                                                <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+                                                    @foreach ($cobrosFinal as $cobro)
+                                                        @php
+                                                            $deudaCobro = number_format($cobro['cargo']['deuda_ars'], 0, ',', '.');
+                                                            [$cobroVariant, $cobroLabel] = match ($cobro['cargo']['estado']) {
+                                                                'pagado' => ['success', 'Planilla pagada'],
+                                                                'exento' => ['info', 'Planilla exenta'],
+                                                                'no_vino' => ['neutral', 'Planilla: no vino'],
+                                                                'parcial' => ['warning', 'Pago parcial, debe $ '.$deudaCobro],
+                                                                default => ['danger', 'Debe planilla $ '.$deudaCobro],
+                                                            };
+                                                        @endphp
+                                                        <x-ui.badge :variant="$cobroVariant" data-dashboard-cobro="{{ $cobro['cargo']['id'] }}">
+                                                            <span class="font-bold" aria-hidden="true">$</span>
+                                                            {{ $cobro['equipo'] }} ({{ $cobro['condicion'] }}): {{ $cobroLabel }}
+                                                        </x-ui.badge>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+
+                                            <div class="mt-4 flex justify-center">
+                                                <x-ui.button size="sm" variant="secondary"
+                                                    href="{{ route('planilla.show', ['partidoId' => $f->id, 'idEdicion' => $idEdicionContexto, 'tipoPartido' => 'instanciaFinal', 'horario' => 0, 'origen' => 'admin', 'horario_filtro' => $horarioString]) }}">
                                                     Planillas
                                                 </x-ui.button>
                                             </div>

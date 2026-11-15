@@ -96,34 +96,15 @@ it('la tarjeta del fixture imprime la edicion y acepta una fecha opcional', func
         ->toContain('<label');
 });
 
-it('la planilla de arbitros acepta horario y avisa que usa la proxima fecha sin jugar', function () {
+it('ya no ofrece las planillas de arbitros: viven solo en el dashboard', function () {
     $contexto = crearContextoImpresiones();
     crearPartidoConHorarioImpresiones($contexto, '10:00');
 
     $html = verImpresiones($this, crearAdminImpresiones(), $contexto)->getContent();
-    $tarjeta = tarjetaImpresion($html, 'arbitros');
 
-    expect($tarjeta)
-        ->toContain('data-print-url="'.route('admin.imprimir-fixture-arbitros-partidos', ['idEdicion' => $contexto['edicion']->id]).'"')
-        ->toContain('data-print-param="horario"')
-        ->toContain('<option value="10:00">10:00</option>')
-        ->toContain('próxima fecha sin partidos jugados');
-});
-
-it('normaliza los horarios legacy sin duplicarlos con los de horario_datetime', function () {
-    $contexto = crearContextoImpresiones();
-    crearPartidoConHorarioImpresiones($contexto, '17:30');
-    // Ediciones viejas: horario en texto ("17:30", "19.30", "9") y sin horario_datetime.
-    foreach (['17:30', '19.30', '9'] as $horarioLegacy) {
-        crearPartidoConHorarioImpresiones($contexto, '00:00')
-            ->forceFill(['horario_datetime' => null, 'horario' => $horarioLegacy])
-            ->save();
-    }
-
-    $tarjeta = tarjetaImpresion(verImpresiones($this, crearAdminImpresiones(), $contexto)->getContent(), 'arbitros');
-    preg_match_all('/<option value="([^"]+)"/', $tarjeta, $opciones);
-
-    expect($opciones[1])->toBe(['09:00', '17:30', '19:30']);
+    expect($html)->not->toContain('data-impresion="arbitros"')
+        ->and($html)->not->toContain('data-impresion="arbitros-finales"')
+        ->and($html)->not->toContain('Planilla de árbitros');
 });
 
 it('ya no ofrece la planilla de cobro impresa', function () {
@@ -179,19 +160,6 @@ it('las tablas de posiciones y de instancias finales imprimen solo la edicion', 
     expect($instancias)
         ->toContain('data-print-url="'.route('admin.imprimir-fixture-instancias-finales', ['idEdicion' => $contexto['edicion']->id]).'"')
         ->not->toContain('<select');
-});
-
-it('la planilla de arbitros de finales acepta horario opcional', function () {
-    $contexto = crearContextoImpresiones();
-    crearPartidoConHorarioImpresiones($contexto, '09:00');
-
-    $html = verImpresiones($this, crearAdminImpresiones(), $contexto)->getContent();
-    $tarjeta = tarjetaImpresion($html, 'arbitros-finales');
-
-    expect($tarjeta)
-        ->toContain('data-print-url="'.route('admin.imprimir-fixture-arbitros', ['idEdicion' => $contexto['edicion']->id]).'"')
-        ->toContain('data-print-param="horario"')
-        ->toContain('<option value="09:00">09:00</option>');
 });
 
 it('no ofrece tarjetas para features sin ruta', function () {

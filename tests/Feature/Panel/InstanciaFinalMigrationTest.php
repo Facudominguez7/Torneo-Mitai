@@ -87,9 +87,8 @@ it('renderiza el encabezado de Instancias finales con x-ui.page-header y las acc
     $response->assertOk()
         ->assertSee('Instancias finales')
         ->assertSee('Agregar partido')
-        ->assertSee('Imprimir')
-        ->assertSee('Fixture')
-        ->assertSee('Planilla Árbitros')
+        ->assertSee('Imprimir fixture')
+        ->assertDontSee('Planilla Árbitros')
         ->assertDontSee('Planilla de Cobro')
         ->assertDontSee('planilla_cobro')
         ->assertSee('text-2xl font-bold text-pa-tinta', false);
@@ -120,7 +119,7 @@ it('muestra la accion Agregar en esta categoria cuando hay filtro de categoria',
     $response->assertOk()->assertSee('Agregar en esta categoría');
 });
 
-it('renderiza los filtros y el selector de impresion con los ids que usa el script de la pagina', function () {
+it('renderiza los filtros y el boton de imprimir fixture con los ids que usa el script de la pagina', function () {
     $admin = crearAdminInstanciaFinalMigration();
     $contexto = crearContextoInstanciaFinalMigration();
     crearInstanciaFinalParaMigration($contexto, 'Mitai Azul', 'Mitai Rojo');
@@ -132,8 +131,7 @@ it('renderiza los filtros y el selector de impresion con los ids que usa el scri
     $response->assertOk()
         ->assertSee('id="filtro-categoria"', false)
         ->assertSee('id="filtro-horario"', false)
-        ->assertSee('id="selector-impresion-instancias"', false)
-        ->assertSee('ejecutarImpresionInstanciasFinales(', false);
+        ->assertSee("imprimirEnIframe('".route('admin.imprimir-fixture-instancias-finales', ['idEdicion' => $contexto['edicion']->id])."')", false);
 });
 
 it('muestra chips de filtro activos removibles y los oculta sin filtros', function () {

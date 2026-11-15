@@ -39,7 +39,7 @@
         ], static fn ($valor) => $valor !== null && $valor !== '');
 
         // Determinar la ruta de regreso según el origen
-        $volverAInstancias = $tipoPartido === 'instanciaFinal' || $origen === 'instancia-final-index';
+        $volverAInstancias = $origen === 'instancia-final-index' || ($tipoPartido === 'instanciaFinal' && $origen !== 'admin');
         $volverAPartidos = $origen === 'partido-index';
 
         if ($volverAInstancias) {

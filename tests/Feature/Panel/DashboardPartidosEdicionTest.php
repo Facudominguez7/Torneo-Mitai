@@ -75,6 +75,7 @@ function tarjetaDashboardPartido(string $html, Partido $partido): string
     // Termina en la próxima tarjeta, el próximo grupo de horario o la sección siguiente.
     $finales = array_filter([
         strpos($html, 'data-dashboard-partido="', $inicio + strlen($marca)),
+        strpos($html, 'data-dashboard-final="', $inicio),
         strpos($html, 'data-dashboard-horario="', $inicio),
         strpos($html, 'Requiere atención', $inicio),
     ], fn ($posicion) => $posicion !== false);
