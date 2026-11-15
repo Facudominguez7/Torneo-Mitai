@@ -78,8 +78,7 @@ it('mantiene las otras impresiones autocontenidas sin el CSS compartido', functi
         ->not->toMatch('/@vite\b|@extends\b|@include\b|@import\b|<link\b|app\.css/i');
 })->with([
     'imprimir/fixture',
-    'imprimir/fixture-arbitros',
-    'imprimir/fixture-arbitros-partidos',
+    'imprimir/planilla-arbitros',
     'imprimir/fixture-instancias-finales',
     'imprimir/tabla-posiciones',
     'lista-buena-fe/imprimir',

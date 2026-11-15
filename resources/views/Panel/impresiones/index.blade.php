@@ -27,7 +27,6 @@
             $idEdicion = $EdicionSeleccionada->id;
             $opcionesFechas = $fechas->mapWithKeys(fn ($fecha) => [$fecha->id => $fecha->nombre])->all();
             $opcionesCategorias = $categorias->mapWithKeys(fn ($categoria) => [$categoria->id => $categoria->nombreCategoria])->all();
-            $opcionesHorarios = $horariosDisponibles->mapWithKeys(fn ($horario) => [$horario => $horario])->all();
 
             $secciones = [
                 [
@@ -39,14 +38,6 @@
                             'descripcion' => 'Los partidos de una fecha o de toda la edición.',
                             'url' => route('admin.imprimir-fixture', ['idEdicion' => $idEdicion]),
                             'filtro' => ['param' => 'idFecha', 'etiqueta' => 'Fecha', 'vacio' => 'Todas las fechas', 'opciones' => $opcionesFechas],
-                        ],
-                        [
-                            'clave' => 'arbitros',
-                            'nombre' => 'Planilla de árbitros',
-                            'descripcion' => 'Planilla para los árbitros con los partidos de la jornada.',
-                            'nota' => 'Usa la próxima fecha sin partidos jugados.',
-                            'url' => route('admin.imprimir-fixture-arbitros-partidos', ['idEdicion' => $idEdicion]),
-                            'filtro' => ['param' => 'horario', 'etiqueta' => 'Horario', 'vacio' => 'Todos los horarios', 'opciones' => $opcionesHorarios],
                         ],
                     ],
                 ],
@@ -83,13 +74,6 @@
                             'nombre' => 'Fixture de instancias finales',
                             'descripcion' => 'Los cruces de las instancias finales.',
                             'url' => route('admin.imprimir-fixture-instancias-finales', ['idEdicion' => $idEdicion]),
-                        ],
-                        [
-                            'clave' => 'arbitros-finales',
-                            'nombre' => 'Planilla de árbitros · finales',
-                            'descripcion' => 'Planilla para los árbitros de las instancias finales.',
-                            'url' => route('admin.imprimir-fixture-arbitros', ['idEdicion' => $idEdicion]),
-                            'filtro' => ['param' => 'horario', 'etiqueta' => 'Horario', 'vacio' => 'Todos los horarios', 'opciones' => $opcionesHorarios],
                         ],
                     ],
                 ],

@@ -78,7 +78,7 @@ it('renderiza el encabezado de Partidos con x-ui.page-header y las tres acciones
         ->assertSee('Partidos')
         ->assertSee('Nuevo partido')
         ->assertSee('Partido interzonal')
-        ->assertSee('Imprimir planilla de árbitros')
+        ->assertDontSee('Imprimir planilla de árbitros')
         ->assertSee('text-2xl font-bold text-pa-tinta', false);
 });
 

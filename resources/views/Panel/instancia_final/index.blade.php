@@ -34,10 +34,6 @@
     @if (isset($EdicionSeleccionada))
         @php
             $urlImprimirFixture = route('admin.imprimir-fixture-instancias-finales', ['idEdicion' => $EdicionSeleccionada->id ?? '']);
-            $urlImprimirArbitros = route('admin.imprimir-fixture-arbitros', [
-                'idEdicion' => $EdicionSeleccionada->id ?? '',
-                'horario' => request('horario'),
-            ]);
 
             $contextoActivo = array_filter([$nombreCategoria ?? null, $nombreFase ?? null]);
             $subtituloInstancias = $totalPartidos . ' ' . ($totalPartidos === 1 ? 'partido' : 'partidos')
@@ -61,21 +57,12 @@
                         Agregar en esta categoría
                     </x-ui.button>
                 @endif
-                <div class="flex items-center gap-2 rounded-lg border border-pa-linea bg-pa-fila-bg px-3 py-2">
-                    <select id="selector-impresion-instancias"
-                        class="min-w-[200px] rounded-md border border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm font-medium text-pa-tinta-media shadow-sm outline-none focus:border-pa-resaltado focus:ring-2 focus:ring-pa-resaltado/30">
-                        <option value="">Seleccionar opción</option>
-                        <option value="fixture">Fixture</option>
-                        <option value="arbitros">Planilla Árbitros</option>
-                    </select>
-                    <x-ui.button type="button" variant="secondary"
-                        onclick="ejecutarImpresionInstanciasFinales('{{ $urlImprimirFixture }}', '{{ $urlImprimirArbitros }}')">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                        </svg>
-                        Imprimir
-                    </x-ui.button>
-                </div>
+                <x-ui.button type="button" variant="secondary" onclick="imprimirEnIframe('{{ $urlImprimirFixture }}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Imprimir fixture
+                </x-ui.button>
             </x-slot>
         </x-ui.page-header>
     @endif
@@ -223,28 +210,6 @@
     @endif
 
     <script>
-        function ejecutarImpresionInstanciasFinales(urlFixture, urlArbitros) {
-            const selector = document.getElementById('selector-impresion-instancias');
-
-            if (!selector?.value) {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Seleccioná una opción',
-                    text: 'Elegí qué querés imprimir antes de continuar.',
-                    confirmButtonColor: '#2563eb',
-                });
-                return;
-            }
-
-            if (selector.value === 'fixture') {
-                imprimirEnIframe(urlFixture);
-                return;
-            }
-
-            if (selector.value === 'arbitros') {
-                imprimirEnIframe(urlArbitros);
-            }
-        }
 
         document.addEventListener('DOMContentLoaded', function () {
             var idEdicion = "{{ $EdicionSeleccionada->id ?? '' }}";

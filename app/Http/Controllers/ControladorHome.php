@@ -23,6 +23,8 @@ use App\Services\EquiposDeEdicionService;
 use App\Services\EstadisticasService;
 use App\Services\FixtureExploradorService;
 use App\Services\Panel\EstadoAdministrativoPartidoService;
+use App\Services\Panel\InstanciasFinalesDashboard;
+use App\Services\Panel\PlanillaArbitros;
 use App\Services\Panel\ResumenDashboard;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -147,6 +149,13 @@ class ControladorHome extends Controller
                 ->sort()
                 ->values();
         }
+        if ($idEdicion) {
+            $horariosDisponibles = $horariosDisponibles
+                ->merge(app(InstanciasFinalesDashboard::class)->horarios((int) $idEdicion))
+                ->unique()
+                ->sort()
+                ->values();
+        }
 
         $fechasFixtureImpresion = collect();
         if ($idEdicion) {
@@ -193,6 +202,13 @@ class ControladorHome extends Controller
             ? app(ConsultaCobrosService::class)->cargosDePartidos(CargoPlanilla::TIPO_PARTIDO, $partidos->flatten(1)->pluck('id')->all())
             : collect();
 
+        $instanciasFinales = $idEdicion
+            ? app(InstanciasFinalesDashboard::class)->delUltimoDia((int) $idEdicion, $horarioString)
+            : collect();
+        $cobrosPorFinal = $request->user()?->isAdmin()
+            ? app(ConsultaCobrosService::class)->cargosDePartidos(CargoPlanilla::TIPO_INSTANCIA_FINAL, $instanciasFinales->pluck('id')->all())
+            : collect();
+
         // Obtener estadísticas de jugadores de las últimas dos fechas
         $estadisticasJugadores = null;
         $jugadoresPorCategoria = null;
@@ -218,7 +234,7 @@ class ControladorHome extends Controller
             $resumenDashboard = $this->resumenDashboard->obtenerResumen((int) $idEdicionResumen);
         }
 
-        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion', 'resumenDashboard', 'cobrosPorPartido', 'estadosAdministrativos'));
+        return view('Panel.admin', compact('ediciones', 'EdicionSeleccionada', 'partidos', 'categorias', 'horarioString', 'horariosDisponibles', 'estadisticasJugadores', 'jugadoresPorCategoria', 'equiposSinAsistencia', 'fechasFixtureImpresion', 'resumenDashboard', 'cobrosPorPartido', 'estadosAdministrativos', 'instanciasFinales', 'cobrosPorFinal'));
     }
 
     public function campeones(Request $request)
@@ -1056,119 +1072,23 @@ class ControladorHome extends Controller
     }
 
     /**
-     * Imprimir fixture para árbitros (instancias finales) con espacios para resultado y goleadores.
-     * Solo muestra partidos pendientes (sin resultado cargado).
-     * Soporta filtro opcional por horario.
+     * Planilla única de árbitros: partidos pendientes de fase regular (última
+     * fecha con partidos sin jugar) e instancias finales pendientes, con
+     * filtro opcional por horario (HH:mm).
      */
-    public function imprimirFixtureArbitros(Request $request)
+    public function imprimirPlanillaArbitros(Request $request, PlanillaArbitros $planillaArbitros)
     {
         $idEdicion = $request->query('idEdicion');
-        $horarioFiltro = $request->query('horario'); // Formato: HH:mm
+        $horarioFiltro = $request->query('horario');
         $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
 
         if (! $EdicionSeleccionada) {
             return redirect()->back()->with('error', 'Debe seleccionar una edición');
         }
 
-        // Obtener partidos de instancias finales PENDIENTES (sin resultado)
-        $query = InstanciaFinal::select(
-            'instancias_finales.*',
-            'fases.nombre as nombre_fase',
-            'fases.secuencia as orden_fase',
-            'el.nombre as nombre_local',
-            'ev.nombre as nombre_visitante',
-            'el.foto as foto_local',
-            'ev.foto as foto_visitante',
-            'categorias.nombreCategoria as nombre_categoria',
-            DB::raw("COALESCE(copas.nombre, '') as nombre_copa"),
-            DB::raw('COALESCE(copas.secuencia, 99) as orden_copa')
-        )
-            ->join('fases', 'instancias_finales.idFase', '=', 'fases.id')
-            ->join('equipos as el', 'instancias_finales.idEquipoLocal', '=', 'el.id')
-            ->join('equipos as ev', 'instancias_finales.idEquipoVisitante', '=', 'ev.id')
-            ->join('categorias', 'instancias_finales.idCategoria', '=', 'categorias.id')
-            ->leftjoin('copas', 'instancias_finales.idCopa', '=', 'copas.id')
-            ->where('instancias_finales.idEdicion', $idEdicion)
-            // Solo partidos pendientes (sin resultado cargado)
-            ->whereNull('instancias_finales.golesEquipoLocal')
-            ->whereNull('instancias_finales.golesEquipoVisitante');
+        $partidos = $planillaArbitros->partidosPendientes((int) $EdicionSeleccionada->id, $horarioFiltro ?: null);
 
-        // Filtro por horario si se proporciona
-        if ($horarioFiltro) {
-            $query->whereRaw('TIME(instancias_finales.horario) = ?', [$horarioFiltro.':00']);
-        }
-
-        $partidos = $query
-            ->orderBy('instancias_finales.horario', 'asc')
-            ->orderBy('instancias_finales.cancha', 'asc')
-            ->orderBy('categorias.nombreCategoria', 'desc')
-            ->orderBy('copas.secuencia', 'asc')
-            ->orderBy('fases.secuencia', 'asc')
-            ->get();
-
-        return view('Panel.imprimir.fixture-arbitros', compact('partidos', 'EdicionSeleccionada', 'horarioFiltro'));
-    }
-
-    /**
-     * Imprimir planilla para árbitros de partidos de fase regular.
-     *
-     * Regla operativa: se listan solo encuentros pendientes para facilitar
-     * carga en cancha y evitar que se impriman cruces ya cerrados.
-     */
-    public function imprimirFixtureArbitrosPartidos(Request $request)
-    {
-        $idEdicion = $request->query('idEdicion');
-        $horarioFiltro = $request->query('horario'); // Formato: HH:mm
-        $EdicionSeleccionada = $idEdicion ? Edicion::find($idEdicion) : null;
-
-        if (! $EdicionSeleccionada) {
-            return redirect()->back()->with('error', 'Debe seleccionar una edición');
-        }
-
-        $ultimaFechaDisponibleId = Partido::query()
-            ->where('partidos.idEdicion', $idEdicion)
-            ->whereNull('partidos.golesEquipoLocal')
-            ->whereNull('partidos.golesEquipoVisitante')
-            ->max('idFechas');
-
-        if (! $ultimaFechaDisponibleId) {
-            return view('Panel.imprimir.fixture-arbitros-partidos', [
-                'partidos' => collect(),
-                'EdicionSeleccionada' => $EdicionSeleccionada,
-                'horarioFiltro' => $horarioFiltro,
-            ]);
-        }
-
-        $query = Partido::select(
-            'partidos.*',
-            'el.nombre as nombre_local',
-            'ev.nombre as nombre_visitante',
-            'f.nombre as nombre_fecha',
-            'cat.nombreCategoria as nombre_categoria',
-            DB::raw("COALESCE(g.nombre, '') as nombre_grupo")
-        )
-            ->join('equipos as el', 'partidos.idEquipoLocal', '=', 'el.id')
-            ->join('equipos as ev', 'partidos.idEquipoVisitante', '=', 'ev.id')
-            ->join('fechas as f', 'partidos.idFechas', '=', 'f.id')
-            ->leftJoin('categorias as cat', 'partidos.idCategoria', '=', 'cat.id')
-            ->leftJoin('grupos as g', 'partidos.idGrupo', '=', 'g.id')
-            ->where('partidos.idEdicion', $idEdicion)
-            ->whereNull('partidos.golesEquipoLocal')
-            ->whereNull('partidos.golesEquipoVisitante')
-            ->where('partidos.idFechas', $ultimaFechaDisponibleId);
-
-        if ($horarioFiltro) {
-            $query->whereRaw('TIME(partidos.horario_datetime) = ?', [$horarioFiltro.':00']);
-        }
-
-        $partidos = $query
-            ->orderBy('partidos.horario_datetime', 'asc')
-            ->orderBy('partidos.cancha', 'asc')
-            ->orderBy('cat.nombreCategoria', 'desc')
-            ->orderBy('f.id', 'asc')
-            ->get();
-
-        return view('Panel.imprimir.fixture-arbitros-partidos', compact('partidos', 'EdicionSeleccionada', 'horarioFiltro'));
+        return view('Panel.imprimir.planilla-arbitros', compact('partidos', 'EdicionSeleccionada', 'horarioFiltro'));
     }
 
     /**

@@ -428,7 +428,7 @@ it('imprime solo los partidos de la ultima fecha disponible para arbitros', func
     ]);
 
     $response = $this->actingAs($admin)
-        ->get(route('admin.imprimir-fixture-arbitros-partidos', ['idEdicion' => $edicion->id]));
+        ->get(route('admin.imprimir-planilla-arbitros', ['idEdicion' => $edicion->id]));
 
     $response->assertOk()
         ->assertSee('Fecha 2')

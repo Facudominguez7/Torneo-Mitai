@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planilla Árbitros - Partidos - {{ $EdicionSeleccionada->nombre ?? 'Edición' }}</title>
+    <title>Planilla Árbitros - {{ $EdicionSeleccionada->nombre ?? 'Edición' }}</title>
     <style>
         @page {
             size: A4 portrait;
@@ -244,7 +244,8 @@
             min-height: 100%;
         }
 
-        .resultado-label {
+        .resultado-label,
+        .penales-label {
             font-size: 9px;
             color: #60757f;
             text-transform: uppercase;
@@ -253,7 +254,8 @@
             line-height: 1.1;
         }
 
-        .resultado-boxes {
+        .resultado-boxes,
+        .penales-boxes {
             display: flex;
             align-items: center;
             gap: 2px;
@@ -267,7 +269,16 @@
             background: #fff;
         }
 
-        .resultado-separator {
+        .penales-box {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #8aa0aa;
+            border-radius: 2px;
+            background: #fff;
+        }
+
+        .resultado-separator,
+        .penales-separator {
             font-weight: 700;
             color: #0e4b5e;
         }
@@ -325,11 +336,16 @@
     <button class="print-button" onclick="window.print()">Imprimir</button>
 
     @if($partidos->isEmpty())
-        <p class="no-partidos">No hay partidos pendientes{{ isset($horarioFiltro) && $horarioFiltro ? ' para el horario ' . $horarioFiltro . ' hs' : '' }}.</p>
+        <p class="no-partidos">No hay partidos pendientes{{ $horarioFiltro ? ' para el horario ' . $horarioFiltro . ' hs' : '' }}.</p>
     @else
         @php
-            $partidosPorHorario = $partidos->groupBy(function ($p) {
-                return $p->horario_datetime ? \Carbon\Carbon::parse($p->horario_datetime)->format('H:i') : 'Por definir';
+            $variosDias = $partidos->map(fn (array $p) => $p['horario']?->toDateString())->filter()->unique()->count() > 1;
+            $partidosPorHorario = $partidos->groupBy(function (array $p) use ($variosDias): string {
+                if ($p['horario'] === null) {
+                    return 'Por definir';
+                }
+
+                return $variosDias ? $p['horario']->format('d/m H:i') : $p['horario']->format('H:i');
             });
         @endphp
 
@@ -352,70 +368,55 @@
                     </div>
 
                     <div class="horario-banner">
-                        <span class="horario-label">Horario {{ $horario }} hs</span>
-                        <span class="horario-meta">{{ $partidosHorario->count() }} {{ $partidosHorario->count() === 1 ? 'partido' : 'partidos' }}</span>
+                        <span class="horario-label">Horario {{ $horario }}{{ $horario === 'Por definir' ? '' : ' hs' }}</span>
+                        <span class="horario-meta">{{ $cantidadPartidosHorario }} {{ $cantidadPartidosHorario === 1 ? 'partido' : 'partidos' }}</span>
                     </div>
 
                     <div class="partidos-lista {{ $claseDistribucion }}">
                         @foreach($partidosHorario as $p)
-                            @php
-                                $nombreFecha = $p->nombre_fecha ?? 'Fecha sin nombre';
-                                $nombreGrupo = trim((string) ($p->nombre_grupo ?? ''));
-                                $fechaNormalizada = mb_strtolower($nombreFecha);
-                                $grupoNormalizado = mb_strtolower($nombreGrupo);
-                                $etiquetaGrupo = str_starts_with($grupoNormalizado, 'grupo ')
-                                    ? $nombreGrupo
-                                    : 'Grupo '.$nombreGrupo;
-                                $mostrarGrupo = $nombreGrupo !== ''
-                                    && ! $p->es_interzonal
-                                    && ! str_contains($fechaNormalizada, 'grupo '.$grupoNormalizado)
-                                    && ! str_contains($fechaNormalizada, $grupoNormalizado.' grupo');
-                            @endphp
-                            <div class="partido-card">
+                            <div class="partido-card" data-planilla-tipo="{{ $p['tipo'] }}">
                                 <div class="partido-header">
                                     <span class="partido-meta">
-                                        <strong>{{ $p->nombre_categoria ?? 'Sin categoria' }}</strong> - {{ $nombreFecha }}
-                                        @if($mostrarGrupo) | {{ $etiquetaGrupo }} @endif
-                                        @if($p->es_interzonal) | Interzonal @endif
-                                        | Cancha {{ $p->cancha ?? '-' }}
+                                        <strong>{{ $p['categoria'] }}</strong>
+                                        @foreach($p['detalle'] as $detalle) | {{ $detalle }} @endforeach
+                                        | Cancha {{ $p['cancha'] ?? '-' }}
                                     </span>
-                                    <span class="partido-fecha">{{ $p->horario_datetime ? \Carbon\Carbon::parse($p->horario_datetime)->format('d/m/Y') : '-' }}</span>
+                                    <span class="partido-fecha">{{ $p['horario']?->format('d/m/Y') ?? '-' }}</span>
                                 </div>
                                 <div class="partido-body">
-                                    <div class="equipo-section">
-                                        <div class="equipo-contenido">
-                                            <div class="equipo-nombre">{{ $p->nombre_local }}</div>
-                                            <div class="goles-area">
-                                                <div class="goles-label">Goleadores (N camiseta)</div>
-                                                <div class="goles-lineas"></div>
-                                                <div class="goles-lineas"></div>
-                                                <div class="goles-lineas"></div>
-                                                <div class="goles-lineas"></div>
+                                    @foreach(['local', 'visitante'] as $lado)
+                                        <div class="equipo-section">
+                                            <div class="equipo-contenido">
+                                                <div class="equipo-nombre">{{ $p[$lado] }}</div>
+                                                <div class="goles-area">
+                                                    <div class="goles-label">Goleadores (N camiseta)</div>
+                                                    <div class="goles-lineas"></div>
+                                                    <div class="goles-lineas"></div>
+                                                    <div class="goles-lineas"></div>
+                                                    <div class="goles-lineas"></div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div class="resultado-section">
-                                        <div class="resultado-label">Resultado</div>
-                                        <div class="resultado-boxes">
-                                            <div class="resultado-box"></div>
-                                            <span class="resultado-separator">-</span>
-                                            <div class="resultado-box"></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="equipo-section">
-                                        <div class="equipo-contenido">
-                                            <div class="equipo-nombre">{{ $p->nombre_visitante }}</div>
-                                            <div class="goles-area">
-                                                <div class="goles-label">Goleadores (N camiseta)</div>
-                                                <div class="goles-lineas"></div>
-                                                <div class="goles-lineas"></div>
-                                                <div class="goles-lineas"></div>
-                                                <div class="goles-lineas"></div>
+                                        @if($lado === 'local')
+                                            <div class="resultado-section">
+                                                <div class="resultado-label">Resultado</div>
+                                                <div class="resultado-boxes">
+                                                    <div class="resultado-box"></div>
+                                                    <span class="resultado-separator">-</span>
+                                                    <div class="resultado-box"></div>
+                                                </div>
+                                                @if($p['tipo'] === 'final')
+                                                    <div class="penales-label">Penales</div>
+                                                    <div class="penales-boxes">
+                                                        <div class="penales-box"></div>
+                                                        <span class="penales-separator">-</span>
+                                                        <div class="penales-box"></div>
+                                                    </div>
+                                                @endif
                                             </div>
-                                        </div>
-                                    </div>
+                                        @endif
+                                    @endforeach
                                 </div>
                             </div>
                         @endforeach

@@ -149,10 +149,8 @@ Route::group(['prefix' => 'Panel', 'middleware' => [UserAccesPanelMiddleware::cl
         ->name('admin.imprimir-fixture');
     Route::get('/admin/imprimir-fixture-instancias-finales', [ControladorHome::class, 'imprimirFixtureInstanciasFinales'])
         ->name('admin.imprimir-fixture-instancias-finales');
-    Route::get('/admin/imprimir-fixture-arbitros', [ControladorHome::class, 'imprimirFixtureArbitros'])
-        ->name('admin.imprimir-fixture-arbitros');
-    Route::get('/admin/imprimir-fixture-arbitros-partidos', [ControladorHome::class, 'imprimirFixtureArbitrosPartidos'])
-        ->name('admin.imprimir-fixture-arbitros-partidos');
+    Route::get('/admin/imprimir-planilla-arbitros', [ControladorHome::class, 'imprimirPlanillaArbitros'])
+        ->name('admin.imprimir-planilla-arbitros');
     Route::get('/admin/grupos-por-categoria/{idCategoria}', [ControladorHome::class, 'gruposPorCategoria'])
         ->name('admin.grupos-por-categoria');
     Route::get('/admin/fechas-por-categoria/{idCategoria}', [ControladorHome::class, 'fechasPorCategoria'])

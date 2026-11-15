@@ -40,11 +40,6 @@
 
     @if (isset($EdicionSeleccionada))
         @php
-            $urlImprimirArbitros = route('admin.imprimir-fixture-arbitros-partidos', [
-                'idEdicion' => $EdicionSeleccionada->id,
-                'horario' => request('horario'),
-            ]);
-
             // Acción primaria única: con categoría y grupo crea directo conservando
             // los filtros activos; sin contexto completo deriva al selector.
             $urlNuevoPartido = isset($idCategoria, $idGrupo) && $idCategoria && $idGrupo
@@ -76,12 +71,6 @@
                         Partido interzonal
                     </x-ui.button>
                 @endif
-                <x-ui.button variant="secondary" onclick="imprimirEnIframe('{{ $urlImprimirArbitros }}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                    </svg>
-                    Imprimir planilla de árbitros
-                </x-ui.button>
             </x-slot>
         </x-ui.page-header>
     @endif
