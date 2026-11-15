@@ -13,12 +13,17 @@ use App\Models\Partido;
 use App\Models\PlanillaJugador;
 use App\Models\ReemplazoEquipo;
 use App\Models\TablaPosicion;
+use App\Models\User;
+use App\Services\Cobros\AnulacionCargosService;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 
 class PartidoService
 {
-    public function __construct(private readonly EstadisticasJugadorService $estadisticasJugadorService) {}
+    public function __construct(
+        private readonly EstadisticasJugadorService $estadisticasJugadorService,
+        private readonly AnulacionCargosService $anulacionCargosService,
+    ) {}
 
     /**
      * Carga el resultado. Un resultado manual deja `ganador_por_no_vino` en null;
@@ -449,16 +454,19 @@ class PartidoService
      * tabla de posiciones, historial de equipos, estadísticas de jugadores
      * y goleadores (por delta, preservando datos manuales), reportes
      * arbitrales y planillas; recalcula golesContra de equipo_ediciones.
+     * La deuda de planilla del partido se anula; con pagos, no se elimina.
      */
-    public function eliminarPartido(Partido $partido): void
+    public function eliminarPartido(Partido $partido, User $actor): void
     {
-        DB::transaction(function () use ($partido): void {
+        DB::transaction(function () use ($partido, $actor): void {
+            $actorVigente = $this->anulacionCargosService->bloquearAntesDelPartido($actor);
             $partido = Partido::query()
                 ->whereKey($partido->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
             $this->asegurarResultadoEditable($partido);
+            $this->anulacionCargosService->anularPorEliminacion($actorVigente, $partido);
 
             $resultadoAplicado = (bool) $partido->jugado
                 && $partido->golesEquipoLocal !== null
