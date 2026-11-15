@@ -526,7 +526,7 @@ class ControladorPartidos extends Controller
         ]);
 
         try {
-            $this->partidoService->eliminarPartido($partido);
+            $this->partidoService->eliminarPartido($partido, $request->user());
         } catch (DomainException $error) {
             return to_route('partido.index', $parametrosRegreso)->with('error', $error->getMessage());
         } catch (Throwable $error) {

@@ -11,6 +11,7 @@ use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\Fase;
 use App\Models\InstanciaFinal;
+use App\Services\Cobros\AnulacionCargosService;
 use App\Services\Cobros\ProgramacionCobroService;
 use App\Services\EstadisticasService;
 use App\Services\PartidoService;
@@ -18,6 +19,8 @@ use App\Traits\SeleccionarCategoriaTrait;
 use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ControladorInstanciaFinal extends Controller
 {
@@ -380,13 +383,25 @@ class ControladorInstanciaFinal extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($instancia_final): void {
+            DB::transaction(function () use ($instancia_final, $request): void {
+                $anulacion = app(AnulacionCargosService::class);
+                $actorVigente = $anulacion->bloquearAntesDelPartido($request->user());
                 $bloqueada = InstanciaFinal::query()->whereKey($instancia_final->id)->lockForUpdate()->firstOrFail();
                 $this->partidoService->asegurarResultadoEditable($bloqueada);
+                $anulacion->anularPorEliminacion($actorVigente, $bloqueada);
                 $bloqueada->delete();
             });
         } catch (DomainException $error) {
             return to_route('instancia_final.index', $parametrosRegreso)->with('error', $error->getMessage());
+        } catch (Throwable $error) {
+            Log::error('No se pudo eliminar la instancia final', [
+                'instancia_final_id' => $instancia_final->id,
+                'idEdicion' => $instancia_final->idEdicion,
+                'excepcion' => $error::class,
+            ]);
+
+            return to_route('instancia_final.index', $parametrosRegreso)
+                ->with('error', 'No se pudo eliminar el partido. Intenta nuevamente.');
         }
 
         return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Partido eliminado con éxito.');
