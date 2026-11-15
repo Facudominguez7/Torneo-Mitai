@@ -11,10 +11,15 @@ use Illuminate\Support\Facades\DB;
 /**
  * Reúne en una sola planilla de árbitros los partidos pendientes de fase
  * regular (de la última fecha con partidos sin jugar) y las instancias finales
- * pendientes, para imprimir todo lo de la jornada de una vez.
+ * pendientes del último día con finales (el mismo que muestra el dashboard),
+ * para imprimir todo lo de la jornada de una vez.
  */
 class PlanillaArbitros
 {
+    public function __construct(
+        private readonly InstanciasFinalesDashboard $finalesDashboard,
+    ) {}
+
     /**
      * @return Collection<int, array{
      *     tipo: string,
@@ -89,6 +94,12 @@ class PlanillaArbitros
      */
     private function instanciasFinales(int $idEdicion, ?string $horario): Collection
     {
+        $ultimoDia = $this->finalesDashboard->ultimoDia($idEdicion);
+
+        if (! $ultimoDia) {
+            return collect();
+        }
+
         return InstanciaFinal::query()
             ->select(
                 'instancias_finales.*',
@@ -106,6 +117,7 @@ class PlanillaArbitros
             ->where('instancias_finales.idEdicion', $idEdicion)
             ->whereNull('instancias_finales.golesEquipoLocal')
             ->whereNull('instancias_finales.golesEquipoVisitante')
+            ->whereRaw('DATE(instancias_finales.horario) = ?', [$ultimoDia])
             ->when($horario, fn ($query) => $query->whereRaw('TIME(instancias_finales.horario) = ?', [$horario.':00']))
             ->orderBy('copas.secuencia')
             ->orderBy('fases.secuencia')

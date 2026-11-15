@@ -19,10 +19,7 @@ class InstanciasFinalesDashboard
      */
     public function delUltimoDia(int $idEdicion, ?string $horario = null): Collection
     {
-        $ultimoDia = InstanciaFinal::query()
-            ->where('idEdicion', $idEdicion)
-            ->whereNotNull('horario')
-            ->max(DB::raw('DATE(horario)'));
+        $ultimoDia = $this->ultimoDia($idEdicion);
 
         if (! $ultimoDia) {
             return collect();
@@ -52,6 +49,19 @@ class InstanciasFinalesDashboard
             ->orderBy('copas.secuencia')
             ->orderBy('fases.secuencia')
             ->get();
+    }
+
+    /**
+     * Último día (Y-m-d) con instancias finales programadas en la edición.
+     */
+    public function ultimoDia(int $idEdicion): ?string
+    {
+        $ultimoDia = InstanciaFinal::query()
+            ->where('idEdicion', $idEdicion)
+            ->whereNotNull('horario')
+            ->max(DB::raw('DATE(horario)'));
+
+        return $ultimoDia ? (string) $ultimoDia : null;
     }
 
     /**
