@@ -9,7 +9,8 @@
         $mensajePrincipal = 'Estos son los resultados cargados hasta el momento:';
     }
 
-    $partidos = $resumen['partidos'] ?? [];
+    $porDia = ($resumen['modo'] ?? null) === 'dia';
+    $grupos = $porDia ? ['Liga' => $resumen['liga'], 'Instancias finales' => $resumen['finales']] : ['' => $resumen['partidos'] ?? []];
     $urlDestino = url($resumen['url_fixture'] ?? '/fixture');
 @endphp
 {{ $tituloPrincipal }}
@@ -18,14 +19,21 @@
 
 {{ $mensajePrincipal }}
 
+@foreach($grupos as $nombreGrupo => $partidos)
+@if($porDia)
+{{ $nombreGrupo }} ({{ count($partidos) }})
+@endif
 @foreach($partidos as $partido)
 - {{ $partido['equipo_local'] ?? 'Local' }} {{ $partido['goles_local'] ?? 0 }} - {{ $partido['goles_visitante'] ?? 0 }} {{ $partido['equipo_visitante'] ?? 'Visitante' }}@php
     $metadatos = array_filter([
         $partido['grupo'] ?? null,
         $partido['cancha'] ?? null,
         $partido['horario'] ?? null,
+        $partido['global'] ?? null,
+        $partido['penales'] ?? null,
     ]);
 @endphp@if($metadatos !== []) ({{ implode(' | ', $metadatos) }})@endif
+@endforeach
 @endforeach
 
 Mas informacion: {{ $urlDestino }}

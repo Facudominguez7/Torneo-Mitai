@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Suscripcion\AvisoTorneoRequest;
+use App\Http\Requests\Suscripcion\ResumenDiaRequest;
 use App\Http\Requests\Suscripcion\ResumenFechaRequest;
 use App\Models\EnvioSuscriptores;
 use App\Services\EnvioSuscriptoresService;
@@ -114,6 +115,69 @@ class ControladorEnvioSuscriptores extends Controller
             'success' => true,
             'envio_id' => $envio->id,
             'estado' => $envio->estado,
+            'destinatarios' => $envio->destinatarios,
+            'message' => "El resumen quedó en cola para {$envio->destinatarios} destinatario(s): sale en el próximo minuto.",
+        ], 202);
+    }
+
+    public function contarResumenDia(ResumenDiaRequest $request): JsonResponse
+    {
+        $idEdicion = $this->resumenes->idUltimaEdicion();
+        $resumen = $idEdicion === null ? null : $this->resumenes->armarDia($idEdicion, $request->dia(), $request->idCategoria());
+        if ($resumen === null) {
+            return response()->json(['success' => false, 'message' => 'No hay resultados para enviar en ese día.'], 422);
+        }
+
+        $envio = $this->envios->envio(EnvioSuscriptores::claveResumenDia($idEdicion, $request->dia(), $request->idCategoria()));
+
+        return response()->json([
+            'success' => true,
+            'destinatarios' => $this->envios->destinatariosResumenFecha(),
+            'partidos_count' => $resumen['partidos_count'],
+            'liga_count' => count($resumen['liga']),
+            'finales_count' => count($resumen['finales']),
+            'fecha_nombre' => $resumen['fecha_nombre'],
+            'categoria_nombre' => $resumen['categoria_nombre'],
+            'envio' => $envio === null ? null : [
+                'estado' => $envio->estado, 'destinatarios' => $envio->destinatarios,
+                'enviado_at' => $envio->enviado_at?->format('d/m/Y H:i'),
+            ],
+        ]);
+    }
+
+    public function enviarResumenDia(ResumenDiaRequest $request): JsonResponse
+    {
+        $idEdicion = $this->resumenes->idUltimaEdicion();
+        $resumen = $idEdicion === null ? null : $this->resumenes->armarDia($idEdicion, $request->dia(), $request->idCategoria());
+        if ($resumen === null) {
+            return response()->json(['success' => false, 'message' => 'No hay resultados para enviar en ese día.'], 422);
+        }
+        if ($this->envios->destinatariosResumenFecha() === 0) {
+            return response()->json(['success' => false, 'message' => 'Todavía nadie eligió recibir el resumen de la fecha.'], 422);
+        }
+
+        try {
+            $envio = $this->envios->registrarResumenDia($resumen, $request->user());
+        } catch (Throwable $error) {
+            Log::error('No se pudo encolar el resumen de día para los suscriptores.', [
+                'error' => $error::class, 'dia' => $request->dia(), 'idCategoria' => $request->idCategoria(),
+            ]);
+
+            return response()->json(['success' => false, 'message' => 'No se pudo dejar el envío en cola. Probá de nuevo en unos minutos.'], 503);
+        }
+        if ($envio === null) {
+            $previo = $this->envios->envio(EnvioSuscriptores::claveResumenDia($idEdicion, $request->dia(), $request->idCategoria()));
+
+            return response()->json([
+                'success' => false,
+                'message' => $previo?->estado === EnvioSuscriptores::ESTADO_ENVIADO
+                    ? 'Este resumen ya se envió a los suscriptores el '.$previo->enviado_at?->format('d/m/Y H:i').'.'
+                    : 'Este resumen ya está en cola para enviarse.',
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true, 'envio_id' => $envio->id, 'estado' => $envio->estado,
             'destinatarios' => $envio->destinatarios,
             'message' => "El resumen quedó en cola para {$envio->destinatarios} destinatario(s): sale en el próximo minuto.",
         ], 202);

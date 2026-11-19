@@ -1,7 +1,8 @@
 @php
-    $partidos = $resumen['partidos'] ?? [];
+    $porDia = ($resumen['modo'] ?? null) === 'dia';
+    $grupos = $porDia ? ['Liga' => $resumen['liga'], 'Instancias finales' => $resumen['finales']] : ['' => $resumen['partidos'] ?? []];
     $titulo = trim((string) ($resumen['titulo_personalizado'] ?? '')) ?: ($resumen['fecha_nombre'] ?? 'Fecha');
-    $mensaje = trim((string) ($resumen['mensaje_personalizado'] ?? '')) ?: 'Estos son los resultados cargados de la fecha.';
+    $mensaje = trim((string) ($resumen['mensaje_personalizado'] ?? '')) ?: ($porDia ? 'Estos son los resultados cargados del día.' : 'Estos son los resultados cargados de la fecha.');
     $subtitulo = collect([
         $resumen['edicion_nombre'] ?? 'Edición vigente',
         ! empty($resumen['categoria_nombre']) ? 'Categoría '.$resumen['categoria_nombre'] : null,
@@ -9,7 +10,7 @@
     $font = "font-family:Barlow,'Segoe UI',Arial,Helvetica,sans-serif;";
 @endphp
 <x-correo.marco
-    etiqueta="Resumen de la fecha"
+    :etiqueta="$porDia ? 'Resumen del día' : 'Resumen de la fecha'"
     :titulo="$titulo"
     :subtitulo="$subtitulo"
     :url-boton="url($resumen['url_fixture'] ?? '/fixture')"
@@ -18,10 +19,14 @@
 >
     <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#3E6170;{{ $font }}">{{ $mensaje }}</p>
 
+    @foreach ($grupos as $nombreGrupo => $partidos)
+    @if ($porDia)
+        <h2 style="font-size:16px;color:#082F3B;{{ $font }}">{{ $nombreGrupo }} ({{ count($partidos) }})</h2>
+    @endif
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         @foreach ($partidos as $partido)
             @php
-                $metadatos = array_filter([$partido['grupo'] ?? null, $partido['cancha'] ?? null, $partido['horario'] ?? null]);
+                $metadatos = array_filter([$partido['grupo'] ?? null, $partido['cancha'] ?? null, $partido['horario'] ?? null, $partido['global'] ?? null, $partido['penales'] ?? null]);
             @endphp
             <tr>
                 <td style="padding:0 0 10px;">
@@ -53,4 +58,5 @@
             </tr>
         @endforeach
     </table>
+    @endforeach
 </x-correo.marco>
