@@ -49,6 +49,11 @@ class EnvioSuscriptores extends Model
         return self::TIPO_RESUMEN_FECHA.':'.$idFecha.':'.($idCategoria ?? 'todas');
     }
 
+    public static function claveResumenDia(int $idEdicion, string $dia, ?int $idCategoria): string
+    {
+        return 'resumen_dia:'.$idEdicion.':'.$dia.':'.($idCategoria ?? 'todas');
+    }
+
     public static function claveProximaFecha(int $idFecha, ?int $idCategoria): string
     {
         return self::TIPO_PROXIMA_FECHA.':'.$idFecha.':'.($idCategoria ?? 'todas');

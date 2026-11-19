@@ -224,6 +224,10 @@ Route::prefix('Panel/notificaciones')->middleware([UserAccesPanelMiddleware::cla
         ->name('notificaciones.resumen-fecha.contar');
     Route::post('/resumen-fecha/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarResumenFecha'])
         ->name('notificaciones.resumen-fecha.suscriptores');
+    Route::get('/resumen-dia/contar', [ControladorEnvioSuscriptores::class, 'contarResumenDia'])
+        ->name('notificaciones.resumen-dia.contar');
+    Route::post('/resumen-dia/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarResumenDia'])
+        ->name('notificaciones.resumen-dia.suscriptores');
     Route::get('/proxima-fecha/contar', [ControladorEnvioSuscriptores::class, 'contarProximaFecha'])
         ->name('notificaciones.proxima-fecha.contar');
     Route::post('/proxima-fecha/suscriptores', [ControladorEnvioSuscriptores::class, 'enviarProximaFecha'])

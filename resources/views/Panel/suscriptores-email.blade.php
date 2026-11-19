@@ -13,7 +13,6 @@
         $resumenIdCategoria = $resumenIdCategoria ?? null;
         $resumenIdFecha = $resumenIdFecha ?? null;
         $categoriasResumen = $categoriasResumen ?? collect();
-        $fechasResumen = $fechasResumen ?? collect();
         $fechasEdicion = $fechasEdicion ?? collect();
         $iniciales = static fn (string $nombre): string => collect(preg_split('/\s+/', trim($nombre)))
             ->filter()
@@ -35,11 +34,15 @@
         <article class="flex flex-col gap-3 rounded-xl border border-pa-linea bg-pa-superficie p-4">
             <div>
                 <h2 class="text-base font-bold text-pa-tinta">Resumen de la fecha</h2>
-                <p class="mt-1 text-sm text-pa-tinta-suave">Resultados de una fecha para los suscriptores que eligieron el resumen.</p>
+                <p class="mt-1 text-sm text-pa-tinta-suave">Resultados por fecha del fixture o por día, para los suscriptores que eligieron el resumen.</p>
                 <p class="mt-1 text-xs text-pa-tinta-suave">Edición activa: {{ $resumenNombreEdicion }}</p>
             </div>
 
             <div class="flex flex-col gap-2" id="resumen-fecha-controls">
+                <x-ui.select id="resumen-modo" label="Agrupar resultados">
+                    <option value="fecha">Por fecha del fixture</option>
+                    <option value="dia">Por día calendario</option>
+                </x-ui.select>
                 <x-ui.select id="resumen-idCategoria" label="Categoría">
                     <option value="">Todas las categorías</option>
                     @foreach($categoriasResumen as $categoriaResumen)
@@ -49,14 +52,22 @@
                     @endforeach
                 </x-ui.select>
 
-                <x-ui.select id="resumen-idFecha" label="Fecha">
-                    <option value="">Seleccionar fecha</option>
-                    @foreach($fechasResumen as $fechaResumen)
-                        <option value="{{ $fechaResumen->id }}" data-categoria="{{ $fechaResumen->idCategoria }}" {{ (string) $resumenIdFecha === (string) $fechaResumen->id ? 'selected' : '' }}>
-                            {{ $fechaResumen->nombre }}
-                        </option>
-                    @endforeach
-                </x-ui.select>
+                <div id="resumen-selector-fecha">
+                    <x-ui.select id="resumen-idFecha" label="Fecha del fixture">
+                        <option value="">Seleccionar fecha</option>
+                        @foreach($fechasEdicion as $fechaResumen)
+                            <option value="{{ $fechaResumen->id }}" data-categoria="{{ $fechaResumen->idCategoria }}" @selected((string) $resumenIdFecha === (string) $fechaResumen->id)>
+                                {{ $fechaResumen->nombre }}
+                            </option>
+                        @endforeach
+                    </x-ui.select>
+                    <p class="mt-1 text-xs text-pa-tinta-suave">Solo liga; no incluye instancias finales.</p>
+                </div>
+                <div id="resumen-selector-dia" hidden>
+                    <label for="resumen-dia" class="mb-1 block text-sm font-medium text-pa-tinta-media">Día calendario</label>
+                    <input type="date" id="resumen-dia" class="block w-full rounded-md border-pa-campo-borde bg-pa-superficie px-3 py-2 text-sm text-pa-tinta-media shadow-sm focus:border-pa-resaltado focus:outline-none focus:ring-2 focus:ring-pa-resaltado/30">
+                    <p class="mt-1 text-xs text-pa-tinta-suave">Incluye resultados de liga y de instancias finales de ese día.</p>
+                </div>
 
                 <x-ui.button id="btn-enviar-resumen-fecha" onclick="iniciarEnvioResumenFecha()" class="mt-1 w-full">
                     Enviar resumen
@@ -280,6 +291,10 @@
                 count_route: '{{ route("notificaciones.resumen-fecha.contar") }}',
                 send_route: '{{ route("notificaciones.resumen-fecha.suscriptores") }}',
             },
+            resumen_dia: {
+                count_route: '{{ route("notificaciones.resumen-dia.contar") }}',
+                send_route: '{{ route("notificaciones.resumen-dia.suscriptores") }}',
+            },
             proxima_fecha: {
                 count_route: '{{ route("notificaciones.proxima-fecha.contar") }}',
                 send_route: '{{ route("notificaciones.proxima-fecha.suscriptores") }}',
@@ -292,6 +307,13 @@
 
         const resumenIdCategoriaInput = document.getElementById('resumen-idCategoria');
         const resumenIdFechaInput = document.getElementById('resumen-idFecha');
+        const resumenModo = document.getElementById('resumen-modo');
+        const resumenDia = document.getElementById('resumen-dia');
+        resumenModo?.addEventListener('change', () => {
+            const porDia = resumenModo.value === 'dia';
+            document.getElementById('resumen-selector-fecha').hidden = porDia;
+            document.getElementById('resumen-selector-dia').hidden = !porDia;
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             filtrarFechasResumen();
@@ -299,6 +321,7 @@
             if (resumenIdCategoriaInput) {
                 resumenIdCategoriaInput.addEventListener('change', () => {
                     filtrarFechasResumen();
+                    if (resumenModo?.value === 'dia') return;
                     actualizarContextoResumen({
                         resumen_idCategoria: resumenIdCategoriaInput.value,
                         resumen_idFecha: resumenIdFechaInput?.value || '',
@@ -422,17 +445,19 @@
             }
 
             const idCategoria = textos.categoria()?.value || '';
-            const idFecha = textos.fecha()?.value || '';
+            const porDia = tipo === 'resumen_fecha' && resumenModo?.value === 'dia';
+            const fecha = porDia ? resumenDia?.value : textos.fecha()?.value;
 
-            if (!idFecha) {
-                await Swal.fire('Faltan datos', textos.faltaFecha, 'warning');
+            if (!fecha) {
+                await Swal.fire('Faltan datos', porDia ? 'Seleccioná un día calendario para enviar el resumen.' : textos.faltaFecha, 'warning');
                 return;
             }
 
-            const datos = { idFecha, ...(idCategoria ? { idCategoria } : {}) };
+            const datos = { ...(porDia ? { dia: fecha } : { idFecha: fecha }), ...(idCategoria ? { idCategoria } : {}) };
+            const endpoints = ENDPOINTS[porDia ? 'resumen_dia' : tipo];
 
             try {
-                const conteo = await fetch(`${ENDPOINTS[tipo].count_route}?${new URLSearchParams(datos).toString()}`, {
+                const conteo = await fetch(`${endpoints.count_route}?${new URLSearchParams(datos).toString()}`, {
                     headers: { Accept: 'application/json' },
                 });
                 const resumen = await conteo.json();
@@ -460,10 +485,14 @@
                     title: reintento ? 'Reintentar el envío' : 'Enviar a suscriptores',
                     html: `<div style="text-align:left">` +
                         (reintento ? `<p>${textos.fallido}</p>` : '') +
-                        `<p><strong>Fecha:</strong> ${resumen.fecha_nombre}</p>` +
+                        `<p><strong>${porDia ? 'Día' : 'Fecha'}:</strong> ${escaparHtml(resumen.fecha_nombre)}</p>` +
+                        (porDia ? `<p><strong>Categoría:</strong> ${escaparHtml(resumen.categoria_nombre || 'Todas las categorías')}</p>` +
+                            `<p><strong>Liga:</strong> ${resumen.liga_count} · <strong>Instancias finales:</strong> ${resumen.finales_count}</p>` : '') +
                         `<p><strong>Partidos:</strong> ${resumen.partidos_count}</p>` +
                         `<p><strong>Destinatarios:</strong> ${resumen.destinatarios}</p>` +
                         `<p>${textos.unaVez}</p>` +
+                        (tipo === 'resumen_fecha' ? '<p>Esperá a que estén cargados todos los resultados antes de enviar. Si cargás resultados después, no vas a poder reenviar esta misma selección.</p>' +
+                            '<p>Algunos resultados pueden repetirse si ya se enviaron por otra modalidad o categoría.</p>' : '') +
                         `</div>`,
                     icon: 'question',
                     showCancelButton: true,
@@ -480,7 +509,7 @@
                 boton.disabled = true;
                 boton.classList.add('opacity-50', 'cursor-not-allowed');
 
-                const respuesta = await fetch(ENDPOINTS[tipo].send_route, {
+                const respuesta = await fetch(endpoints.send_route, {
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',

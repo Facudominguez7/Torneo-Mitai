@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\Fecha;
+use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use Carbon\Carbon;
 
@@ -96,6 +97,81 @@ class ResumenFechaService
                     ? Carbon::parse($partido->horario_datetime)->format('d/m H:i')
                     : ($partido->horario ?: null),
             ])->values()->all(),
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    public function armarDia(int $idEdicion, string $dia, ?int $idCategoria = null): ?array
+    {
+        $inicio = Carbon::createFromFormat('!Y-m-d', $dia);
+        $fin = $inicio->copy()->addDay();
+        $liga = Partido::query()
+            ->with(['equipoLocal:id,nombre,foto', 'equipoVisitante:id,nombre,foto', 'grupo:id,nombre'])
+            ->where('idEdicion', $idEdicion)
+            ->when($idCategoria !== null, fn ($query) => $query->where('idCategoria', $idCategoria))
+            ->where('horario_datetime', '>=', $inicio)->where('horario_datetime', '<', $fin)
+            ->whereNotNull('golesEquipoLocal')->whereNotNull('golesEquipoVisitante')
+            ->orderBy('horario_datetime')->orderBy('id')->get();
+        $finales = InstanciaFinal::query()
+            ->with(['equipoLocal:id,nombre,foto', 'equipoVisitante:id,nombre,foto', 'fase:id,nombre', 'copa:id,nombre'])
+            ->where('idEdicion', $idEdicion)
+            ->when($idCategoria !== null, fn ($query) => $query->where('idCategoria', $idCategoria))
+            ->where('horario', '>=', $inicio)->where('horario', '<', $fin)
+            ->whereNotNull('golesEquipoLocal')->whereNotNull('golesEquipoVisitante')
+            ->orderBy('horario')->orderBy('id')->get();
+
+        if ($liga->isEmpty() && $finales->isEmpty()) {
+            return null;
+        }
+
+        $datosLiga = $liga->map(fn (Partido $partido): array => [
+            'equipo_local' => $partido->equipoLocal->nombre ?? 'Local',
+            'equipo_visitante' => $partido->equipoVisitante->nombre ?? 'Visitante',
+            'escudo_local' => $this->urlEscudo($partido->equipoLocal->foto ?? null),
+            'escudo_visitante' => $this->urlEscudo($partido->equipoVisitante->foto ?? null),
+            'goles_local' => (int) $partido->golesEquipoLocal,
+            'goles_visitante' => (int) $partido->golesEquipoVisitante,
+            'grupo' => $this->etiquetaGrupo($partido->grupo->nombre ?? null),
+            'cancha' => $partido->cancha ? 'Cancha '.$partido->cancha : null,
+            'horario' => Carbon::parse($partido->horario_datetime)->format('d/m H:i'),
+        ])->all();
+        $datosFinales = $finales->map(function (InstanciaFinal $partido): array {
+            $global = trim((string) $partido->resultadoGlobal);
+            $empate = preg_match('/^(\d+)\s*-\s*(\d+)$/', $global, $marcador) === 1
+                ? (int) $marcador[1] === (int) $marcador[2]
+                : (int) $partido->golesEquipoLocal === (int) $partido->golesEquipoVisitante;
+            $penales = null;
+            if ($empate
+                && $partido->penalesEquipoLocal !== null && $partido->penalesEquipoVisitante !== null
+                && (int) $partido->penalesEquipoLocal !== (int) $partido->penalesEquipoVisitante) {
+                $ganador = (int) $partido->penalesEquipoLocal > (int) $partido->penalesEquipoVisitante
+                    ? ($partido->equipoLocal->nombre ?? 'Local') : ($partido->equipoVisitante->nombre ?? 'Visitante');
+                $penales = 'Penales: '.$partido->penalesEquipoLocal.' - '.$partido->penalesEquipoVisitante.' · Ganador: '.$ganador;
+            }
+
+            return [
+                'equipo_local' => $partido->equipoLocal->nombre ?? 'Local',
+                'equipo_visitante' => $partido->equipoVisitante->nombre ?? 'Visitante',
+                'escudo_local' => $this->urlEscudo($partido->equipoLocal->foto ?? null),
+                'escudo_visitante' => $this->urlEscudo($partido->equipoVisitante->foto ?? null),
+                'goles_local' => (int) $partido->golesEquipoLocal,
+                'goles_visitante' => (int) $partido->golesEquipoVisitante,
+                'grupo' => collect([$partido->copa->nombre ?? null, $partido->fase->nombre ?? null])->filter()->implode(' · ') ?: null,
+                'cancha' => $partido->cancha ? 'Cancha '.$partido->cancha : null,
+                'horario' => Carbon::parse($partido->horario)->format('d/m H:i'),
+                'global' => $global !== '' ? 'Global: '.$global : null,
+                'penales' => $penales,
+            ];
+        })->all();
+
+        return [
+            'modo' => 'dia', 'dia' => $dia, 'id_edicion' => $idEdicion, 'id_categoria' => $idCategoria,
+            'edicion_nombre' => Edicion::query()->whereKey($idEdicion)->value('nombre') ?? 'Edición vigente',
+            'fecha_nombre' => $inicio->format('d/m/Y'),
+            'categoria_nombre' => $idCategoria !== null ? Categoria::query()->whereKey($idCategoria)->value('nombreCategoria') : null,
+            'url_fixture' => '/fixture?idEdicion='.$idEdicion,
+            'partidos_count' => count($datosLiga) + count($datosFinales),
+            'liga' => $datosLiga, 'finales' => $datosFinales,
         ];
     }
 

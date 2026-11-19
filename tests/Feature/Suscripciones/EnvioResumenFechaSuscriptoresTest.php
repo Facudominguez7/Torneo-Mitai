@@ -6,11 +6,14 @@
 use App\Jobs\EnviarAvisoSuscriptores;
 use App\Mail\ResumenResultadosFechaMail;
 use App\Models\Categoria;
+use App\Models\Copa;
 use App\Models\Edicion;
 use App\Models\EnvioSuscriptores;
 use App\Models\Equipo;
+use App\Models\Fase;
 use App\Models\Fecha;
 use App\Models\Grupo;
+use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\Suscriptor;
 use App\Models\User;
@@ -401,6 +404,169 @@ it('el canal del envio depende del entorno: resend en produccion y el mailer en 
     'produccion' => [true, CanalBroadcastResend::class],
     'local con mailhog' => [false, CanalMailerLocal::class],
 ]);
+
+/** @param  array<string, mixed>  $atributos */
+function finalParaResumenDia(Fecha $fecha, array $atributos = []): InstanciaFinal
+{
+    $local = Equipo::create(['idCategoria' => $fecha->idCategoria, 'idEdicion' => $fecha->idEdicion, 'nombre' => 'Finalistas Norte']);
+    $visitante = Equipo::create(['idCategoria' => $fecha->idCategoria, 'idEdicion' => $fecha->idEdicion, 'nombre' => 'Finalistas Sur']);
+
+    return InstanciaFinal::create([
+        'idCategoria' => $fecha->idCategoria,
+        'idEdicion' => $fecha->idEdicion,
+        'idEquipoLocal' => $local->id,
+        'idEquipoVisitante' => $visitante->id,
+        'idCopa' => Copa::create(['nombre' => 'Copa Oro'])->id,
+        'idFase' => Fase::create(['nombre' => 'Semifinal'])->id,
+        'horario' => '2026-11-07 18:00:00',
+        'cancha' => '2',
+        'golesEquipoLocal' => 1,
+        'golesEquipoVisitante' => 1,
+        'penalesEquipoLocal' => 4,
+        'penalesEquipoVisitante' => 3,
+        ...$atributos,
+    ]);
+}
+
+it('la tarjeta ofrece las dos modalidades y advierte sobre resultados repetidos', function (): void {
+    $this->actingAs(adminEnvioResumen())->get(route('notificaciones.index'))
+        ->assertOk()
+        ->assertSee('Por fecha del fixture')
+        ->assertSee('Por día calendario')
+        ->assertSee('Algunos resultados pueden repetirse')
+        ->assertSee('Solo liga; no incluye instancias finales')
+        ->assertSee('Si cargás resultados después, no vas a poder reenviar esta misma selección.')
+        ->assertSee('/Panel/notificaciones/resumen-dia/contar', false)
+        ->assertSee('/Panel/notificaciones/resumen-dia/suscriptores', false);
+});
+
+it('la tarjeta conserva las fechas de otras categorias al abrir el panel filtrado', function (): void {
+    ['fecha' => $fecha] = fechaConResultados();
+    $otra = Categoria::create(['idEdicion' => $fecha->idEdicion, 'nombreCategoria' => 'Sub 14']);
+    Fecha::create(['idEdicion' => $fecha->idEdicion, 'idCategoria' => $otra->id, 'nombre' => 'Fecha de Sub 14']);
+
+    $respuesta = $this->actingAs(adminEnvioResumen())->get(route('notificaciones.index', [
+        'resumen_idCategoria' => $fecha->idCategoria,
+        'resumen_idFecha' => $fecha->id,
+    ]))->assertOk();
+
+    $documento = new DOMDocument;
+    $documento->loadHTML($respuesta->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
+    $opciones = (new DOMXPath($documento))->query('//select[@id="resumen-idFecha"]/option');
+
+    expect($opciones->length)->toBe(3)
+        ->and(trim($opciones->item(2)->textContent))->toBe('Fecha de Sub 14')
+        ->and($opciones->item(1)->hasAttribute('selected'))->toBeTrue();
+});
+
+it('resumen por dia calendario combina liga y finales en una vista previa y un solo correo', function (): void {
+    Queue::fake();
+    $historial = resendFalso([respuestaResend(['id' => 'broadcast-dia']), respuestaResend(['id' => 'broadcast-dia'])]);
+    ['fecha' => $fecha] = fechaConResultados();
+    Partido::query()->update(['horario_datetime' => '2026-11-07 00:00:00']);
+    $vuelta = finalParaResumenDia($fecha, ['golesEquipoLocal' => 2, 'golesEquipoVisitante' => 1]);
+    $vuelta->resultadoGlobal = '3-3';
+    $vuelta->save();
+    Suscriptor::factory()->activo()->create(['recibe_resumen_fecha' => true]);
+    $admin = adminEnvioResumen();
+    $datos = ['dia' => '2026-11-07'];
+
+    $this->actingAs($admin)->getJson('/Panel/notificaciones/resumen-dia/contar?'.http_build_query($datos))
+        ->assertOk()->assertJson([
+            'success' => true, 'partidos_count' => 2, 'liga_count' => 1,
+            'finales_count' => 1, 'destinatarios' => 1, 'envio' => null,
+        ]);
+    $this->actingAs($admin)->withSession(['_token' => 'token-resumen'])
+        ->postJson('/Panel/notificaciones/resumen-dia/suscriptores', $datos, ['X-CSRF-TOKEN' => 'token-resumen'])
+        ->assertAccepted();
+    Queue::assertPushed(EnviarAvisoSuscriptores::class, 1);
+    procesarEnvio(EnvioSuscriptores::query()->sole());
+
+    expect($historial)->toHaveCount(2);
+    $correo = pedidoResend($historial, 0)['cuerpo'];
+    foreach (['html', 'text'] as $formato) {
+        expect($correo[$formato])->toContain('Liga')->toContain('Instancias finales')
+            ->toContain('Halcones')->toContain('Pumitas')->toContain('Finalistas Norte')->toContain('Finalistas Sur')
+            ->toContain('Copa Oro')->toContain('Semifinal')->toContain('Global: 3-3')
+            ->toContain('Penales: 4 - 3')->toContain('Ganador: Finalistas Norte');
+    }
+    expect(pedidoResend($historial, 1)['ruta'])->toBe('/broadcasts/broadcast-dia/send');
+});
+
+it('resumen por dia calendario admite un dia con solo finales y sin penales inventados', function (array $marcador, ?string $global): void {
+    Queue::fake();
+    $historial = resendFalso([respuestaResend(['id' => 'broadcast-final']), respuestaResend(['id' => 'broadcast-final'])]);
+    ['fecha' => $fecha] = fechaConResultados(false);
+    $final = finalParaResumenDia($fecha, $marcador);
+    $final->resultadoGlobal = $global;
+    $final->save();
+    Suscriptor::factory()->activo()->create(['recibe_resumen_fecha' => true]);
+    $admin = adminEnvioResumen();
+    $datos = ['dia' => '2026-11-07', 'idCategoria' => $fecha->idCategoria];
+
+    $this->actingAs($admin)->getJson('/Panel/notificaciones/resumen-dia/contar?'.http_build_query($datos))
+        ->assertOk()->assertJson(['liga_count' => 0, 'finales_count' => 1, 'partidos_count' => 1]);
+    $this->actingAs($admin)->withSession(['_token' => 'token-resumen'])
+        ->postJson('/Panel/notificaciones/resumen-dia/suscriptores', $datos, ['X-CSRF-TOKEN' => 'token-resumen'])->assertAccepted();
+    procesarEnvio(EnvioSuscriptores::query()->sole());
+
+    foreach (['html', 'text'] as $formato) {
+        $cuerpo = pedidoResend($historial, 0)['cuerpo'][$formato];
+        expect($cuerpo)->toContain('Finalistas Norte')->not->toContain('Penales')->not->toContain('Ganador: Finalistas Sur');
+        if ($global !== null) {
+            expect($cuerpo)->toContain('Global: '.$global);
+        }
+    }
+})->with([
+    'sin tanda' => [['golesEquipoLocal' => 2, 'golesEquipoVisitante' => 0, 'penalesEquipoLocal' => null, 'penalesEquipoVisitante' => null], null],
+    'global no empatado prevalece' => [['golesEquipoLocal' => 1, 'golesEquipoVisitante' => 1, 'penalesEquipoLocal' => 3, 'penalesEquipoVisitante' => 4], '3-2'],
+]);
+
+it('resumen por dia calendario respeta edicion categoria limites del dia y resultados pendientes', function (): void {
+    Queue::fake();
+    $edicionVieja = Edicion::create(['nombre' => 'Anterior']);
+    $categoriaVieja = Categoria::create(['idEdicion' => $edicionVieja->id, 'nombreCategoria' => 'Anterior']);
+    $fechaOtraEdicion = Fecha::create(['idEdicion' => $edicionVieja->id, 'idCategoria' => $categoriaVieja->id, 'nombre' => 'Otra']);
+    finalParaResumenDia($fechaOtraEdicion);
+    ['fecha' => $fecha, 'categoria' => $categoria] = fechaConResultados();
+    $liga = Partido::query()->sole();
+    $liga->update(['horario_datetime' => '2026-11-07 23:59:59']);
+    $liga->replicate()->fill(['public_token' => null, 'horario_datetime' => '2026-11-08 00:00:00'])->save();
+    $liga->replicate()->fill(['public_token' => null, 'golesEquipoVisitante' => null])->save();
+    finalParaResumenDia($fecha, ['horario' => '2026-11-07 00:00:00']);
+    finalParaResumenDia($fecha, ['horario' => '2026-11-08 00:00:00']);
+    finalParaResumenDia($fecha, ['horario' => '2026-11-06 23:59:59']);
+    finalParaResumenDia($fecha, ['golesEquipoLocal' => null]);
+    $otra = Categoria::create(['idEdicion' => $fecha->idEdicion, 'nombreCategoria' => 'Sub 14']);
+    finalParaResumenDia($fecha, ['idCategoria' => $otra->id]);
+    $admin = adminEnvioResumen();
+
+    $this->actingAs($admin)->getJson('/Panel/notificaciones/resumen-dia/contar?'.http_build_query([
+        'dia' => '2026-11-07', 'idCategoria' => $categoria->id, 'idEdicion' => $edicionVieja->id,
+    ]))->assertOk()->assertJson(['liga_count' => 1, 'finales_count' => 1, 'partidos_count' => 2]);
+    $this->actingAs($admin)->getJson('/Panel/notificaciones/resumen-dia/contar?dia=2026-11-07')
+        ->assertOk()->assertJson(['liga_count' => 1, 'finales_count' => 2, 'partidos_count' => 3]);
+    Queue::assertNothingPushed();
+});
+
+it('resumen por dia calendario deduplica por dia edicion y categoria sin bloquear el modo fecha', function (): void {
+    Queue::fake();
+    ['fecha' => $fecha] = fechaConResultados();
+    Partido::query()->update(['horario_datetime' => '2026-11-07 12:00:00']);
+    finalParaResumenDia($fecha, ['horario' => '2026-11-08 12:00:00']);
+    Suscriptor::factory()->activo()->create(['recibe_resumen_fecha' => true]);
+    $admin = adminEnvioResumen();
+    $enviar = fn (array $datos): TestResponse => $this->actingAs($admin)->withSession(['_token' => 'token-resumen'])
+        ->postJson('/Panel/notificaciones/resumen-dia/suscriptores', $datos, ['X-CSRF-TOKEN' => 'token-resumen']);
+
+    $enviar(['dia' => '2026-11-07'])->assertAccepted();
+    $enviar(['dia' => '2026-11-07'])->assertConflict();
+    $enviar(['dia' => '2026-11-07', 'idCategoria' => $fecha->idCategoria])->assertAccepted();
+    $enviar(['dia' => '2026-11-08'])->assertAccepted();
+    enviarResumenASuscriptores($this, $admin, ['idFecha' => $fecha->id])->assertAccepted();
+    Queue::assertPushed(EnviarAvisoSuscriptores::class, 4);
+    expect(EnvioSuscriptores::query()->count())->toBe(4);
+});
 
 it('con todas las categorias resume los partidos de todas, no solo los de la categoria de la fecha', function (): void {
     Queue::fake();

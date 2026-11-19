@@ -44,6 +44,22 @@ class EnvioSuscriptoresService
         );
     }
 
+    /** @param  array<string, mixed>  $resumen */
+    public function registrarResumenDia(array $resumen, ?User $administrador): ?EnvioSuscriptores
+    {
+        return $this->registrar(
+            EnvioSuscriptores::TIPO_RESUMEN_FECHA,
+            EnvioSuscriptores::claveResumenDia($resumen['id_edicion'], $resumen['dia'], $resumen['id_categoria']),
+            [
+                'idEdicion' => $resumen['id_edicion'],
+                'idCategoria' => $resumen['id_categoria'],
+                'contenido' => ['modo' => 'dia', 'dia' => $resumen['dia']],
+            ],
+            $this->destinatariosResumenFecha(),
+            $administrador,
+        );
+    }
+
     /**
      * Registra el envío de la próxima fecha y lo encola, con la misma regla que el resumen: cada
      * fecha y categoría sale una sola vez y solo se reintenta la que falló.
@@ -220,7 +236,9 @@ class EnvioSuscriptoresService
     /** Arma el resumen con los resultados del momento; null si la fecha ya no tiene resultados. */
     private function enviarResumenFecha(EnvioSuscriptores $envio): ?int
     {
-        $resumen = $this->resumenes->armar($envio->idEdicion, (int) $envio->idFecha, $envio->idCategoria);
+        $resumen = ($envio->contenido['modo'] ?? null) === 'dia'
+            ? $this->resumenes->armarDia($envio->idEdicion, (string) $envio->contenido['dia'], $envio->idCategoria)
+            : $this->resumenes->armar($envio->idEdicion, (int) $envio->idFecha, $envio->idCategoria);
 
         if ($resumen === null) {
             return null;
