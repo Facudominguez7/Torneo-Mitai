@@ -930,16 +930,16 @@ it('la barra de acciones muestra un unico signo mas y controles compactos equiva
     // vacío suma su propia acción "Nuevo partido" a la del encabezado.
     expect(substr_count($contenido, 'Nuevo partido'))->toBe(2);
 
-    // T5: los dos controles del encabezado (Nuevo partido y Partido
-    // interzonal; la planilla de árbitros vive solo en el dashboard) comparten la misma firma
+    // T5: los tres controles del encabezado (Nuevo partido, Partido interzonal
+    // e Instancia final; la planilla de árbitros vive solo en el dashboard) comparten la misma firma
     // compacta de x-ui.button tamaño "md" (base + forma + tamaño, sin el
     // color de variante), en vez del viejo pill "h-9 w-full rounded-full".
     // "Limpiar todo" pasa a ser un link de texto: limpiar filtros no es una
     // acción destructiva y no lleva el botón rojo.
     $firmaCompactaCompartida = 'inline-flex items-center justify-center gap-2 font-semibold transition focus:outline-none focus-visible:ring-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-4 py-2 text-sm';
-    expect(substr_count($contenido, $firmaCompactaCompartida))->toBe(2);
+    expect(substr_count($contenido, $firmaCompactaCompartida))->toBe(3);
 
-    foreach (['Nuevo partido', 'Partido interzonal'] as $accion) {
+    foreach (['Nuevo partido', 'Partido interzonal', 'Instancia final'] as $accion) {
         $bloque = bloqueDeAccion($contenido, $accion);
 
         expect($bloque)->not->toBeNull();

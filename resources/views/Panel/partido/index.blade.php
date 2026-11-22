@@ -52,6 +52,9 @@
                     'busqueda' => request('busqueda'),
                 ], static fn ($valor) => $valor !== null && $valor !== ''))
                 : route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'partido', 'forzarSeleccion' => 1]);
+            $urlNuevaInstanciaFinal = isset($idCategoria) && $idCategoria
+                ? route('instancia_final.create', ['idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => $idCategoria, 'origen' => 'partido'])
+                : route('seleccionar-categoria', ['idEdicion' => $EdicionSeleccionada->id, 'tipo' => 'instancia_final', 'origen' => 'partido']);
         @endphp
 
         <x-ui.page-header title="Partidos" :subtitle="$subtituloPartidos">
@@ -71,6 +74,12 @@
                         Partido interzonal
                     </x-ui.button>
                 @endif
+                <x-ui.button variant="secondary" href="{{ $urlNuevaInstanciaFinal }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Instancia final
+                </x-ui.button>
             </x-slot>
         </x-ui.page-header>
     @endif

@@ -5,12 +5,12 @@
         $parametrosRegreso = $parametrosRegreso ?? ['idEdicion' => $EdicionSeleccionada->id ?? request('idEdicion')];
     @endphp
 
-    <x-ui.page-header title="Nuevo partido" />
+    <x-ui.page-header :title="($vieneDePartidos ?? false) ? 'Nueva instancia final' : 'Nuevo partido'" />
 
     @include('Panel.fragment._errores-formulario')
 
     <div class="mb-4 mt-6">
-        <a href="{{ route('instancia_final.index', $parametrosRegreso) }}"
+        <a href="{{ $urlVolver ?? route('instancia_final.index', $parametrosRegreso) }}"
             class="inline-flex items-center gap-2 rounded-md bg-pa-superficie px-3 py-2 text-sm font-semibold text-pa-tinta-media shadow hover:bg-pa-fila-hover">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -23,6 +23,10 @@
         <x-ui.form-card>
             <div>
                 @include('Panel.instancia_final._form')
+
+                @if ($vieneDePartidos ?? false)
+                    <input type="hidden" name="origen" value="partido">
+                @endif
 
                 <input type="hidden" name="retorno_idCategoria" value="{{ $parametrosRegreso['idCategoria'] ?? '' }}">
                 <input type="hidden" name="retorno_idFase" value="{{ $parametrosRegreso['idFase'] ?? '' }}">

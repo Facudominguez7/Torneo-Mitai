@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Constants\PartidoConstants;
 use App\Models\Categoria;
 use App\Models\Edicion;
 use App\Models\EquipoEdicion;
@@ -61,6 +62,10 @@ trait SeleccionarCategoriaTrait
             'fecha' => $request->query('fecha'),
             'horario' => $request->query('horario'),
             'busqueda' => $request->query('busqueda'),
+            'origen' => $tipo === PartidoConstants::TIPO_INSTANCIA_FINAL
+                && $request->query('origen') === PartidoConstants::TIPO_PARTIDO_NORMAL
+                    ? PartidoConstants::TIPO_PARTIDO_NORMAL
+                    : null,
         ], static fn ($valor) => $valor !== null && $valor !== '');
 
         $parametrosBase = array_merge($parametrosContexto, [
