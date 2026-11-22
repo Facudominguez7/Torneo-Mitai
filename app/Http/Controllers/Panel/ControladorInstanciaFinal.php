@@ -175,8 +175,12 @@ class ControladorInstanciaFinal extends Controller
             'idEdicion' => $idEdicion,
             'idCategoria' => $idCategoria,
         ]);
+        $vieneDePartidos = $this->vieneDePartidos($request);
+        $urlVolver = $vieneDePartidos
+            ? route('partido.index', array_filter(['idEdicion' => $idEdicion, 'idCategoria' => $idCategoria]))
+            : route('instancia_final.index', $parametrosRegreso);
 
-        return view('Panel.instancia_final.create', compact('ediciones', 'partido', 'EdicionSeleccionada', 'fases', 'equipos', 'idCategoria', 'CategoriaSeleccionada', 'copas', 'parametrosRegreso'));
+        return view('Panel.instancia_final.create', compact('ediciones', 'partido', 'EdicionSeleccionada', 'fases', 'equipos', 'idCategoria', 'CategoriaSeleccionada', 'copas', 'parametrosRegreso', 'vieneDePartidos', 'urlVolver'));
     }
 
     /**
@@ -186,6 +190,13 @@ class ControladorInstanciaFinal extends Controller
     {
         $data = $request->validated();
         $programacionCobroService->crearInstanciaFinal($request->user(), $data);
+
+        if ($this->vieneDePartidos($request)) {
+            return to_route('partido.index', [
+                'idEdicion' => $data['idEdicion'],
+                'idCategoria' => $data['idCategoria'],
+            ])->with('status', 'Instancia final creada con éxito.');
+        }
 
         // Tras crear, volver al listado sin filtros preseleccionados (solo el contexto de edición).
         return to_route('instancia_final.index', ['idEdicion' => $data['idEdicion']])
@@ -405,6 +416,11 @@ class ControladorInstanciaFinal extends Controller
         }
 
         return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Partido eliminado con éxito.');
+    }
+
+    private function vieneDePartidos(Request $request): bool
+    {
+        return $request->input('origen') === PartidoConstants::TIPO_PARTIDO_NORMAL;
     }
 
     /**

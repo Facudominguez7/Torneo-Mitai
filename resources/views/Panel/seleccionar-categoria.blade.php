@@ -21,10 +21,12 @@
             'valla' => 'valla.index',
         ];
 
-        $rutaIndice = $rutasIndice[$tipo] ?? 'admin';
+        $rutaIndice = ($contexto['origen'] ?? null) === 'partido'
+            ? 'partido.index'
+            : ($rutasIndice[$tipo] ?? 'admin');
         $parametrosVolver = array_filter(array_merge([
             'idEdicion' => $EdicionSeleccionada->id ?? request('idEdicion'),
-        ], $contexto), static fn ($valor) => $valor !== null && $valor !== '');
+        ], array_diff_key($contexto, ['origen' => true])), static fn ($valor) => $valor !== null && $valor !== '');
     @endphp
 
     <div class="mx-auto w-full max-w-2xl px-4 py-4">
