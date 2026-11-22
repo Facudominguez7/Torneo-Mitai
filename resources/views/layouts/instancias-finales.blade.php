@@ -118,7 +118,10 @@
             let animacion = null;
 
             function ubicarBarra() {
-                barra.style.setProperty('--finales-nav-altura', Math.max(0, navegacion.getBoundingClientRect().bottom) + 'px');
+                const condensada = navegacion.closest('.nav-condensada') !== null;
+                const tope = Math.max(0, navegacion.getBoundingClientRect().bottom) + (condensada ? 8 : 0);
+                barra.style.setProperty('--finales-nav-altura', tope + 'px');
+                barra.classList.toggle('finales-barra--flotante', condensada && barra.getBoundingClientRect().top <= tope + 0.5);
             }
 
             function cerrarYAplicar() {
@@ -142,6 +145,7 @@
             });
             window.addEventListener('scroll', ubicarBarra, { passive: true });
             window.addEventListener('resize', ubicarBarra);
+            navegacion.addEventListener('transitionend', ubicarBarra);
             if ('ResizeObserver' in window) new ResizeObserver(ubicarBarra).observe(navegacion);
             ubicarBarra();
         });
