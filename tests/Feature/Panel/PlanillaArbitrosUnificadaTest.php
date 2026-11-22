@@ -153,15 +153,83 @@ it('agrupa sin horario en Por definir y no muestra el dia si es una sola jornada
         ->assertDontSee('Horario 15/11');
 });
 
-it('muestra el dia en el encabezado cuando la planilla abarca varias jornadas', function () {
+it('no imprime partidos viejos sin resultado cuando hay una jornada pendiente mas reciente', function () {
+    $this->travelTo('2026-11-22 12:00:00');
     $c = contextoPlanillaUnica();
-    partidoPlanillaUnica($c, 'Sabado Regular', 'Rival G', '2026-11-14 18:00:00');
-    finalPlanillaUnica($c, 'Domingo Final', 'Rival H', '2026-11-15 10:00:00');
+    partidoPlanillaUnica($c, 'Vieja Regular', 'Rival G', '2026-11-01 18:00:00');
+    finalPlanillaUnica($c, 'Reciente Final', 'Rival H', '2026-11-15 10:00:00');
 
     $this->actingAs(adminPlanillaUnica())
         ->get(route('admin.imprimir-planilla-arbitros', ['idEdicion' => $c['edicion']->id]))
         ->assertOk()
-        ->assertSeeInOrder(['Horario 14/11 18:00 hs', 'Sabado Regular', 'Horario 15/11 10:00 hs', 'Domingo Final']);
+        ->assertSee('Reciente Final')
+        ->assertSee('Horario 10:00 hs')
+        ->assertDontSee('Vieja Regular');
+});
+
+it('no imprime finales viejas sin resultado cuando la jornada pendiente es de fase regular', function () {
+    $this->travelTo('2026-11-22 12:00:00');
+    $c = contextoPlanillaUnica();
+    finalPlanillaUnica($c, 'Vieja Final', 'Rival G', '2026-11-08 10:00:00');
+    partidoPlanillaUnica($c, 'Reciente Regular', 'Rival H', '2026-11-15 10:00:00');
+
+    $this->actingAs(adminPlanillaUnica())
+        ->get(route('admin.imprimir-planilla-arbitros', ['idEdicion' => $c['edicion']->id]))
+        ->assertOk()
+        ->assertSee('Reciente Regular')
+        ->assertDontSee('Vieja Final');
+});
+
+it('prioriza la proxima jornada y no la tapa un partido reprogramado mas adelante', function () {
+    $this->travelTo('2026-08-09 09:00:00');
+    $c = contextoPlanillaUnica();
+    partidoPlanillaUnica($c, 'Atrasado Regular', 'Rival G', '2026-08-02 10:00:00');
+    partidoPlanillaUnica($c, 'Jornada Regular', 'Rival H', '2026-08-09 10:00:00');
+    partidoPlanillaUnica($c, 'Reprogramado Regular', 'Rival I', '2026-08-16 10:00:00');
+
+    $this->actingAs(adminPlanillaUnica())
+        ->get(route('admin.imprimir-planilla-arbitros', ['idEdicion' => $c['edicion']->id]))
+        ->assertOk()
+        ->assertSee('Jornada Regular')
+        ->assertDontSee('Atrasado Regular')
+        ->assertDontSee('Reprogramado Regular');
+});
+
+it('el filtro de horario no trae partidos de una jornada vieja', function () {
+    $this->travelTo('2026-11-22 12:00:00');
+    $c = contextoPlanillaUnica();
+    partidoPlanillaUnica($c, 'Vieja Dieciocho', 'Rival G', '2026-11-01 18:00:00');
+    finalPlanillaUnica($c, 'Reciente Diez', 'Rival H', '2026-11-15 10:00:00');
+
+    $this->actingAs(adminPlanillaUnica())
+        ->get(route('admin.imprimir-planilla-arbitros', ['idEdicion' => $c['edicion']->id, 'horario' => '18:00']))
+        ->assertOk()
+        ->assertSee('No hay partidos pendientes para el horario 18:00 hs')
+        ->assertDontSee('Vieja Dieciocho');
+});
+
+it('no imprime partidos sin horario de una fecha ajena a la jornada', function () {
+    $this->travelTo('2026-11-22 12:00:00');
+    $c = contextoPlanillaUnica();
+    partidoPlanillaUnica($c, 'Sin Hora Vieja', 'Rival G', '2026-11-01 18:00:00')->forceFill(['horario_datetime' => null])->save();
+    finalPlanillaUnica($c, 'Reciente Final', 'Rival H', '2026-11-15 10:00:00');
+
+    $this->actingAs(adminPlanillaUnica())
+        ->get(route('admin.imprimir-planilla-arbitros', ['idEdicion' => $c['edicion']->id]))
+        ->assertOk()
+        ->assertSee('Reciente Final')
+        ->assertDontSee('Sin Hora Vieja');
+});
+
+it('imprime los partidos sin horario de la ultima fecha cuando ninguno tiene dia', function () {
+    $c = contextoPlanillaUnica();
+    partidoPlanillaUnica($c, 'Sin Dia', 'Rival G', '2026-11-01 18:00:00')->forceFill(['horario_datetime' => null])->save();
+
+    $this->actingAs(adminPlanillaUnica())
+        ->get(route('admin.imprimir-planilla-arbitros', ['idEdicion' => $c['edicion']->id]))
+        ->assertOk()
+        ->assertSee('Horario Por definir')
+        ->assertSee('Sin Dia');
 });
 
 it('avisa cuando no hay partidos pendientes', function () {
