@@ -1040,6 +1040,7 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
  * rounded, bordered, lowered). Only transform, width, radius and colors change, never the
  * height, so the sticky bar does not push the content. Sections stay in the bottom tab bar.
  */
+:root { --nav-capsula-ancho: min(60rem, calc(100% - 2rem)); }
 .nav-capsula {
     --nav-fondo: var(--brand-navy-deep);
     --nav-linea: 255 255 255;
@@ -1059,7 +1060,7 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
 }
 .nav-rotulo { max-width: 16rem; overflow: hidden; }
 .nav-condensada .nav-capsula {
-    max-width: min(60rem, calc(100% - 2rem));
+    max-width: var(--nav-capsula-ancho);
     transform: translateY(.75rem);
     border-color: rgb(var(--nav-linea) / .16);
     border-radius: 1rem;
@@ -1072,6 +1073,26 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
 }
 .nav-condensada .nav-rotulo { max-width: 0; opacity: 0; }
 
+/* Once stuck, the finals filter bar becomes a second capsule aligned with the navigation. */
+.finales-barra--flotante {
+    max-width: var(--nav-capsula-ancho);
+    margin-inline: auto;
+    border: 1px solid rgb(var(--tm-linea) / .16);
+    border-radius: 1rem;
+    background: rgb(var(--tm-fondo) / .8);
+    box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 12px 32px -16px rgb(var(--brand-navy-deep) / .45);
+    backdrop-filter: blur(24px);
+}
+:root[data-tema="oscuro"] .finales-barra--flotante {
+    box-shadow: 0 1px 2px rgb(0 0 0 / .2), 0 12px 32px -16px rgb(0 0 0 / .8);
+}
+.finales-barra--flotante .finales-filtros[open] form {
+    max-height: calc(100dvh - var(--finales-nav-altura, 0px) - 9rem);
+    overflow: auto;
+}
+
+@media (max-width: 639px) { :root { --nav-capsula-ancho: calc(100% - 1.5rem); } }
+
 /* On the phone the bar stays opaque and without backdrop-filter (decision of PR #240). */
 @media (max-width: 639px) {
     .nav-capsula {
@@ -1079,15 +1100,23 @@ html[data-tema="oscuro"] .toggle-tema__perilla {
         backdrop-filter: none;
     }
     .nav-condensada .nav-capsula {
-        max-width: calc(100% - 1.5rem);
         transform: translateY(.5rem);
         background-color: rgb(var(--nav-fondo));
+        backdrop-filter: none;
+    }
+    .finales-barra--flotante {
+        background: rgb(var(--tm-fondo));
         backdrop-filter: none;
     }
 }
 @media (prefers-reduced-motion: no-preference) {
     .nav-capsula {
         transition-property: max-width, transform, border-color, border-radius, background-color, box-shadow;
+        transition-duration: .5s;
+        transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .finales-barra {
+        transition-property: max-width, border-color, border-radius, background-color, box-shadow;
         transition-duration: .5s;
         transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
     }
