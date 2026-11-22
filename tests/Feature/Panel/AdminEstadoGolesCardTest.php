@@ -78,7 +78,7 @@ function crearPartidoEstadoGoles(array $contexto, Equipo $local, Equipo $visitan
     ]);
 }
 
-it('muestra goles pendientes de carga en el card admin cuando el resultado ya existe sin confirmacion', function () {
+it('avisa en requiere atencion los goles sin confirmar cuando el resultado ya existe', function () {
     $admin = crearAdminEstadoGoles();
     $contexto = crearContextoEstadoGoles();
     $local = crearEquipoEstadoGoles($contexto, 'Mitai Naranja');
@@ -94,7 +94,8 @@ it('muestra goles pendientes de carga en el card admin cuando el resultado ya ex
     $this->actingAs($admin)
         ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]))
         ->assertOk()
-        ->assertSee('Goles pendientes de carga', false);
+        ->assertSee('Goles sin confirmar', false)
+        ->assertDontSee('data-dashboard-partido="'.$partido->id.'"', false);
 });
 
 it('identifica el resultado administrativo sin pedir goles individuales en el dashboard', function () {
@@ -107,8 +108,8 @@ it('identifica el resultado administrativo sin pedir goles individuales en el da
 
     $this->actingAs($admin)->get(route('admin', ['idEdicion' => $contexto['edicion']->id]))
         ->assertOk()
-        ->assertSee('Resultado administrativo · No vino')
-        ->assertDontSee('Goles pendientes de carga');
+        ->assertDontSee('data-dashboard-partido="'.$partido->id.'"', false)
+        ->assertDontSee('Goles sin confirmar');
 });
 
 it('mantiene pendientes los goles de un 3 a 0 manual', function () {
@@ -121,11 +122,11 @@ it('mantiene pendientes los goles de un 3 a 0 manual', function () {
 
     $this->actingAs($admin)->get(route('admin', ['idEdicion' => $contexto['edicion']->id]))
         ->assertOk()
-        ->assertSee('Goles pendientes de carga')
+        ->assertSee('Goles sin confirmar')
         ->assertDontSee('Resultado administrativo · No vino');
 });
 
-it('muestra goles confirmados en el card admin cuando la revision ya fue confirmada', function () {
+it('saca del dashboard el partido cuando la revision de goles ya fue confirmada', function () {
     $admin = crearAdminEstadoGoles();
     $contexto = crearContextoEstadoGoles();
     $local = crearEquipoEstadoGoles($contexto, 'Mitai Coral');
@@ -139,7 +140,8 @@ it('muestra goles confirmados en el card admin cuando la revision ya fue confirm
     $this->actingAs($admin)
         ->get(route('admin', ['idEdicion' => $contexto['edicion']->id]))
         ->assertOk()
-        ->assertSee('Goles confirmados', false);
+        ->assertDontSee('data-dashboard-partido="'.$partido->id.'"', false)
+        ->assertDontSee('Goles sin confirmar', false);
 });
 
 it('no inventa estado de goles en el card admin cuando falta cargar resultado oficial', function () {

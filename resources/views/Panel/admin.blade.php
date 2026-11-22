@@ -213,7 +213,7 @@
                             <div>
                                 <h2 id="titulo-partidos-edicion" class="text-lg font-bold text-pa-tinta">Todos los partidos de la edición</h2>
                                 <p class="mt-1 text-sm text-pa-tinta-cuerpo">
-                                    {{ $partidosPlanos->count() }} {{ $partidosPlanos->count() === 1 ? 'partido' : 'partidos' }} de la última fecha
+                                    {{ $partidosPlanos->count() }} {{ $partidosPlanos->count() === 1 ? 'partido pendiente' : 'partidos pendientes' }} de la última fecha
                                     @if ($instanciasFinales->isNotEmpty())
                                         · {{ $instanciasFinales->count() }} de instancias finales
                                     @endif
@@ -253,8 +253,8 @@
                     </div>
 
                     @if ($partidosPlanos->isEmpty() && $instanciasFinales->isEmpty())
-                        <x-ui.empty-state class="mt-4" message="No hay partidos para mostrar"
-                            description="{{ $horarioFiltroActivo ? 'Probá con otro horario o limpiá el filtro.' : 'Cuando se carguen partidos en la última fecha aparecerán acá.' }}" />
+                        <x-ui.empty-state class="mt-4" message="No hay partidos pendientes"
+                            description="{{ $horarioFiltroActivo ? 'Probá con otro horario o limpiá el filtro.' : 'Los partidos sin resultado de la última fecha aparecerán acá.' }}" />
                     @else
                         @foreach ($horariosDashboard as $horarioGrupo)
                             @php

@@ -72,8 +72,8 @@ function crearPartidoAdmin(
     Equipo $local,
     Equipo $visitante,
     string $horario,
-    ?int $golesEquipoLocal = 0,
-    ?int $golesEquipoVisitante = 0,
+    ?int $golesEquipoLocal = null,
+    ?int $golesEquipoVisitante = null,
 ): Partido {
     return Partido::create([
         'idCategoria' => $contexto['categoria']->id,

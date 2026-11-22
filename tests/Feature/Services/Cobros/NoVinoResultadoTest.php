@@ -143,8 +143,8 @@ it('muestra los estados de no vino al regularizar y deshacer sin inventar golead
         ->assertJsonPath('data.local', [])
         ->assertJsonPath('data.visitante', []);
     $this->actingAs($this->admin)->get($dashboard)->assertOk()
-        ->assertSee('Resultado administrativo · No vino')
-        ->assertDontSee('Goles pendientes de carga')
+        ->assertDontSee('data-dashboard-partido="'.$this->partido->id.'"', false)
+        ->assertDontSee('Goles sin confirmar')
         ->assertDontSee('Local No Vino (Local): Sin planilla');
 
     app(PartidoService::class)->restablecerResultado($this->partido);
