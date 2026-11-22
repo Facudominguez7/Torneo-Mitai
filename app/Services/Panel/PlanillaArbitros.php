@@ -4,22 +4,19 @@ namespace App\Services\Panel;
 
 use App\Models\InstanciaFinal;
 use App\Models\Partido;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Reúne en una sola planilla de árbitros los partidos pendientes de fase
- * regular (de la última fecha con partidos sin jugar) y las instancias finales
- * pendientes del último día con finales (el mismo que muestra el dashboard),
- * para imprimir todo lo de la jornada de una vez.
+ * Reúne en una sola planilla de árbitros los partidos regulares y las instancias
+ * finales pendientes de una única jornada: la próxima desde hoy o, si no hay,
+ * la última con partidos sin resultado. Así no se imprimen partidos viejos que
+ * quedaron sin cargar ni la jornada queda tapada por un partido reprogramado.
  */
 class PlanillaArbitros
 {
-    public function __construct(
-        private readonly InstanciasFinalesDashboard $finalesDashboard,
-    ) {}
-
     /**
      * @return Collection<int, array{
      *     tipo: string,
@@ -33,8 +30,10 @@ class PlanillaArbitros
      */
     public function partidosPendientes(int $idEdicion, ?string $horario = null): Collection
     {
-        return $this->partidosRegulares($idEdicion, $horario)
-            ->concat($this->instanciasFinales($idEdicion, $horario))
+        $jornada = $this->jornadaPendiente($idEdicion);
+
+        return $this->partidosRegulares($idEdicion, $horario, $jornada)
+            ->concat($this->instanciasFinales($idEdicion, $horario, $jornada))
             ->sortBy([
                 fn (array $a, array $b): int => ($a['horario']?->timestamp ?? PHP_INT_MAX) <=> ($b['horario']?->timestamp ?? PHP_INT_MAX),
                 fn (array $a, array $b): int => (string) $a['cancha'] <=> (string) $b['cancha'],
@@ -44,17 +43,55 @@ class PlanillaArbitros
     }
 
     /**
-     * @return Collection<int, array<string, mixed>>
+     * Día (Y-m-d) a imprimir: el primero pendiente desde hoy o, si ya pasaron
+     * todos, el último con partidos sin resultado.
      */
-    private function partidosRegulares(int $idEdicion, ?string $horario): Collection
+    private function jornadaPendiente(int $idEdicion): ?string
     {
-        $ultimaFechaPendienteId = Partido::query()
+        $diasRegulares = $this->partidosSinResultado($idEdicion)
+            ->whereNotNull('horario_datetime')
+            ->toBase()
+            ->selectRaw('DATE(horario_datetime) as dia')
+            ->distinct()
+            ->pluck('dia');
+
+        $diasFinales = InstanciaFinal::query()
             ->where('idEdicion', $idEdicion)
             ->whereNull('golesEquipoLocal')
             ->whereNull('golesEquipoVisitante')
-            ->max('idFechas');
+            ->whereNotNull('horario')
+            ->toBase()
+            ->selectRaw('DATE(horario) as dia')
+            ->distinct()
+            ->pluck('dia');
 
-        if (! $ultimaFechaPendienteId) {
+        $dias = $diasRegulares->concat($diasFinales)->map(fn ($dia): string => (string) $dia)->unique()->sort()->values();
+        $hoy = now()->toDateString();
+
+        return $dias->first(fn (string $dia): bool => $dia >= $hoy) ?? $dias->last();
+    }
+
+    private function partidosSinResultado(int $idEdicion): Builder
+    {
+        return Partido::query()
+            ->where('idEdicion', $idEdicion)
+            ->whereNull('golesEquipoLocal')
+            ->whereNull('golesEquipoVisitante');
+    }
+
+    /**
+     * Partidos del día y los sin horario de sus mismas fechas. Si ninguno tiene
+     * día, los de la última fecha pendiente.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function partidosRegulares(int $idEdicion, ?string $horario, ?string $jornada): Collection
+    {
+        $idsFechas = $jornada
+            ? $this->partidosSinResultado($idEdicion)->whereRaw('DATE(horario_datetime) = ?', [$jornada])->distinct()->pluck('idFechas')
+            : collect([$this->partidosSinResultado($idEdicion)->max('idFechas')])->filter();
+
+        if (! $jornada && $idsFechas->isEmpty()) {
             return collect();
         }
 
@@ -75,7 +112,11 @@ class PlanillaArbitros
             ->where('partidos.idEdicion', $idEdicion)
             ->whereNull('partidos.golesEquipoLocal')
             ->whereNull('partidos.golesEquipoVisitante')
-            ->where('partidos.idFechas', $ultimaFechaPendienteId)
+            ->where(fn ($query) => $query
+                ->when($jornada, fn ($delDia) => $delDia->whereRaw('DATE(partidos.horario_datetime) = ?', [$jornada]))
+                ->orWhere(fn ($sinHorario) => $sinHorario
+                    ->whereNull('partidos.horario_datetime')
+                    ->whereIn('partidos.idFechas', $idsFechas)))
             ->when($horario, fn ($query) => $query->whereRaw('TIME(partidos.horario_datetime) = ?', [$horario.':00']))
             ->get()
             ->map(fn (Partido $partido): array => [
@@ -92,11 +133,9 @@ class PlanillaArbitros
     /**
      * @return Collection<int, array<string, mixed>>
      */
-    private function instanciasFinales(int $idEdicion, ?string $horario): Collection
+    private function instanciasFinales(int $idEdicion, ?string $horario, ?string $jornada): Collection
     {
-        $ultimoDia = $this->finalesDashboard->ultimoDia($idEdicion);
-
-        if (! $ultimoDia) {
+        if (! $jornada) {
             return collect();
         }
 
@@ -117,7 +156,7 @@ class PlanillaArbitros
             ->where('instancias_finales.idEdicion', $idEdicion)
             ->whereNull('instancias_finales.golesEquipoLocal')
             ->whereNull('instancias_finales.golesEquipoVisitante')
-            ->whereRaw('DATE(instancias_finales.horario) = ?', [$ultimoDia])
+            ->whereRaw('DATE(instancias_finales.horario) = ?', [$jornada])
             ->when($horario, fn ($query) => $query->whereRaw('TIME(instancias_finales.horario) = ?', [$horario.':00']))
             ->orderBy('copas.secuencia')
             ->orderBy('fases.secuencia')
