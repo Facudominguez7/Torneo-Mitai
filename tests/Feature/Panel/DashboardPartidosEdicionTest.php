@@ -1,11 +1,14 @@
 <?php
 
 use App\Models\Categoria;
+use App\Models\Copa;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\EquipoEdicion;
+use App\Models\Fase;
 use App\Models\Fecha;
 use App\Models\Grupo;
+use App\Models\InstanciaFinal;
 use App\Models\Partido;
 use App\Models\User;
 
@@ -163,7 +166,7 @@ it('mantiene en cada tarjeta equipos, marcador, estado y la accion de planillas'
     $contexto = crearContextoPartidosEdicion();
     $local = crearEquipoPartidosEdicion($contexto, 'Mitai Azul');
     $visitante = crearEquipoPartidosEdicion($contexto, 'Mitai Rojo');
-    $partido = crearPartidoPartidosEdicion($contexto, $local, $visitante, '2026-04-01 10:00:00', 2, 1);
+    $partido = crearPartidoPartidosEdicion($contexto, $local, $visitante, '2026-04-01 10:00:00');
 
     $tarjeta = tarjetaDashboardPartido(dashboardPartidosEdicion($contexto), $partido);
 
@@ -178,8 +181,7 @@ it('mantiene en cada tarjeta equipos, marcador, estado y la accion de planillas'
 
     expect($tarjeta)->toContain('Mitai Azul')
         ->toContain('Mitai Rojo')
-        ->toContain('2 - 1')
-        ->toContain('Goles pendientes de carga')
+        ->toMatch('/data-dashboard-centro[^>]*>\s*vs\s*</')
         ->toContain('Cancha 3')
         // La hora va destacada y separada de la fecha (pedido del usuario).
         ->toContain('01-04-2026')
@@ -189,23 +191,21 @@ it('mantiene en cada tarjeta equipos, marcador, estado y la accion de planillas'
         ->toContain('Sub 12');
 });
 
-it('muestra el estado de goles confirmados en la tarjeta', function () {
+it('no muestra la tarjeta de un partido con goles confirmados', function () {
     $contexto = crearContextoPartidosEdicion();
     $local = crearEquipoPartidosEdicion($contexto, 'Mitai Azul');
     $visitante = crearEquipoPartidosEdicion($contexto, 'Mitai Rojo');
     $partido = crearPartidoPartidosEdicion($contexto, $local, $visitante, '2026-04-01 10:00:00', 1, 0);
     $partido->forceFill(['goles_confirmados_at' => now()])->save();
 
-    $tarjeta = tarjetaDashboardPartido(dashboardPartidosEdicion($contexto), $partido);
-
-    expect($tarjeta)->toContain('Goles confirmados')->not->toContain('Goles pendientes de carga');
+    expect(dashboardPartidosEdicion($contexto))->not->toContain('data-dashboard-partido="'.$partido->id.'"');
 });
 
 it('sigue mostrando los avisos de asistencia pendientes dentro de la tarjeta del partido', function () {
     $contexto = crearContextoPartidosEdicion();
     $local = crearEquipoPartidosEdicion($contexto, 'Mitai Verde');
     $visitante = crearEquipoPartidosEdicion($contexto, 'Mitai Blanco');
-    $partido = crearPartidoPartidosEdicion($contexto, $local, $visitante, '2026-04-01 11:00:00', 0, 0);
+    $partido = crearPartidoPartidosEdicion($contexto, $local, $visitante, '2026-04-01 11:00:00');
 
     $tarjeta = tarjetaDashboardPartido(dashboardPartidosEdicion($contexto), $partido);
 
@@ -220,22 +220,19 @@ it('muestra un estado vacio cuando la edicion no tiene partidos', function () {
     $html = dashboardPartidosEdicion($contexto);
 
     expect($html)->toContain('>Todos los partidos de la edición</h2>')
-        ->toContain('No hay partidos para mostrar')
+        ->toContain('No hay partidos pendientes')
         ->not->toContain('data-dashboard-partido="');
 });
 
-it('muestra el marcador en lugar del vs cuando hay resultado, y el vs cuando no', function () {
+it('muestra el vs en el partido pendiente y saca la tarjeta del que tiene resultado', function () {
     $contexto = crearContextoPartidosEdicion();
     $jugado = crearPartidoPartidosEdicion($contexto, crearEquipoPartidosEdicion($contexto, 'Local Jugado'), crearEquipoPartidosEdicion($contexto, 'Visita Jugado'), '2026-04-01 15:00:00', 10, 0);
     $pendiente = crearPartidoPartidosEdicion($contexto, crearEquipoPartidosEdicion($contexto, 'Local Pendiente'), crearEquipoPartidosEdicion($contexto, 'Visita Pendiente'), '2026-04-01 16:00:00');
 
     $html = dashboardPartidosEdicion($contexto);
-    $tarjetaJugado = tarjetaDashboardPartido($html, $jugado);
     $tarjetaPendiente = tarjetaDashboardPartido($html, $pendiente);
 
-    expect($tarjetaJugado)
-        ->toMatch('/data-dashboard-centro[^>]*>\s*10\s*-\s*0\s*</')
-        ->not->toMatch('/>\s*vs\s*</')
+    expect($html)->not->toContain('data-dashboard-partido="'.$jugado->id.'"')
         ->and($tarjetaPendiente)
         ->toMatch('/data-dashboard-centro[^>]*>\s*vs\s*</')
         ->not->toMatch('/data-dashboard-centro[^>]*>\s*\d/');
@@ -279,4 +276,72 @@ it('no falla si un parametro reenviado llega como array', function () {
 
     expect($html)->toContain('Local Array')
         ->not->toContain('name="otro"');
+});
+
+function crearFinalPartidosEdicion(array $contexto, string $local, string $visitante, string $horario, ?int $goles = null): InstanciaFinal
+{
+    $copa = Copa::create(['idEdicion' => $contexto['edicion']->id, 'nombre' => 'Copa '.$local]);
+    $fase = Fase::create(['nombre' => 'Fase '.$local]);
+
+    return InstanciaFinal::create([
+        'idCategoria' => $contexto['categoria']->id,
+        'idCopa' => $copa->id,
+        'idEdicion' => $contexto['edicion']->id,
+        'idFase' => $fase->id,
+        'idEquipoLocal' => crearEquipoPartidosEdicion($contexto, $local)->id,
+        'idEquipoVisitante' => crearEquipoPartidosEdicion($contexto, $visitante)->id,
+        'golesEquipoLocal' => $goles,
+        'golesEquipoVisitante' => $goles,
+        'horario' => $horario,
+        'cancha' => '2',
+    ]);
+}
+
+it('no lista los partidos con resultado ni ofrece sus horarios', function () {
+    $contexto = crearContextoPartidosEdicion();
+    $jugado = crearPartidoPartidosEdicion($contexto, crearEquipoPartidosEdicion($contexto, 'Local Jugado'), crearEquipoPartidosEdicion($contexto, 'Visita Jugado'), '2026-04-01 09:00:00', 0, 7);
+    $pendiente = crearPartidoPartidosEdicion($contexto, crearEquipoPartidosEdicion($contexto, 'Local Pendiente'), crearEquipoPartidosEdicion($contexto, 'Visita Pendiente'), '2026-04-01 12:30:00');
+
+    $html = dashboardPartidosEdicion($contexto);
+
+    expect($html)->toContain('data-dashboard-partido="'.$pendiente->id.'"')
+        ->not->toContain('data-dashboard-partido="'.$jugado->id.'"')
+        ->toContain('<option value="12:30"')
+        ->not->toContain('<option value="09:00"')
+        ->toContain('1 partido pendiente de la última fecha');
+});
+
+it('no lista las instancias finales con resultado ni ofrece sus horarios', function () {
+    $contexto = crearContextoPartidosEdicion();
+    $jugada = crearFinalPartidosEdicion($contexto, 'Final Jugada', 'Rival Jugada', '2026-04-08 09:00:00', 2);
+    $pendiente = crearFinalPartidosEdicion($contexto, 'Final Pendiente', 'Rival Pendiente', '2026-04-08 12:30:00');
+
+    $html = dashboardPartidosEdicion($contexto);
+
+    expect($html)->toContain('data-dashboard-final="'.$pendiente->id.'"')
+        ->not->toContain('data-dashboard-final="'.$jugada->id.'"')
+        ->toContain('<option value="12:30"')
+        ->not->toContain('<option value="09:00"');
+});
+
+it('muestra las finales pendientes aunque el ultimo dia ya tenga resultados', function () {
+    $contexto = crearContextoPartidosEdicion();
+    $pendiente = crearFinalPartidosEdicion($contexto, 'Final Anterior', 'Rival Anterior', '2026-04-08 10:00:00');
+    $jugada = crearFinalPartidosEdicion($contexto, 'Final Posterior', 'Rival Posterior', '2026-04-15 10:00:00', 1);
+
+    $html = dashboardPartidosEdicion($contexto);
+
+    expect($html)->toContain('data-dashboard-final="'.$pendiente->id.'"')
+        ->not->toContain('data-dashboard-final="'.$jugada->id.'"');
+});
+
+it('avisa que no quedan pendientes cuando todos los partidos tienen resultado', function () {
+    $contexto = crearContextoPartidosEdicion();
+    crearPartidoPartidosEdicion($contexto, crearEquipoPartidosEdicion($contexto, 'Local Jugado'), crearEquipoPartidosEdicion($contexto, 'Visita Jugado'), '2026-04-01 09:00:00', 1, 1);
+
+    $html = dashboardPartidosEdicion($contexto);
+
+    expect($html)->not->toContain('data-dashboard-partido="')
+        ->toContain('No hay partidos pendientes')
+        ->toContain('Goles sin confirmar');
 });

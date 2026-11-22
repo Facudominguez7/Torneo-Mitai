@@ -140,6 +140,7 @@ class ControladorHome extends Controller
         if ($ultimaFecha) {
             $horariosDisponibles = Partido::where('idEdicion', $idEdicion)
                 ->where('idFechas', $ultimaFecha->id)
+                ->where(fn ($query) => $query->whereNull('golesEquipoLocal')->orWhereNull('golesEquipoVisitante'))
                 ->whereNotNull('horario_datetime')
                 ->pluck('horario_datetime')
                 ->map(function ($datetime) {
@@ -179,6 +180,7 @@ class ControladorHome extends Controller
             ->join('fechas as f', 'partidos.idFechas', '=', 'f.id')
             ->join('categorias as c', 'partidos.idCategoria', '=', 'c.id')
             ->where('partidos.idEdicion', $idEdicion)
+            ->where(fn ($query) => $query->whereNull('partidos.golesEquipoLocal')->orWhereNull('partidos.golesEquipoVisitante'))
             ->when($ultimaFecha, function ($query) use ($ultimaFecha) {
                 return $query->where('partidos.idFechas', $ultimaFecha->id);
             });

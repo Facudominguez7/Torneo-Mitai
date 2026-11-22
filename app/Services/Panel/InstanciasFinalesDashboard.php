@@ -8,9 +8,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Instancias finales que muestra el dashboard: las del último día con
- * finales programadas de la edición, el equivalente a "la última fecha" de la
- * fase regular.
+ * Instancias finales que muestra el dashboard: las que siguen sin resultado
+ * en el último día con finales pendientes de la edición, el equivalente a
+ * "la última fecha" de la fase regular.
  */
 class InstanciasFinalesDashboard
 {
@@ -42,6 +42,7 @@ class InstanciasFinalesDashboard
             ->join('categorias', 'instancias_finales.idCategoria', '=', 'categorias.id')
             ->leftJoin('copas', 'instancias_finales.idCopa', '=', 'copas.id')
             ->where('instancias_finales.idEdicion', $idEdicion)
+            ->where(fn ($query) => $query->whereNull('instancias_finales.golesEquipoLocal')->orWhereNull('instancias_finales.golesEquipoVisitante'))
             ->whereRaw('DATE(instancias_finales.horario) = ?', [$ultimoDia])
             ->when($horario, fn ($query) => $query->whereRaw('TIME(instancias_finales.horario) = ?', [$horario.':00']))
             ->orderBy('instancias_finales.horario')
@@ -52,12 +53,13 @@ class InstanciasFinalesDashboard
     }
 
     /**
-     * Último día (Y-m-d) con instancias finales programadas en la edición.
+     * Último día (Y-m-d) con instancias finales sin resultado en la edición.
      */
     public function ultimoDia(int $idEdicion): ?string
     {
         $ultimoDia = InstanciaFinal::query()
             ->where('idEdicion', $idEdicion)
+            ->where(fn ($query) => $query->whereNull('golesEquipoLocal')->orWhereNull('golesEquipoVisitante'))
             ->whereNotNull('horario')
             ->max(DB::raw('DATE(horario)'));
 
