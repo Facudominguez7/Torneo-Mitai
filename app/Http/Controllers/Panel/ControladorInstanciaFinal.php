@@ -4,19 +4,24 @@ namespace App\Http\Controllers\Panel;
 
 use App\Constants\PartidoConstants;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\InstanciaFinal\MoverAFechaRequest;
 use App\Http\Requests\InstanciaFinal\StoreRequest;
 use App\Models\Categoria;
 use App\Models\Copa;
 use App\Models\Edicion;
 use App\Models\Equipo;
 use App\Models\Fase;
+use App\Models\Fecha;
 use App\Models\InstanciaFinal;
 use App\Services\Cobros\AnulacionCargosService;
 use App\Services\Cobros\ProgramacionCobroService;
 use App\Services\EstadisticasService;
+use App\Services\MoverInstanciaFinalAFechaService;
 use App\Services\PartidoService;
 use App\Traits\SeleccionarCategoriaTrait;
 use DomainException;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -421,6 +426,51 @@ class ControladorInstanciaFinal extends Controller
     private function vieneDePartidos(Request $request): bool
     {
         return $request->input('origen') === PartidoConstants::TIPO_PARTIDO_NORMAL;
+    }
+
+    /**
+     * Formulario para pasar a una fecha común un partido cargado por error como instancia final.
+     */
+    public function moverAFecha(InstanciaFinal $instancia_final, Request $request): View
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+
+        $partido = $instancia_final->load(['equipoLocal:id,nombre', 'equipoVisitante:id,nombre', 'categoria:id,nombreCategoria', 'fase:id,nombre']);
+        $fechas = Fecha::query()
+            ->where('idEdicion', $partido->idEdicion)
+            ->where(fn ($consulta) => $consulta->where('idCategoria', $partido->idCategoria)->orWhereNull('idCategoria'))
+            ->orderByDesc('id')
+            ->get(['id', 'nombre']);
+        $grupoLocal = $this->partidoService->obtenerGrupoEquipo($partido->idEquipoLocal, $partido->idCategoria, $partido->idEdicion);
+        $grupoVisitante = $this->partidoService->obtenerGrupoEquipo($partido->idEquipoVisitante, $partido->idCategoria, $partido->idEdicion);
+        $requiereInterzonal = $grupoLocal !== null && $grupoVisitante !== null && $grupoLocal->id !== $grupoVisitante->id;
+        $parametrosRegreso = $this->construirParametrosRegreso($request, ['idEdicion' => $partido->idEdicion]);
+
+        return view('Panel.instancia_final.mover-fecha', compact('partido', 'fechas', 'requiereInterzonal', 'parametrosRegreso'));
+    }
+
+    public function guardarMoverAFecha(
+        MoverAFechaRequest $request,
+        InstanciaFinal $instancia_final,
+        MoverInstanciaFinalAFechaService $moverInstanciaFinal,
+    ): RedirectResponse {
+        $parametrosRegreso = $this->construirParametrosRegreso($request, ['idEdicion' => $instancia_final->idEdicion]);
+
+        try {
+            $moverInstanciaFinal->mover($request->user(), $instancia_final, $request->integer('idFechas'), $request->boolean('confirmar_interzonal'));
+        } catch (DomainException $error) {
+            return back()->withInput()->with('error', $error->getMessage());
+        } catch (Throwable $error) {
+            Log::error('No se pudo mover la instancia final a una fecha', [
+                'instancia_final_id' => $instancia_final->id,
+                'idFechas' => $request->integer('idFechas'),
+                'excepcion' => $error::class,
+            ]);
+
+            return back()->withInput()->with('error', 'No se pudo mover el partido. No se cambió ningún dato.');
+        }
+
+        return to_route('instancia_final.index', $parametrosRegreso)->with('status', 'Partido movido a la fecha con su planilla y sus cobros.');
     }
 
     /**

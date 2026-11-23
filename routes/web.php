@@ -133,6 +133,10 @@ Route::group(['prefix' => 'Panel', 'middleware' => [UserAccesPanelMiddleware::cl
     Route::post('partido-interzonal/store', [ControladorPartidos::class, 'storeInterzonal'])->name('partido.store-interzonal');
     Route::resource('tabla_goleador', ControladorTablaGoleadores::class);
     Route::resource('instancia_final', ControladorInstanciaFinal::class);
+    Route::get('instancia_final/{instancia_final}/mover-a-fecha', [ControladorInstanciaFinal::class, 'moverAFecha'])
+        ->whereNumber('instancia_final')->name('instancia_final.mover-fecha');
+    Route::post('instancia_final/{instancia_final}/mover-a-fecha', [ControladorInstanciaFinal::class, 'guardarMoverAFecha'])
+        ->whereNumber('instancia_final')->name('instancia_final.mover-fecha.store');
     Route::get('/instancia_final/{idEdicion}/{horario?}', [ControladorInstanciaFinal::class, 'index'])->name('instancia_final');
     Route::resource('fase', ControladorFase::class);
     Route::match(['get', 'post'], 'cargar-resultado', [ControladorPartidos::class, 'cargarResultado'])->name('cargar-resultado');

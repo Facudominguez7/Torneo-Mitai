@@ -117,5 +117,11 @@
             action="{{ route('instancia_final.destroy', $camposEliminar) }}"
             message="¿Estás seguro de eliminar este partido?"
         />
+        @if (auth()->user()?->isAdmin())
+            <x-ui.button size="sm" variant="secondary" class="col-span-2"
+                href="{{ route('instancia_final.mover-fecha', ['instancia_final' => $p->id, 'idEdicion' => $EdicionSeleccionada->id, 'idCategoria' => request('idCategoria'), 'idFase' => request('idFase'), 'idCopa' => request('idCopa'), 'estado' => request('estado'), 'busqueda' => request('busqueda'), 'fecha' => request('fecha'), 'horario' => request('horario')]) }}">
+                Mover a una fecha
+            </x-ui.button>
+        @endif
     </div>
 </div>
