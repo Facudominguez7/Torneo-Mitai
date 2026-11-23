@@ -139,6 +139,15 @@ class PartidoService
         }, 3);
     }
 
+    /**
+     * Suma a posiciones un resultado cuyo historial de equipos ya fue aplicado,
+     * como el de una instancia final que pasa a ser un partido de fecha.
+     */
+    public function aplicarResultadoEnPosiciones(Partido $partido, int $golesEquipoLocal, int $golesEquipoVisitante): void
+    {
+        $this->actualizarTablaPosiciones($partido, $golesEquipoLocal, $golesEquipoVisitante);
+    }
+
     protected function actualizarTablaPosiciones(Partido $partido, $golesEquipoLocal, $golesEquipoVisitante)
     {
         // Lógica para actualizar la tabla de posiciones
@@ -246,7 +255,7 @@ class PartidoService
     /**
      * Obtener el grupo al que pertenece un equipo en una categoría y edición
      */
-    protected function obtenerGrupoEquipo($equipoId, $categoriaId, $edicionId)
+    public function obtenerGrupoEquipo($equipoId, $categoriaId, $edicionId)
     {
         return Grupo::where('idCategoria', $categoriaId)
             ->where('idEdicion', $edicionId)
@@ -513,7 +522,7 @@ class PartidoService
      * Recalcula golesContra de equipo_ediciones para los dos equipos del
      * partido, con el grupo propio de cada equipo en los interzonales.
      */
-    private function recalcularGolesContraDePartido(Partido $partido): void
+    public function recalcularGolesContraDePartido(Partido $partido): void
     {
         foreach ([$partido->idEquipoLocal, $partido->idEquipoVisitante] as $idEquipo) {
             $existeEquipoEdicion = EquipoEdicion::query()
