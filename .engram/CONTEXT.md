@@ -4,6 +4,13 @@ Trabajá siempre en `feat/panel-admin-redesign`, tanto para implementar como par
 
 Resumen del rediseño al 2026-10-04; checkpoint de cobros actualizado al 2026-10-12; cobros desde la planilla e identidad visual al 2026-10-24; alta con fecha nueva y planilla al 2026-11-08. Este archivo viaja con Git; la memoria viva de Engram y la configuración global de cada agente son independientes.
 
+## Mover una instancia final a una fecha (rama `feat/mover-final-a-fecha`, 2026-11-23)
+
+- Los administradores pueden pasar a una fecha común una instancia final cargada por error. `MoverInstanciaFinalAFechaService` crea el partido y repunta planillas, reportes arbitrales y cargos conservando sus ids, audita `mover_final_a_fecha`, suma el resultado a posiciones y borra la final. No vuelve a sumar el historial de equipos ni los goleadores. No hay opción para deshacerlo.
+- Se bloquea con penales o resultado global (incluidas las columnas legacy), ediciones 1 a 3, resultado incompleto, cancha no numérica, cruce repetido en la fecha, equipo sin grupo, grupos distintos sin confirmar interzonal, ausencia sin resultado y podio confirmado.
+- El enlace público anterior de la final da 404 después de mover. Re-guardar el resultado de una final ya infla el historial de equipos (bug previo, sin corregir).
+- Verificado con Pest, verificación independiente, revisión nativa y Playwright en `mitai` con autorización: una final sin resultado y otra con resultado y goles. En `mitai` local esas dos finales quedaron movidas a la 15° Fecha. No se probaron en navegador los casos de resultado sin goles ni goles sin resultado.
+
 ## Navbar pública que se condensa en cápsula (rama `feat/navbar-condense`, 2026-11-11)
 
 - Port del patrón "condense" de Prestige a Blade y CSS (el proyecto no usa React). Al bajar más de 40 px, la barra pública pasa a ser una cápsula flotante `.nav-capsula`: más angosta, redondeada, con borde y sombra, y desplazada hacia abajo. Vuelve a expandirse por debajo de 8 px. La altura no cambia y la animación respeta el movimiento reducido. En el celular es opaca, sin desenfoque y sin hamburguesa; las secciones siguen en la barra inferior. Se quitó la compactación anterior, que ocultaba bloques.
